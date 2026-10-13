@@ -1,0 +1,73 @@
+{
+    "fileFormatVersion": "1",
+    "parameterSets": {
+        "1bay-patch6": {
+            "bays": "1",
+            "fit": "flush",
+            "spare_fill": "keystone"
+        },
+        "2bay-flush-1U-patch6": {
+            "bays": "2",
+            "fit": "flush",
+            "spare_fill": "keystone"
+        },
+        "3bay-flush-2U-patch6": {
+            "bays": "3",
+            "fit": "flush",
+            "spare_fill": "keystone"
+        },
+        "4bay-flush-3U-patch6": {
+            "bays": "4",
+            "fit": "flush",
+            "spare_fill": "keystone"
+        },
+        "3bay-flush-2U-vent": {
+            "bays": "3",
+            "fit": "flush",
+            "spare_fill": "vent"
+        },
+        "2bay-bezel-1U-patch6": {
+            "bays": "2",
+            "fit": "flush",
+            "front_style": "bezel",
+            "filler_mode": "integral",
+            "spare_fill": "keystone"
+        },
+        "3bay-bezel-2U-patch6": {
+            "bays": "3",
+            "fit": "flush",
+            "front_style": "bezel",
+            "filler_mode": "integral",
+            "spare_fill": "keystone"
+        },
+        "3bay-bezel-overhang-3U": {
+            "bays": "3",
+            "fit": "overhang",
+            "front_style": "bezel",
+            "hole_pattern": "center"
+        },
+        "2bay-overhang-2U": {
+            "bays": "2",
+            "fit": "overhang"
+        },
+        "3bay-overhang-3U": {
+            "bays": "3",
+            "fit": "overhang",
+            "hole_pattern": "center"
+        },
+        "panel-1U-patch6": {
+            "panel_u": "1",
+            "panel_fill": "keystone",
+            "ks_ports": "6"
+        },
+        "panel-1U-vent": {
+            "panel_u": "1",
+            "panel_fill": "vent"
+        },
+        "panel-2U-patch12": {
+            "panel_u": "2",
+            "panel_fill": "keystone",
+            "ks_ports": "12"
+        }
+    }
+}

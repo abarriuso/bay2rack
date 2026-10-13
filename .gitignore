@@ -1,0 +1,10 @@
+# OpenSCAD / slicer scratch
+*.bak
+*.3mf
+*.gcode
+*.bgcode
+*.csg
+src/*.stl
+# OS
+Thumbs.db
+.DS_Store
