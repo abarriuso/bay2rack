@@ -5,6 +5,7 @@ VARIANTS below is the single source of truth. It generates:
   src/bay2rack.json   presets for the OpenSCAD Customizer
   stl/<family>/...    ready-to-print STL files (already in print orientation)
   stl/README.md       what to print for each variant + the hardware you need
+  stl/index.json      the same catalogue for the web viewer
 
 Usage:
   python scripts/build.py               build everything
@@ -17,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -126,6 +128,28 @@ def write_presets():
     print(f"wrote {PRESETS.relative_to(ROOT)} ({len(sets)} presets)")
 
 
+FACET = re.compile(r"facet normal\s+(\S+)\s+(\S+)\s+(\S+)\s+outer loop\s+"
+                   r"vertex\s+(\S+)\s+(\S+)\s+(\S+)\s+vertex\s+(\S+)\s+(\S+)\s+(\S+)\s+vertex\s+(\S+)\s+(\S+)\s+(\S+)")
+
+
+def normalize_stl(path):
+    """OpenSCAD writes the same triangles in a different order on every run. Rewrite the
+    STL as binary with the triangles in a canonical order: identical geometry gives an
+    identical file (no git churn) and the file is ~5x smaller."""
+    tris = []
+    for f in FACET.findall(path.read_text()):
+        n = tuple(float(x) for x in f[:3])
+        vs = [tuple(float(x) for x in f[3 + 3 * i: 6 + 3 * i]) for i in range(3)]
+        k = vs.index(min(vs))                     # rotate, keeping the winding
+        tris.append((tuple(vs[k:] + vs[:k]), n))
+    tris.sort()
+    with open(path, "wb") as out:
+        out.write(b"bay2rack binary STL".ljust(80, b" "))
+        out.write(struct.pack("<I", len(tris)))
+        for vs, n in tris:
+            out.write(struct.pack("<12fH", *n, *vs[0], *vs[1], *vs[2], 0))
+
+
 def export(openscad, v, filename, extra):
     out = STL / (v["path"] + ".stl" if v["flat"] else Path(v["path"]) / filename)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -135,6 +159,8 @@ def export(openscad, v, filename, extra):
     log = r.stdout + r.stderr
     echoes = re.findall(r'ECHO: "(.*)"', log)
     ok = r.returncode == 0 and out.exists()
+    if ok:
+        normalize_stl(out)
     return {"variant": v, "file": out, "ok": ok, "log": log, "echoes": echoes}
 
 
@@ -165,7 +191,33 @@ def write_index(results):
             lines.append(f"| **{v['path'].split('/', 1)[1]}**<br>{v['title']} | {files} | {hw} |")
         lines.append("")
     (STL / "README.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
-    print(f"wrote {(STL / 'README.md').relative_to(ROOT)}")
+    # the same catalogue as JSON, for the web viewer
+    catalog = {"families": FAMILIES, "variants": []}
+    for v in VARIANTS:
+        rs = by_variant.get(v["path"], [])
+        bom = []
+        for r in rs:
+            bom += [e[6:] for e in r["echoes"] if e.startswith("BOM | ") and e[6:] not in bom]
+        catalog["variants"].append({
+            "path": v["path"], "family": v["path"].split("/")[0], "title": v["title"], "params": v["params"],
+            "files": [r["file"].relative_to(STL).as_posix() for r in rs if r["ok"]], "bom": bom})
+    (STL / "index.json").write_text(json.dumps(catalog, indent=1) + "\n", encoding="utf-8", newline="\n")
+    print(f"wrote {(STL / 'README.md').relative_to(ROOT)} + index.json")
+
+
+def remove_stale(keep):
+    """Delete STL files that are no longer produced; folders in use (open in a slicer) are left alone."""
+    for f in STL.rglob("*.stl"):
+        if f.resolve() not in keep:
+            try:
+                f.unlink()
+            except OSError as e:
+                print(f"  keep  {f.relative_to(ROOT).as_posix()} ({e.strerror})")
+    for d in sorted((p for p in STL.rglob("*") if p.is_dir()), key=lambda p: -len(p.parts)):
+        try:
+            d.rmdir()          # only succeeds when empty
+        except OSError:
+            pass
 
 
 def main(argv):
@@ -179,8 +231,6 @@ def main(argv):
     words = [a for a in argv if not a.startswith("--")]
     chosen = [v for v in VARIANTS if all(w in v["path"] for w in words)]
     full = not words
-    if full and STL.exists():
-        shutil.rmtree(STL)
     openscad = find_openscad()
     jobs = [(v, f, extra) for v in chosen for f, extra in v["parts"]]
     print(f"exporting {len(jobs)} files from {len(chosen)} variants with {openscad}")
@@ -198,6 +248,7 @@ def main(argv):
             if e.startswith(("WARNING", "NOTE")):
                 print(f"        {e}")
     if full:
+        remove_stale({r["file"].resolve() for r in results if r["ok"]})
         write_index(results)
     else:
         print("partial build: stl/README.md left unchanged (run without filters to refresh it)")

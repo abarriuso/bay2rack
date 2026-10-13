@@ -1,0 +1,433 @@
+{
+ "families": {
+  "plate-flush": "Plate front, flush: N-1 U inside the bay stack + a swappable filler in the spare zone.",
+  "plate-overhang": "Plate front, overhang: N bays = N U, the frame and panels stick out a few mm.",
+  "bezel-flush": "Exact 5.25in drive bezel, flush with the case front, patch panel cut into the bezel.",
+  "bezel-overhang": "Exact 5.25in drive bezel, N U of rack panels overlapping the case front.",
+  "panels": "Standalone 6in rack panels for any 6in rack.",
+  "tests": "Small test prints: check them before printing a full adapter."
+ },
+ "variants": [
+  {
+   "path": "plate-flush/1bay-0U",
+   "family": "plate-flush",
+   "title": "1 bay, 0U + spare zone",
+   "params": {
+    "bays": 1,
+    "fit": "flush",
+    "front_style": "plate",
+    "filler_mode": "separate"
+   },
+   "files": [
+    "plate-flush/1bay-0U/adapter.stl",
+    "plate-flush/1bay-0U/filler-keystone6.stl",
+    "plate-flush/1bay-0U/filler-vent.stl",
+    "plate-flush/1bay-0U/filler-blank.stl"
+   ],
+   "bom": [
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "plate-flush/2bay-1U",
+   "family": "plate-flush",
+   "title": "2 bays, 1U + spare zone",
+   "params": {
+    "bays": 2,
+    "fit": "flush",
+    "front_style": "plate",
+    "filler_mode": "separate"
+   },
+   "files": [
+    "plate-flush/2bay-1U/adapter.stl",
+    "plate-flush/2bay-1U/filler-keystone6.stl",
+    "plate-flush/2bay-1U/filler-vent.stl",
+    "plate-flush/2bay-1U/filler-blank.stl"
+   ],
+   "bom": [
+    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "plate-flush/3bay-2U",
+   "family": "plate-flush",
+   "title": "3 bays, 2U + spare zone",
+   "params": {
+    "bays": 3,
+    "fit": "flush",
+    "front_style": "plate",
+    "filler_mode": "separate"
+   },
+   "files": [
+    "plate-flush/3bay-2U/adapter.stl",
+    "plate-flush/3bay-2U/filler-keystone6.stl",
+    "plate-flush/3bay-2U/filler-vent.stl",
+    "plate-flush/3bay-2U/filler-blank.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "plate-flush/4bay-3U",
+   "family": "plate-flush",
+   "title": "4 bays, 3U + spare zone",
+   "params": {
+    "bays": 4,
+    "fit": "flush",
+    "front_style": "plate",
+    "filler_mode": "separate"
+   },
+   "files": [
+    "plate-flush/4bay-3U/adapter.stl",
+    "plate-flush/4bay-3U/filler-keystone6.stl",
+    "plate-flush/4bay-3U/filler-vent.stl",
+    "plate-flush/4bay-3U/filler-blank.stl"
+   ],
+   "bom": [
+    "rack accessories: 18 x M6 x 12 button head  +  18 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 8 x M3 x 5 pan head  +  8 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "plate-overhang/1bay-1U",
+   "family": "plate-overhang",
+   "title": "1 bay, 1U",
+   "params": {
+    "bays": 1,
+    "fit": "overhang",
+    "front_style": "plate",
+    "hole_pattern": "eia"
+   },
+   "files": [
+    "plate-overhang/1bay-1U/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "plate-overhang/2bay-2U",
+   "family": "plate-overhang",
+   "title": "2 bays, 2U",
+   "params": {
+    "bays": 2,
+    "fit": "overhang",
+    "front_style": "plate",
+    "hole_pattern": "eia"
+   },
+   "files": [
+    "plate-overhang/2bay-2U/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "plate-overhang/3bay-3U",
+   "family": "plate-overhang",
+   "title": "3 bays, 3U",
+   "params": {
+    "bays": 3,
+    "fit": "overhang",
+    "front_style": "plate",
+    "hole_pattern": "center"
+   },
+   "files": [
+    "plate-overhang/3bay-3U/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "bezel-flush/1bay-patch6",
+   "family": "bezel-flush",
+   "title": "1 bay, 0U + 6-port patch",
+   "params": {
+    "bays": 1,
+    "fit": "flush",
+    "front_style": "bezel",
+    "filler_mode": "integral",
+    "spare_fill": "keystone"
+   },
+   "files": [
+    "bezel-flush/1bay-patch6/adapter.stl"
+   ],
+   "bom": [
+    "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "bezel-flush/2bay-1U-patch6",
+   "family": "bezel-flush",
+   "title": "2 bays, 1U + 6-port patch",
+   "params": {
+    "bays": 2,
+    "fit": "flush",
+    "front_style": "bezel",
+    "filler_mode": "integral",
+    "spare_fill": "keystone"
+   },
+   "files": [
+    "bezel-flush/2bay-1U-patch6/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "bezel-flush/3bay-2U-patch6",
+   "family": "bezel-flush",
+   "title": "3 bays, 2U + 6-port patch",
+   "params": {
+    "bays": 3,
+    "fit": "flush",
+    "front_style": "bezel",
+    "filler_mode": "integral",
+    "spare_fill": "keystone"
+   },
+   "files": [
+    "bezel-flush/3bay-2U-patch6/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "bezel-overhang/1bay-1U",
+   "family": "bezel-overhang",
+   "title": "1 bay, 1U",
+   "params": {
+    "bays": 1,
+    "fit": "overhang",
+    "front_style": "bezel",
+    "hole_pattern": "eia"
+   },
+   "files": [
+    "bezel-overhang/1bay-1U/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "bezel-overhang/2bay-2U",
+   "family": "bezel-overhang",
+   "title": "2 bays, 2U",
+   "params": {
+    "bays": 2,
+    "fit": "overhang",
+    "front_style": "bezel",
+    "hole_pattern": "center"
+   },
+   "files": [
+    "bezel-overhang/2bay-2U/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 4 x M6 x 12 button head  +  4 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "bezel-overhang/3bay-3U",
+   "family": "bezel-overhang",
+   "title": "3 bays, 3U",
+   "params": {
+    "bays": 3,
+    "fit": "overhang",
+    "front_style": "bezel",
+    "hole_pattern": "center"
+   },
+   "files": [
+    "bezel-overhang/3bay-3U/adapter.stl"
+   ],
+   "bom": [
+    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "panels/1U-patch6",
+   "family": "panels",
+   "title": "1U, 6 keystones",
+   "params": {
+    "part": "rack_panel",
+    "panel_u": 1,
+    "panel_fill": "keystone"
+   },
+   "files": [
+    "panels/1U-patch6.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "panels/1U-vent",
+   "family": "panels",
+   "title": "1U, vented",
+   "params": {
+    "part": "rack_panel",
+    "panel_u": 1,
+    "panel_fill": "vent"
+   },
+   "files": [
+    "panels/1U-vent.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "panels/1U-blank",
+   "family": "panels",
+   "title": "1U, blank",
+   "params": {
+    "part": "rack_panel",
+    "panel_u": 1,
+    "panel_fill": "blank"
+   },
+   "files": [
+    "panels/1U-blank.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "panels/2U-patch12",
+   "family": "panels",
+   "title": "2U, 12 keystones",
+   "params": {
+    "part": "rack_panel",
+    "panel_u": 2,
+    "panel_fill": "keystone",
+    "ks_ports": 12
+   },
+   "files": [
+    "panels/2U-patch12.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 12 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "tests/bay-plate",
+   "family": "tests",
+   "title": "Bay screw corner, plate front",
+   "params": {
+    "part": "test_bay"
+   },
+   "files": [
+    "tests/bay-plate.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "tests/bay-bezel",
+   "family": "tests",
+   "title": "Bay screw corner, bezel front (checks flushness)",
+   "params": {
+    "part": "test_bay",
+    "front_style": "bezel"
+   },
+   "files": [
+    "tests/bay-bezel.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "tests/rack-M6-heatset",
+   "family": "tests",
+   "title": "Rack hole spacing bar, M6 heat-set",
+   "params": {
+    "part": "test_rack"
+   },
+   "files": [
+    "tests/rack-M6-heatset.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "tests/keystone-metal",
+   "family": "tests",
+   "title": "One metal keystone holder cell",
+   "params": {
+    "part": "test_keystone",
+    "ks_style": "metal"
+   },
+   "files": [
+    "tests/keystone-metal.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x metal / shielded keystone"
+   ]
+  },
+  {
+   "path": "tests/keystone-standard",
+   "family": "tests",
+   "title": "One standard keystone cut-out",
+   "params": {
+    "part": "test_keystone",
+    "ks_style": "standard"
+   },
+   "files": [
+    "tests/keystone-standard.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystone jacks: 6 x standard keystone"
+   ]
+  }
+ ]
+}

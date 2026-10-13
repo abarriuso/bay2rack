@@ -1,0 +1,4 @@
+*.stl binary
+*.3mf binary
+*.png binary
+*.wasm binary

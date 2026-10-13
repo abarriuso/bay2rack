@@ -12,6 +12,9 @@ convertir en un **patch panel de 6 keystones integrado**.
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
 
+> **[Abre el generador web](https://abarriuso.github.io/bay2rack/)**: configúralo, previsualízalo en 3D (montado en una torre,
+> con la tornillería) y descarga el STL, todo en el navegador. No hay que instalar nada.
+>
 > **¿Solo quieres imprimir?** Todas las variantes están ya generadas en [`stl/`](stl/README.md), con la tornillería que necesita cada una.
 > Imprime primero las [piezas de prueba](stl/README.md#tests).
 
@@ -120,6 +123,10 @@ con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slo
 
 ## Personalizar
 
+- **Generador web:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) ejecuta OpenSCAD compilado a
+  WebAssembly en el navegador. Tiene los mismos parámetros que el Customizer, enlaces para compartir, la lista de materiales
+  y descargas en STL o 3MF con colores. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
+
 - **Customizer de OpenSCAD:** abre `src/bay2rack.scad` y ve a *Window → Customizer*. Cada variante es un preset del
   desplegable. F5 previsualiza (el adaptador aparece montado en una torre, `case_view`) y F6 renderiza.
 - **Línea de comandos:**
@@ -146,6 +153,7 @@ src/lib/
   preview.scad           tornillería, cortes y torre de PC (solo previsualización)
 scripts/build.py         tabla de variantes -> presets + stl/ + stl/README.md
 scripts/render_docs.py   imágenes del README
+web/                     visor y generador web (GitHub Pages)
 stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md
 docs/img/                imágenes del README
 ```

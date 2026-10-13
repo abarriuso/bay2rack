@@ -189,6 +189,8 @@ case_bays = 0; // [0:1:8]
 // Transparent side panel of the preview tower
 case_window = "left"; // [left, right, none]
 show_devices = true;
+// What the example rack holds (top U first)
+demo_devices = "homelab"; // [homelab:5-port switch + NanoKVM + metal keystones, generic:Generic 1U panels]
 // Draw screws, inserts and nuts
 show_hardware = true;
 // Cut the assembly open to see the hardware inside

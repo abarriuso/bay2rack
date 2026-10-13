@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bay2rack · 5.25" bay to 6" mini rack</title>
+  <meta name="description" content="Parametric adapter that turns 5.25 inch PC drive bays into a 6 inch mini rack. Configure, preview and download the STL in your browser.">
+  <meta property="og:title" content="bay2rack · 5.25&quot; bay to 6&quot; mini rack">
+  <meta property="og:image" content="img/hero.png">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='5' width='26' height='22' rx='3' fill='%23e58a3a'/%3E%3Crect x='7' y='10' width='18' height='4' rx='1' fill='%23222'/%3E%3Crect x='7' y='18' width='18' height='4' rx='1' fill='%23222'/%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <strong>bay2rack</strong>
+      <span data-i18n="subtitle"></span>
+    </div>
+    <nav>
+      <button id="lang" class="ghost" type="button">ES</button>
+      <a class="ghost" href="https://github.com/abarriuso/bay2rack" data-i18n="source"></a>
+    </nav>
+  </header>
+
+  <div class="layout">
+    <aside class="panel">
+      <label class="field">
+        <span data-i18n="variant"></span>
+        <select id="variant"></select>
+      </label>
+      <div id="prebuilt" class="prebuilt"></div>
+      <h2 data-i18n="parameters"></h2>
+      <div id="form"></div>
+    </aside>
+
+    <main class="stage">
+      <div id="view" class="view"></div>
+      <div class="toolbar">
+        <button id="generate" class="primary" type="button" data-i18n="generate"></button>
+        <label class="check"><input type="checkbox" id="auto" checked><span data-i18n="auto"></span></label>
+        <span id="status" class="status"></span>
+        <span class="spacer"></span>
+        <button id="fit" class="ghost" type="button" data-i18n="resetView"></button>
+        <button id="share" class="ghost" type="button" data-i18n="share"></button>
+        <button id="download" class="ghost" type="button" data-i18n="download" disabled></button>
+      </div>
+      <section class="results">
+        <div id="summary" class="summary"></div>
+        <div class="cols">
+          <div><h3 data-i18n="bom"></h3><ul id="bom"></ul></div>
+          <div><h3 data-i18n="warnings"></h3><ul id="warnings"></ul></div>
+        </div>
+        <details class="log"><summary data-i18n="log"></summary><pre id="log"></pre></details>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <span data-i18n="footer"></span>
+    <a href="https://github.com/openscad/openscad">OpenSCAD</a> ·
+    <a href="https://www.npmjs.com/package/@kreijstal/openscad-wasm">WebAssembly build</a> ·
+    bay2rack CC BY-NC-SA 4.0
+  </footer>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

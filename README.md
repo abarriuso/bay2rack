@@ -12,6 +12,9 @@ become a **built-in 6-port keystone patch panel**.
 Evolution of the original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
 
+> **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: configure it, preview it in 3D (mounted in a PC tower,
+> with the hardware) and download the STL, all in your browser. Nothing to install.
+>
 > **Just want to print?** Every variant is pre-built in [`stl/`](stl/README.md), with the screws and inserts it needs.
 > Print the [test pieces](stl/README.md#tests) first.
 
@@ -120,6 +123,10 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 
 ## Customizing
 
+- **Web generator:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) runs OpenSCAD compiled to
+  WebAssembly in the browser. It has the same parameters as the Customizer, shareable links, the bill of materials
+  and STL / colored 3MF downloads. The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
+
 - **OpenSCAD Customizer:** open `src/bay2rack.scad` and use *Window → Customizer*. Every variant is a preset
   in the dropdown. Press F5 to preview (the adapter is shown mounted in a PC tower, `case_view`) and F6 to render.
 - **Command line:**
@@ -146,6 +153,7 @@ src/lib/
   preview.scad           hardware models, sections, PC tower (preview only)
 scripts/build.py         variant table -> presets + stl/ + stl/README.md
 scripts/render_docs.py   README images
+web/                     browser viewer + generator (GitHub Pages)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md
 docs/img/                README images
 ```

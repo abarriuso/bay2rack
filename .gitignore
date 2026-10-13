@@ -11,3 +11,6 @@ Thumbs.db
 
 # render cache
 build/
+
+# local tooling
+.claude/

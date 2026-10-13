@@ -101,14 +101,85 @@ module section_cut() {
     }
 }
 
-module dummy_devices() if (units > 0)
-    for (u = [0 : units - 1]) {
+// --- example devices ------------------------------------------------
+// which device sits in rack unit u (u = 0 is the bottom one), filled from the top
+function demo_dev(u) = demo_devices != "homelab" ? "generic"
+                     : let(k = units - 1 - u) k == 0 ? "switch" : k == 1 ? "kvm" : "generic";
+
+// 1U faceplate with an optional window, front at y = yf
+module dev_panel(z, yf, win = [0, 0], wx = 0)
+    color([0.17, 0.18, 0.2]) difference() {
+        translate([0, yf + accessory_panel_t, z]) plate(panel_w, U - 0.79, accessory_panel_t, 0.5);
+        if (win[0] > 0) translate([wx - win[0] / 2, yf - 1, z + (U - 0.79 - win[1]) / 2])
+            cube([win[0], accessory_panel_t + 2, win[1]]);
+    }
+
+module rj45_port(x, z, yf) {     // dark socket with the latch notch, front at yf
+    color([0.04, 0.04, 0.05]) translate([x - 6, yf - 0.05, z - 4.5]) cube([12, 0.3, 9]);
+    color([0.04, 0.04, 0.05]) translate([x - 2.5, yf - 0.05, z + 4.4]) cube([5, 0.3, 2]);
+    color([0.8, 0.65, 0.2]) translate([x - 4, yf - 0.1, z + 2.2]) cube([8, 0.1, 1.2]);
+}
+
+// 5-port gigabit desktop switch (about 100 x 25 x 98 mm) behind a windowed 1U plate
+module dev_switch(z, yf) {
+    zc = z + (U - 0.79) / 2;
+    dev_panel(z, yf, [104, 28]);
+    color([0.12, 0.2, 0.32]) translate([-50, yf + 0.8, zc - 12.5]) cube([100, 98, 25]);
+    for (i = [0 : 4]) rj45_port(-34 + i * 16, zc - 1, yf + 0.8);
+    for (i = [0 : 4]) color(i < 3 ? [0.2, 0.95, 0.35] : [1, 0.6, 0.1]) translate([-37 + i * 16, yf + 0.7, zc + 7.5]) cube([1.6, 0.1, 1.2]);
+    color([0.2, 0.95, 0.35]) translate([44, yf + 0.7, zc + 7.5]) cube([1.6, 0.1, 1.2]);
+    color([0.85, 0.87, 0.9]) translate([34, yf + 0.7, zc - 8]) cube([10, 0.1, 1.4]);   // logo strip
+}
+
+// NanoKVM-style KVM over IP box (about 40 x 28 x 40 mm, OLED, RJ45, USB-C) behind a windowed 1U plate
+module dev_kvm(z, yf) {
+    zc = z + (U - 0.79) / 2;
+    dev_panel(z, yf, [44, 31], -38);
+    color([0.93, 0.93, 0.92]) translate([-58, yf + 0.8, zc - 14]) cube([40, 40, 28]);
+    color([0.03, 0.03, 0.04]) translate([-55, yf + 0.7, zc + 2]) cube([20, 0.2, 9]);           // OLED
+    color([0.35, 0.85, 1]) for (r = [0 : 2]) translate([-53, yf + 0.6, zc + 4 + r * 2.4]) cube([10 + (r % 2) * 5, 0.1, 0.9]);
+    rj45_port(-28, zc - 5.5, yf + 0.8);
+    color([0.1, 0.1, 0.1]) translate([-56, yf + 0.7, zc - 9]) cube([9, 0.2, 3.2]);             // USB-C
+    color([0.1, 0.1, 0.1]) translate([-45, yf + 0.7, zc - 9]) cube([9, 0.2, 3.2]);
+    // blank right side of the plate: a few vent slots
+    color([0.05, 0.05, 0.06]) for (i = [0 : 7]) translate([-4 + i * 7, yf - 0.05, zc - 9]) cube([3, 0.3, 18]);
+}
+
+module dev_generic(z, yf) {
+    dev_panel(z, yf);
+    color([0.05, 0.05, 0.05]) for (i = [0 : 7])
+        translate([-52 + i * 13, yf - 0.1, z + U / 2 - 6]) cube([10, 0.2, 9]);
+    color([0.3, 0.3, 0.32]) translate([-min(2 * x_in - 6, 120) / 2, yf + accessory_panel_t, z + 6])
+        cube([min(2 * x_in - 6, 120), 90, U - 14]);
+}
+
+module dummy_devices() {
+    if (units > 0) for (u = [0 : units - 1]) {
         z = units_z0 + u * U + 0.395;
-        color([0.18, 0.19, 0.21]) translate([0, -ft - explode, z]) plate(panel_w, U - 0.79, accessory_panel_t, 0.5);
-        color([0.05, 0.05, 0.05]) for (i = [0 : 7])
-            translate([-52 + i * 13, -ft - accessory_panel_t - 0.1 - explode, z + U / 2 - 6]) cube([10, 0.2, 9]);
-        color([0.3, 0.3, 0.32]) translate([-min(2 * x_in - 6, 120) / 2, -ft - explode, z + 6])
-            cube([min(2 * x_in - 6, 120), 90, U - 14]);
+        yf = -ft - accessory_panel_t - explode;
+        d = demo_dev(u);
+        if (d == "switch") dev_switch(z, yf);
+        else if (d == "kvm") dev_kvm(z, yf);
+        else dev_generic(z, yf);
+    }
+    if (demo_devices == "homelab") dummy_keystones();
+}
+
+// metal keystone jacks plugged into the patch panel zones
+module dummy_keystones()
+    for (zn = zones) if (zn[2] == "keystone") {
+        sep = filler_mode == "separate";
+        w  = sep ? hole_s - R[0] - 6 : 2 * x_in - 2;
+        h  = sep ? zn[1] - 0.8 : zn[1];
+        z0 = sep ? zn[0] + 0.4 : zn[0];
+        yf = sep ? -ft - filler_t - 2 * explode : -ft;
+        for (p = ks_layout(w, h, ks_ports)) translate([p[0], yf, z0 + p[1]]) {
+            color([0.72, 0.74, 0.77]) {
+                translate([-7.2, 0.6, -8]) cube([14.4, 9, 16]);
+                translate([-8, 9.6, -10]) cube([16, 22, 22]);
+            }
+            color([0.05, 0.05, 0.06]) translate([-5.9, 0.5, -5]) cube([11.8, 0.3, 8.5]);
+        }
     }
 
 module case_ghost() {

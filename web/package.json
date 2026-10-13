@@ -1,0 +1,21 @@
+{
+  "name": "bay2rack-web",
+  "private": true,
+  "type": "module",
+  "description": "Browser viewer and generator for bay2rack (OpenSCAD compiled to WebAssembly)",
+  "license": "CC-BY-NC-SA-4.0",
+  "packageManager": "pnpm@10.34.5",
+  "scripts": {
+    "assets": "node scripts/copy-assets.mjs",
+    "dev": "node scripts/copy-assets.mjs && vite",
+    "build": "node scripts/copy-assets.mjs && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@kreijstal/openscad-wasm": "2026.7.26-build.1",
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "vite": "8.3.4"
+  }
+}
