@@ -113,8 +113,13 @@
         "tests/rack-M6-heatset": {
             "part": "test_rack"
         },
-        "tests/keystone": {
-            "part": "test_keystone"
+        "tests/keystone-metal": {
+            "part": "test_keystone",
+            "ks_style": "metal"
+        },
+        "tests/keystone-standard": {
+            "part": "test_keystone",
+            "ks_style": "standard"
         }
     }
 }

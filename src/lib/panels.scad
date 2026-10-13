@@ -17,7 +17,10 @@ module panel_holes(zs, t, slot) {
 module filler_panel(zn) {
     h = zn[1] - 0.8;
     difference() {
-        plate(panel_w, h, filler_t, 0.6);
+        union() {
+            plate(panel_w, h, filler_t, 0.6);
+            fill_add(zn[2], hole_s - R[0] - 6, h, filler_t);
+        }
         panel_holes([h / 2], filler_t, panel_hole_slot);
         fill_cut(zn[2], hole_s - R[0] - 6, h, filler_t);
     }
@@ -27,7 +30,10 @@ module rack_panel() {
     h = panel_u * U - 0.79;
     zs = [for (u = [0 : panel_u - 1]) for (o = pat(hole_pattern)) u * U + o - 0.395];
     difference() {
-        plate(panel_w, h, panel_t, 0.6);
+        union() {
+            plate(panel_w, h, panel_t, 0.6);
+            fill_add(panel_fill, hole_s - R[0] - 6, h, panel_t);
+        }
         panel_holes(zs, panel_t, panel_hole_slot);
         fill_cut(panel_fill, hole_s - R[0] - 6, h, panel_t);
     }
@@ -64,8 +70,15 @@ module test_bay() {
     }
 }
 
-module test_keystone()
+// one keystone port with the same plate thickness as the filler panels
+module test_keystone() {
+    w = ks_cw + 8;
+    h = ks_hi - ks_lo + 8;
     difference() {
-        plate(ks_w + 10, ks_h + 14, filler_t, 0.6);
-        keystone_cut(ks_w + 10, ks_h + 14, filler_t, 1);
+        union() {
+            plate(w, h, filler_t, 0.6);
+            keystone_add(w, h, filler_t, 1);
+        }
+        keystone_cut(w, h, filler_t, 1);
     }
+}

@@ -7,13 +7,7 @@ varias bahías de 5,25" y las convierte en un **mini rack de 6"**. Así los acce
 (switches, patch panels, bandejas…) se montan directamente en la caja del PC. El espacio que sobra en la pila de bahías se puede
 convertir en un **patch panel de 6 keystones integrado**.
 
-<table>
-<tr>
-<td width="34%"><img src="docs/img/hero.png" alt="Montado en una torre"></td>
-<td><img src="docs/img/mounted-plate.png" alt="Frontal plano"><br><sub>3 bahías · frontal plano · 2U + patch panel de 6 puertos</sub><br><br>
-<img src="docs/img/mounted-bezel.png" alt="Frontal bisel"><br><sub>3 bahías · bisel exacto de 5,25", enrasado con el frontal de la caja</sub></td>
-</tr>
-</table>
+![bay2rack montado en una torre](docs/img/hero.png)
 
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
@@ -48,25 +42,28 @@ Dos elecciones independientes dan cuatro familias, y cada una está disponible p
 | **Frontal plano**: marco plano detrás de los paneles | `plate-flush`: la zona libre lleva un **relleno intercambiable** (patch de 6 puertos, rejilla o tapa ciega) | `plate-overhang`: el marco es unos mm más alto que el hueco |
 | **Frontal bisel**: el contorno exacto de biseles de unidades de 5,25" apiladas | `bezel-flush`: enrasado con el frontal de la caja como una unidad original, con el patch panel cortado en el bisel | `bezel-overhang`: el bisel sigue enrasado y solo los paneles sobresalen sobre el frontal |
 
-<table>
-<tr>
-<td><img src="docs/img/plate-flush-1bay.png"><br><sub>plate-flush · 1 bahía = patch panel de 6 puertos</sub></td>
-<td><img src="docs/img/plate-flush-3bay.png"><br><sub>plate-flush · 3 bahías = 2U + patch</sub></td>
-<td><img src="docs/img/plate-flush-4bay.png"><br><sub>plate-flush · 4 bahías = 3U + patch</sub></td>
-</tr>
-<tr>
-<td><img src="docs/img/plate-overhang-3bay.png"><br><sub>plate-overhang · 3 bahías = 3U</sub></td>
-<td><img src="docs/img/bezel-flush-3bay.png"><br><sub>bezel-flush · 3 bahías (frontal de la caja en transparente)</sub></td>
-<td><img src="docs/img/mounted-bezel-1bay.png"><br><sub>bezel-flush · 1 bahía: un patch panel que parece una unidad</sub></td>
-</tr>
-</table>
+![Las cuatro familias](docs/img/variants.png)
+
+![Montado en una torre](docs/img/mounted.png)
 
 Usa el frontal plano cuando el frontal de tu caja sea plano a la altura de las bahías. Si la caja tiene un
 frontal de plástico que sobresale de la chapa, usa el bisel y ajusta `bezel_depth` a lo que sobresale ese frontal.
 
 Otros ajustes: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split)
-y el relleno de la zona libre (`keystone` de 1 a 12 puertos numerados, `vent`, `cable`, `led`, `label` o `blank`).
+y el relleno de la zona libre (`keystone`, `vent`, `cable`, `led`, `label` o `blank`).
 El relleno puede ser `separate` (panel atornillado en el mismo plano que los accesorios) o `integral` (cortado en el marco).
+
+## Keystones
+
+El patch panel admite de 1 a 12 puertos (añade filas automáticamente) con números grabados opcionales.
+`ks_style` elige el alojamiento:
+
+- **`metal`** (por defecto) es la celda para **keystones metálicos / apantallados**, replicada del adaptador
+  original. Tiene una boca frontal de 15 × 16,5 mm, rampa para la patilla, una cavidad de 24,3 mm y labios traseros que retienen el conector.
+  Mide 9,5 mm de fondo, con paredes de 2 mm y un paso de 20 mm. Todas las cotas son parámetros (`ksm_*`).
+- `standard` es un hueco simple de 14,9 × 16,4 mm en una placa de 2 mm, para keystones de plástico.
+
+![Alojamiento de keystone metálico](docs/img/keystone.png)
 
 ## Estándar de rack
 
@@ -102,13 +99,7 @@ BOM | drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 
 La previsualización dibuja los tornillos, insertos y tuercas en su sitio (`show_hardware`). `explode` separa las piezas
 y `section` corta el modelo para ver cada fijación dentro del plástico.
 
-<table>
-<tr>
-<td><img src="docs/img/hw-explode.png"><br><sub>explode = 25</sub></td>
-<td><img src="docs/img/hw-section-row.png"><br><sub>section = rack_row</sub></td>
-<td><img src="docs/img/hw-section-column.png"><br><sub>section = rack_column</sub></td>
-</tr>
-</table>
+![Tornillería](docs/img/hardware.png)
 
 ## Estándar de bahía
 
@@ -119,15 +110,13 @@ con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slo
 
 ## Impresión
 
-<img src="docs/img/print-orientation.png" width="320" align="right">
-
 - Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los techos de las
   ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.
 - Se recomienda PETG o ABS/ASA dentro de una caja caliente; el PLA sirve si la caja está fresca.
 - 3–4 perímetros y 20–30 % de relleno.
 - La versión de 3 bahías ocupa 148 × 128 mm en la cama y mide unos 66–70 mm de alto.
 
-<br clear="right">
+<p align="center"><img src="docs/img/print.png" width="420" alt="Orientación de impresión"></p>
 
 ## Personalizar
 
@@ -151,7 +140,7 @@ src/lib/
   standards.scad         tablas de tornillos, insertos y tuercas, longitudes estándar
   config.scad            medidas derivadas, comprobaciones, lista de materiales
   util.scad              utilidades de geometría
-  fills.scad             keystone, rejilla, pasacables, LED, etiqueta
+  fills.scad             keystones (metálico / estándar), rejilla, pasacables, LED, etiqueta
   adapter.scad           fijaciones de rack, guía de bahía, marco frontal
   panels.scad            rellenos, paneles de rack, piezas de prueba
   preview.scad           tornillería, cortes y torre de PC (solo previsualización)

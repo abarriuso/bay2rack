@@ -7,13 +7,7 @@ A parametric OpenSCAD adapter that screws into the standard side holes of one or
 patch panels, shelves…) mount straight into a PC case. The space a bay stack leaves over can
 become a **built-in 6-port keystone patch panel**.
 
-<table>
-<tr>
-<td width="34%"><img src="docs/img/hero.png" alt="Mounted in a tower"></td>
-<td><img src="docs/img/mounted-plate.png" alt="Plate front"><br><sub>3 bays · plate front · 2U + 6-port patch panel</sub><br><br>
-<img src="docs/img/mounted-bezel.png" alt="Bezel front"><br><sub>3 bays · exact 5.25" bezel, flush with the case front</sub></td>
-</tr>
-</table>
+![bay2rack mounted in a PC tower](docs/img/hero.png)
 
 Evolution of the original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
@@ -48,25 +42,28 @@ Two independent choices give four families, each available for 1–4 bays:
 | **Plate front**: flat frame behind the rack panels | `plate-flush`: the spare zone takes a **swappable filler** (6-port patch, vent, blank) | `plate-overhang`: the frame is a few mm taller than the stack |
 | **Bezel front**: the exact outline of stacked 5.25" drive bezels | `bezel-flush`: flush with the case front like an original drive, patch panel cut into the bezel | `bezel-overhang`: the bezel stays flush, only the rack panels overlap the case front |
 
-<table>
-<tr>
-<td><img src="docs/img/plate-flush-1bay.png"><br><sub>plate-flush · 1 bay = 6-port patch panel</sub></td>
-<td><img src="docs/img/plate-flush-3bay.png"><br><sub>plate-flush · 3 bays = 2U + patch</sub></td>
-<td><img src="docs/img/plate-flush-4bay.png"><br><sub>plate-flush · 4 bays = 3U + patch</sub></td>
-</tr>
-<tr>
-<td><img src="docs/img/plate-overhang-3bay.png"><br><sub>plate-overhang · 3 bays = 3U</sub></td>
-<td><img src="docs/img/bezel-flush-3bay.png"><br><sub>bezel-flush · 3 bays (case front shown transparent)</sub></td>
-<td><img src="docs/img/mounted-bezel-1bay.png"><br><sub>bezel-flush · 1 bay: a patch panel that looks like a drive</sub></td>
-</tr>
-</table>
+![The four families](docs/img/variants.png)
+
+![Mounted in a PC tower](docs/img/mounted.png)
 
 Use the plate front when your case front is flat at the drive bays. If the case has a plastic front that
 stands out from the metal, use the bezel front and set `bezel_depth` to how far that front stands out.
 
 Other knobs: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split),
-and the spare-zone fill (`keystone` 1–12 ports with numbered labels, `vent`, `cable`, `led`, `label`, `blank`).
+and the spare-zone fill (`keystone`, `vent`, `cable`, `led`, `label`, `blank`).
 The fill can be `separate` (a screw-on panel in the same plane as the rack accessories) or `integral` (cut into the frame).
+
+## Keystones
+
+The patch panel takes 1–12 ports (rows are added automatically) with optional engraved numbers.
+`ks_style` picks the holder:
+
+- **`metal`** (default) is a holder cell for **metal / shielded keystones**, replicated from the original
+  bay adapter. It has a 15 × 16.5 mm front opening, a latch ramp, a 24.3 mm cavity and rear lips that catch the jack.
+  It is 9.5 mm deep, with 2 mm walls and a 20 mm pitch. Every dimension is a parameter (`ksm_*`).
+- `standard` is a plain 14.9 × 16.4 mm cut-out in a 2 mm plate for plastic snap-in keystones.
+
+![Metal keystone holder](docs/img/keystone.png)
 
 ## Rack standard
 
@@ -102,13 +99,7 @@ BOM | drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 
 The preview draws screws, inserts and nuts in place (`show_hardware`). `explode` pulls the parts apart,
 and `section` cuts the model open so you can see each fixing inside the plastic.
 
-<table>
-<tr>
-<td><img src="docs/img/hw-explode.png"><br><sub>explode = 25</sub></td>
-<td><img src="docs/img/hw-section-row.png"><br><sub>section = rack_row</sub></td>
-<td><img src="docs/img/hw-section-column.png"><br><sub>section = rack_column</sub></td>
-</tr>
-</table>
+![Hardware preview](docs/img/hardware.png)
 
 ## Bay standard
 
@@ -119,15 +110,13 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 
 ## Printing
 
-<img src="docs/img/print-orientation.png" width="320" align="right">
-
 - The STL files are already oriented **front face down**. Walls and posts rise vertically, and window
   roofs and screw bosses are 45° teardrops, so **no supports** are needed.
 - PETG or ABS/ASA is recommended inside a warm case; PLA works for cool cases.
 - 3–4 perimeters, 20–30 % infill.
 - 3 bays print at 148 × 128 mm on the bed, about 66–70 mm tall.
 
-<br clear="right">
+<p align="center"><img src="docs/img/print.png" width="420" alt="Print orientation"></p>
 
 ## Customizing
 
@@ -151,7 +140,7 @@ src/lib/
   standards.scad         screw / insert / nut tables, standard lengths
   config.scad            derived dimensions, checks, bill of materials
   util.scad              geometry helpers
-  fills.scad             keystone, vent, cable, LED, label
+  fills.scad             keystones (metal / standard), vent, cable, LED, label
   adapter.scad           rack fixings, bay sleeve, front frame
   panels.scad            fillers, rack panels, test pieces
   preview.scad           hardware models, sections, PC tower (preview only)

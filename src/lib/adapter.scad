@@ -136,6 +136,8 @@ module adapter() {
             translate([0, 0, frame_z0]) plate(fw, frame_h, ft, frame_chamfer);
             posts();
             sleeve();
+            if (filler_mode != "separate")
+                for (zn = zones) translate([0, 0, zn[0]]) fill_add(zn[2], 2 * x_in - 2, zn[1], ft);
         }
         if (units > 0) opening(units_z0, units * U);
         for (zn = zones) {

@@ -8,3 +8,6 @@ src/*.stl
 # OS
 Thumbs.db
 .DS_Store
+
+# render cache
+build/

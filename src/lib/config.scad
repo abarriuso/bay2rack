@@ -122,6 +122,10 @@ n_bay  = bay_fixing == "none" ? 0 : 2 * len(bay_ys) * len(bay_zs);
 bom("rack accessories", n_dev, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
 bom("filler panels", n_fill, rack_screw, rack_L_fill, rack_screw_head, rack_fixing, R);
 bom("drive bay", n_bay, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
+n_ks = part == "rack_panel" ? (panel_fill == "keystone" ? ks_ports : 0)
+     : len([for (zn = zones) if (zn[2] == "keystone") 1]) * ks_ports;
+if (n_ks > 0) echo(str("BOM | keystone jacks: ", n_ks, " x ",
+                       ks_style == "metal" ? "metal / shielded keystone" : "standard keystone"));
 
 module check_len(label, s, L, r)
     if (L < r[0] - 0.01 || L > r[1] + 0.01)

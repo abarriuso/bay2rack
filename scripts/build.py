@@ -93,7 +93,8 @@ VARIANTS = (
     + [test("bay-plate", "Bay screw corner, plate front", "test_bay"),
        test("bay-bezel", "Bay screw corner, bezel front (checks flushness)", "test_bay", front_style="bezel"),
        test("rack-M6-heatset", "Rack hole spacing bar, M6 heat-set", "test_rack"),
-       test("keystone", "Keystone cut-out coupon", "test_keystone")]
+       test("keystone-metal", "One metal keystone holder cell", "test_keystone", ks_style="metal"),
+       test("keystone-standard", "One standard keystone cut-out", "test_keystone", ks_style="standard")]
 )
 
 

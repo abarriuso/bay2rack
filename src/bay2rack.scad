@@ -138,15 +138,40 @@ filler_t = 3;
 label_text = "HOMELAB";
 
 /* [Keystone patch] */
+// metal = holder cells for metal / shielded keystones (shape of the original design).  standard = plain cut-out for plastic keystones
+ks_style = "metal"; // [metal:Metal / shielded keystone - holder cells, standard:Standard plastic keystone - cut-out]
 ks_ports = 6; // [1:1:12]
-// Keystone cut-out (standard jack ~14.5 x 16.0)
+ks_labels = true;
+ks_label_start = 1;
+
+/* [Keystone - metal holder cell] */
+// Cavity width
+ksm_w = 15.0;
+// Front opening height
+ksm_face_h = 16.5;
+// 45 deg chamfer under the front opening
+ksm_chamfer = 2.0;
+// Cavity height behind the opening
+ksm_cav_h = 24.3;
+// Depth where the latch ramp reaches the cavity top
+ksm_ramp_d = 4.87;
+// Depth where the rear lips start
+ksm_lip_d = 8.05;
+// Rear lip heights (they catch the jack)
+ksm_lip_top = 2.0;
+ksm_lip_bot = 2.5;
+// Total cell depth from the front face
+ksm_depth = 9.5;
+ksm_wall = 2.0;
+ksm_pitch = 20.0;
+
+/* [Keystone - standard cut-out] */
+// Cut-out (standard jack ~14.5 x 16.0)
 ks_w = 14.9;
 ks_h = 16.4;
 ks_pitch = 19.0;
 // Plate thickness where the jack clips in
 ks_plate_t = 2.0;
-ks_labels = true;
-ks_label_start = 1;
 
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
