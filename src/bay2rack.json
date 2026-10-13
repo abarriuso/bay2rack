@@ -1,73 +1,120 @@
 {
     "fileFormatVersion": "1",
     "parameterSets": {
-        "1bay-patch6": {
+        "plate-flush/1bay-0U": {
             "bays": "1",
             "fit": "flush",
-            "spare_fill": "keystone"
+            "front_style": "plate",
+            "filler_mode": "separate"
         },
-        "2bay-flush-1U-patch6": {
+        "plate-flush/2bay-1U": {
             "bays": "2",
             "fit": "flush",
-            "spare_fill": "keystone"
+            "front_style": "plate",
+            "filler_mode": "separate"
         },
-        "3bay-flush-2U-patch6": {
+        "plate-flush/3bay-2U": {
             "bays": "3",
             "fit": "flush",
-            "spare_fill": "keystone"
+            "front_style": "plate",
+            "filler_mode": "separate"
         },
-        "4bay-flush-3U-patch6": {
+        "plate-flush/4bay-3U": {
             "bays": "4",
             "fit": "flush",
+            "front_style": "plate",
+            "filler_mode": "separate"
+        },
+        "plate-overhang/1bay-1U": {
+            "bays": "1",
+            "fit": "overhang",
+            "front_style": "plate",
+            "hole_pattern": "eia"
+        },
+        "plate-overhang/2bay-2U": {
+            "bays": "2",
+            "fit": "overhang",
+            "front_style": "plate",
+            "hole_pattern": "eia"
+        },
+        "plate-overhang/3bay-3U": {
+            "bays": "3",
+            "fit": "overhang",
+            "front_style": "plate",
+            "hole_pattern": "center"
+        },
+        "bezel-flush/1bay-patch6": {
+            "bays": "1",
+            "fit": "flush",
+            "front_style": "bezel",
+            "filler_mode": "integral",
             "spare_fill": "keystone"
         },
-        "3bay-flush-2U-vent": {
-            "bays": "3",
-            "fit": "flush",
-            "spare_fill": "vent"
-        },
-        "2bay-bezel-1U-patch6": {
+        "bezel-flush/2bay-1U-patch6": {
             "bays": "2",
             "fit": "flush",
             "front_style": "bezel",
             "filler_mode": "integral",
             "spare_fill": "keystone"
         },
-        "3bay-bezel-2U-patch6": {
+        "bezel-flush/3bay-2U-patch6": {
             "bays": "3",
             "fit": "flush",
             "front_style": "bezel",
             "filler_mode": "integral",
             "spare_fill": "keystone"
         },
-        "3bay-bezel-overhang-3U": {
+        "bezel-overhang/1bay-1U": {
+            "bays": "1",
+            "fit": "overhang",
+            "front_style": "bezel",
+            "hole_pattern": "eia"
+        },
+        "bezel-overhang/2bay-2U": {
+            "bays": "2",
+            "fit": "overhang",
+            "front_style": "bezel",
+            "hole_pattern": "center"
+        },
+        "bezel-overhang/3bay-3U": {
             "bays": "3",
             "fit": "overhang",
             "front_style": "bezel",
             "hole_pattern": "center"
         },
-        "2bay-overhang-2U": {
-            "bays": "2",
-            "fit": "overhang"
-        },
-        "3bay-overhang-3U": {
-            "bays": "3",
-            "fit": "overhang",
-            "hole_pattern": "center"
-        },
-        "panel-1U-patch6": {
+        "panels/1U-patch6": {
+            "part": "rack_panel",
             "panel_u": "1",
-            "panel_fill": "keystone",
-            "ks_ports": "6"
+            "panel_fill": "keystone"
         },
-        "panel-1U-vent": {
+        "panels/1U-vent": {
+            "part": "rack_panel",
             "panel_u": "1",
             "panel_fill": "vent"
         },
-        "panel-2U-patch12": {
+        "panels/1U-blank": {
+            "part": "rack_panel",
+            "panel_u": "1",
+            "panel_fill": "blank"
+        },
+        "panels/2U-patch12": {
+            "part": "rack_panel",
             "panel_u": "2",
             "panel_fill": "keystone",
             "ks_ports": "12"
+        },
+        "tests/bay-plate": {
+            "part": "test_bay"
+        },
+        "tests/bay-bezel": {
+            "part": "test_bay",
+            "front_style": "bezel"
+        },
+        "tests/rack-M6-heatset": {
+            "part": "test_rack"
+        },
+        "tests/keystone": {
+            "part": "test_keystone"
         }
     }
 }
