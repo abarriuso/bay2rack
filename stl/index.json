@@ -5,6 +5,8 @@
   "bezel-flush": "Exact 5.25in drive bezel, flush with the case front, patch panel cut into the bezel.",
   "bezel-overhang": "Exact 5.25in drive bezel, N U of rack panels overlapping the case front.",
   "panels": "Standalone 6in rack panels for any 6in rack.",
+  "modules": "1U rack modules: switch mount, shelf, button panel, patch panel.",
+  "covers": "Keystone covers for unused ports, pushed in from the front.",
   "tests": "Small test prints: check them before printing a full adapter."
  },
  "variants": [
@@ -27,7 +29,9 @@
    "bom": [
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -50,7 +54,9 @@
     "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -73,7 +79,9 @@
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -96,7 +104,9 @@
     "rack accessories: 18 x M6 x 12 button head  +  18 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 8 x M3 x 5 pan head  +  8 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -169,7 +179,9 @@
    ],
    "bom": [
     "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -189,7 +201,9 @@
    "bom": [
     "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -209,7 +223,9 @@
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -282,7 +298,9 @@
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
@@ -338,7 +356,118 @@
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 12 x metal / shielded keystone"
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
+   ]
+  },
+  {
+   "path": "modules/ms105g",
+   "family": "modules",
+   "title": "Mercusys MS105G switch mount (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "ms105g"
+   },
+   "files": [
+    "modules/ms105g.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/shelf",
+   "family": "modules",
+   "title": "1U shelf for small devices",
+   "params": {
+    "part": "rack_module",
+    "module_type": "shelf"
+   },
+   "files": [
+    "modules/shelf.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/buttons",
+   "family": "modules",
+   "title": "1U button panel: MX keys + power / HDD LEDs",
+   "params": {
+    "part": "rack_module",
+    "module_type": "buttons"
+   },
+   "files": [
+    "modules/buttons.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)",
+    "buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires"
+   ]
+  },
+  {
+   "path": "modules/patch6",
+   "family": "modules",
+   "title": "1U patch panel, 6 keystone ports",
+   "params": {
+    "part": "rack_module",
+    "module_type": "patch"
+   },
+   "files": [
+    "modules/patch6.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "keystones: 3 x metal / shielded RJ45 keystone",
+    "keystones: 2 x printed keystone cover",
+    "keystones: 1 x printed cable pass-through cover"
+   ]
+  },
+  {
+   "path": "covers/keystone-blank",
+   "family": "covers",
+   "title": "Plain keystone cover",
+   "params": {
+    "part": "keystone_cover",
+    "cover_type": "blank"
+   },
+   "files": [
+    "covers/keystone-blank.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "covers/keystone-pass",
+   "family": "covers",
+   "title": "Keystone cable pass-through cover",
+   "params": {
+    "part": "keystone_cover",
+    "cover_type": "pass"
+   },
+   "files": [
+    "covers/keystone-pass.stl"
+   ],
+   "bom": [
+    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
   {
@@ -354,8 +483,7 @@
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
   {
@@ -372,8 +500,7 @@
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
   {
@@ -389,8 +516,7 @@
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
   {
@@ -407,8 +533,7 @@
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x metal / shielded keystone"
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
   {
@@ -425,8 +550,7 @@
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "keystone jacks: 6 x standard keystone"
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   }
  ]

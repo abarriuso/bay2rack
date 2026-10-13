@@ -26,3 +26,10 @@ module plate(w, h, t, c = 0.8) {
         translate([-w / 2, -t + c, 0]) cube([w, t - c, h]);
     }
 }
+
+// "a, b,c" -> ["a", "b", "c"] (spaces ignored, empty items dropped)
+function str_split(s, sep = ",", i = 0, cur = "") =
+    i >= len(s) ? (cur == "" ? [] : [cur])
+  : s[i] == sep ? concat(cur == "" ? [] : [cur], str_split(s, sep, i + 1, ""))
+  : s[i] == " " ? str_split(s, sep, i + 1, cur)
+  : str_split(s, sep, i + 1, str(cur, s[i]));

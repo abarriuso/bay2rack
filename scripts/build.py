@@ -37,6 +37,8 @@ FAMILIES = {
     "bezel-flush": "Exact 5.25in drive bezel, flush with the case front, patch panel cut into the bezel.",
     "bezel-overhang": "Exact 5.25in drive bezel, N U of rack panels overlapping the case front.",
     "panels": "Standalone 6in rack panels for any 6in rack.",
+    "modules": "1U rack modules: switch mount, shelf, button panel, patch panel.",
+    "covers": "Keystone covers for unused ports, pushed in from the front.",
     "tests": "Small test prints: check them before printing a full adapter.",
 }
 
@@ -92,6 +94,12 @@ VARIANTS = (
        panel("1U-vent", "1U, vented", 1, "vent"),
        panel("1U-blank", "1U, blank", 1, "blank"),
        panel("2U-patch12", "2U, 12 keystones", 2, "keystone", ks_ports=12)]
+    + [variant("modules/ms105g", "Mercusys MS105G switch mount (1U)", {"part": "rack_module", "module_type": "ms105g"}, [("", {})], flat=True),
+       variant("modules/shelf", "1U shelf for small devices", {"part": "rack_module", "module_type": "shelf"}, [("", {})], flat=True),
+       variant("modules/buttons", "1U button panel: MX keys + power / HDD LEDs", {"part": "rack_module", "module_type": "buttons"}, [("", {})], flat=True),
+       variant("modules/patch6", "1U patch panel, 6 keystone ports", {"part": "rack_module", "module_type": "patch"}, [("", {})], flat=True),
+       variant("covers/keystone-blank", "Plain keystone cover", {"part": "keystone_cover", "cover_type": "blank"}, [("", {})], flat=True),
+       variant("covers/keystone-pass", "Keystone cable pass-through cover", {"part": "keystone_cover", "cover_type": "pass"}, [("", {})], flat=True)]
     + [test("bay-plate", "Bay screw corner, plate front", "test_bay"),
        test("bay-bezel", "Bay screw corner, bezel front (checks flushness)", "test_bay", front_style="bezel"),
        test("rack-M6-heatset", "Rack hole spacing bar, M6 heat-set", "test_rack"),

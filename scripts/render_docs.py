@@ -22,14 +22,19 @@ IMG = ROOT / "docs" / "img"
 RAW = ROOT / "build" / "render"
 ISO = "0,0,0,68,0,-32,0"            # gimbal camera, used with --viewall
 CLOSE = "-320,-470,250,0,40,60"     # eye + target: close-up of the bays in the tower
-NO_CASE = {"case_view": "none"}
+NO_CASE = {"case_view": "none", "scene": "single"}
 BEZEL = {"front_style": "bezel", "filler_mode": "integral"}
 
 # name: (camera, raw size, viewall, params)  - raw size is 2x the card size
 VIEWS = {
-    "hero":            ("-300,-520,230,0,40,55", "2400,1300", False, {}),
-    "mounted-bezel":   (CLOSE, "1200,900", False, BEZEL),
-    "mounted-1bay":    ("-260,-400,200,0,40,15", "1200,900", False, {"bays": 1, "case_bays": 3, **BEZEL}),
+    "hero":            ("-760,-1500,820,300,180,-90", "2400,1350", False, {}),
+    "homelab-back":    ("1150,1650,800,240,260,-60", "1200,900", False, {}),
+    "rack-close":      ("-170,-330,150,0,0,60", "1200,900", False, {"scene": "single", "case_view": "none"}),
+    "mounted-bezel":   (CLOSE, "1200,900", False, {**BEZEL, "scene": "single"}),
+    "mounted-1bay":    ("-260,-400,200,0,40,15", "1200,900", False, {"bays": 1, "case_model": "obsidian750d", **BEZEL, "scene": "single"}),
+    "btn-ring":        ("-60,-230,95,0,-10,108", "1200,900", False, {"spare_fill": "buttons", "led_style": "ring", **NO_CASE}),
+    "btn-halo":        ("-60,-230,95,0,-10,108", "1200,900", False, {"spare_fill": "buttons", "led_style": "halo", **NO_CASE}),
+    "btn-glow":        ("-60,-230,95,0,-10,108", "1200,900", False, {"spare_fill": "buttons", "led_style": "glow", **NO_CASE}),
     "pf-1":            (ISO, "1200,900", True, {"bays": 1, **NO_CASE}),
     "pf-3":            (ISO, "1200,900", True, {"bays": 3, **NO_CASE}),
     "pf-4":            (ISO, "1200,900", True, {"bays": 4, **NO_CASE}),
@@ -39,14 +44,19 @@ VIEWS = {
     "hw-explode":      (ISO, "1200,900", True, {"explode": 25, **NO_CASE}),
     "hw-row":          ("0,0,0,60,0,-25,0", "1200,900", True, {"section": "rack_row"}),
     "hw-column":       ("0,0,0,75,0,60,0", "1200,900", True, {"section": "rack_column"}),
+    "mod-ms105g":      ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "ms105g"}),
+    "mod-shelf":       ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "shelf"}),
     "ks-front":        ("0,0,0,90,0,0,0", "1200,900", True, {"part": "rack_panel", "print_orientation": False}),
     "ks-back":         ("0,0,0,62,0,200,0", "1200,900", True, {"part": "rack_panel", "print_orientation": False}),
     "ks-cut":          ("0,0,0,90,0,90,0", "1200,900", True, None),     # special: cut-open coupon
+    "cover-pass":      ("0,0,0,50,0,30,0", "1200,900", True, {"part": "keystone_cover", "cover_type": "pass"}),
     "print":           ("0,0,0,55,0,-30,0", "1200,900", True, {"part": "adapter"}),
 }
 
 SHEETS = {
     "hero.png":     (1, [("hero", None)]),
+    "homelab.png":  (2, [("homelab-back", "cables: back of the case -> patch panel"),
+                         ("rack-close", "MS105G switch · NanoKVM shelf · patch panel")]),
     "variants.png": (3, [("pf-1", "plate-flush · 1 bay · 6-port patch"),
                          ("pf-3", "plate-flush · 3 bays · 2U + patch"),
                          ("pf-4", "plate-flush · 4 bays · 3U + patch"),
@@ -55,7 +65,13 @@ SHEETS = {
                          ("bo-3", "bezel-overhang · 3 bays · 3U")]),
     "mounted.png":  (2, [("mounted-bezel", "exact 5.25\" bezel · flush with the case front"),
                          ("mounted-1bay", "1 bay · patch panel bezel")]),
-    "keystone.png": (3, [("ks-front", "1U panel · 6 metal keystones"),
+    "modules.png":  (3, [("mod-ms105g", "Mercusys MS105G mount"),
+                         ("mod-shelf", "1U shelf (NanoKVM, Pi...)"),
+                         ("cover-pass", "keystone pass-through cover")]),
+    "buttons.png":  (3, [("btn-ring", "MX keys · LED ring"),
+                         ("btn-halo", "MX keys · halo"),
+                         ("btn-glow", "MX keys · hidden glow")]),
+    "keystone.png": (3, [("ks-front", "1U panel · metal keystones, covers, pass-through"),
                          ("ks-back", "holder cells (back)"),
                          ("ks-cut", "cell profile: latch ramp + rear lips")]),
     "hardware.png": (3, [("hw-explode", "explode = 25"),

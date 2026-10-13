@@ -105,7 +105,7 @@ export class Viewer {
     if (!box) return;
     const center = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
-    const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2)) * (box === this.focus ? 0.85 : 1.05);
+    const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2)) * (box === this.focus ? 0.85 : 0.82);
     this.camera.position.copy(center).addScaledVector(VIEW_DIR, dist);
     this.camera.near = dist / 100;
     this.camera.far = dist * 20;

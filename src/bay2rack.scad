@@ -17,7 +17,7 @@
 
 /* [Part to render] */
 // What to render. "assembly" is a preview only, do not print it.
-part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
+part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, keystone_cover:Keystone cover - plain or cable pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
 // Lay printable parts front-face down on the bed
 print_orientation = true;
 
@@ -131,9 +131,9 @@ lighten = true;
 /* [Spare-zone filler] */
 // separate = screw-on panel you can swap (modular).  integral = features cut into the frame
 filler_mode = "separate"; // [separate:Separate screw-on panel, integral:Cut into the frame]
-spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label]
+spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons]
 // Fill of the top zone when spare_pos = split
-spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label]
+spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons]
 filler_t = 3;
 label_text = "HOMELAB";
 
@@ -141,6 +141,8 @@ label_text = "HOMELAB";
 // metal = holder cells for metal / shielded keystones (shape of the original design).  standard = plain cut-out for plastic keystones
 ks_style = "metal"; // [metal:Metal / shielded keystone - holder cells, standard:Standard plastic keystone - cut-out]
 ks_ports = 6; // [1:1:12]
+// Type of every port, comma separated (empty = ks_ports x ks_style): rj45m = metal RJ45 cell, rj45 hdmi usb = standard keystones, cover = plain cover, pass = cable pass-through cover, none = no hole
+ks_ports_list = "rj45m,rj45m,rj45m,cover,cover,pass";
 ks_labels = true;
 ks_label_start = 1;
 
@@ -173,9 +175,48 @@ ks_pitch = 19.0;
 // Plate thickness where the jack clips in
 ks_plate_t = 2.0;
 
+/* [Keystone covers] */
+// Printed covers for unused ports, pushed in from the front (part = keystone_cover)
+cover_type = "blank"; // [blank:Plain cover, pass:Cable pass-through - split so it clips around a cable]
+// Clearance per side in the port
+cover_clear = 0.25;
+// Cable diameter for the pass-through
+cover_cable_d = 6.5;
+
+/* [Button panel] */
+// Power / reset keys use normal keyboard switches (Cherry MX compatible: 14 mm cut-out, 1.5 mm plate)
+btn_count = 2; // [1:Power only, 2:Power + reset]
+mx_cut = 14.0;
+mx_plate_t = 1.5;
+// Power and disk-activity LEDs
+led_d = 3; // [3:3 mm, 5:5 mm]
+// halo = light ring around each key. ring = countersunk hole with an engraved ring and the LED dome sticking out. glow = hidden: the light shines through a thin skin and the engraved icon lights up
+led_style = "ring"; // [ring:Countersunk ring - the LED dome sticks out, halo:Halo ring of light around each key, glow:Hidden glow - the icon lights up through a thin skin]
+// How far the LED dome sticks out of the front (ring style)
+led_protrude = 1.5;
+
+/* [Rack contents] */
+// What goes in each rack unit, top first (assembly preview and kit): ms105g, shelf, patch, vent, blank, cable, led, label
+rack_modules = "ms105g,shelf";
+// Module made by part = rack_module
+module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, shelf:1U shelf for small devices, patch:1U keystone patch panel, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
+
+/* [Device mounts] */
+// Mercusys MS105G 5-port switch, W x H x D from retailer spec sheets (VERIFY)
+ms_w = 105;
+ms_h = 24.9;
+ms_d = 70;
+// Clearance around the device
+mount_clear = 0.6;
+// Lip around the front window that stops the device
+mount_lip = 1.5;
+mount_wall = 2.0;
+// Shelf depth for small devices (NanoKVM, Raspberry Pi...)
+shelf_depth = 100;
+
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
-panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label]
+panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons]
 panel_t = 3;
 // Horizontal slotting of panel holes
 panel_hole_slot = 2; // [0:0.5:6]
@@ -184,13 +225,15 @@ panel_hole_slot = 2; // [0:0.5:6]
 explode = 0; // [0:1:60]
 // Show the adapter mounted in a PC case
 case_view = "tower"; // [none:No case, ghost:Transparent bay sheets only, tower:PC tower case]
-// Total 5.25in bays in the preview tower (0 = adapter bays + 1)
-case_bays = 0; // [0:1:8]
+// Real PC case for the preview (approximate outer size). auto = the smallest one with enough 5.25in bays
+case_model = "auto"; // [auto:Auto - smallest case that fits, definer5:Fractal Design Define R5 - 2 bays, obsidian750d:Corsair Obsidian 750D - 3 bays, antec300:Antec Three Hundred - 3 bays, enthoopro:Phanteks Enthoo Pro - 3 bays, definexlr2:Fractal Design Define XL R2 - 4 bays, haf932:Cooler Master HAF 932 - 5 bays, stacker830:Cooler Master Stacker 830 - 11 bays]
 // Transparent side panel of the preview tower
 case_window = "left"; // [left, right, none]
 show_devices = true;
-// What the example rack holds (top U first)
-demo_devices = "homelab"; // [homelab:5-port switch + NanoKVM + metal keystones, generic:Generic 1U panels]
+// Show the devices in the rack modules (switch, NanoKVM, keystone jacks)
+demo_devices = "homelab"; // [homelab:Devices + keystone jacks, generic:Empty modules]
+// homelab = two client PCs + access point + network cables around this PC
+scene = "homelab"; // [homelab:Homelab - two client PCs + access point + cables, single:Just this PC]
 // Draw screws, inserts and nuts
 show_hardware = true;
 // Cut the assembly open to see the hardware inside
@@ -229,6 +272,8 @@ else if (part == "filler" || part == "filler_2") {
     else echo("WARNING: no spare zone in this configuration");
 }
 else if (part == "rack_panel") printable(panel_t) rack_panel();
+else if (part == "rack_module") printable(panel_t) rack_module(module_type);
+else if (part == "keystone_cover") keystone_cover(cover_type);
 else if (part == "test_rack") printable(ft) test_rack();
 else if (part == "test_bay") printable(ft) test_bay();
 else if (part == "test_keystone") printable(filler_t) test_keystone();

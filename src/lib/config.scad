@@ -51,6 +51,13 @@ zones = concat(
 R = with_insert(hw(rack_screw), rack_insert_d, rack_insert_l);
 B = with_insert(hw(bay_screw), bay_insert_d, bay_insert_l);
 
+// keystone port types and rack contents
+ks_types  = ks_ports_list == "" ? [for (i = [0 : max(ks_ports, 1) - 1]) ks_style == "metal" ? "rj45m" : "rj45"]
+          : str_split(ks_ports_list);
+rack_mods = str_split(rack_modules);
+function mod_at(u) = let(k = units - 1 - u) k < len(rack_mods) ? rack_mods[k] : "blank";   // u = 0 is the bottom unit
+used_mods = units > 0 ? [for (u = [0 : units - 1]) mod_at(u)] : [];
+
 // rack posts
 r_feat = rack_fixing == "heatset"    ? R[2]
        : rack_fixing == "tap"        ? R[1]
@@ -122,10 +129,33 @@ n_bay  = bay_fixing == "none" ? 0 : 2 * len(bay_ys) * len(bay_zs);
 bom("rack accessories", n_dev, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
 bom("filler panels", n_fill, rack_screw, rack_L_fill, rack_screw_head, rack_fixing, R);
 bom("drive bay", n_bay, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
-n_ks = part == "rack_panel" ? (panel_fill == "keystone" ? ks_ports : 0)
-     : len([for (zn = zones) if (zn[2] == "keystone") 1]) * ks_ports;
-if (n_ks > 0) echo(str("BOM | keystone jacks: ", n_ks, " x ",
-                       ks_style == "metal" ? "metal / shielded keystone" : "standard keystone"));
+// keystone jacks and covers: one set per patch panel
+n_patch = part == "rack_panel" ? (panel_fill == "keystone" ? 1 : 0)
+        : part == "rack_module" ? (module_type == "patch" ? 1 : 0)
+        : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
+           || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+          ? len([for (zn = zones) if (zn[2] == "keystone") 1])
+            + (part == "assembly" ? len([for (m = used_mods) if (m == "patch") 1]) : 0)
+        : 0;
+function ks_count(tp) = n_patch * len([for (x = ks_types) if (x == tp) 1]);
+KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],
+            ["usb", "USB keystone"], ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
+for (k = KS_NAMES) if (ks_count(k[0]) > 0) echo(str("BOM | keystones: ", ks_count(k[0]), " x ", k[1]));
+n_ties = (part == "assembly" ? len([for (m = used_mods) if (m == "ms105g" || m == "shelf") 1])
+        : part == "rack_module" && (module_type == "ms105g" || module_type == "shelf") ? 1 : 0);
+n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
+      : part == "rack_module" ? (module_type == "buttons" ? 1 : 0)
+      : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
+         || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+        ? len([for (zn = zones) if (zn[2] == "buttons") 1])
+          + (part == "assembly" ? len([for (m = used_mods) if (m == "buttons") 1]) : 0)
+      : 0;
+if (n_btn > 0) {
+    echo(str("BOM | buttons: ", n_btn * btn_count, " x Cherry MX compatible keyboard switch + 1u keycap (",
+             btn_count >= 2 ? "power, reset" : "power", ")"));
+    echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
+}
+if (n_ties > 0) echo(str("BOM | zip ties: ", 2 * n_ties, " x 2.5-3.6 mm cable tie (holds the device)"));
 
 module check_len(label, s, L, r)
     if (L < r[0] - 0.01 || L > r[1] + 0.01)

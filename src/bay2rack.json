@@ -103,6 +103,30 @@
             "panel_fill": "keystone",
             "ks_ports": "12"
         },
+        "modules/ms105g": {
+            "part": "rack_module",
+            "module_type": "ms105g"
+        },
+        "modules/shelf": {
+            "part": "rack_module",
+            "module_type": "shelf"
+        },
+        "modules/buttons": {
+            "part": "rack_module",
+            "module_type": "buttons"
+        },
+        "modules/patch6": {
+            "part": "rack_module",
+            "module_type": "patch"
+        },
+        "covers/keystone-blank": {
+            "part": "keystone_cover",
+            "cover_type": "blank"
+        },
+        "covers/keystone-pass": {
+            "part": "keystone_cover",
+            "cover_type": "pass"
+        },
         "tests/bay-plate": {
             "part": "test_bay"
         },

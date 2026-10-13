@@ -68,6 +68,7 @@ async function run({ id, defines, out }) {
   mkdirs(FS, '/out/x');
 
   const args = ['/src/bay2rack.scad', '--backend=manifold', '-o', '/out/' + out];
+  if (out.endsWith('.stl')) args.push('--export-format', 'binstl');
   for (const d of defines) args.push('-D', d);
   let code;
   try {

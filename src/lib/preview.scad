@@ -69,7 +69,7 @@ module bay_hw(s, y, z)
 
 module hardware() {
     for (s = [-1, 1], z = rack_zs)
-        rack_hw(s * hole_s / 2, z, -ft - accessory_panel_t - explode, rack_L_dev, show_devices);
+        rack_hw(s * hole_s / 2, z, -ft - panel_t - explode, rack_L_dev, show_devices);
     if (filler_mode == "separate")
         for (zn = zones, s = [-1, 1])
             rack_hw(s * hole_s / 2, zn[0] + zn[1] / 2, -ft - filler_t - 2 * explode, rack_L_fill);
@@ -101,119 +101,40 @@ module section_cut() {
     }
 }
 
-// --- example devices ------------------------------------------------
-// which device sits in rack unit u (u = 0 is the bottom one), filled from the top
-function demo_dev(u) = demo_devices != "homelab" ? "generic"
-                     : let(k = units - 1 - u) k == 0 ? "switch" : k == 1 ? "kvm" : "generic";
-
-// 1U faceplate with an optional window, front at y = yf
-module dev_panel(z, yf, win = [0, 0], wx = 0)
-    color([0.17, 0.18, 0.2]) difference() {
-        translate([0, yf + accessory_panel_t, z]) plate(panel_w, U - 0.79, accessory_panel_t, 0.5);
-        if (win[0] > 0) translate([wx - win[0] / 2, yf - 1, z + (U - 0.79 - win[1]) / 2])
-            cube([win[0], accessory_panel_t + 2, win[1]]);
-    }
-
-module rj45_port(x, z, yf) {     // dark socket with the latch notch, front at yf
-    color([0.04, 0.04, 0.05]) translate([x - 6, yf - 0.05, z - 4.5]) cube([12, 0.3, 9]);
-    color([0.04, 0.04, 0.05]) translate([x - 2.5, yf - 0.05, z + 4.4]) cube([5, 0.3, 2]);
-    color([0.8, 0.65, 0.2]) translate([x - 4, yf - 0.1, z + 2.2]) cube([8, 0.1, 1.2]);
-}
-
-// 5-port gigabit desktop switch (about 100 x 25 x 98 mm) behind a windowed 1U plate
-module dev_switch(z, yf) {
-    zc = z + (U - 0.79) / 2;
-    dev_panel(z, yf, [104, 28]);
-    color([0.12, 0.2, 0.32]) translate([-50, yf + 0.8, zc - 12.5]) cube([100, 98, 25]);
-    for (i = [0 : 4]) rj45_port(-34 + i * 16, zc - 1, yf + 0.8);
-    for (i = [0 : 4]) color(i < 3 ? [0.2, 0.95, 0.35] : [1, 0.6, 0.1]) translate([-37 + i * 16, yf + 0.7, zc + 7.5]) cube([1.6, 0.1, 1.2]);
-    color([0.2, 0.95, 0.35]) translate([44, yf + 0.7, zc + 7.5]) cube([1.6, 0.1, 1.2]);
-    color([0.85, 0.87, 0.9]) translate([34, yf + 0.7, zc - 8]) cube([10, 0.1, 1.4]);   // logo strip
-}
-
-// NanoKVM-style KVM over IP box (about 40 x 28 x 40 mm, OLED, RJ45, USB-C) behind a windowed 1U plate
-module dev_kvm(z, yf) {
-    zc = z + (U - 0.79) / 2;
-    dev_panel(z, yf, [44, 31], -38);
-    color([0.93, 0.93, 0.92]) translate([-58, yf + 0.8, zc - 14]) cube([40, 40, 28]);
-    color([0.03, 0.03, 0.04]) translate([-55, yf + 0.7, zc + 2]) cube([20, 0.2, 9]);           // OLED
-    color([0.35, 0.85, 1]) for (r = [0 : 2]) translate([-53, yf + 0.6, zc + 4 + r * 2.4]) cube([10 + (r % 2) * 5, 0.1, 0.9]);
-    rj45_port(-28, zc - 5.5, yf + 0.8);
-    color([0.1, 0.1, 0.1]) translate([-56, yf + 0.7, zc - 9]) cube([9, 0.2, 3.2]);             // USB-C
-    color([0.1, 0.1, 0.1]) translate([-45, yf + 0.7, zc - 9]) cube([9, 0.2, 3.2]);
-    // blank right side of the plate: a few vent slots
-    color([0.05, 0.05, 0.06]) for (i = [0 : 7]) translate([-4 + i * 7, yf - 0.05, zc - 9]) cube([3, 0.3, 18]);
-}
-
-module dev_generic(z, yf) {
-    dev_panel(z, yf);
-    color([0.05, 0.05, 0.05]) for (i = [0 : 7])
-        translate([-52 + i * 13, yf - 0.1, z + U / 2 - 6]) cube([10, 0.2, 9]);
-    color([0.3, 0.3, 0.32]) translate([-min(2 * x_in - 6, 120) / 2, yf + accessory_panel_t, z + 6])
-        cube([min(2 * x_in - 6, 120), 90, U - 14]);
-}
-
-module dummy_devices() {
-    if (units > 0) for (u = [0 : units - 1]) {
-        z = units_z0 + u * U + 0.395;
-        yf = -ft - accessory_panel_t - explode;
-        d = demo_dev(u);
-        if (d == "switch") dev_switch(z, yf);
-        else if (d == "kvm") dev_kvm(z, yf);
-        else dev_generic(z, yf);
-    }
-    if (demo_devices == "homelab") dummy_keystones();
-}
-
-// metal keystone jacks plugged into the patch panel zones
-module dummy_keystones()
-    for (zn = zones) if (zn[2] == "keystone") {
-        sep = filler_mode == "separate";
-        w  = sep ? hole_s - R[0] - 6 : 2 * x_in - 2;
-        h  = sep ? zn[1] - 0.8 : zn[1];
-        z0 = sep ? zn[0] + 0.4 : zn[0];
-        yf = sep ? -ft - filler_t - 2 * explode : -ft;
-        for (p = ks_layout(w, h, ks_ports)) translate([p[0], yf, z0 + p[1]]) {
-            color([0.72, 0.74, 0.77]) {
-                translate([-7.2, 0.6, -8]) cube([14.4, 9, 16]);
-                translate([-8, 9.6, -10]) cube([16, 22, 22]);
-            }
-            color([0.05, 0.05, 0.06]) translate([-5.9, 0.5, -5]) cube([11.8, 0.3, 8.5]);
-        }
-    }
-
-module case_ghost() {
-    % difference() {
-        translate([-95, 0.01, -20]) cube([190, 0.8, stack_raw + 40]);
-        translate([-bay_w / 2 - 0.5, -1, 0]) cube([bay_w + 1, 3, stack_raw]);
-    }
-    % for (s = [-1, 1]) translate([s > 0 ? bay_w / 2 : -bay_w / 2 - case_wall_t, 1, 0])
-        cube([case_wall_t, 200, stack_raw]);
-    if (bezel_mode) % difference() {   // plastic case front the bezel sits flush in
-        translate([-fw / 2 - 30, -ft, base_z0 - 25]) cube([fw + 60, ft - 0.02, base_h + 50]);
-        translate([-bezel_w / 2, -ft - 1, base_z0 - bezel_clearance / 2]) cube([bezel_w, ft + 2, base_h + bezel_clearance]);
-    }
-}
-
-// --- preview PC tower ------------------------------------------------
-tc_bays  = case_bays > 0 ? max(case_bays, bays) : bays + 1;
-tc_extra = tc_bays - bays;                            // covered bays below the adapter
+// --- preview PC tower: real cases ---------------------------------------
+// Outer size from the makers' spec sheets (approximate, preview only).
+// [id, name, width, height, depth, 5.25in bays, case top to the first bay, front, body colour, front colour]
+CASES = [
+    ["definer5",     "Fractal Design Define R5",    232, 451, 521,  2, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
+    ["obsidian750d", "Corsair Obsidian 750D",       230, 560, 545,  3, 34, "solid", [0.14, 0.14, 0.15], [0.22, 0.22, 0.24]],
+    ["antec300",     "Antec Three Hundred",         205, 470, 465,  3, 22, "mesh",  [0.10, 0.10, 0.11], [0.06, 0.06, 0.07]],
+    ["enthoopro",    "Phanteks Enthoo Pro",         235, 535, 550,  3, 36, "solid", [0.11, 0.11, 0.12], [0.08, 0.08, 0.09]],
+    ["definexlr2",   "Fractal Design Define XL R2", 232, 560, 560,  4, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
+    ["haf932",       "Cooler Master HAF 932",       230, 605, 548,  5, 40, "mesh",  [0.09, 0.09, 0.10], [0.05, 0.05, 0.06]],
+    ["stacker830",   "Cooler Master Stacker 830",   220, 547, 598, 11, 24, "mesh",  [0.70, 0.71, 0.73], [0.60, 0.61, 0.64]]
+];
+tc_fit = [for (c = CASES) if (c[5] >= bays) c];
+tc_sel = [for (c = CASES) if (c[0] == case_model) c];
+TC = case_model == "auto" ? (len(tc_fit) > 0 ? tc_fit[0] : CASES[len(CASES) - 1])
+   : len(tc_sel) > 0 ? tc_sel[0] : CASES[0];
+TC_W = TC[2]; TC_H = TC[3]; TC_D = TC[4];
+tc_extra = max(0, TC[5] - bays);                      // covered bays below the adapter
+tc_cz1   = stack_raw;                                 // cage top = top of the adapter's top bay
 tc_cz0   = -tc_extra * bay_pitch;                     // cage bottom
-tc_cz1   = stack_raw;                                 // cage top
-TC_W = 215; TC_D = 450;
-TC_H = max(470, tc_cz1 - tc_cz0 + 330);
-tc_z1 = max(tc_cz1, frame_z1, units_z0 + units * U) + 32;
-tc_z0 = tc_z1 - TC_H;
-tc_fd = ft;                                           // case front depth: frame front is flush with it
-TC_BODY   = [0.24, 0.24, 0.27];
-TC_FRONT  = [0.15, 0.15, 0.17];
-TC_COVER  = [0.19, 0.19, 0.21];
-TC_METAL  = [0.62, 0.64, 0.68, 0.35];
+tc_z1    = tc_cz1 + TC[6];
+tc_z0    = tc_z1 - TC_H;
+tc_fd    = ft;                                        // case front depth: frame front is flush with it
+TC_COVER = [0.17, 0.17, 0.19];
+TC_METAL = [0.62, 0.64, 0.68, 0.35];
+if (part == "assembly" && case_view == "tower") {
+    echo(str("NOTE: preview case ", TC[1], " - approx. ", TC_W, " x ", TC_H, " x ", TC_D, " mm, ", TC[5], " x 5.25in bays"));
+    if (bays > TC[5]) echo(str("WARNING: the adapter needs ", bays, " bays but the ", TC[1], " has ", TC[5]));
+}
 
 module tower_case() {
     wx = case_window == "left" ? -1 : case_window == "right" ? 1 : 0;
     // body shell, front metal with the cage opening
-    color(TC_BODY) difference() {
+    color(TC[8]) difference() {
         translate([-TC_W / 2, 0, tc_z0]) cube([TC_W, TC_D, TC_H]);
         translate([-TC_W / 2 + 1, 1, tc_z0 + 1]) cube([TC_W - 2, TC_D - 2, TC_H - 2]);
         if (wx != 0) translate([wx > 0 ? TC_W / 2 - 2 : -TC_W / 2 - 1, 15, tc_z0 + 15]) cube([3, TC_D - 30, TC_H - 30]);
@@ -229,29 +150,239 @@ module tower_case() {
     // motherboard + PSU, for scale
     color([0.12, 0.32, 0.2]) translate([TC_W / 2 - 22, TC_D - 262, tc_z1 - 30 - 305]) cube([1.6, 244, 305]);
     color([0.1, 0.1, 0.1]) translate([-TC_W / 2 + 6, TC_D - 146, tc_z0 + 4]) cube([150, 140, 86]);
-    // plastic front
-    color(TC_FRONT) difference() {
+    // plastic front with the bay openings
+    color(TC[9]) difference() {
         translate([-TC_W / 2, -tc_fd + 0.15, tc_z0 + 8]) cube([TC_W, tc_fd - 0.17, TC_H - 8]);   // 0.15 behind the frame front: no z-fighting
         translate([-fw / 2 - 0.3, -tc_fd - 1, frame_z0 - 0.3]) cube([fw + 0.6, tc_fd + 2, frame_h + 0.6]);
         if (tc_extra > 0) for (k = [1 : tc_extra])
             translate([-bezel_w / 2, -tc_fd - 1, -k * bay_pitch - (bezel_h1 - bay_h) / 2]) cube([bezel_w, tc_fd + 2, bezel_h1]);
-        // vents in the lower front
-        for (z = [tc_z0 + 30 : 9 : tc_cz0 - 30])
-            translate([-TC_W / 2 + 25, -tc_fd - 1, z]) cube([TC_W - 50, 1.6, 4]);
-        // power button recess
-        translate([TC_W / 2 - 32, -tc_fd - 1, tc_z1 - 16]) rotate([-90, 0, 0]) cylinder(d = 14, h = 1.6);
+    }
+    // front texture: mesh grid or two side intake slits
+    yf = -tc_fd - 0.05;
+    mz0 = tc_z0 + 22; mz1 = tc_cz0 - 12;
+    color([0.02, 0.02, 0.03]) if (TC[7] == "mesh") {
+        if (mz1 - mz0 > 10) {
+            for (z = [mz0 : 5 : mz1]) translate([-TC_W / 2 + 14, yf, z]) cube([TC_W - 28, 0.1, 2.2]);
+            for (x = [-TC_W / 2 + 14 : 6 : TC_W / 2 - 14]) translate([x, yf - 0.05, mz0]) cube([1.2, 0.1, mz1 - mz0]);
+        }
+    } else {
+        for (s = [-1, 1]) translate([s * (TC_W / 2 - 9) - 1, yf, tc_z0 + 20]) cube([2, 0.1, TC_H - 50]);
     }
     // blank covers in the free bays
     color(TC_COVER) if (tc_extra > 0) for (k = [1 : tc_extra])
         translate([0, 0, -k * bay_pitch - (bezel_h1 - bay_h) / 2 + 0.3])
             plate(bezel_w - 0.6, bezel_h1 - 0.6, tc_fd - 0.3, 0.6);
     // power button, front USB, feet
-    color([0.75, 0.75, 0.78]) translate([TC_W / 2 - 32, -tc_fd - 0.5, tc_z1 - 16]) rotate([-90, 0, 0]) cylinder(d = 10, h = 1);
-    color([0.03, 0.03, 0.03]) for (i = [0, 1]) translate([TC_W / 2 - 70 - i * 18, -tc_fd - 0.3, tc_z1 - 19]) cube([13, 0.4, 5]);
+    color([0.75, 0.75, 0.78]) translate([TC_W / 2 - 32, -tc_fd - 0.5, tc_z1 - TC[6] / 2]) rotate([-90, 0, 0]) cylinder(d = 10, h = 1);
+    color([0.03, 0.03, 0.03]) for (i = [0, 1]) translate([TC_W / 2 - 70 - i * 18, -tc_fd - 0.3, tc_z1 - TC[6] / 2 - 2.5]) cube([13, 0.4, 5]);
     color([0.05, 0.05, 0.05]) for (x = [-TC_W / 2 + 20, TC_W / 2 - 40], y = [20, TC_D - 40])
         translate([x, y, tc_z0 - 8]) cube([20, 20, 8]);
     // window panel last so it blends over the inside
     if (wx != 0) color([0.6, 0.7, 0.8, 0.18]) translate([wx > 0 ? TC_W / 2 - 1 : -TC_W / 2, 0, tc_z0]) cube([1, TC_D, TC_H]);
+}
+
+// --- example devices ------------------------------------------------
+MOD_COLOR = [0.24, 0.26, 0.30];
+
+module rj45_port(x, z, yf) {     // dark socket with the latch notch, front at yf
+    color([0.04, 0.04, 0.05]) translate([x - 6, yf - 0.05, z - 4.5]) cube([12, 0.3, 9]);
+    color([0.04, 0.04, 0.05]) translate([x - 2.5, yf - 0.05, z + 4.4]) cube([5, 0.3, 2]);
+    color([0.8, 0.65, 0.2]) translate([x - 4, yf - 0.1, z + 2.2]) cube([8, 0.1, 1.2]);
+}
+
+// Mercusys MS105G: black body, five red ports and the power jack on the front
+function ms_ports(zc) = [for (i = [0 : 4]) [-ms_w / 2 + 13 + i * 15.5, zc - 1]];
+module ms105g_model(yf, zc) {     // yf = front face, zc = body centre height
+    color([0.07, 0.07, 0.08]) translate([-ms_w / 2, yf, zc - ms_h / 2]) cube([ms_w, ms_d, ms_h]);
+    for (p = ms_ports(zc)) {
+        color([0.86, 0.13, 0.15]) translate([p[0] - 7, yf - 0.1, p[1] - 6.5]) cube([14, 0.2, 13]);
+        rj45_port(p[0], p[1], yf - 0.15);
+    }
+    color([0.02, 0.02, 0.02]) translate([ms_w / 2 - 10, yf - 0.1, zc - 1]) rotate([-90, 0, 0]) cylinder(d = 8, h = 0.3);
+    color([0.7, 0.7, 0.7]) translate([ms_w / 2 - 10, yf - 0.2, zc - 1]) rotate([-90, 0, 0]) cylinder(d = 2.2, h = 0.3);
+}
+
+// NanoKVM-style KVM over IP box (about 40 x 28 x 40 mm) standing on the shelf
+module nanokvm_model(yf, zb, x = -34) {
+    color([0.94, 0.94, 0.93]) translate([x - 20, yf, zb]) cube([40, 40, 28]);
+    color([0.03, 0.03, 0.04]) translate([x - 16, yf - 0.1, zb + 15]) cube([20, 0.2, 9]);      // OLED
+    color([0.35, 0.85, 1]) for (r = [0 : 2]) translate([x - 14, yf - 0.2, zb + 17 + r * 2.4]) cube([10 + (r % 2) * 5, 0.1, 0.9]);
+    rj45_port(x + 10, zb + 9, yf - 0.1);
+    color([0.1, 0.1, 0.1]) for (dx = [-17, -6]) translate([x + dx, yf - 0.1, zb + 4]) cube([9, 0.2, 3.2]);   // USB-C
+}
+
+// keystone jack / cover models at a port centre; yf = front face of the panel
+module jack_model(tp, yf) {
+    if (tp == "rj45m") {
+        color([0.72, 0.74, 0.77]) { translate([-7.2, yf + 0.6, -8]) cube([14.4, 9, 16]); translate([-8, yf + 9.6, -10]) cube([16, 22, 22]); }
+        color([0.05, 0.05, 0.06]) translate([-5.9, yf + 0.5, -5]) cube([11.8, 0.3, 8.5]);
+    } else if (tp == "rj45" || tp == "hdmi" || tp == "usb") {
+        color(tp == "rj45" ? [0.95, 0.95, 0.93] : [0.12, 0.12, 0.13]) {
+            translate([-7.2, yf + 0.4, -8]) cube([14.4, 26, 16]);
+        }
+        if (tp == "rj45") color([0.05, 0.05, 0.06]) translate([-5.9, yf + 0.3, -5]) cube([11.8, 0.3, 8.5]);
+        if (tp == "hdmi") color([0.75, 0.62, 0.25]) translate([0, yf + 0.3, 1]) rotate([-90, 0, 0])
+            linear_extrude(0.3) polygon([[-7, -2.2], [7, -2.2], [7, 0.6], [5.6, 2.2], [-5.6, 2.2], [-7, 0.6]]);
+        if (tp == "usb") { color([0.05, 0.05, 0.06]) translate([-6, yf + 0.3, -1.5]) cube([12, 0.3, 5]);
+                           color([0.2, 0.35, 0.85]) translate([-5, yf + 0.25, -0.2]) cube([10, 0.3, 1.6]); }
+    } else if (tp == "cover" || tp == "pass") {
+        color([0.32, 0.35, 0.4]) translate([0, yf - 1.2, 0]) mirror([0, 0, 1]) rotate([-90, 0, 0])
+            keystone_cover(tp == "pass" ? "pass" : "blank");
+    }
+}
+
+// keyboard switch + keycap and the LEDs of a button panel
+module buttons_models(w, h, z0, yf) {
+    L = btn_layout(w, h);
+    for (k = L[0]) translate([k[0], 0, z0 + k[1]]) {
+        color([0.18, 0.18, 0.2]) translate([-7, yf - 5, -7]) cube([14, 5 + 6, 14]);
+        color(k[2] == "power" ? [0.9, 0.48, 0.18] : [0.82, 0.83, 0.86])
+            hull() { translate([-9, yf - 6.5, -9]) cube([18, 0.1, 18]); translate([-6.5, yf - 13.5, -6.5]) cube([13, 0.1, 13]); }
+    }
+    for (k = L[1]) {
+        lc = k[2] == "hdd" ? [0.2, 0.55, 1] : [0.2, 0.95, 0.4];
+        lz = led_style == "halo" ? k[1] - mx_cut / 2 - halo_gap - halo_w / 2 : k[1];
+        if (led_style == "ring")
+            color(lc) translate([k[0], yf - led_protrude, z0 + lz]) rotate([-90, 0, 0]) {
+                translate([0, 0, led_d / 2]) cylinder(d = led_d, h = led_body - led_d / 2);
+                translate([0, 0, led_d / 2]) sphere(d = led_d);
+            }
+        else if (led_style == "halo")      // lit ring around the key
+            color(lc) translate([k[0], yf - 0.15, z0 + k[1]]) rotate([90, 0, 0]) mirror([0, 0, 1]) linear_extrude(0.2)
+                difference() { square(mx_cut + 2 * (halo_gap + halo_w), center = true); square(mx_cut + 2 * halo_gap, center = true); }
+        else
+            color(lc) translate([k[0], yf - 0.15, z0 + lz]) rotate([90, 0, 0]) mirror([0, 0, 1]) linear_extrude(0.2)
+                icon2d(k[2] == "hdd" ? "hdd" : "power", 4.4);
+    }
+}
+
+module fill_devices(type, w, h, z0, yf) {
+    if (type == "keystone")
+        for (p = ks_layout(w, h, len(ks_types))) translate([p[0], 0, z0 + p[1]]) jack_model(ks_types[p[3]], yf);
+    else if (type == "buttons") buttons_models(w, h, z0, yf);
+}
+
+// the printed rack modules, with their devices
+module rack_contents() if (units > 0) for (u = [0 : units - 1]) {
+    z = units_z0 + u * U + 0.395;
+    m = mod_at(u);
+    yb = -ft - explode;                                // back face of the module plate
+    color(MOD_COLOR) translate([0, yb, z]) rack_module(m);
+    if (demo_devices == "homelab") {
+        if (m == "ms105g") ms105g_model(yb + 0.2, z + ms_z0 + ms_ch / 2);
+        else if (m == "shelf") nanokvm_model(yb + 6, z + shelf_z + 2);
+        else if (m == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
+        else if (m == "buttons") fill_devices("buttons", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
+    }
+}
+
+// what sits in the spare zone (keystone jacks, keys and LEDs)
+zn_sep = filler_mode == "separate";
+function zone_w() = zn_sep ? hole_s - R[0] - 6 : 2 * x_in - 2;
+function zone_h(zn) = zn_sep ? zn[1] - 0.8 : zn[1];
+function zone_z0(zn) = zn_sep ? zn[0] + 0.4 : zn[0];
+zone_yf = zn_sep ? -ft - filler_t - 2 * explode : -ft;
+
+module zone_devices() if (demo_devices == "homelab")
+    for (zn = zones) fill_devices(zn[2], zone_w(), zone_h(zn), zone_z0(zn), zone_yf);
+
+module dummy_devices() {
+    rack_contents();
+    zone_devices();
+}
+
+// --- homelab scene: client PCs, access point, network cables ------------
+CABLE_D = 5.2;
+module cable(pts, c = [0.15, 0.45, 0.9], d = CABLE_D)
+    color(c) for (i = [0 : len(pts) - 2]) hull() {
+        translate(pts[i]) sphere(d = d, $fn = 10);
+        translate(pts[i + 1]) sphere(d = d, $fn = 10);
+    }
+module plug(p, c) color(c) translate(p) translate([-6, -14, -4.5]) cube([12, 14, 9]);   // RJ45 boot, cable side -Y
+
+// keystone ports of the first patch zone, in world coordinates: [x, z, type]
+ks_zone = [for (zn = zones) if (zn[2] == "keystone") zn];
+patch_ports = len(ks_zone) == 0 ? [] :
+    [for (p = ks_layout(zone_w(), zone_h(ks_zone[0]), len(ks_types))) [p[0], zone_z0(ks_zone[0]) + p[1], ks_types[p[3]]]];
+rj_ports = [for (p = patch_ports) if (p[2] == "rj45m" || p[2] == "rj45") p];
+pass_ports = [for (p = patch_ports) if (p[2] == "pass") p];
+sw_units = units > 0 ? [for (u = [0 : units - 1]) if (mod_at(u) == "ms105g") u] : [];
+sw_zc = len(sw_units) > 0 ? units_z0 + sw_units[0] * U + 0.395 + ms_z0 + ms_ch / 2 : 0;
+sw_yf = -ft - explode + 0.2;
+
+// clients: old towers next to the server, fronts in line with it
+CLIENTS = [[185, 420, 440, [0.84, 0.81, 0.73]], [178, 380, 410, [0.16, 0.16, 0.17]]];
+cl_x = [TC_W / 2 + 70 + CLIENTS[0][0] / 2, TC_W / 2 + 70 + CLIENTS[0][0] + 60 + CLIENTS[1][0] / 2];
+ap_pos = [0, TC_D * 0.55, tc_z1];
+
+module client_pc(x, c) {
+    W = c[0]; H = c[1]; D = c[2];
+    color(c[3]) translate([x - W / 2, -tc_fd, tc_z0]) cube([W, D, H]);
+    color(c[3] * 0.85) for (k = [0, 1]) translate([x - 74, -tc_fd - 0.4, tc_z0 + H - 40 - k * 44]) cube([148, 0.5, 41]);
+    color([0.2, 0.9, 0.35]) translate([x + W / 2 - 24, -tc_fd - 0.5, tc_z0 + H - 135]) rotate([-90, 0, 0]) cylinder(d = 3, h = 0.6);
+    color([0.6, 0.6, 0.62]) translate([x + W / 2 - 36, -tc_fd - 0.5, tc_z0 + H - 135]) rotate([-90, 0, 0]) cylinder(d = 9, h = 0.6);
+    color([0.05, 0.05, 0.05]) for (i = [0 : 9]) translate([x - W / 2 + 25, -tc_fd - 0.3, tc_z0 + 30 + i * 9]) cube([W - 50, 0.3, 4]);
+}
+function client_port(i) = [cl_x[i] - CLIENTS[i][0] / 2 + 34, CLIENTS[i][2] - tc_fd, tc_z0 + CLIENTS[i][1] - 70];
+
+module access_point() {
+    color([0.96, 0.96, 0.95]) translate(ap_pos) cylinder(d = 170, h = 32, $fn = 64);
+    color([0.96, 0.96, 0.95]) translate(ap_pos + [0, 0, 32]) cylinder(d1 = 170, d2 = 150, h = 6, $fn = 64);
+    color([0.3, 0.75, 1]) translate(ap_pos + [0, 0, 38]) cylinder(d = 10, h = 0.6);
+}
+
+// keystone back -> along the inside of the case -> out of the back -> target
+function inner_route(p, i) =
+    let(xr = -TC_W / 2 + 26 + i * 7, zr = tc_z1 - 120 - i * 6, yb = zone_yf + 33)
+    [[p[0], yb, p[1]], [p[0], yb + 30, p[1] - 8], [xr, 150, p[1] - 30], [xr, TC_D - 50, zr], [xr, TC_D + 25, zr]];
+
+module homelab_scene() {
+    client_pc(cl_x[0], CLIENTS[0]);
+    client_pc(cl_x[1], CLIENTS[1]);
+    access_point();
+    colors = [[0.15, 0.45, 0.9], [0.92, 0.75, 0.12], [0.85, 0.85, 0.87]];
+    for (i = [0 : min(len(rj_ports), 3) - 1]) {
+        p = rj_ports[i];
+        r = inner_route(p, i);
+        last = r[len(r) - 1];
+        zf = tc_z0 + 12 + i * 6;
+        out = i < 2
+            ? let(t = client_port(i))
+              [last, [last[0], TC_D + 45, zf], [t[0], TC_D + 45, zf], [t[0], t[1] + 30, t[2]], [t[0], t[1] + 2, t[2]]]
+            : [last, [last[0], TC_D + 30, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 95, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 82, tc_z1 + 14]];
+        cable(concat(r, [for (k = [1 : len(out) - 1]) out[k]]), colors[i]);
+        if (i < 2) plug(client_port(i) + [0, 16, 0], colors[i]);
+    }
+    // short patch cords: switch front -> patch panel front
+    if (len(sw_units) > 0)
+        for (i = [0 : min(len(rj_ports), 4) - 1]) {
+            s = ms_ports(sw_zc)[i];
+            p = rj_ports[i];
+            c = [0.2, 0.75, 0.38];
+            cable([[s[0], sw_yf - 12, s[1]], [s[0], sw_yf - 26, s[1] + 4], [p[0], zone_yf - 26, p[1] - 4], [p[0], zone_yf - 12, p[1]]], c, 4.6);
+            plug([s[0], sw_yf, s[1]], c);
+            plug([p[0], zone_yf, p[1]], c);
+        }
+    // the switch's power cable goes back through the pass-through cover
+    if (len(sw_units) > 0 && len(pass_ports) > 0) {
+        q = pass_ports[0];
+        jx = ms_w / 2 - 10;
+        cable([[jx, sw_yf - 6, sw_zc - 1], [jx, sw_yf - 20, sw_zc - 1], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
+               [q[0], 60, q[1]], [TC_W / 2 - 30, 160, q[1] - 40], [TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]], [0.05, 0.05, 0.05], 3.2);
+    }
+}
+
+module case_ghost() {
+    % difference() {
+        translate([-95, 0.01, -20]) cube([190, 0.8, stack_raw + 40]);
+        translate([-bay_w / 2 - 0.5, -1, 0]) cube([bay_w + 1, 3, stack_raw]);
+    }
+    % for (s = [-1, 1]) translate([s > 0 ? bay_w / 2 : -bay_w / 2 - case_wall_t, 1, 0])
+        cube([case_wall_t, 200, stack_raw]);
+    if (bezel_mode) % difference() {   // plastic case front the bezel sits flush in
+        translate([-fw / 2 - 30, -ft, base_z0 - 25]) cube([fw + 60, ft - 0.02, base_h + 50]);
+        translate([-bezel_w / 2, -ft - 1, base_z0 - bezel_clearance / 2]) cube([bezel_w, ft + 2, base_h + bezel_clearance]);
+    }
 }
 
 module assembly() {
@@ -263,5 +394,6 @@ module assembly() {
     if (section == "none") {
         if (case_view == "ghost") case_ghost();
         else if (case_view == "tower") tower_case();
+        if (case_view == "tower" && scene == "homelab") homelab_scene();
     }
 }

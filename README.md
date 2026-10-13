@@ -1,24 +1,34 @@
-# bay2rack — 5.25" drive bay → 6" mini rack
+# bay2rack — old PC case → 6" homelab rack
 
 *[Leer en español](README.es.md)*
 
-A parametric OpenSCAD adapter that screws into the standard side holes of one or more
-5.25" drive bays and turns them into a **6" mini rack**, so 6" rack accessories (switches,
-patch panels, shelves…) mount straight into a PC case. The space a bay stack leaves over can
-become a **built-in 6-port keystone patch panel**.
+A parametric OpenSCAD adapter that screws into the 5.25" drive bays of an old PC case and turns them into a
+**6" mini rack**. Give that case a second life as the heart of a cheap, entry-level homelab: the rack takes
+printed modules (a mount for the Mercusys MS105G switch, a shelf for a NanoKVM or a Raspberry Pi, a patch panel,
+a button panel…), and the space a bay stack leaves over becomes a **built-in keystone patch panel**.
 
-![bay2rack mounted in a PC tower](docs/img/hero.png)
+![An old PC turned into a homelab server, with two client PCs and an access point](docs/img/hero.png)
 
-Evolution of the original
-[6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
-
-> **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: configure it, preview it in 3D (mounted in a PC tower,
-> with the hardware) and download the STL, all in your browser. Nothing to install.
+> **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: choose the bays, the front, what goes in every
+> rack unit and every patch panel port, see it mounted in a real PC case, and download a **kit (.zip)** with every
+> STL and the bill of materials. It all runs in your browser.
 >
 > **Just want to print?** Every variant is pre-built in [`stl/`](stl/README.md), with the screws and inserts it needs.
 > Print the [test pieces](stl/README.md#tests) first.
 
+Evolution of the original
+[6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
+
 ---
+
+## A homelab from old PCs
+
+The server keeps its rack in the bays: the switch, a KVM over IP and the patch panel. The network cables of the
+other machines (two old client PCs and an access point) come in through the back of the case and end in the
+keystones behind the patch panel; short patch cords on the front connect them to the switch. The switch's own
+cable goes back in through a pass-through cover.
+
+![Cables from the back of the case to the patch panel](docs/img/homelab.png)
 
 ## The height problem
 
@@ -53,20 +63,49 @@ Use the plate front when your case front is flat at the drive bays. If the case 
 stands out from the metal, use the bezel front and set `bezel_depth` to how far that front stands out.
 
 Other knobs: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split),
-and the spare-zone fill (`keystone`, `vent`, `cable`, `led`, `label`, `blank`).
+and the spare-zone fill (`keystone`, `buttons`, `vent`, `cable`, `led`, `label`, `blank`).
 The fill can be `separate` (a screw-on panel in the same plane as the rack accessories) or `integral` (cut into the frame).
+
+## Rack modules
+
+`rack_modules` lists what goes in every rack unit, top first. Every module is a separate 1U print that screws to
+the rack holes:
+
+| Module | |
+|---|---|
+| `ms105g` | **Mercusys MS105G** 5-port switch (105 × 70 × 24.9 mm): it slides into a tunnel from the back, the front window leaves the 5 ports and the power jack free, a zip tie behind it holds it |
+| `shelf` | Shelf with zip-tie slots for small devices: NanoKVM, Raspberry Pi, a mini router… |
+| `patch` | 1U patch panel with the ports you choose |
+| `buttons` | 1U button panel (see below) |
+| `vent`, `blank`, `cable`, `led`, `label` | Vented, blank, cable pass-through, LED strip and engraved panels |
+
+![Switch mount, shelf and pass-through cover](docs/img/modules.png)
 
 ## Keystones
 
 The patch panel takes 1–12 ports (rows are added automatically) with optional engraved numbers.
-`ks_style` picks the holder:
+`ks_ports_list` sets **every port**: `rj45m` (metal / shielded RJ45), `rj45`, `hdmi`, `usb` (standard keystones),
+`cover` (a plain printed cover for an unused port), `pass` (a split pass-through cover that clips around a cable, e.g.
+the switch power cable) or `none`. Both covers are pushed in from the front and click behind the opening.
 
-- **`metal`** (default) is a holder cell for **metal / shielded keystones**, replicated from the original
-  bay adapter. It has a 15 × 16.5 mm front opening, a latch ramp, a 24.3 mm cavity and rear lips that catch the jack.
-  It is 9.5 mm deep, with 2 mm walls and a 20 mm pitch. Every dimension is a parameter (`ksm_*`).
-- `standard` is a plain 14.9 × 16.4 mm cut-out in a 2 mm plate for plastic snap-in keystones.
+- **Metal holder cell** (default, `ks_style = metal`), replicated from the original bay adapter: a 15 × 16.5 mm front
+  opening, a latch ramp, a 24.3 mm cavity and rear lips that catch the jack, which goes in from the back. It is 9.5 mm
+  deep, with 2 mm walls and a 20 mm pitch; every dimension is a parameter (`ksm_*`).
+- **Standard cut-out**: 14.9 × 16.4 mm in a 2 mm plate for plastic snap-in keystones (HDMI, USB and plastic RJ45 use it).
 
 ![Metal keystone holder](docs/img/keystone.png)
+
+## Button panel
+
+A fill or a 1U module with **power and reset keys made from normal keyboard switches** (Cherry MX compatible:
+14 mm cut-out in a 1.5 mm plate, any 1u keycap) plus **power and disk-activity LEDs** (3 or 5 mm), wired to the
+motherboard's front-panel header. Three LED designs, all printable front face down:
+
+- `ring`: a countersunk hole with an engraved ring; the LED dome sticks out by `led_protrude`.
+- `halo`: a thin ring of light around each key.
+- `glow`: invisible when off; the LED shines through a 0.6 mm skin and the engraved icon lights up (print it in white or natural).
+
+![Button panel: ring, halo and hidden glow](docs/img/buttons.png)
 
 ## Rack standard
 
@@ -124,8 +163,9 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 ## Customizing
 
 - **Web generator:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) runs OpenSCAD compiled to
-  WebAssembly in the browser. It has the same parameters as the Customizer, shareable links, the bill of materials
-  and STL / colored 3MF downloads. The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
+  WebAssembly in the browser: a simple step-by-step mode with hover help, an advanced mode with every parameter,
+  shareable links, the bill of materials, single-part STL / coloured 3MF downloads and a kit .zip with every STL.
+  The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
 
 - **OpenSCAD Customizer:** open `src/bay2rack.scad` and use *Window → Customizer*. Every variant is a preset
   in the dropdown. Press F5 to preview (the adapter is shown mounted in a PC tower, `case_view`) and F6 to render.

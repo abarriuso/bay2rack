@@ -1,24 +1,34 @@
-# bay2rack — bahía de 5,25" → mini rack de 6"
+# bay2rack — caja de PC antigua → rack de 6" para tu homelab
 
 *[Read in English](README.md)*
 
-Adaptador paramétrico en OpenSCAD que se atornilla a los agujeros laterales estándar de una o
-varias bahías de 5,25" y las convierte en un **mini rack de 6"**. Así los accesorios de 6"
-(switches, patch panels, bandejas…) se montan directamente en la caja del PC. El espacio que sobra en la pila de bahías se puede
-convertir en un **patch panel de 6 keystones integrado**.
+Adaptador paramétrico en OpenSCAD que se atornilla a las bahías de 5,25" de una caja de PC antigua y las convierte
+en un **mini rack de 6"**. Dale a esa caja una segunda vida como el corazón de un homelab barato de iniciación: el
+rack admite módulos impresos (soporte para el switch Mercusys MS105G, bandeja para un NanoKVM o una Raspberry Pi,
+patch panel, botonera…), y el espacio que sobra en la pila de bahías se convierte en un **patch panel de keystones integrado**.
 
-![bay2rack montado en una torre](docs/img/hero.png)
+![Un PC antiguo convertido en servidor de homelab, con dos PCs cliente y un punto de acceso](docs/img/hero.png)
 
-Evolución del post original
-[6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
-
-> **[Abre el generador web](https://abarriuso.github.io/bay2rack/)**: configúralo, previsualízalo en 3D (montado en una torre,
-> con la tornillería) y descarga el STL, todo en el navegador. No hay que instalar nada.
+> **[Abre el generador web](https://abarriuso.github.io/bay2rack/)**: elige las bahías, el frontal, qué va en cada U
+> del rack y cada puerto del patch panel, míralo montado en una caja de PC real y descarga un **kit (.zip)** con todos
+> los STL y la lista de materiales. Todo se ejecuta en tu navegador.
 >
 > **¿Solo quieres imprimir?** Todas las variantes están ya generadas en [`stl/`](stl/README.md), con la tornillería que necesita cada una.
 > Imprime primero las [piezas de prueba](stl/README.md#tests).
 
+Evolución del post original
+[6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
+
 ---
+
+## Un homelab con PCs antiguos
+
+El servidor lleva su rack en las bahías: el switch, un KVM por IP y el patch panel. Los cables de red de las demás
+máquinas (dos PCs cliente antiguos y un punto de acceso) entran por detrás de la caja y terminan en los keystones de
+detrás del patch panel; unos latiguillos cortos por delante los conectan al switch. El cable del propio switch vuelve
+a entrar por una tapa pasacables.
+
+![Cables desde la parte trasera de la caja hasta el patch panel](docs/img/homelab.png)
 
 ## El problema de la altura
 
@@ -53,20 +63,50 @@ Usa el frontal plano cuando el frontal de tu caja sea plano a la altura de las b
 frontal de plástico que sobresale de la chapa, usa el bisel y ajusta `bezel_depth` a lo que sobresale ese frontal.
 
 Otros ajustes: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split)
-y el relleno de la zona libre (`keystone`, `vent`, `cable`, `led`, `label` o `blank`).
+y el relleno de la zona libre (`keystone`, `buttons`, `vent`, `cable`, `led`, `label` o `blank`).
 El relleno puede ser `separate` (panel atornillado en el mismo plano que los accesorios) o `integral` (cortado en el marco).
+
+## Módulos de rack
+
+`rack_modules` indica qué va en cada U del rack, de arriba abajo. Cada módulo es una pieza de 1U que se atornilla a
+los agujeros del rack:
+
+| Módulo | |
+|---|---|
+| `ms105g` | Switch **Mercusys MS105G** de 5 puertos (105 × 70 × 24,9 mm): entra por detrás en un túnel, la ventana frontal deja libres los 5 puertos y la clavija, una brida por detrás lo sujeta |
+| `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños: NanoKVM, Raspberry Pi, un mini router… |
+| `patch` | Patch panel de 1U con los puertos que elijas |
+| `buttons` | Botonera de 1U (ver abajo) |
+| `vent`, `blank`, `cable`, `led`, `label` | Paneles con rejilla, ciegos, pasacables, tira LED y etiqueta grabada |
+
+![Soporte del switch, bandeja y tapa pasacables](docs/img/modules.png)
 
 ## Keystones
 
 El patch panel admite de 1 a 12 puertos (añade filas automáticamente) con números grabados opcionales.
-`ks_style` elige el alojamiento:
+`ks_ports_list` define **cada puerto**: `rj45m` (RJ45 metálico / apantallado), `rj45`, `hdmi`, `usb` (keystones
+estándar), `cover` (tapa lisa impresa para un puerto sin usar), `pass` (tapa pasacables partida que abraza un cable,
+p. ej. el de alimentación del switch) o `none`. Las dos tapas se meten desde delante y hacen clic tras la boca.
 
-- **`metal`** (por defecto) es la celda para **keystones metálicos / apantallados**, replicada del adaptador
-  original. Tiene una boca frontal de 15 × 16,5 mm, rampa para la patilla, una cavidad de 24,3 mm y labios traseros que retienen el conector.
-  Mide 9,5 mm de fondo, con paredes de 2 mm y un paso de 20 mm. Todas las cotas son parámetros (`ksm_*`).
-- `standard` es un hueco simple de 14,9 × 16,4 mm en una placa de 2 mm, para keystones de plástico.
+- **Celda metálica** (por defecto, `ks_style = metal`), replicada del adaptador original: boca frontal de 15 × 16,5 mm,
+  rampa para la patilla, cavidad de 24,3 mm y labios traseros que retienen el conector, que entra por detrás. Mide 9,5 mm
+  de fondo, con paredes de 2 mm y paso de 20 mm; todas las cotas son parámetros (`ksm_*`).
+- **Hueco estándar**: 14,9 × 16,4 mm en una placa de 2 mm para keystones de plástico (los HDMI, USB y RJ45 de plástico lo usan).
 
 ![Alojamiento de keystone metálico](docs/img/keystone.png)
+
+## Botonera
+
+Un relleno o un módulo de 1U con **teclas de encendido y reset hechas con interruptores de teclado normales**
+(compatibles Cherry MX: hueco de 14 mm en placa de 1,5 mm, cualquier tecla 1u) y **LEDs de encendido y de actividad
+de disco** (3 o 5 mm), conectados al cabezal del panel frontal de la placa base. Tres diseños de LED, todos
+imprimibles con la cara frontal sobre la cama:
+
+- `ring`: agujero avellanado con un aro grabado; la cúpula del LED asoma `led_protrude` mm.
+- `halo`: un aro fino de luz alrededor de cada tecla.
+- `glow`: invisible apagado; el LED atraviesa una piel de 0,6 mm y se ilumina el icono grabado (imprímelo en blanco o natural).
+
+![Botonera: anillo, halo y brillo oculto](docs/img/buttons.png)
 
 ## Estándar de rack
 
@@ -124,8 +164,8 @@ con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slo
 ## Personalizar
 
 - **Generador web:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) ejecuta OpenSCAD compilado a
-  WebAssembly en el navegador. Tiene los mismos parámetros que el Customizer, enlaces para compartir, la lista de materiales
-  y descargas en STL o 3MF con colores. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
+  WebAssembly en el navegador: un modo sencillo paso a paso con ayuda al pasar el ratón, un modo avanzado con todos los
+  parámetros, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit .zip con todos los STL. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
 
 - **Customizer de OpenSCAD:** abre `src/bay2rack.scad` y ve a *Window → Customizer*. Cada variante es un preset del
   desplegable. F5 previsualiza (el adaptador aparece montado en una torre, `case_view`) y F6 renderiza.
