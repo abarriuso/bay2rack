@@ -484,15 +484,29 @@ module client_bezel(fill, x, zb, nb = 1) {
 }
 module client_bezels() for (k = [0, 1]) client_bezel(CLIENT_FILLS[k][0], cl_x[0], client_bezels_at()[k][0], CLIENT_FILLS[k][1]);
 // square fan of size s and thickness th, front face at y, centred on (x, zc)
+// a real axial fan: rounded frame with a round throat and the four screw holes, seven pitched
+// blades on a hub with its label, four struts holding the motor at the back
 module fan_model(s, th, x, y, zc) {
     k = s / 80;
-    color([0.07, 0.07, 0.08]) difference() {
-        translate([x - s / 2, y, zc - s / 2]) cube([s, th, s]);
-        translate([x, y - 1, zc]) rotate([-90, 0, 0]) cylinder(d = s * 0.95, h = th + 2);
+    r_hub = 15 * k;
+    r_tip = s * 0.47 - 0.8;
+    translate([x, y, zc]) rotate([-90, 0, 0]) {        // local z = the fan axis, into the case (+Y)
+        color([0.07, 0.07, 0.08]) difference() {
+            linear_extrude(th) offset(r = 3 * k) square(s - 6 * k, center = true);
+            translate([0, 0, -1]) cylinder(r = r_tip + 0.8, h = th + 2, $fn = 96);
+            for (sx = [-1, 1], sz = [-1, 1]) translate([sx * (s / 2 - 4.25 * k), sz * (s / 2 - 4.25 * k), -1])
+                cylinder(d = 4.3 * k, h = th + 2, $fn = 20);
+        }
+        color([0.07, 0.07, 0.08]) {
+            translate([0, 0, th - 3]) cylinder(r = r_hub + 1, h = 3, $fn = 48);
+            for (a = [45 : 90 : 315]) rotate(a) translate([r_hub, -1.2 * k, th - 2.5]) cube([r_tip + 1 - r_hub, 2.4 * k, 2.5]);
+        }
+        color([0.09, 0.09, 0.1]) translate([0, 0, 1]) cylinder(r = r_hub, h = th - 4, $fn = 64);
+        color([0.55, 0.57, 0.6]) translate([0, 0, 0.8]) cylinder(r = r_hub * 0.72, h = 0.3, $fn = 64);
+        color([0.11, 0.11, 0.12]) for (i = [0 : 6]) rotate(i * 360 / 7)
+            translate([0, 0, 1.5]) linear_extrude(height = th - 5, twist = -28, slices = 6)
+                polygon([[r_hub - 1, -3.5 * k], [r_tip, -6 * k], [r_tip, 7.5 * k], [r_hub - 1, 4 * k]]);
     }
-    color([0.07, 0.07, 0.08]) translate([x, y + th * 0.16, zc]) rotate([-90, 0, 0]) cylinder(d = 30 * k, h = th * 0.72);
-    color([0.12, 0.12, 0.13]) for (a = [0 : 6]) translate([x, y + th * 0.32, zc]) rotate([0, a * 360 / 7, 0])
-        translate([0, 0, 15 * k]) rotate([0, 0, 25]) cube([12 * k, 1.4, 22 * k], center = true);
 }
 
 function client_port(i) = i == 0 ? [cl_x[0] - CLIENTS[0][0] / 2 + 34, CLIENTS[0][2] - tc_fd, tc_z0 + CLIENTS[0][1] - 70]
@@ -579,10 +593,16 @@ function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4], p 
                       : [[p[0] - 18, TC_D - 40, p[2] - 20], [p[0] - 18, TC_D + 20, p[2] - 10]],
            [[p[0], TC_D + 32, p[2]], [p[0], TC_D + 4, p[2]]]);
 // WAN: card port 1 to the fibre box on the floor behind the case
-ont_pos = [-TC_W / 2 - 40, TC_D + 120, tc_z0];
+// the fibre box (ONT) on the floor behind the case: 140 x 95 x 28, its LAN port on the side facing
+// the router, the fibre comes in on the other side
+ont_pos = [-TC_W / 2 + 10, TC_D + 120, tc_z0];
+ont_lan = [ont_pos[0] + 70, ont_pos[1] - 20, tc_z0 + 12];
+ont_fibre = [ont_pos[0] - 70, ont_pos[1] + 10, tc_z0 + 12];
 function wan_route() = let(p = wan_port)
-    [[p[0], TC_D + 4, p[2]], [p[0], TC_D + 36, p[2]], [p[0] - 10, TC_D + 70, tc_z0 + 60], [p[0] - 40, TC_D + 110, tc_z0 + 6],
-     [ont_pos[0] + 60, ont_pos[1] + 10, tc_z0 + 6], [ont_pos[0] + 40, ont_pos[1], tc_z0 + 18]];
+    [[p[0], TC_D + 4, p[2]], [p[0], TC_D + 36, p[2]], [p[0] - 10, TC_D + 62, tc_z0 + 70], [p[0] - 30, TC_D + 90, tc_z0 + 8],
+     [ont_lan[0] + 60, ont_lan[1] + 8, tc_z0 + 6], [ont_lan[0] + 30, ont_lan[1], ont_lan[2]], [ont_lan[0] + 2, ont_lan[1], ont_lan[2]]];
+function fibre_route() = [ont_fibre + [-1, 0, 0], ont_fibre + [-30, 0, -6], ont_fibre + [-110, 60, -11],
+                          ont_fibre + [-260, 220, -11.5], ont_fibre + [-420, 420, -11.5]];
 
 // every cable of the scene: [colour, diameter, points, plug at start, plug at end, vlan]
 two_sw = sw_second != undef;
@@ -592,6 +612,7 @@ cables = concat(
     two_sw ? [[vlan_c(20), 4.6, cord(sw_ports_of(sw_main)[1], sw_yf, sw_ports_of(sw_second)[0], sw_yf, 10), true, true, 20]] : [],
     len(sw_list) > 0 && len(pass_ports) > 1 ? [[vlan_c(0), 4.6, uplink_route(), true, true, 0]] : [],
     rear_slots ? [[vlan_c(-1), CABLE_D, wan_route(), true, true, -1]] : [],
+    rear_slots ? [[[0.95, 0.86, 0.42], 2.8, fibre_route(), false, false, -3]] : [],
     len(sw_list) > 0 && len(pass_ports) > 0 ? [[[0.05, 0.05, 0.05], 3.2, power_route(), false, false, -2]] : []);
 
 module homelab_scene() {

@@ -161,9 +161,13 @@ module opening(z0, h) {
 
 module bezel_groove_cuts() if (bezel_mode && bezel_grooves && bays > 1) {
     gw = max(0.6, bay_pitch - bezel_h1);
-    for (k = [1 : bays - 1])
-        translate([-fw / 2 - 1, -ft - eps, k * bay_pitch - (bay_pitch - bay_h) / 2 - gw / 2])
-            cube([fw + 2, 0.6 + eps, gw]);
+    for (k = [1 : bays - 1]) {
+        z = k * bay_pitch - (bay_pitch - bay_h) / 2;
+        in_zone = len([for (zn = zones) if (z > zn[0] && z < zn[0] + zn[1]) 1]) > 0;
+        // across the whole bezel, or only beside a fill so it never runs through its fan, ports or keys
+        for (sp = in_zone ? [[-fw / 2 - 1, -x_in + 1], [x_in - 1, fw / 2 + 1]] : [[-fw / 2 - 1, fw / 2 + 1]])
+            translate([sp[0], -ft - eps, z - gw / 2]) cube([sp[1] - sp[0], 0.6 + eps, gw]);
+    }
 }
 
 module adapter() {

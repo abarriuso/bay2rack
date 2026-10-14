@@ -225,7 +225,7 @@ module fan40_cut(w, h, t) {
 }
 
 module fan80_cut(w, h, t) {
-    if (h < 82 || w < 82) echo(str("WARNING: an 80 mm fan needs an 82 x 82 mm zone, this one is ", w, " x ", h, " mm - use 2 bays"));
+    if (h < 82 || w < 82) echo(str("WARNING: an 80 mm fan needs an 82 x 82 mm zone, this one is ", w, " x ", h, " mm - use more bays or give this zone more of the height"));
     else translate([0, 0, h / 2]) {
         xz_extrude(-t - eps, t + 2 * eps) if (fan_guard == "open") circle(d = 77, $fn = 144);
             else intersection() {

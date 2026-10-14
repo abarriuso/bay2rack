@@ -289,7 +289,7 @@ show_devices = true;
 // Show the devices in the rack modules (switch, NanoKVM, keystone jacks)
 demo_devices = "homelab"; // [homelab:Devices + keystone jacks, generic:Empty modules]
 // homelab = two client PCs + access point + network cables around this PC
-scene = "homelab"; // [homelab:Homelab - two client PCs + access point + cables, single:Just this PC]
+scene = "single"; // [single:Just this PC, homelab:Homelab - two client PCs + access point + cables]
 // Homelab scene: this PC is the router, with a 4-port network card in this expansion slot (0 = top, -1 = none)
 router_nic_slot = 1; // [-1:1:6]
 // Draw screws, inserts and nuts

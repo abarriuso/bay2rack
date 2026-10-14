@@ -7,7 +7,9 @@ takes a modern motherboard. **bay2rack** is a parametric OpenSCAD adapter that s
 into a **6" mini rack**, so an old tower becomes the heart of a cheap homelab: a router with VLANs, switches,
 KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the case.
 
-![A beige 90s "sleeper" with a modern server inside, its bays turned into a rack](docs/img/film/hero.webp)
+![A beige 90s sleeper unfolds: a modern server inside, its 5.25" bays become a rack](docs/video/assemble.gif)
+
+**[▶ Watch the full film](https://abarriuso.github.io/bay2rack/)** (rendered in Blender from the same models).
 
 > **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: start from a ready-made build, choose the bays,
 > what goes in every rack unit and every patch panel port, see it mounted in a real PC case (or a 90s sleeper), and
@@ -31,6 +33,8 @@ Evolution of the original
 | ![UniFi](docs/gallery/unifi.webp) **UniFi**: Flex Mini switch and UniFi Express | ![Flush bezel](docs/gallery/bezel.webp) **Flush bezel**: an exact 5.25" bezel, flush with the case front |
 
 ### The film
+
+![3 bays, 5 bays, a Raspberry Pi cluster: the same parts, other builds](docs/video/builds.gif)
 
 The hero of the site is rendered in Blender from the same models (`scripts/blender/`): a beige 90s **sleeper**
 opens up, the modern server inside floats in the open, everything snaps back, the adapter and the rack modules fly
