@@ -417,8 +417,9 @@ export function buildClient(i, cl, bays) {
   g.add(plane(x, -bays.fd + 2, (vent[2] + vent[3]) / 2, vent[1] - vent[0], vent[3] - vent[2], MAT.mesh(beige ? 0x8f8a7c : 0x0c0c0d), 'y'));
   g.add(plane(x, 6, (vent[2] + vent[3]) / 2, vent[1] - vent[0], vent[3] - vent[2], MAT.plastic(0x050506, 0.9), 'y'));
   const p = bays.port;
-  g.add(box(p[0] - 14, D - 0.6, p[2] - 60, 44, 1, 150, MAT.plastic(0x2a2c30, 0.5)));
-  g.add(box(p[0] - 7, D - 0.8, p[2] - 5, 14, 1.2, 11, MAT.gloss(0x050506)));
+  // just the network port at the back (its I/O plate would read as a dark slab in the film)
+  g.add(box(p[0] - 9, D - 0.9, p[2] - 7, 18, 1.4, 14, MAT.plastic(0x1a1b1d, 0.6), 0.5));
+  g.add(box(p[0] - 7, D - 1.1, p[2] - 5, 14, 1.2, 11, MAT.gloss(0x050506)));
   for (const fx of [x - W / 2 + 18, x + W / 2 - 18]) for (const fy of [22, D - 22]) g.add(cyl(fx, fy, z0 - 3, 10, 6, MAT.rubber(), 'z'));
   if (bays.sleeper) retroControls(g, x + W / 2 - 16, -bays.fd, z0 + H - 16, true);
   return g;

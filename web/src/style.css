@@ -374,10 +374,11 @@ button:disabled { opacity: .45; cursor: default; }
 .sec summary::-webkit-details-marker { display: none; }
 .sec summary::after { content: "+"; color: var(--ink-3); font-family: var(--f-mono); }
 .sec[open] > summary::after { content: "–"; }
-.param { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px; align-items: center; padding: 3px 2px 7px; cursor: help; }
+.param { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 150px); gap: 8px; align-items: center; padding: 3px 2px 7px; cursor: help; }
 .param .name { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .param.modified .name::after { content: " •"; color: var(--signal); font-weight: 700; }
 .param input[type=checkbox] { justify-self: end; width: 18px; height: 18px; accent-color: var(--signal); }
+.param input, .param select, .dim input { min-width: 0; }
 .param .num, .param .text { width: 100%; padding: 5px 8px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--plate-2); text-align: right; font-variant-numeric: tabular-nums; }
 .param .text { text-align: left; }
 .slider { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 6px; align-items: center; }
