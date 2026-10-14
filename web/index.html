@@ -31,26 +31,16 @@
   </header>
 
   <main>
-    <section class="hero" id="top">
-      <div class="hero-copy">
+    <section class="hero-band" id="top">
+    <div class="hero">
+      <div class="hero-head">
         <span class="tape" data-i18n="hero_eyebrow"></span>
         <h1 data-i18n="hero_title"></h1>
-        <p class="lead" data-i18n="hero_lead"></p>
-        <ul class="points">
-          <li data-i18n="hero_p1"></li>
-          <li data-i18n="hero_p2"></li>
-          <li data-i18n="hero_p3"></li>
-        </ul>
-        <div class="cta">
-          <a class="btn" href="#build"><span data-i18n="hero_cta"></span><span aria-hidden="true">→</span></a>
-          <a class="btn ghost" href="#gallery" data-i18n="hero_cta2"></a>
-        </div>
       </div>
       <figure class="hero-figure" id="heroStage">
         <div class="hero-stage">
-          <div id="heroView" class="hero-view" aria-hidden="true"></div>
           <video id="heroVideo" class="hero-video" autoplay muted loop playsinline preload="metadata"
-                 poster="video/hero.webp" width="1600" height="900" data-i18n-label="hero_video_label">
+                 poster="video/hero.webp" width="1600" height="900">
             <source src="video/hero.webm" type="video/webm">
             <source src="video/hero.mp4" type="video/mp4">
           </video>
@@ -61,6 +51,21 @@
           <button id="heroReplay" class="btn small ghost" type="button" data-i18n="hero_replay"></button>
         </figcaption>
       </figure>
+      <div class="hero-foot">
+        <p class="lead" data-i18n="hero_lead"></p>
+        <div class="hero-act">
+          <ul class="points">
+            <li data-i18n="hero_p1"></li>
+            <li data-i18n="hero_p2"></li>
+            <li data-i18n="hero_p3"></li>
+          </ul>
+          <div class="cta">
+            <a class="btn" href="#build"><span data-i18n="hero_cta"></span><span aria-hidden="true">→</span></a>
+            <a class="btn ghost" href="#gallery" data-i18n="hero_cta2"></a>
+          </div>
+        </div>
+      </div>
+    </div>
     </section>
 
     <section class="band" id="why">

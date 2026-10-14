@@ -32,23 +32,23 @@ const DEVICE_DIMS = {
 // ready-made builds: the examples step and the gallery (applied on top of the defaults)
 const EXAMPLES = {
   router: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,kvm:jet+nano',
-            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass', scene: 'homelab' },
+            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass' },
   homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm:jet+nano',
-             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
+             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
   network: { bays: 5, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,ux,patch',
-             spare_pos: 'top', spare_fill: 'vent', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass', scene: 'homelab' },
+             spare_pos: 'top', spare_fill: 'vent', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass' },
   pi: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,piblade:pi5+pi5+pi5+pi5',
-        spare_pos: 'top', spare_fill: 'vent', scene: 'single' },
+        spare_pos: 'top', spare_fill: 'vent' },
   kvm: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'kvm:jet+jet,kvm:nano+nano',
-         spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,hdmi,usb', scene: 'single' },
+         spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,hdmi,usb' },
   audio: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'pi:pi4,fan40',
-           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rca,rca,jack,toslink,rj45m,pass', scene: 'single' },
+           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rca,rca,jack,toslink,rj45m,pass' },
   unifi: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ux',
-           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass', scene: 'homelab' },
+           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass' },
   client: { bays: 3, fit: 'panel', front_style: 'plate', filler_mode: 'integral', spare_pos: 'split', spare_split: 0.67,
-            spare_fill: 'fan80', spare_fill_2: 'buttons', scene: 'single' },
+            spare_fill: 'fan80', spare_fill_2: 'buttons' },
   bezel: { bays: 3, fit: 'flush', front_style: 'bezel', filler_mode: 'integral', rack_modules: 'ms105g,kvm:jet+nano',
-           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
+           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
 };
 const EXAMPLE_KEYS = [...new Set(Object.values(EXAMPLES).flatMap(Object.keys))];
 const GALLERY = ['router', 'network', 'pi', 'kvm', 'audio', 'client', 'unifi', 'bezel'];
@@ -191,10 +191,10 @@ function refresh() {
 // ---------------------------------------------------------------- small widgets
 const tipOf = (key) => optionHelp(key) || undefined;
 
-function choice(param, value, content, { cls = 'chip', tip, extra } = {}) {
+function choice(param, value, content, { cls = 'chip', tip, extra, disabled = false, flag = '' } = {}) {
   const active = S.values[param] === value;
   return h('button', {
-    type: 'button', className: `${cls}${active ? ' active' : ''}`,
+    type: 'button', className: `${cls}${active ? ' active' : ''}${flag ? ' ' + flag : ''}`, disabled,
     onclick: () => update({ [param]: value, ...(extra ? extra(value) : {}) }),
     dataset: { tip },
   }, content);
@@ -307,13 +307,46 @@ function trayEditor(kind, items, onChange) {
     h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: t(fits ? 'tray_' + kind : 'trayNoFit') }));
 }
 
+// smallest zone height (mm) each fill needs; the model warns too, the editor just won't offer what can't fit
+const FILL_MIN = { fan80: 82, fan40: 41, keystone: 30, buttons: 22 };
+const fillMin = (f) => FILL_MIN[f] ?? 6;
+
+// The spare zone(s): where they go, how the height is shared, and what fills each one. A fill that does
+// not fit at the current share but would fit at another one moves the share for you.
 function fillEditor() {
   const v = S.values;
+  const c = calc(v);
+  const split = v.spare_pos === 'split';
+  const zone = (param, other, height, label, setShare) => h('div', { className: 'zone' },
+    h('div', { className: 'zone-head' }, h('b', { textContent: label }), h('span', { className: 'zone-size', textContent: `${num(height)} mm` })),
+    h('div', { className: 'chips' }, FILLS.map((f) => {
+      const need = fillMin(f);
+      const share = split ? setShare(need, fillMin(v[other])) : null;
+      const fits = height >= need - 0.01 || share != null;
+      return choice(param, f, t('fill_' + f), {
+        disabled: !fits, flag: v[param] === f && height < need - 0.01 ? 'misfit' : '',
+        tip: height >= need - 0.01 ? undefined : fits ? t('fillMoves', { n: need }) : t('fillTooSmall', { n: need, h: num(height) }),
+        extra: () => (height < need - 0.01 && share != null ? { spare_split: share } : {}),
+      });
+    })));
+  if (!split) return [segmented('spare_pos', ['top', 'bottom', 'split'], (x) => t('pos_' + x)),
+    zone('spare_fill', null, c.spare, t(v.spare_pos === 'top' ? 'fillTop' : 'fillBottom'), () => null)];
+  // the bottom zone gets spare * split, the top one the rest; a share that gives `need` mm to one zone while
+  // the other keeps `keep` mm, or null
+  const shareFor = (bottom) => (need, keep) => {
+    const sh = bottom ? need / c.spare + 0.004 : 1 - need / c.spare - 0.004;
+    const other = bottom ? c.spare * (1 - sh) : c.spare * sh;
+    return sh >= 0.2 && sh <= 0.8 && other >= keep - 0.01 ? Math.round(sh * 100) / 100 : null;
+  };
   return [
     segmented('spare_pos', ['top', 'bottom', 'split'], (x) => t('pos_' + x)),
-    v.spare_pos === 'split' ? h('small', { className: 'hint', textContent: t('fillBottom') }) : null,
-    chips('spare_fill', FILLS, (x) => t('fill_' + x)),
-    v.spare_pos === 'split' ? [h('small', { className: 'hint', textContent: t('fillTop') }), chips('spare_fill_2', FILLS, (x) => t('fill_' + x))] : null,
+    zone('spare_fill_2', 'spare_fill', c.spare * (1 - v.spare_split), t('fillTop'), shareFor(false)),
+    h('div', { className: 'split' },
+      h('input', { type: 'range', min: 0.2, max: 0.8, step: 0.01, value: v.spare_split, 'aria-label': t('fillShare'),
+        onchange: (e) => update({ spare_split: Number(e.target.value) }) }),
+      h('button', { type: 'button', className: 'pill', textContent: t('fillSwap'), dataset: { tip: t('fillSwapTip') },
+        onclick: () => update({ spare_fill: v.spare_fill_2, spare_fill_2: v.spare_fill, spare_split: Math.round((1 - v.spare_split) * 100) / 100 }) })),
+    zone('spare_fill', 'spare_fill_2', c.spare * v.spare_split, t('fillBottom'), shareFor(true)),
   ];
 }
 
@@ -826,6 +859,16 @@ function wire() {
     try { await navigator.clipboard.writeText(location.href); setStatus(t('copied'), 'ok'); } catch { prompt('URL', location.href); }
   };
   document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') render(); });
+  // a shared link opened in the same tab only changes the hash: load its settings
+  addEventListener('hashchange', () => {
+    if (location.hash === '#' + new URLSearchParams(Object.entries(S.values)
+      .filter(([k, x]) => !same(x, S.defaults[k])).map(([k, x]) => [k, Array.isArray(x) ? x.join(',') : String(x)])).toString().replace(/%2C/g, ',')) return;
+    if (!/=/.test(location.hash)) return;                       // plain section anchors (#build, #gallery…)
+    S.values = { ...S.defaults };
+    readHash();
+    refresh();
+    schedule(0);
+  });
 }
 
 async function boot() {

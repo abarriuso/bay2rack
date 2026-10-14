@@ -38,7 +38,8 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     graded = os.path.join(BL, "graded.mov")
     # one graded master (lossless-ish), then every delivery format from it
-    run("-framerate", str(FPS), "-i", src, "-vf", LOOK, "-c:v", "prores_ks", "-profile:v", "3", graded)
+    if "--gifs" not in sys.argv:
+        run("-framerate", str(FPS), "-i", src, "-vf", LOOK, "-c:v", "prores_ks", "-profile:v", "3", graded)
     run("-i", graded, "-vf", "scale=1600:-2,format=yuv420p", "-c:v", "libx264", "-crf", "21", "-preset", "slow",
         "-movflags", "+faststart", "-an", os.path.join(OUT, "hero.mp4"))
     run("-i", graded, "-vf", "scale=1600:-2,format=yuv420p", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "34",
@@ -46,10 +47,11 @@ def main():
     # poster = the last frame (the hero shot), also the og:image
     run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", os.path.join(OUT, "hero.webp"))
     run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", os.path.join(REPO, "docs", "img", "hero.png"))
-    # README: the whole film and the unfold, as GIFs with their own palette
-    for name, extra, width, fps in (("hero.gif", [], 720, 15), ("unfold.gif", ["-ss", "1.4", "-t", "4.6"], 640, 20)):
+    # README: the unfold + assembly and the build changes, short GIFs with their own palette (a few MB each)
+    for name, extra, width, fps in (("assemble.gif", ["-ss", "1.45", "-t", "4.6"], 560, 12),
+                                    ("builds.gif", ["-ss", "8.4", "-t", "5.0"], 480, 12)):
         pal = os.path.join(BL, "palette.png")
-        run(*extra, "-i", graded, "-vf", f"fps={fps},scale={width}:-1:flags=lanczos,palettegen=max_colors=192:stats_mode=diff", pal)
+        run(*extra, "-i", graded, "-vf", f"fps={fps},scale={width}:-1:flags=lanczos,palettegen=max_colors=128:stats_mode=diff", pal)
         run(*extra, "-i", graded, "-i", pal, "-lavfi",
             f"fps={fps},scale={width}:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=sierra2_4a:diff_mode=rectangle",
             os.path.join(OUT, name))

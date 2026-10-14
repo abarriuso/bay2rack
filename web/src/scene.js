@@ -473,6 +473,10 @@ export function buildONT(pos) {
   g.add(box(pos[0] - 70, pos[1] - 45, pos[2] + 27.5, 140, 95, 1, MAT.plastic(0xdcdcd6, 0.5), 6));
   [0x3ddc84, 0x3ddc84, 0x5ac8ff, 0x3ddc84].forEach((c, i) =>
     g.add(box(pos[0] - 50 + i * 12, pos[1] - 45.6, pos[2] + 18, 5, 1, 2, MAT.led(c, 2))));
+  // LAN port on the side facing the router, the green SC/APC fibre socket on the other side
+  g.add(box(pos[0] + 69.4, pos[1] - 28, pos[2] + 5.2, 1.4, 16, 13.6, MAT.plastic(0x0b0b0c, 0.7)));
+  g.add(box(pos[0] + 70.6, pos[1] - 24.5, pos[2] + 15, 0.3, 9, 1.2, MAT.gold()));
+  g.add(box(pos[0] - 72, pos[1] + 5, pos[2] + 7, 3, 10, 10, MAT.plastic(0x2e9e5b, 0.4), 1));
   return g;
 }
 

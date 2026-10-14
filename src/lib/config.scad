@@ -187,7 +187,7 @@ if (n_btn > 0) {
 n_fan = part == "rack_panel" ? (panel_fill == "fan80" ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
          || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-        ? len([for (zn = zones) if (zn[2] == "fan80") 1]) : 0;
+        ? len([for (zn = zones) if (zn[2] == "fan80" && zn[1] - (filler_mode == "separate" ? 0.8 : 0) >= 82) 1]) : 0;
 if (n_fan > 0) echo(str("BOM | fan: ", n_fan, " x 80 mm fan (80 x 80 x 25) + ", 4 * n_fan, " x fan screws"));
 n_fan40 = fan40_count * (part == "rack_panel" ? (panel_fill == "fan40" ? 1 : 0)
       : len([for (m = bom_mods) if (m == "fan40") 1])

@@ -315,7 +315,7 @@ const WARN_ES = [
   [/^(\d+) blades at (.+) mm do not fit between the rack posts - lower pi_blade_pitch or use fewer boards$/, '$1 blades a $2 mm no caben entre los postes: baja pi_blade_pitch o usa menos placas'],
   [/^40 mm fans need a zone at least 41 mm tall, this one is (.+) mm$/, 'Los ventiladores de 40 mm necesitan una zona de 41 mm de alto y esta mide $1 mm'],
   [/^(\d+) fans of 40 mm do not fit side by side here - use fewer fans$/, '$1 ventiladores de 40 mm no caben lado a lado aquí: pon menos'],
-  [/^an 80 mm fan needs an 82 x 82 mm zone, this one is (.+) x (.+) mm - use 2 bays$/, 'Un ventilador de 80 mm necesita una zona de 82 x 82 mm y esta mide $1 x $2 mm: usa 2 bahías'],
+  [/^an 80 mm fan needs an 82 x 82 mm zone, this one is (.+) x (.+) mm - use more bays or give this zone more of the height$/, 'Un ventilador de 80 mm necesita una zona de 82 x 82 mm y esta mide $1 x $2 mm: usa más bahías o dale más altura a esta zona'],
   [/^the tab grooves start (\d+) mm behind the front where a rack hole is at the same height - bend a tab there if your cage has one that far forward$/, 'Donde un agujero del rack coincide en altura, la ranura de las pestañas empieza $1 mm por detrás del frontal: si tu caja tiene una pestaña tan adelante, dóblala'],
   [/^the adapter needs (\d+) bays but the (.+) has (\d+)$/, 'El adaptador necesita $1 bahías y la $2 solo tiene $3'],
 ];
