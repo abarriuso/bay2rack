@@ -4,14 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
-const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'model/stl', '.md': 'text/markdown', '.webp': 'image/webp', '.png': 'image/png' };
+const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'model/stl', '.md': 'text/markdown', '.webp': 'image/webp', '.png': 'image/png', '.mp4': 'video/mp4', '.webm': 'video/webm' };
 
 // In dev, serve the model and the STLs straight from the repo so edits show up on reload
 // (the build copies them into public/ with scripts/copy-assets.mjs).
 const liveRepoFiles = () => ({
   name: 'bay2rack-live-files',
   configureServer(server) {
-    for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl'], ['/img/gallery/', 'docs/gallery']]) {
+    for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl'], ['/img/gallery/', 'docs/gallery'], ['/video/', 'docs/video']]) {
       server.middlewares.use(url, (req, res, next) => {
         const file = normalize(join(repo, dir, decodeURIComponent(req.url.split('?')[0])));
         if (!file.startsWith(join(repo, dir)) || !existsSync(file) || !statSync(file).isFile()) return next();

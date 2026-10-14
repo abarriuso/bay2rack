@@ -9,7 +9,6 @@ import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from '
 import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
 import { renderLegend } from './legend.js';
-import { startHero } from './hero.js';
 
 const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
@@ -51,7 +50,6 @@ const EXAMPLES = {
            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
 };
 const EXAMPLE_KEYS = [...new Set(Object.values(EXAMPLES).flatMap(Object.keys))];
-const SHOWCASE = 'router';                 // the build the hero assembles
 const GALLERY = ['router', 'network', 'pi', 'kvm', 'audio', 'client', 'unifi', 'bezel'];
 const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'rca', 'jack', 'toslink', 'cover', 'pass', 'none'];
 const SCREWS = ['M3', 'M4', 'M5', 'M6', '10-32', '12-24'];
@@ -62,7 +60,7 @@ const FILAMENTS = {
   black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
   blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
 };
-const UI_DEFAULT = { filament: 'black', cables: true, side: true };
+const UI_DEFAULT = { filament: 'black', cables: true, side: true, sleeper: false };
 const UI = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 const saveUI = () => { try { localStorage.setItem('ui', JSON.stringify(UI)); } catch { /* private mode */ } };
 
@@ -149,7 +147,6 @@ worker.onmessage = ({ data: m }) => {
   if (m.type === 'ready') {
     S.engine = 'ready';
     setStatus(t('ready'), 'ok');
-    startShowcase();
     if (S.wantRender) render();
   } else if (m.type === 'error') {
     S.engine = 'error';
@@ -422,6 +419,7 @@ function previewEditor() {
       toggle(t('sidePanel'), UI.side, (on) => { UI.side = on; saveUI(); viewer.setVisible('side', on); }),
       toggle(t('devices'), v.demo_devices === 'homelab', (on) => update({ demo_devices: on ? 'homelab' : 'generic' })),
       toggle(t('hardware'), v.show_hardware, (on) => update({ show_hardware: on })),
+      toggle(t('sleeper'), UI.sleeper, (on) => { UI.sleeper = on; saveUI(); render(); }),
       toggle(t('explode'), v.explode > 0, (on) => update({ explode: on ? 25 : 0 }))),
   ];
 }
@@ -580,6 +578,7 @@ function showResult(res, ext, values) {
       if (d.cable) scene.cables.push(d.cable); else Object.assign(scene, d);
     } catch { /* ignore a malformed line */ }
   }
+  if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
   viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
   renderLegend($('#legend'), ext === '3mf' && UI.cables ? scene : null);
   $('#caseName').textContent = ext === '3mf' && scene.case ? scene.case.name : '';
@@ -665,27 +664,43 @@ async function downloadKit() {
 }
 
 // ---------------------------------------------------------------- hero + gallery
-let hero = null;
-function startShowcase() {
-  if (hero || !S.params.bays || new URLSearchParams(location.search).has('nohero')) return;
-  const values = { ...S.defaults, ...EXAMPLES[SHOWCASE] };
-  hero = startHero({
-    el: $('#hero'), caption: $('#heroCaption'), step: $('#heroStep'), replay: $('#heroReplay'), legend: $('#heroLegend'),
-    onReady: () => $('#heroStage').classList.add('live'),
-    runJob, definesFor, values, mods: usedMods(values, calc(values).units),
-    filament: FILAMENTS[UI.filament] ?? FILAMENTS.black,
-  });
-  hero.setTheme(document.documentElement.dataset.theme);
-  if (import.meta.env.DEV) window.__b2r.hero = hero;
+// the hero film: one caption per shot (start in seconds, see scripts/blender/hero.py)
+const HERO_SHOTS = [[0, 'hero_s1'], [1.45, 'hero_s2'], [4.25, 'hero_s3'], [6.05, 'hero_s4'], [8.4, 'hero_s5'],
+  [10.35, 'hero_s6'], [11.85, 'hero_s7'], [13.35, 'hero_s8']];
+function wireHeroVideo() {
+  const video = $('#heroVideo');
+  const cap = $('#heroCaption');
+  const step = $('#heroStep');
+  let shown = -1;
+  const show = () => {
+    const i = Math.max(0, HERO_SHOTS.findLastIndex(([at]) => video.currentTime >= at));
+    if (i === shown) return;
+    shown = i;
+    step.textContent = `${String(i + 1).padStart(2, '0')}/${String(HERO_SHOTS.length).padStart(2, '0')}`;
+    cap.textContent = t(HERO_SHOTS[i][1]);
+    cap.classList.remove('show');
+    void cap.offsetWidth;
+    cap.classList.add('show');
+  };
+  video.addEventListener('timeupdate', show);
+  show();
+  $('#heroReplay').onclick = () => { video.currentTime = 0; video.play().catch(() => {}); };
+  video.setAttribute('aria-label', t('hero_video_label'));
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { video.removeAttribute('autoplay'); video.pause(); }
+  // pause while scrolled away: no decoding in the background
+  new IntersectionObserver(([e]) => { if (e.isIntersecting) video.play().catch(() => {}); else video.pause(); })
+    .observe(video);
+  return () => { shown = -1; show(); };
 }
+let heroRelabel = null;
 
 // dev only: save a build as GLB for the Blender video (docs/blender/)
 if (import.meta.env.DEV) {
-  window.__b2r.exportBuild = async (name, patch) => {
+  window.__b2r.exportBuild = async (name, patch, opts = {}) => {
     const { exportBuild } = await import('./export-glb.js');
     const values = { ...S.defaults, ...patch };
     return exportBuild({ name, values, mods: usedMods(values, calc(values).units), runJob, definesFor,
-      filament: FILAMENTS[UI.filament] ?? FILAMENTS.black });
+      filament: FILAMENTS[UI.filament] ?? FILAMENTS.black, ...opts });
   };
 }
 
@@ -741,7 +756,6 @@ function renderBayTable() {
 function applyTheme(th) {
   document.documentElement.dataset.theme = th;
   viewer.setTheme(th);
-  hero?.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
   try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }
@@ -763,6 +777,7 @@ function wire() {
     refresh();
     renderGallery();
     renderBayTable();
+    heroRelabel?.();
     if (S.result) render();
   };
   const adv = $('#advanced');
@@ -806,7 +821,7 @@ async function boot() {
   refresh();
   renderGallery();
   renderBayTable();
-  if (S.engine === 'ready') startShowcase();
+  heroRelabel = wireHeroVideo();
   S.wantRender = true;
   if (S.engine === 'ready') render();
 }

@@ -153,14 +153,10 @@ button:disabled { opacity: .45; cursor: default; }
 
 .hero-figure { margin: 0; display: grid; gap: var(--s-3); min-width: 0; }
 .hero-stage {
-  position: relative; aspect-ratio: 16 / 11; overflow: hidden; background: var(--stage); border-radius: var(--r);
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: #08090b; border-radius: var(--r);
   box-shadow: var(--shadow); min-width: 0;
 }
-.hero-stage .poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .8s; }
-.hero-view { position: absolute; inset: 0; opacity: 0; transition: opacity .8s; }
-.hero-view canvas { width: 100%; height: 100%; display: block; }
-.hero-figure.live .hero-view { opacity: 1; }
-.hero-figure.live .poster { opacity: 0; }
+.hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 /* what the animation is showing, under it like a caption */
 .stage-bar {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--s-3);
@@ -501,7 +497,6 @@ button:disabled { opacity: .45; cursor: default; }
   .top { gap: var(--s-2); }
   .top-actions .btn.small { display: none; }
   .hero { padding-top: var(--s-5); }
-  .hero-stage { aspect-ratio: 4 / 3.6; }
   .stage-bar { font-size: 11.5px; padding: 9px 10px 10px; gap: var(--s-2); }
   .stage-bar .btn.small { padding: 6px 9px; font-size: 13px; }
   .hero-stage .legend { display: none; }

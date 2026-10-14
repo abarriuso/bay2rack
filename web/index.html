@@ -48,9 +48,11 @@
       </div>
       <figure class="hero-figure" id="heroStage">
         <div class="hero-stage">
-          <img class="poster" src="img/hero.png" alt="" width="1600" height="1100">
-          <div id="hero" class="hero-view"></div>
-          <ul id="heroLegend" class="legend" hidden></ul>
+          <video id="heroVideo" class="hero-video" autoplay muted loop playsinline preload="metadata"
+                 poster="video/hero.webp" width="1600" height="900" data-i18n-label="hero_video_label">
+            <source src="video/hero.webm" type="video/webm">
+            <source src="video/hero.mp4" type="video/mp4">
+          </video>
         </div>
         <figcaption class="stage-bar">
           <span id="heroStep" class="stage-step"></span>

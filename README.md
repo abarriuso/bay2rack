@@ -2,18 +2,18 @@
 
 *[Leer en español](README.es.md)*
 
-A parametric OpenSCAD adapter that screws into the 5.25" drive bays of an old PC case and turns them into a
-**6" mini rack**. Give that case a second life as the heart of a cheap, entry-level homelab: the rack takes
-printed modules (a mount for the Mercusys MS105G switch, a shelf for a NanoKVM or a Raspberry Pi, a patch panel,
-a button panel…), and the space a bay stack leaves over becomes a **built-in keystone patch panel**.
+Towers used to come with 5.25" bays for CD drives. New cases don't, but ATX hasn't changed: that old case still
+takes a modern motherboard. **bay2rack** is a parametric OpenSCAD adapter that screws into those bays and turns them
+into a **6" mini rack**, so an old tower becomes the heart of a cheap homelab: a router with VLANs, switches,
+KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the case.
 
-![An old PC turned into a homelab server, with two client PCs and an access point](docs/img/hero.png)
+![A beige 90s "sleeper" with a modern server inside, its bays turned into a rack](docs/img/film/hero.webp)
 
-> **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: choose the bays, the front, what goes in every
-> rack unit and every patch panel port, see it mounted in a real PC case, and download a **kit (.zip)** with every
-> STL and the bill of materials. It all runs in your browser.
+> **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: start from a ready-made build, choose the bays,
+> what goes in every rack unit and every patch panel port, see it mounted in a real PC case (or a 90s sleeper), and
+> download a **kit (.zip)** with every STL and the bill of materials. It all runs in your browser.
 >
-> **Just want to print?** Every variant is pre-built in [`stl/`](stl/README.md), with the screws and inserts it needs.
+> **Just want to print?** Pre-built variants are in [`stl/`](stl/README.md), with the screws and inserts they need.
 > Print the [test pieces](stl/README.md#tests) first.
 
 Evolution of the original
@@ -21,12 +21,34 @@ Evolution of the original
 
 ---
 
+## What you can build
+
+| | |
+|---|---|
+| ![Router + VLANs](docs/gallery/router.webp) **Router + VLANs**: the PC runs OPNsense / pfSense with a 4-port network card; a managed UniFi switch carries the VLANs, a second switch the servers, JetKVM + NanoKVM, patch panel | ![Network rack](docs/gallery/network.webp) **Network rack**: 5 bays, two switches, a UniFi Express and a full patch panel |
+| ![Raspberry Pi cluster](docs/gallery/pi.webp) **Raspberry Pi cluster**: a UniFi switch and four Raspberry Pi 5 standing as 2U blades | ![KVM station](docs/gallery/kvm.webp) **KVM station**: two trays, two JetKVM and two NanoKVM, HDMI and USB keystones |
+| ![Audio](docs/gallery/audio.webp) **Audio**: a Raspberry Pi 4 streamer, three 40 mm fans, RCA, 3.5 mm jack and Toslink keystones | ![Buttons + 80 mm fan](docs/gallery/client.webp) **Proxmox / TrueNAS box**: no rack, just a bezel with an 80 mm fan and a power / reset button panel |
+| ![UniFi](docs/gallery/unifi.webp) **UniFi**: Flex Mini switch and UniFi Express | ![Flush bezel](docs/gallery/bezel.webp) **Flush bezel**: an exact 5.25" bezel, flush with the case front |
+
+### The film
+
+The hero of the site is rendered in Blender from the same models (`scripts/blender/`): a beige 90s **sleeper**
+opens up, the modern server inside floats in the open, everything snaps back, the adapter and the rack modules fly
+into the bays, the cables leave through the PCI slots coloured by VLAN, and the Proxmox node next to it trades its
+fan for a Raspberry Pi blade cluster.
+
+| | | |
+|---|---|---|
+| ![The sleeper unfolds](docs/img/film/unfold.webp) | ![A modern server inside](docs/img/film/server.webp) | ![The rack front](docs/img/film/front.webp) |
+| ![Cables through the PCI slots](docs/img/film/cables.webp) | ![Raspberry Pi blades in the Proxmox node](docs/img/film/pi-cluster.webp) | ![The homelab](docs/img/film/hero.webp) |
+
 ## A homelab from old PCs
 
-The server keeps its rack in the bays: the switch, a KVM over IP and the patch panel. The network cables of the
-other machines (two old client PCs and an access point) come in through the back of the case and end in the
-keystones behind the patch panel; short patch cords on the front connect them to the switch. The switch's own
-cable goes back in through a pass-through cover.
+The router keeps its rack in the bays: the switches, the KVMs over IP and the patch panel. The network cables of the
+other machines (a Proxmox node, a TrueNAS box and an access point) come in through **printed brackets in two PCI
+slots** at the back and end in the keystones behind the patch panel; short patch cords on the front connect them to
+the switches. Cable colours are VLANs: clients, servers, the trunk to the access point and the WAN from the
+router's network card to the fibre box.
 
 ![Cables from the back of the case to the patch panel](docs/img/homelab.png)
 
@@ -74,17 +96,27 @@ the rack holes:
 | Module | |
 |---|---|
 | `ms105g` | **Mercusys MS105G** 5-port switch (105 × 70 × 24.9 mm): it slides into a tunnel from the back, the front window leaves the 5 ports and the power jack free, a zip tie behind it holds it |
-| `shelf` | Shelf with zip-tie slots for small devices: NanoKVM, Raspberry Pi, a mini router… |
+| `uswflex`, `ux` | **UniFi USW-Flex-Mini** (managed, VLANs) and **UniFi Express** in the same kind of tunnel |
+| `kvm:jet+nano` | **KVM over IP tray**: 1 to 3 boxes of your choice side by side (`jet` JetKVM, `nano` NanoKVM, `custom`), e.g. `kvm:nano+nano`; it warns when they don't fit |
+| `pi:pi5` | **Raspberry Pi tray**: Pi 5 / 4 / 3 or Zero flat on M2.5 standoffs, USB and Ethernet through the front; two boards side by side with PoE HATs |
+| `piblade:pi5+pi5+pi5+pi5` | **2U Raspberry Pi blades**: up to four boards on edge, each on its own fin, standoffs that print without supports |
+| `dev1`, `dev2` | A made-to-measure tray for any device: set its width, height and depth |
+| `fan40` | 1U panel with up to three **40 mm fans** behind round openings |
+| `shelf` | Shelf with zip-tie slots for small devices |
 | `patch` | 1U patch panel with the ports you choose |
 | `buttons` | 1U button panel (see below) |
 | `vent`, `blank`, `cable`, `led`, `label` | Vented, blank, cable pass-through, LED strip and engraved panels |
+
+A module can take more than one unit (the blades take 2U): the rack is filled from the top and a module that no
+longer fits becomes a blank.
 
 ![Switch mount, shelf and pass-through cover](docs/img/modules.png)
 
 ## Keystones
 
 The patch panel takes 1–12 ports (rows are added automatically) with optional engraved numbers.
-`ks_ports_list` sets **every port**: `rj45m` (metal / shielded RJ45), `rj45`, `hdmi`, `usb` (standard keystones),
+`ks_ports_list` sets **every port**: `rj45m` (metal / shielded RJ45), `rj45`, `hdmi`, `usb`, `rca`, `jack` (3.5 mm),
+`toslink` (standard keystones),
 `cover` (a plain printed cover for an unused port), `pass` (a split pass-through cover that clips around a cable, e.g.
 the switch power cable) or `none`. Both covers are pushed in from the front and click behind the opening.
 
@@ -106,6 +138,16 @@ motherboard's front-panel header. Three LED designs, all printable front face do
 - `glow`: invisible when off; the LED shines through a 0.6 mm skin and the engraved icon lights up (print it in white or natural).
 
 ![Button panel: ring, halo and hidden glow](docs/img/buttons.png)
+
+## It goes in like a drive
+
+- **Grooves for the metal tabs between the bays.** Many cages have lanced ledges in the gap between two bays that
+  the drives rest on. The adapter has a groove for them along the whole sleeve (with a rib inside so the wall keeps
+  its strength), so you don't have to bend them flat.
+- **Stiff side walls**: an inner lip along their top and bottom edges and a fillet into each rack post, all outside
+  the rack opening.
+- Bay screws, heat-set inserts or nuts; 80 mm and 40 mm fan openings are plain round holes, nothing in front of
+  the fan.
 
 ## Rack standard
 
@@ -193,15 +235,18 @@ src/lib/
   preview.scad           hardware models, sections, PC tower (preview only)
 scripts/build.py         variant table -> presets + stl/ + stl/README.md
 scripts/render_docs.py   README images
-web/                     browser viewer + generator (GitHub Pages)
+scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF)
+web/                     browser viewer + generator (GitHub Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md
-docs/img/                README images
+docs/img/, docs/gallery/ README and site images
 ```
 
 ## Roadmap / ideas
 
 - [ ] Verified hole spacings for commercial 6" racks (PRs with measurements welcome)
-- [ ] Shelf / tray part for devices without rack ears
+- [x] Trays for devices without rack ears (switches, KVMs, Raspberry Pi, any size)
+- [ ] An open spec for the bay-to-rack interface (bay mount, rack face profiles, module envelope), so other
+      people can make compatible modules
 - [ ] Tool-less clip option for cases without side screws
 - [ ] Brush or grommet cable fill
 

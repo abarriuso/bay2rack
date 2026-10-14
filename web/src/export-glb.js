@@ -16,7 +16,7 @@ function parseScene(logs) {
 
 const save = (path, body) => fetch('/__save?path=' + encodeURIComponent(path), { method: 'POST', body });
 
-export async function exportBuild({ name, values, mods, runJob, definesFor, filament }) {
+export async function exportBuild({ name, values, mods, runJob, definesFor, filament, sleeper = false }) {
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;left:-4000px;top:0;width:320px;height:240px';
   document.body.append(el);
@@ -31,7 +31,10 @@ export async function exportBuild({ name, values, mods, runJob, definesFor, fila
   for (const [item, k] of jobs) {
     const res = await runJob([...definesFor(base), 'web_scene=true', `preview_item="${item}"`, `preview_index=${k}`], 'out.3mf');
     if (!res.ok) { console.warn('export: no geometry for', item, k); continue; }
-    if (item === 'adapter') scene = parseScene(res.logs);
+    if (item === 'adapter') {
+      scene = parseScene(res.logs);
+      if (sleeper && scene.case) scene.case.style = 'sleeper';
+    }
     items.push({ name: item === 'module' ? `module${k}` : item, buffer: res.data.buffer });
   }
   v.loadGroups(items, { scene: scene?.case ? scene : null });

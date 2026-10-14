@@ -22,5 +22,8 @@ copy(join(wasm, 'fonts'), 'openscad/fonts');
 copy(join(wasm, 'LICENSES'), 'openscad/LICENSES');
 copy(join(repo, 'docs', 'img', 'hero.png'), 'img/hero.png');
 if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'), 'img/gallery');
+// the hero film (the GIFs next to it are for the README only)
+for (const f of ['hero.mp4', 'hero.webm', 'hero.webp'])
+  if (existsSync(join(repo, 'docs', 'video', f))) copy(join(repo, 'docs', 'video', f), `video/${f}`);
 
 console.log('static assets copied to web/public/');

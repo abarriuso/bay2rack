@@ -516,7 +516,7 @@ module access_point() {
 PCI_PITCH = 20.32;
 pci_xr = TC_W / 2 - 18;                                // motherboard end of the slots
 pci_x0 = pci_xr - PCI_L;
-pci_ztop = tc_z1 - 236;                                // centre of slot 0, just under the I/O shield
+pci_ztop = tc_z1 - 40 - 175;                           // slot 0: board top 40 mm under the roof, 175 mm lower (ATX)
 function pci_cz(i) = pci_ztop - i * PCI_PITCH;
 function pci_x(along) = pci_xr - along;                // a point this far along a slot from the motherboard end
 // the printed bracket (built flat: X width, Y length, Z up) standing in slot i, its tab inside the case
