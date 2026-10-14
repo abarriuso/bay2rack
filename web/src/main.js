@@ -9,7 +9,6 @@ import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from '
 import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
 import { renderLegend } from './legend.js';
-import { startHero } from './hero.js';
 
 const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
@@ -148,7 +147,6 @@ worker.onmessage = ({ data: m }) => {
   if (m.type === 'ready') {
     S.engine = 'ready';
     setStatus(t('ready'), 'ok');
-    startAnimatedHero();
     if (S.wantRender) render();
   } else if (m.type === 'error') {
     S.engine = 'error';
@@ -699,65 +697,66 @@ async function downloadKit() {
 }
 
 // ---------------------------------------------------------------- hero + gallery
-// the hero film: one caption per shot (start in seconds, see scripts/blender/hero.py)
-const HERO_SHOTS = [[0, 'hero_s1'], [1.45, 'hero_s2'], [4.25, 'hero_s3'], [6.05, 'hero_s4'], [8.4, 'hero_s5'],
-  [10.35, 'hero_s6'], [11.85, 'hero_s7'], [13.35, 'hero_s8']];
+// the hero film: one chapter per shot (start in seconds, see scripts/blender/hero.py)
+const HERO_SHOTS = [0, 1.45, 4.25, 6.05, 8.4, 10.35, 11.85, 13.35];
 function wireHeroVideo() {
   const video = $('#heroVideo');
-  const cap = $('#heroCaption');
-  const step = $('#heroStep');
+  const list = $('#heroChapters');
   let shown = -1;
-  const show = () => {
-    const i = Math.max(0, HERO_SHOTS.findLastIndex(([at]) => video.currentTime >= at));
-    if (i === shown) return;
-    shown = i;
-    step.textContent = `${String(i + 1).padStart(2, '0')}/${String(HERO_SHOTS.length).padStart(2, '0')}`;
-    cap.textContent = t(HERO_SHOTS[i][1]);
-    cap.classList.remove('show');
-    void cap.offsetWidth;
-    cap.classList.add('show');
+  let buttons = [];
+  const build = () => {
+    buttons = HERO_SHOTS.map((at, i) => h('button', {
+      type: 'button', className: 'chapter', 'aria-label': `${i + 1}/${HERO_SHOTS.length} · ${t('hero_s' + (i + 1))}`,
+      onclick: () => { video.currentTime = at + 0.05; video.play().catch(() => {}); },
+    }, h('span', { className: 'track' }, h('span', { className: 'fill' })),
+      h('span', { className: 'name', textContent: `${String(i + 1).padStart(2, '0')} ${t('ch_' + (i + 1))}` })));
+    list.replaceChildren(...buttons.map((b) => h('li', {}, b)));
+    shown = -1;
   };
-  video.addEventListener('timeupdate', show);
-  show();
+  // the current chapter fills with the film; earlier ones are full, later ones empty
+  const paint = () => {
+    const now = video.currentTime;
+    const dur = video.duration || 17;
+    const i = Math.max(0, HERO_SHOTS.findLastIndex((at) => now >= at));
+    buttons.forEach((b, k) => {
+      const end = HERO_SHOTS[k + 1] ?? dur;
+      const f = k < i ? 1 : k > i ? 0 : Math.min(1, (now - HERO_SHOTS[k]) / (end - HERO_SHOTS[k]));
+      b.firstChild.firstChild.style.width = `${(f * 100).toFixed(1)}%`;
+      b.classList.toggle('now', k === i);
+    });
+    if (i !== shown) {
+      shown = i;
+      $('#heroStep').textContent = `${String(i + 1).padStart(2, '0')}/${String(HERO_SHOTS.length).padStart(2, '0')}`;
+      $('#heroCaption').textContent = t('hero_s' + (i + 1));
+    }
+  };
+  let raf = 0;
+  const loop = () => { paint(); raf = video.paused ? 0 : requestAnimationFrame(loop); };
+  video.addEventListener('play', () => { if (!raf) raf = requestAnimationFrame(loop); });
+  video.addEventListener('seeked', paint);
+  video.addEventListener('timeupdate', () => { if (!raf) paint(); });
   $('#heroReplay').onclick = () => { video.currentTime = 0; video.play().catch(() => {}); };
-  video.setAttribute('aria-label', t('hero_video_label'));
+  const label = () => {
+    video.setAttribute('aria-label', t('hero_video_label'));
+    $('#heroReplay').setAttribute('aria-label', t('hero_replay'));
+  };
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { video.removeAttribute('autoplay'); video.pause(); }
   // pause while scrolled away: no decoding in the background
-  new IntersectionObserver(([e]) => { if (e.isIntersecting) video.play().catch(() => {}); else video.pause(); })
+  new IntersectionObserver(([e]) => { if (e.isIntersecting && !matchMedia('(prefers-reduced-motion: reduce)').matches) video.play().catch(() => {}); else video.pause(); })
     .observe(video);
-  return () => { shown = -1; show(); };
+  // the header turns dark while it sits on the film
+  const film = $('#heroStage');
+  const top = $('.top');
+  const onScroll = () => top.classList.toggle('on-film', film.getBoundingClientRect().bottom > top.offsetHeight);
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  build();
+  label();
+  paint();
+  return () => { build(); label(); paint(); };
 }
 let heroRelabel = null;
-let animatedHero = null;
 
-function startAnimatedHero() {
-  const el = $('#heroView');
-  if (!el || animatedHero || S.engine !== 'ready') return;
-  if (new URLSearchParams(location.search).has('nohero')) return;
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const values = { ...S.defaults, ...EXAMPLES.router };
-  const units = calc(values).units;
-
-  animatedHero = startHero({
-    el,
-    caption: $('#heroCaption'),
-    replay: $('#heroReplay'),
-    legend: $('#heroLegend'),
-    onReady: () => {
-      $('#heroStage').classList.add('live');
-      $('#heroStep').hidden = true;
-    },
-
-    runJob,
-    definesFor,
-    values,
-    mods: usedMods(values, units),
-    filament: FILAMENTS[UI.filament] ?? FILAMENTS.black,
-  });
-
-  animatedHero.setTheme(document.documentElement.dataset.theme);
-}
 // dev only: save a build as GLB for the Blender video (docs/blender/)
 if (import.meta.env.DEV) {
   window.__b2r.exportBuild = async (name, patch, opts = {}) => {

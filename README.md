@@ -34,6 +34,8 @@ Evolution of the original
 
 ### The film
 
+![3 bays, 5 bays, a Raspberry Pi cluster: the same parts, other builds](docs/video/builds.gif)
+
 The hero of the site is rendered in Blender from the same models (`scripts/blender/`): a beige 90s **sleeper**
 opens up, the modern server inside floats in the open, everything snaps back, the adapter and the rack modules fly
 into the bays, the cables leave through the PCI slots coloured by VLAN, and the Proxmox node next to it trades its
