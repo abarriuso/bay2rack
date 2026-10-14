@@ -17,7 +17,7 @@
 
 /* [Part to render] */
 // What to render. "assembly" is a preview only, do not print it.
-part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, keystone_cover:Keystone cover - plain or cable pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
+part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
 // Lay printable parts front-face down on the bed
 print_orientation = true;
 
@@ -64,7 +64,7 @@ bezel_grooves = true;
 
 /* [Fit mode] */
 // flush = N-1 U + spare zone, nothing sticks out.  overhang = N bays = N U, rack panels stick out a few mm above/below
-fit = "flush"; // [flush:Flush - inside the bay stack, overhang:Overhang - N bays = N U]
+fit = "flush"; // [flush:Flush - inside the bay stack, overhang:Overhang - N bays = N U, panel:Panel only - no rack units / the whole front is the fill]
 // Rack units to provide (0 = automatic)
 units_override = 0; // [0:1:6]
 // Where the extra height goes when there is no spare zone
@@ -131,9 +131,9 @@ lighten = true;
 /* [Spare-zone filler] */
 // separate = screw-on panel you can swap (modular).  integral = features cut into the frame
 filler_mode = "separate"; // [separate:Separate screw-on panel, integral:Cut into the frame]
-spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons]
+spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan80]
 // Fill of the top zone when spare_pos = split
-spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons]
+spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan80]
 filler_t = 3;
 label_text = "HOMELAB";
 
@@ -196,10 +196,10 @@ led_style = "ring"; // [ring:Countersunk ring - the LED dome sticks out, halo:Ha
 led_protrude = 1.5;
 
 /* [Rack contents] */
-// What goes in each rack unit, top first (assembly preview and kit): ms105g, shelf, patch, vent, blank, cable, led, label
-rack_modules = "ms105g,shelf";
+// What goes in each rack unit, top first (assembly preview and kit): ms105g, kvm2, uswflex, ux, dev1, dev2, shelf, patch, buttons, vent, blank, cable, led, label
+rack_modules = "ms105g,kvm2";
 // Module made by part = rack_module
-module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, shelf:1U shelf for small devices, patch:1U keystone patch panel, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
+module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm2:Two KVM over IP - JetKVM + NanoKVM, uswflex:UniFi USW-Flex-Mini switch mount, ux:UniFi Express mount, dev1:Your device 1 - dev1_dims, dev2:Your device 2 - dev2_dims, shelf:1U shelf for small devices, patch:1U keystone patch panel, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
 
 /* [Device mounts] */
 // Mercusys MS105G 5-port switch, W x H x D from retailer spec sheets (VERIFY)
@@ -213,10 +213,34 @@ mount_lip = 1.5;
 mount_wall = 2.0;
 // Shelf depth for small devices (NanoKVM, Raspberry Pi...)
 shelf_depth = 100;
+// kvm2 module, left box: JetKVM, W x H x D (press / retailer figures - VERIFY)
+kvm_a = [43, 31, 60];
+// kvm2 module, right box: Sipeed NanoKVM Full, W x H x D (VERIFY)
+kvm_b = [40, 36, 40];
+// UniFi USW-Flex-Mini, W x H x D (Ubiquiti spec)
+usw_dims = [107.2, 21.2, 70.2];
+// UniFi Express (UX), W x H x D (Ubiquiti spec)
+ux_dims = [98, 30, 98];
+// Your own device for the dev1 module, W x H x D
+dev1_dims = [100, 30, 80];
+// Your own device for the dev2 module, W x H x D
+dev2_dims = [60, 25, 60];
+
+/* [Rear cable slots] */
+// Printed brackets that replace two PCI slot covers: the network cables and the power cable leave the case through them
+rear_slots = true;
+// PCI slot used by the network cables (0 = top)
+pci_lan_slot = 5;
+// PCI slot used by the power cable
+pci_power_slot = 6;
+// Bracket made by part = pci_bracket
+pci_kind = "lan"; // [lan:Network cables - keyhole slot, power:Power cable - round hole + strain relief]
+// Bracket thickness (steel ones are ~0.9 mm, most cases take 2 mm)
+pci_t = 2.0;
 
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
-panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons]
+panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan80]
 panel_t = 3;
 // Horizontal slotting of panel holes
 panel_hole_slot = 2; // [0:0.5:6]
@@ -240,6 +264,11 @@ show_hardware = true;
 section = "none"; // [none:No cut, rack_row:Horizontal cut through a rack hole row, rack_column:Vertical cut through the right rack holes, bay:Cut through the bay screws]
 
 /* [Hidden] */
+// set by the web viewer: OpenSCAD only echoes the scene (case, clients, cables) as data
+web_scene = false;
+// web viewer: render a single piece of the assembly (adapter, filler, module, hardware) so it can be animated
+preview_item = "all";
+preview_index = 0;
 $fn = 40;
 eps = 0.01;
 
@@ -274,6 +303,7 @@ else if (part == "filler" || part == "filler_2") {
 else if (part == "rack_panel") printable(panel_t) rack_panel();
 else if (part == "rack_module") printable(panel_t) rack_module(module_type);
 else if (part == "keystone_cover") keystone_cover(cover_type);
+else if (part == "pci_bracket") pci_bracket(pci_kind);
 else if (part == "test_rack") printable(ft) test_rack();
 else if (part == "test_bay") printable(ft) test_bay();
 else if (part == "test_keystone") printable(filler_t) test_keystone();

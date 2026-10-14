@@ -90,6 +90,12 @@ VARIANTS = (
     + [plate_overhang(1), plate_overhang(2), plate_overhang(3, "center")]
     + [bezel_flush(b) for b in (1, 2, 3)]
     + [bezel_overhang(1), bezel_overhang(2, "center"), bezel_overhang(3, "center")]
+    + [variant("bezel-flush/1bay-buttons", "1 bay bezel: power key (MX) + LEDs, for the client PCs",
+               {"bays": 1, "fit": "flush", "front_style": "bezel", "filler_mode": "integral", "spare_fill": "buttons", "btn_count": 1},
+               [("adapter.stl", {"part": "adapter"})]),
+       variant("bezel-flush/1bay-vent", "1 bay bezel with vents, for the client PCs",
+               {"bays": 1, "fit": "flush", "front_style": "bezel", "filler_mode": "integral", "spare_fill": "vent"},
+               [("adapter.stl", {"part": "adapter"})])]
     + [panel("1U-patch6", "1U, 6 keystones", 1, "keystone"),
        panel("1U-vent", "1U, vented", 1, "vent"),
        panel("1U-blank", "1U, blank", 1, "blank"),

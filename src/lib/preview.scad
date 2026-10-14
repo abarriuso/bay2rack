@@ -25,8 +25,8 @@ module v_screw(d, L, head) {
 
 module v_insert(dh, l, d) color(BRASS) difference() {
     union() {
-        cylinder(d = dh, h = l);
-        for (f = [0.12, 0.55]) translate([0, 0, l * f]) cylinder(d = dh + 0.5, h = l * 0.3);
+        translate([0, 0, 0.3]) cylinder(d = dh - 0.2, h = l - 0.3);
+        for (f = [0.2, 0.6]) translate([0, 0, l * f]) cylinder(d = dh + 0.2, h = l * 0.25);
     }
     translate([0, 0, -eps]) cylinder(d = d, h = l + 2 * eps);
 }
@@ -182,7 +182,11 @@ module tower_case() {
 }
 
 // --- example devices ------------------------------------------------
-MOD_COLOR = [0.24, 0.26, 0.30];
+// printed parts: exact colours, the web viewer maps them to the chosen filament
+PRINT_A = [48, 50, 54] / 255;                         // adapter
+PRINT_B = [63, 65, 70] / 255;                         // filler panels
+PRINT_C = [77, 79, 84] / 255;                         // rack modules and covers
+MOD_COLOR = PRINT_C;
 
 module rj45_port(x, z, yf) {     // dark socket with the latch notch, front at yf
     color([0.04, 0.04, 0.05]) translate([x - 6, yf - 0.05, z - 4.5]) cube([12, 0.3, 9]);
@@ -211,6 +215,45 @@ module nanokvm_model(yf, zb, x = -34) {
     color([0.1, 0.1, 0.1]) for (dx = [-17, -6]) translate([x + dx, yf - 0.1, zb + 4]) cube([9, 0.2, 3.2]);   // USB-C
 }
 
+// JetKVM: black aluminium box with a 1.69in colour touch screen on the front
+module jetkvm_model(x, yf, zc) {
+    color([0.08, 0.08, 0.09]) translate([x - kvm_a[0] / 2, yf, zc - kvm_a[1] / 2]) cube([kvm_a[0], kvm_a[2], kvm_a[1]]);
+    color([0.02, 0.02, 0.03]) translate([x - 17, yf - 0.1, zc - 12]) cube([34, 0.2, 24]);
+    color([0.36, 0.55, 1.0]) translate([x - 15, yf - 0.2, zc + 4]) cube([30, 0.1, 6]);        // screen UI
+    color([0.35, 0.85, 1.0]) translate([x - 15, yf - 0.2, zc - 9]) cube([20, 0.1, 3]);
+    color([0.20, 0.95, 0.40]) translate([x + 9, yf - 0.2, zc - 9]) cube([6, 0.1, 3]);
+}
+// Sipeed NanoKVM Full: white box, small OLED on the front
+module nanokvm_front(x, yf, zc) {
+    color([0.94, 0.94, 0.93]) translate([x - kvm_b[0] / 2, yf, zc - kvm_b[1] / 2]) cube([kvm_b[0], kvm_b[2], kvm_b[1]]);
+    color([0.03, 0.03, 0.04]) translate([x - 11, yf - 0.1, zc + 2]) cube([22, 0.2, 10]);
+    color([0.35, 0.85, 1.0]) for (r = [0 : 2]) translate([x - 9, yf - 0.2, zc + 4 + r * 2.6]) cube([10 + (r % 2) * 6, 0.1, 1]);
+    color([0.02, 0.02, 0.02]) translate([x - 6, yf - 0.1, zc - 11]) cube([12, 0.2, 7]);
+}
+
+// UniFi USW-Flex-Mini: white body, five ports and USB-C on the port face
+module uswflex_model(yf, zc) {
+    d = usw_dims;
+    color([0.95, 0.95, 0.94]) translate([-d[0] / 2, yf, zc - d[1] / 2]) cube([d[0], d[2], d[1]]);
+    for (i = [0 : 4]) rj45_port(-d[0] / 2 + 14 + i * 15, zc, yf - 0.1);
+    color([0.1, 0.1, 0.1]) translate([d[0] / 2 - 14, yf - 0.1, zc - 1.6]) cube([9, 0.2, 3.2]);
+    color([0.36, 0.55, 1.0]) translate([d[0] / 2 - 6, yf - 0.2, zc + 6]) cube([3, 0.1, 1.2]);
+}
+// UniFi Express: white rounded box with a small display
+module ux_model(yf, zc) {
+    d = ux_dims;
+    color([0.95, 0.95, 0.94]) translate([-d[0] / 2, yf, zc - d[1] / 2]) cube([d[0], d[2], d[1]]);
+    color([0.02, 0.02, 0.03]) translate([-13, yf - 0.1, zc - 6]) cube([26, 0.2, 12]);
+    color([0.36, 0.55, 1.0]) translate([-11, yf - 0.2, zc - 1]) cube([16, 0.1, 2.4]);
+    color([0.36, 0.55, 1.0]) translate([-30, yf - 0.2, zc - d[1] / 2 + 3]) cube([60, 0.1, 1]);
+}
+
+// a generic device box for dev1 / dev2
+module dev_model(d, yf, zc) {
+    color([0.2, 0.21, 0.23]) translate([-d[0] / 2, yf, zc - d[1] / 2]) cube([d[0], d[2], d[1]]);
+    color([0.2, 0.95, 0.4]) translate([d[0] / 2 - 8, yf - 0.2, zc + d[1] / 2 - 5]) cube([3, 0.1, 1.5]);
+}
+
 // keystone jack / cover models at a port centre; yf = front face of the panel
 module jack_model(tp, yf) {
     if (tp == "rj45m") {
@@ -226,7 +269,7 @@ module jack_model(tp, yf) {
         if (tp == "usb") { color([0.05, 0.05, 0.06]) translate([-6, yf + 0.3, -1.5]) cube([12, 0.3, 5]);
                            color([0.2, 0.35, 0.85]) translate([-5, yf + 0.25, -0.2]) cube([10, 0.3, 1.6]); }
     } else if (tp == "cover" || tp == "pass") {
-        color([0.32, 0.35, 0.4]) translate([0, yf - 1.2, 0]) mirror([0, 0, 1]) rotate([-90, 0, 0])
+        color(PRINT_C) translate([0, yf - 1.2, 0]) mirror([0, 0, 1]) rotate([-90, 0, 0])
             keystone_cover(tp == "pass" ? "pass" : "blank");
     }
 }
@@ -236,7 +279,7 @@ module buttons_models(w, h, z0, yf) {
     L = btn_layout(w, h);
     for (k = L[0]) translate([k[0], 0, z0 + k[1]]) {
         color([0.18, 0.18, 0.2]) translate([-7, yf - 5, -7]) cube([14, 5 + 6, 14]);
-        color(k[2] == "power" ? [0.9, 0.48, 0.18] : [0.82, 0.83, 0.86])
+        color(k[2] == "power" ? [0.88, 0.89, 0.9] : [0.32, 0.33, 0.36])
             hull() { translate([-9, yf - 6.5, -9]) cube([18, 0.1, 18]); translate([-6.5, yf - 13.5, -6.5]) cube([13, 0.1, 13]); }
     }
     for (k = L[1]) {
@@ -263,13 +306,21 @@ module fill_devices(type, w, h, z0, yf) {
 }
 
 // the printed rack modules, with their devices
-module rack_contents() if (units > 0) for (u = [0 : units - 1]) {
+module rack_contents() if (units > 0) for (u = [0 : units - 1]) if (preview_item == "all" || preview_index == units - 1 - u) {
     z = units_z0 + u * U + 0.395;
     m = mod_at(u);
     yb = -ft - explode;                                // back face of the module plate
-    color(MOD_COLOR) translate([0, yb, z]) rack_module(m);
+    color(PRINT_C + [units - 1 - u, 0, 0] / 255) translate([0, yb, z]) rack_module(m);
     if (demo_devices == "homelab") {
         if (m == "ms105g") ms105g_model(yb + 0.2, z + ms_z0 + ms_ch / 2);
+        else if (m == "uswflex") uswflex_model(yb + 0.2, z + tunnel_z0(dev_c(usw_dims)[1]) + dev_c(usw_dims)[1] / 2);
+        else if (m == "ux") ux_model(yb + 0.2, z + tunnel_z0(dev_c(ux_dims)[1]) + dev_c(ux_dims)[1] / 2);
+        else if (m == "dev1") dev_model(dev1_dims, yb + 0.2, z + tunnel_z0(dev_c(dev1_dims)[1]) + dev_c(dev1_dims)[1] / 2);
+        else if (m == "dev2") dev_model(dev2_dims, yb + 0.2, z + tunnel_z0(dev_c(dev2_dims)[1]) + dev_c(dev2_dims)[1] / 2);
+        else if (m == "kvm2") {
+            jetkvm_model(kvm_xa, yb + 0.2, z + tunnel_z0(kvm_c(kvm_a)[1]) + kvm_c(kvm_a)[1] / 2);
+            nanokvm_front(kvm_xb, yb + 0.2, z + tunnel_z0(kvm_c(kvm_b)[1]) + kvm_c(kvm_b)[1] / 2);
+        }
         else if (m == "shelf") nanokvm_model(yb + 6, z + shelf_z + 2);
         else if (m == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
         else if (m == "buttons") fill_devices("buttons", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
@@ -290,6 +341,7 @@ module dummy_devices() {
     rack_contents();
     zone_devices();
 }
+// (assembly() calls rack_contents and zone_devices directly so the hero can render them apart)
 
 // --- homelab scene: client PCs, access point, network cables ------------
 CABLE_D = 5.2;
@@ -311,19 +363,55 @@ sw_zc = len(sw_units) > 0 ? units_z0 + sw_units[0] * U + 0.395 + ms_z0 + ms_ch /
 sw_yf = -ft - explode + 0.2;
 
 // clients: old towers next to the server, fronts in line with it
-CLIENTS = [[185, 420, 440, [0.84, 0.81, 0.73]], [178, 380, 410, [0.16, 0.16, 0.17]]];
+CLIENTS = [[185, 420, 440, [0.84, 0.81, 0.73]], [166, 199, 223, [0.10, 0.10, 0.11]]];   // old PC, 4-bay NAS
 cl_x = [TC_W / 2 + 70 + CLIENTS[0][0] / 2, TC_W / 2 + 70 + CLIENTS[0][0] + 60 + CLIENTS[1][0] / 2];
 ap_pos = [0, TC_D * 0.55, tc_z1];
 
 module client_pc(x, c) {
     W = c[0]; H = c[1]; D = c[2];
     color(c[3]) translate([x - W / 2, -tc_fd, tc_z0]) cube([W, D, H]);
-    color(c[3] * 0.85) for (k = [0, 1]) translate([x - 74, -tc_fd - 0.4, tc_z0 + H - 40 - k * 44]) cube([148, 0.5, 41]);
+
     color([0.2, 0.9, 0.35]) translate([x + W / 2 - 24, -tc_fd - 0.5, tc_z0 + H - 135]) rotate([-90, 0, 0]) cylinder(d = 3, h = 0.6);
     color([0.6, 0.6, 0.62]) translate([x + W / 2 - 36, -tc_fd - 0.5, tc_z0 + H - 135]) rotate([-90, 0, 0]) cylinder(d = 9, h = 0.6);
     color([0.05, 0.05, 0.05]) for (i = [0 : 9]) translate([x - W / 2 + 25, -tc_fd - 0.3, tc_z0 + 30 + i * 9]) cube([W - 50, 0.3, 4]);
 }
-function client_port(i) = [cl_x[i] - CLIENTS[i][0] / 2 + 34, CLIENTS[i][2] - tc_fd, tc_z0 + CLIENTS[i][1] - 70];
+// the clients reuse bay2rack too: a 1-bay bezel with the button panel and one with vents
+CLIENT_FILLS = [["buttons", 1], ["fan80", 2]];                 // [fill, bays], from the top
+function client_bay_z(i, k) = tc_z0 + CLIENTS[i][1] - 38 - (k + 1) * bay_pitch;   // bottom of bay k (0 = top)
+function client_bezels_at() = [[client_bay_z(0, 0), 1], [client_bay_z(0, 2), 2]];   // [bottom z, bays]
+module client_bezel(fill, x, zb, nb = 1) {
+    w = bezel_w - bezel_clearance;
+    h = (nb - 1) * bay_pitch + bezel_h1 - bezel_clearance;
+    t = 8;
+    translate([x, -tc_fd + t, zb]) {
+        color(PRINT_C) difference() {
+            union() { plate(w, h, t, 0.8); fill_add(fill, w - 20, h, t); }
+            fill_cut(fill, w - 20, h, t);
+        }
+        if (fill == "buttons") buttons_models(w - 20, h, 0, -t);
+        if (fill == "fan80") fan80_model(0, 2, h / 2);
+    }
+}
+module client_bezels() for (k = [0, 1]) client_bezel(CLIENT_FILLS[k][0], cl_x[0], client_bezels_at()[k][0], CLIENT_FILLS[k][1]);
+module fan80_model(x, y, zc) {
+    color([0.07, 0.07, 0.08]) difference() {
+        translate([x - 40, y, zc - 40]) cube([80, 25, 80]);
+        translate([x, y - 1, zc]) rotate([-90, 0, 0]) cylinder(d = 76, h = 27);
+    }
+    color([0.07, 0.07, 0.08]) translate([x, y + 4, zc]) rotate([-90, 0, 0]) cylinder(d = 30, h = 18);
+    color([0.12, 0.12, 0.13]) for (a = [0 : 6]) translate([x, y + 8, zc]) rotate([0, a * 360 / 7, 0])
+        translate([0, 0, 15]) rotate([0, 0, 25]) cube([12, 1.4, 22], center = true);
+}
+
+function client_port(i) = i == 0 ? [cl_x[0] - CLIENTS[0][0] / 2 + 34, CLIENTS[0][2] - tc_fd, tc_z0 + CLIENTS[0][1] - 70]
+                               : [cl_x[1] + 30, CLIENTS[1][2] - tc_fd, tc_z0 + 40];
+
+module nas(x, c) {
+    W = c[0]; H = c[1]; D = c[2];
+    color(c[3]) translate([x - W / 2, -tc_fd, tc_z0]) cube([W, D, H]);
+    color([0.18, 0.18, 0.2]) for (i = [0 : 3]) translate([x - W / 2 + 12 + i * 36, -tc_fd - 1, tc_z0 + 14]) cube([33, 1, 150]);
+    color([0.2, 0.9, 0.35]) for (i = [0 : 3]) translate([x - W / 2 + 26 + i * 36, -tc_fd - 1.2, tc_z0 + 172]) cube([5, 0.3, 2]);
+}
 
 module access_point() {
     color([0.96, 0.96, 0.95]) translate(ap_pos) cylinder(d = 170, h = 32, $fn = 64);
@@ -331,44 +419,88 @@ module access_point() {
     color([0.3, 0.75, 1]) translate(ap_pos + [0, 0, 38]) cylinder(d = 10, h = 0.6);
 }
 
-// keystone back -> along the inside of the case -> out of the back -> target
-function inner_route(p, i) =
-    let(xr = -TC_W / 2 + 26 + i * 7, zr = tc_z1 - 120 - i * 6, yb = zone_yf + 33)
-    [[p[0], yb, p[1]], [p[0], yb + 30, p[1] - 8], [xr, 150, p[1] - 30], [xr, TC_D - 50, zr], [xr, TC_D + 25, zr]];
+// rear PCI slots (same positions as the web viewer's case): centre x and z range of slot i
+function pci_cx(i) = -TC_W / 2 + 48 + i * 20.32;
+pci_z0 = tc_z1 - 380;
+pci_z1 = pci_z0 + PCI_L;
+module rear_brackets() if (rear_slots)
+    for (b = [[pci_lan_slot, "lan"], [pci_power_slot, "power"]])
+        color(PRINT_C) translate([pci_cx(b[0]), TC_D + pci_t - 0.6, pci_z0]) rotate([90, 0, 0]) pci_bracket(b[1]);
 
-module homelab_scene() {
-    client_pc(cl_x[0], CLIENTS[0]);
-    client_pc(cl_x[1], CLIENTS[1]);
-    access_point();
-    colors = [[0.15, 0.45, 0.9], [0.92, 0.75, 0.12], [0.85, 0.85, 0.87]];
-    for (i = [0 : min(len(rj_ports), 3) - 1]) {
-        p = rj_ports[i];
-        r = inner_route(p, i);
-        last = r[len(r) - 1];
-        zf = tc_z0 + 12 + i * 6;
+// keystone back -> along the inside of the case -> out through the rear LAN slot (or the back) -> target
+function inner_route(p, i) =
+    let(xr = -TC_W / 2 + 26 + i * 7, zr = tc_z1 - 120 - i * 6, yb = zone_yf + 33,
+        xs = rear_slots ? pci_cx(pci_lan_slot) : xr, zs = rear_slots ? pci_z0 + 40 + i * 9 : zr)
+    [[p[0], yb, p[1]], [p[0], yb + 30, p[1] - 8], [xr, 150, p[1] - 30], [xs, TC_D - 60, zs], [xs, TC_D + 25, zs]];
+
+CABLE_COLORS = [[0.15, 0.45, 0.9], [0.92, 0.75, 0.12], [0.85, 0.85, 0.87]];
+n_links = min(len(rj_ports), 3);
+n_cords = len(sw_units) > 0 ? min(len(rj_ports), 4) : 0;
+
+function link_route(i) =
+    let(p = rj_ports[i], r = inner_route(p, i), last = r[len(r) - 1], zf = tc_z0 + 12 + i * 6,
         out = i < 2
             ? let(t = client_port(i))
               [last, [last[0], TC_D + 45, zf], [t[0], TC_D + 45, zf], [t[0], t[1] + 30, t[2]], [t[0], t[1] + 2, t[2]]]
-            : [last, [last[0], TC_D + 30, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 95, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 82, tc_z1 + 14]];
-        cable(concat(r, [for (k = [1 : len(out) - 1]) out[k]]), colors[i]);
-        if (i < 2) plug(client_port(i) + [0, 16, 0], colors[i]);
+            : [last, [last[0], TC_D + 30, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 95, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 82, tc_z1 + 14]])
+    concat(r, [for (k = [1 : len(out) - 1]) out[k]]);
+
+function cord_route(i) =
+    let(s = ms_ports(sw_zc)[i], p = rj_ports[i])
+    [[s[0], sw_yf - 2, s[1]], [s[0], sw_yf - 14, s[1]], [s[0], sw_yf - 28, s[1] + 4],
+     [p[0], zone_yf - 28, p[1] - 4], [p[0], zone_yf - 14, p[1]], [p[0], zone_yf - 2, p[1]]];
+
+function power_route() =
+    let(q = pass_ports[0], jx = ms_w / 2 - 10, xp = pci_cx(pci_power_slot), zp = pci_z0 + 80)
+    concat([[jx, sw_yf - 2, sw_zc - 1], [jx, sw_yf - 20, sw_zc - 1], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
+            [q[0], 60, q[1]], [TC_W / 2 - 30, 160, q[1] - 40]],
+           rear_slots ? [[xp, TC_D - 60, zp], [xp, TC_D + 30, zp], [xp, TC_D + 60, tc_z0 + 8], [xp + 160, TC_D + 90, tc_z0 + 4]]
+                      : [[TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]]);
+
+// every cable of the scene: [colour, diameter, points, plug at start, plug at end]
+cables = concat(
+    n_links > 0 ? [for (i = [0 : n_links - 1]) [CABLE_COLORS[i], CABLE_D, link_route(i), false, i < 2]] : [],
+    n_cords > 0 ? [for (i = [0 : n_cords - 1]) [[0.2, 0.75, 0.38], 4.6, cord_route(i), true, true]] : [],
+    len(sw_units) > 0 && len(pass_ports) > 0 ? [[[0.05, 0.05, 0.05], 3.2, power_route(), false, false]] : []);
+
+module homelab_scene() {
+    client_pc(cl_x[0], CLIENTS[0]);
+    nas(cl_x[1], CLIENTS[1]);
+    client_bezels();
+    access_point();
+    for (c = cables) {
+        cable(c[2], c[0], c[1]);
+        if (c[3]) plug(c[2][0], c[0]);
+        if (c[4]) plug(c[2][len(c[2]) - 1], c[0]);
     }
-    // short patch cords: switch front -> patch panel front
-    if (len(sw_units) > 0)
-        for (i = [0 : min(len(rj_ports), 4) - 1]) {
-            s = ms_ports(sw_zc)[i];
-            p = rj_ports[i];
-            c = [0.2, 0.75, 0.38];
-            cable([[s[0], sw_yf - 12, s[1]], [s[0], sw_yf - 26, s[1] + 4], [p[0], zone_yf - 26, p[1] - 4], [p[0], zone_yf - 12, p[1]]], c, 4.6);
-            plug([s[0], sw_yf, s[1]], c);
-            plug([p[0], zone_yf, p[1]], c);
-        }
-    // the switch's power cable goes back through the pass-through cover
-    if (len(sw_units) > 0 && len(pass_ports) > 0) {
-        q = pass_ports[0];
-        jx = ms_w / 2 - 10;
-        cable([[jx, sw_yf - 6, sw_zc - 1], [jx, sw_yf - 20, sw_zc - 1], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
-               [q[0], 60, q[1]], [TC_W / 2 - 30, 160, q[1] - 40], [TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]], [0.05, 0.05, 0.05], 3.2);
+}
+
+// --- scene as data for the web viewer (it draws these with real materials) ----
+function jstr(x) = str("\"", x, "\"");
+module scene_echo() {
+    if (case_view == "tower")
+        echo(str("SCENE ", "{", jstr("case"), ":{",
+            jstr("id"), ":", jstr(TC[0]), ",", jstr("name"), ":", jstr(TC[1]),
+            ",", jstr("w"), ":", TC_W, ",", jstr("h"), ":", TC_H, ",", jstr("d"), ":", TC_D,
+            ",", jstr("z0"), ":", tc_z0, ",", jstr("z1"), ":", tc_z1, ",", jstr("bays"), ":", TC[5],
+            ",", jstr("extra"), ":", tc_extra, ",", jstr("cz0"), ":", tc_cz0, ",", jstr("cz1"), ":", tc_cz1,
+            ",", jstr("fd"), ":", tc_fd, ",", jstr("front"), ":", jstr(TC[7]),
+            ",", jstr("open"), ":", [-fw / 2 - 0.3, fw / 2 + 0.3, frame_z0 - 0.3, frame_z1 + 0.3],
+            ",", jstr("bay"), ":", [bay_w, bay_h, bay_pitch, bezel_w, bezel_h1, case_wall_t],
+            ",", jstr("window"), ":", jstr(case_window),
+            ",", jstr("rearSlots"), ":", rear_slots ? [pci_lan_slot, pci_power_slot] : [],
+            ",", jstr("pci"), ":", [pci_z0, PCI_L], "}}"));
+    if (case_view == "tower" && scene == "homelab") {
+        echo(str("SCENE ", "{", jstr("homelab"), ":{",
+            jstr("clients"), ":", [for (i = [0, 1]) [cl_x[i], CLIENTS[i][0], CLIENTS[i][1], CLIENTS[i][2], CLIENTS[i][3]]],
+            ",", jstr("types"), ":", ["pc", "nas"],
+            ",", jstr("clientBezels"), ":", [for (b = client_bezels_at()) [b[0], (b[1] - 1) * bay_pitch + bezel_h1]],
+
+            ",", jstr("ports"), ":", [client_port(0), client_port(1)],
+            ",", jstr("ap"), ":", ap_pos, "}}"));
+        for (c = cables)
+            echo(str("SCENE ", "{", jstr("cable"), ":{", jstr("c"), ":", c[0], ",", jstr("d"), ":", c[1],
+                     ",", jstr("p"), ":", c[2], ",", jstr("plugs"), ":", [c[3], c[4]], "}}"));
     }
 }
 
@@ -386,14 +518,25 @@ module case_ghost() {
 }
 
 module assembly() {
-    section_cut() color([0.92, 0.55, 0.2]) adapter();
-    if (filler_mode == "separate") for (zn = zones)
-        section_cut() color([0.25, 0.6, 0.85]) translate([0, -ft - 2 * explode, zn[0] + 0.4]) filler_panel(zn);
-    if (show_devices) section_cut() dummy_devices();
-    if (show_hardware) section_cut() hardware();
+    pi = preview_item;
+    if (pi == "all" || pi == "adapter") section_cut() color(PRINT_A) adapter();
+    if (pi == "all" || pi == "filler") {
+        if (filler_mode == "separate") for (zn = zones)
+            section_cut() color(PRINT_B) translate([0, -ft - 2 * explode, zn[0] + 0.4]) filler_panel(zn);
+        if (show_devices) zone_devices();
+    }
+    if ((pi == "all" || pi == "module") && show_devices) section_cut() rack_contents();
+    if ((pi == "all" || pi == "hardware") && show_hardware) section_cut() hardware();
     if (section == "none") {
-        if (case_view == "ghost") case_ghost();
-        else if (case_view == "tower") tower_case();
-        if (case_view == "tower" && scene == "homelab") homelab_scene();
+        if (web_scene) {
+            if (pi == "all" || pi == "adapter") scene_echo();
+            if ((pi == "all" || pi == "clients") && case_view == "tower" && scene == "homelab") client_bezels();
+            if ((pi == "all" || pi == "clients") && case_view == "tower") rear_brackets();
+        }
+        else {
+            if (case_view == "ghost") case_ghost();
+            else if (case_view == "tower") { tower_case(); rear_brackets(); }
+            if (case_view == "tower" && scene == "homelab") homelab_scene();
+        }
     }
 }

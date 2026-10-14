@@ -5,6 +5,7 @@
 
 function parseValue(src) {
   if (/^".*"$/.test(src)) return { type: 'string', value: src.slice(1, -1) };
+  if (/^\[[\d.,\s-]+\]$/.test(src)) return { type: 'vector', value: src.slice(1, -1).split(',').map(Number) };
   if (src === 'true' || src === 'false') return { type: 'bool', value: src === 'true' };
   const n = Number(src);
   return Number.isFinite(n) ? { type: 'number', value: n } : null;
@@ -38,7 +39,7 @@ export function parseCustomizer(source) {
 }
 
 function makeParam(name, { type, value }, spec, desc) {
-  const p = { name, type, value, desc, widget: type === 'bool' ? 'check' : type === 'string' ? 'text' : 'number' };
+  const p = { name, type, value, desc, widget: type === 'bool' ? 'check' : type === 'string' ? 'text' : type === 'vector' ? 'vector' : 'number' };
   if (spec == null) return p;
   const s = spec.trim();
   if (type === 'number' && /^-?[\d.]+(:-?[\d.]+){1,2}$/.test(s)) {
@@ -60,12 +61,17 @@ function makeParam(name, { type, value }, spec, desc) {
 export function scadLiteral(p, v) {
   if (p.type === 'string') return '"' + String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
   if (p.type === 'bool') return v ? 'true' : 'false';
+  if (p.type === 'vector') return '[' + v.join(',') + ']';
   return String(v);
 }
+
+// equality that also works for vectors
+export const same = (a, b) => (Array.isArray(a) || Array.isArray(b)) ? JSON.stringify(a) === JSON.stringify(b) : a === b;
 
 // Customizer preset values are strings: convert to the parameter's type
 export function fromPreset(p, s) {
   if (p.type === 'bool') return s === true || s === 'true';
+  if (p.type === 'vector') return Array.isArray(s) ? s.map(Number) : String(s).replace(/[[\]\s]/g, '').split(',').map(Number);
   if (p.type === 'number') return Number(s);
   return String(s);
 }

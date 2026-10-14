@@ -21,6 +21,9 @@ export const ICONS = {
   overhang: svg(`${bayLines}<rect x="14" y="3" width="36" height="12" rx="1.5" fill="var(--accent)"/>
     <rect x="14" y="16" width="36" height="12" rx="1.5" fill="var(--accent)"/>
     <rect x="14" y="29" width="36" height="12" rx="1.5" fill="var(--accent)"/>`),
+  // front view: one panel filling the bays, no rack units
+  panel: svg(`${bayLines}<rect x="14" y="8" width="36" height="28" rx="2" fill="var(--accent-2)"/>
+    <circle cx="32" cy="22" r="9" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".7"/>`),
   sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>',
   moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="currentColor"/></svg>',
   logo: '<svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="4" width="26" height="24" rx="5" fill="var(--accent)"/><rect x="7" y="9" width="18" height="5" rx="1.5" fill="#fff" opacity=".95"/><rect x="7" y="17" width="18" height="5" rx="1.5" fill="#fff" opacity=".7"/></svg>',

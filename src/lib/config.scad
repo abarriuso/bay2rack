@@ -24,7 +24,7 @@ U       = rack_u_h;
 panel_w = rack_std == "6in" ? 152.4 : custom_panel_w;
 hole_s  = rack_std == "6in" ? 152.4 - (254 - 236.525) : custom_hole_spacing;
 
-units   = units_override > 0 ? units_override
+units   = fit == "panel" ? 0 : units_override > 0 ? units_override
         : fit == "overhang" ? bays : floor((base_h + 0.001) / U);
 grow    = !bezel_mode && fit == "overhang";           // plate frame grows to N U
 frame_h = grow ? max(units * U, base_h) : base_h;
@@ -141,8 +141,8 @@ function ks_count(tp) = n_patch * len([for (x = ks_types) if (x == tp) 1]);
 KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],
             ["usb", "USB keystone"], ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
 for (k = KS_NAMES) if (ks_count(k[0]) > 0) echo(str("BOM | keystones: ", ks_count(k[0]), " x ", k[1]));
-n_ties = (part == "assembly" ? len([for (m = used_mods) if (m == "ms105g" || m == "shelf") 1])
-        : part == "rack_module" && (module_type == "ms105g" || module_type == "shelf") ? 1 : 0);
+function ties_of(m) = m == "kvm2" ? 2 : (m == "ms105g" || m == "shelf" || m == "uswflex" || m == "ux" || m == "dev1" || m == "dev2") ? 1 : 0;
+n_ties = part == "assembly" ? sum_list([for (m = used_mods) ties_of(m)]) : part == "rack_module" ? ties_of(module_type) : 0;
 n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
       : part == "rack_module" ? (module_type == "buttons" ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
@@ -155,6 +155,14 @@ if (n_btn > 0) {
              btn_count >= 2 ? "power, reset" : "power", ")"));
     echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
 }
+n_fan = part == "rack_panel" ? (panel_fill == "fan80" ? 1 : 0)
+      : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
+         || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+        ? len([for (zn = zones) if (zn[2] == "fan80") 1]) : 0;
+if (n_fan > 0) echo(str("BOM | fan: ", n_fan, " x 80 mm fan (80 x 80 x 25) + 4 x fan screws"));
+if ((part == "assembly" && rear_slots) || part == "pci_bracket")
+    echo(str("BOM | rear slots: ", part == "pci_bracket" ? 1 : 2, " x printed PCI-slot bracket",
+             part == "pci_bracket" ? (pci_kind == "lan" ? " (network cables)" : " (power cable)") : " (network cables, power cable)", " + the case's slot screws"));
 if (n_ties > 0) echo(str("BOM | zip ties: ", 2 * n_ties, " x 2.5-3.6 mm cable tie (holds the device)"));
 
 module check_len(label, s, L, r)

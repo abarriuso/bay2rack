@@ -33,3 +33,5 @@ function str_split(s, sep = ",", i = 0, cur = "") =
   : s[i] == sep ? concat(cur == "" ? [] : [cur], str_split(s, sep, i + 1, ""))
   : s[i] == " " ? str_split(s, sep, i + 1, cur)
   : str_split(s, sep, i + 1, str(cur, s[i]));
+
+function sum_list(v, i = 0) = i >= len(v) ? 0 : v[i] + sum_list(v, i + 1);

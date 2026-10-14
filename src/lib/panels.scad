@@ -46,6 +46,11 @@ module rack_panel() rack_panel_u(panel_u, panel_fill);
 // one U of the rack contents
 module rack_module(type) {
     if (type == "ms105g") switch_mount();
+    else if (type == "kvm2") kvm2_mount();
+    else if (type == "uswflex") dev_mount(usw_dims);
+    else if (type == "ux") dev_mount(ux_dims);
+    else if (type == "dev1") dev_mount(dev1_dims);
+    else if (type == "dev2") dev_mount(dev2_dims);
     else if (type == "shelf") shelf_mount();
     else rack_panel_u(1, type == "patch" ? "keystone" : type);
 }
@@ -53,35 +58,106 @@ module rack_module(type) {
 // ---------------------------------------------------------------------
 //  Device mounts (1U, front at y = -panel_t, the device behind)
 // ---------------------------------------------------------------------
-// Mercusys MS105G: ports and power jack are all on the front. The switch slides
-// into a tunnel from the back, the window lip stops it, a zip tie behind it holds it.
+// A device slides into a tunnel from the back, the window lip in the plate stops it and a
+// zip tie behind it holds it. Used by the switch and the KVM mounts.
+function tunnel_z0(ch) = (U - 0.79 - ch) / 2;          // cavity bottom, centred in the 1U plate
+
+module tunnel_add(x, cw, ch, d)
+    translate([x - cw / 2 - mount_wall, -eps, tunnel_z0(ch) - mount_wall]) cube([cw + 2 * mount_wall, d, ch + 2 * mount_wall]);
+
+module tunnel_cut(x, cw, ch, d, dev_d) {
+    z0 = tunnel_z0(ch);
+    w = mount_wall;
+    translate([x - cw / 2 + mount_lip, -panel_t - 1, z0 + mount_lip]) cube([cw - 2 * mount_lip, panel_t + 2, ch - 2 * mount_lip]);
+    translate([x - cw / 2, 0, z0]) cube([cw, d + 1, ch]);                     // open at the back
+    // vent slots in roof and floor, along the depth (no bridges when printed front-down)
+    n = max(1, floor((cw - 8) / 14));
+    if (d > 26) for (zz = [z0 - w - 1, z0 + ch - 1]) for (i = [0 : n - 1])
+        translate([x - (n - 1) * 7 + i * 14 - 3, 10, zz]) cube([6, d - 20, w + 2]);
+    // zip-tie slots just behind the device: the tie runs behind it from wall to wall
+    for (s = [-1, 1]) translate([x + s * (cw / 2 + w / 2) - (w + 2) / 2, dev_d + mount_clear + 0.4, z0 + ch / 2 - 2.2])
+        cube([w + 2, 3.2, 4.4]);
+}
+
+// Mercusys MS105G: ports and power jack are all on the front
 ms_cw = ms_w + mount_clear;
 ms_ch = ms_h + mount_clear;
-ms_z0 = (U - 0.79 - ms_ch) / 2;                       // cavity bottom inside the 1U plate
+ms_z0 = tunnel_z0(ms_ch);
 ms_td = ms_d + mount_clear + 6;                       // tunnel depth behind the plate
 
 module switch_mount() {
-    h = U - 0.79;
-    w = mount_wall;
-    if (ms_cw + 2 * w > 2 * x_in) echo("WARNING: the switch mount is wider than the rack opening");
+    if (ms_cw + 2 * mount_wall > 2 * x_in) echo("WARNING: the switch mount is wider than the rack opening");
     difference() {
-        union() {
-            plate(panel_w, h, panel_t, 0.6);
-            translate([-ms_cw / 2 - w, -eps, ms_z0 - w]) cube([ms_cw + 2 * w, ms_td, ms_ch + 2 * w]);
-        }
+        union() { plate(panel_w, U - 0.79, panel_t, 0.6); tunnel_add(0, ms_cw, ms_ch, ms_td); }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
-        // front window: a lip smaller than the switch all round
-        translate([-ms_cw / 2 + mount_lip, -panel_t - 1, ms_z0 + mount_lip])
-            cube([ms_cw - 2 * mount_lip, panel_t + 2, ms_ch - 2 * mount_lip]);
-        translate([-ms_cw / 2, 0, ms_z0]) cube([ms_cw, ms_td + 1, ms_ch]);   // tunnel, open at the back
-        // vent slots in roof and floor, along the depth (no bridges when printed front-down)
-        for (zz = [ms_z0 - w - 1, ms_z0 + ms_ch - 1]) for (i = [-3 : 3])
-            translate([i * 14 - 3, 10, zz]) cube([6, ms_td - 20, w + 2]);
-        // zip-tie slots just behind the switch: the tie runs behind it from wall to wall
-        for (s = [-1, 1]) translate([s * (ms_cw / 2 + w / 2) - (w + 2) / 2, ms_d + mount_clear + 0.4, ms_z0 + ms_ch / 2 - 2.2])
-            cube([w + 2, 3.2, 4.4]);
+        tunnel_cut(0, ms_cw, ms_ch, ms_td, ms_d);
     }
 }
+
+// two small KVM-over-IP boxes side by side (JetKVM + NanoKVM by default), screens visible in front
+function kvm_c(k) = [k[0] + mount_clear, k[1] + mount_clear, k[2] + mount_clear + 6];
+kvm_gap = 12;
+kvm_xa = -(kvm_gap / 2 + mount_wall + kvm_c(kvm_a)[0] / 2);
+kvm_xb = kvm_gap / 2 + mount_wall + kvm_c(kvm_b)[0] / 2;
+
+module kvm2_mount() {
+    A = kvm_c(kvm_a);
+    B = kvm_c(kvm_b);
+    if (max(A[1], B[1]) + 2 * mount_wall > U - 0.79) echo("WARNING: a KVM box is too tall for 1U");
+    difference() {
+        union() {
+            plate(panel_w, U - 0.79, panel_t, 0.6);
+            tunnel_add(kvm_xa, A[0], A[1], A[2]);
+            tunnel_add(kvm_xb, B[0], B[1], B[2]);
+        }
+        panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        tunnel_cut(kvm_xa, A[0], A[1], A[2], kvm_a[2]);
+        tunnel_cut(kvm_xb, B[0], B[1], B[2], kvm_b[2]);
+    }
+}
+
+// any box W x H x D in a 1U tunnel (UniFi Flex Mini, UniFi Express...)
+function dev_c(d) = [d[0] + mount_clear, d[1] + mount_clear, d[2] + mount_clear + 6];
+module dev_mount(dims) {
+    c = dev_c(dims);
+    if (c[0] + 2 * mount_wall > 2 * x_in) echo("WARNING: the device mount is wider than the rack opening");
+    if (c[1] + 2 * mount_wall > U - 0.79) echo("WARNING: the device is too tall for 1U");
+    difference() {
+        union() { plate(panel_w, U - 0.79, panel_t, 0.6); tunnel_add(0, c[0], c[1], c[2]); }
+        panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        tunnel_cut(0, c[0], c[1], c[2], dims[2]);
+    }
+}
+
+// ---------------------------------------------------------------------
+//  Rear PCI-slot bracket that replaces a slot cover. Print orientation:
+//  plate flat on the bed (X width, Y length), top tab rising +Z.
+//  lan   = keyhole: pass the RJ45 plugs through the round end, then slide the cables down the slot
+//  power = round hole for the power cable + two zip-tie slots for strain relief
+// ---------------------------------------------------------------------
+PCI_W = 18.42;
+PCI_L = 112;
+module pci_bracket(kind = pci_kind) {
+    t = pci_t;
+    difference() {
+        union() {
+            translate([-PCI_W / 2, 0, 0]) cube([PCI_W, PCI_L, t]);
+            translate([-5.1, -8, 0]) cube([10.2, 8 + eps, t]);                       // bottom tongue
+            translate([-PCI_W / 2, PCI_L - t, 0]) cube([PCI_W, t, 11.4]);           // top tab
+            translate([-PCI_W / 2, PCI_L - t - 3, t - eps]) multmatrix(YZ_X())      // fillet under the tab
+                linear_extrude(PCI_W) polygon([[0, 0], [3, 0], [3, 3]]);
+        }
+        translate([-2.2, PCI_L - t - 1, 4.5]) cube([4.4, t + 2, 10]);                // screw notch in the tab
+        if (kind == "lan") {
+            translate([0, 92, -1]) cylinder(d = 13, h = t + 2, $fn = 48);
+            hull() for (y = [24, 88]) translate([0, y, -1]) cylinder(d = 7, h = t + 2, $fn = 32);
+        } else {
+            translate([0, 80, -1]) cylinder(d = 9, h = t + 2, $fn = 40);
+            for (x = [-4.6, 4.6]) translate([x - 0.9, 54, -1]) cube([1.8, 4.6, t + 2]);
+        }
+    }
+}
+function YZ_X() = [[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]];
 
 // 1U shelf for small devices (NanoKVM, Raspberry Pi, a small router...)
 shelf_w = 2 * x_in - 8;

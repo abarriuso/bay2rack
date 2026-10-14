@@ -78,6 +78,11 @@ const OPTION_HELP = {
   'mod:shelf': { en: 'A shelf with zip-tie slots for small devices: NanoKVM, Raspberry Pi, a mini router…', es: 'Una bandeja con ranuras para bridas para dispositivos pequeños: NanoKVM, Raspberry Pi, un mini router…' },
   'mod:patch': { en: '1U patch panel with the ports you choose below.', es: 'Patch panel de 1U con los puertos que elijas abajo.' },
   'mod:buttons': { en: '1U button panel: keyboard-switch power / reset and LEDs.', es: 'Botonera de 1U: encendido / reset con interruptores de teclado y LEDs.' },
+  'mod:kvm2': { en: 'Two KVM-over-IP boxes side by side: JetKVM (43 x 31 x 60 mm, touch screen in front) and Sipeed NanoKVM (40 x 36 x 36 mm). Sizes are editable.', es: 'Dos KVM por IP lado a lado: JetKVM (43 x 31 x 60 mm, pantalla táctil delante) y Sipeed NanoKVM (40 x 36 x 36 mm). Las medidas se pueden cambiar.' },
+  'mod:uswflex': { en: 'UniFi USW-Flex-Mini (107.2 x 21.2 x 70.2 mm): the ports face the front.', es: 'UniFi USW-Flex-Mini (107,2 x 21,2 x 70,2 mm): los puertos quedan delante.' },
+  'mod:ux': { en: 'UniFi Express (98 x 30 x 98 mm) gateway / access point, its display in the window.', es: 'UniFi Express (98 x 30 x 98 mm), gateway / punto de acceso, con su pantalla en la ventana.' },
+  'mod:dev1': { en: 'A tray made to measure for any device: set its width, height and depth.', es: 'Una bandeja a medida para cualquier dispositivo: pon su ancho, alto y fondo.' },
+  'mod:dev2': { en: 'A second made-to-measure tray.', es: 'Una segunda bandeja a medida.' },
   'port:rj45m': { en: 'Metal / shielded RJ45 keystone (goes in from the back of the holder cell).', es: 'Keystone RJ45 metálico / apantallado (entra por detrás de la celda).' },
   'port:rj45': { en: 'Plastic RJ45 keystone.', es: 'Keystone RJ45 de plástico.' },
   'port:hdmi': { en: 'HDMI keystone coupler.', es: 'Acoplador keystone HDMI.' },
@@ -236,11 +241,20 @@ const BOM_ES = [
   [/Cherry MX compatible keyboard switch \+ 1u keycap/g, 'interruptor de teclado compatible Cherry MX + tecla 1u'],
   [/\(power, reset\)/g, '(encendido, reset)'], [/\(power\)/g, '(encendido)'],
   [/dome LED \(power, disk activity\) \+ front-panel header wires/g, 'LED (encendido, actividad de disco) + cables al panel frontal de la placa'],
+  [/^rear slots:/, 'Ranuras traseras:'], [/^fan:/, 'Ventilador:'], [/^fans:/, 'Ventiladores:'],
+  [/printed PCI-slot bracket/g, 'chapa de ranura PCI impresa'], [/\(network cables, power cable\)/g, '(cables de red, cable de corriente)'],
+  [/\(network cables\)/g, '(cables de red)'], [/\(power cable\)/g, '(cable de corriente)'],
+  [/\+ the case's slot screws/g, '+ los tornillos de las ranuras de la caja'],
+  [/80 mm fan \(80 x 80 x 25\) \+ 4 x fan screws/g, 'ventilador de 80 mm (80 x 80 x 25) + 4 tornillos de ventilador'],
+  [/40 mm fan \(40 x 40 x 10\) \+ 4 x M3 x 12 screws/g, 'ventilador de 40 mm (40 x 40 x 10) + 4 tornillos M3 x 12'],
 ];
 
 const WARN_ES = [
   [/^preview case (.+) - approx\. (.+) mm, (\d+) x 5\.25in bays$/, 'Caja de la vista: $1 (aprox. $2 mm, $3 bahías de 5,25")'],
   [/^rack panels overlap the case front by (.+)mm above and below the bezel$/, 'Los paneles montan $1 mm sobre el frontal por encima y por debajo del bisel'],
+  [/^part is taller than 250 mm - check your print bed$/, 'La pieza mide más de 250 mm de alto: comprueba que cabe en tu cama'],
+  [/^units do not fit in the frame - lower units_override or use overhang$/, 'Las U no caben en el marco: baja units_override o usa «Sobresale»'],
+  [/^bay screw holes are deeper than the sleeve - raise sleeve_depth$/, 'Los agujeros de la bahía quedan más hondos que la funda: sube sleeve_depth'],
   [/^the adapter needs (\d+) bays but the (.+) has (\d+)$/, 'El adaptador necesita $1 bahías y la $2 solo tiene $3'],
 ];
 

@@ -18,6 +18,7 @@ module fill_cut(type, w, h, t) {
     else if (type == "led")   led_cut(w, h, t);
     else if (type == "label") label_cut(w, h, t);
     else if (type == "buttons") buttons_cut(w, h, t);
+    else if (type == "fan80") fan80_cut(w, h, t);
 }
 
 // ---------------------------------------------------------------------
@@ -195,5 +196,21 @@ module buttons_cut(w, h, t) {
             // wider bore for the LED flange from the stop to the back of the tube
             slot_y(led_flange + 0.3, 0, -t + max(stop, 0.4), 12);
         }
+    }
+}
+
+// ---------------------------------------------------------------------
+//  80 mm fan: hex-hole grille + the four fan screw holes (71.5 mm apart).
+//  The fan sits behind the plate; needs a zone at least 82 mm tall (2 bays).
+// ---------------------------------------------------------------------
+module fan80_cut(w, h, t) {
+    if (h < 82 || w < 82) echo(str("WARNING: an 80 mm fan needs an 82 x 82 mm zone, this one is ", w, " x ", h, " mm - use 2 bays"));
+    else translate([0, 0, h / 2]) {
+        xz_extrude(-t - eps, t + 2 * eps) intersection() {
+            circle(d = 76, $fn = 96);
+            union() for (r = [-6 : 6], c = [-6 : 6])
+                translate([c * 7 + (abs(r) % 2) * 3.5, r * 6.06]) circle(d = 5.6, $fn = 6);
+        }
+        for (sx = [-1, 1], sz = [-1, 1]) translate([sx * 35.75, 0, sz * 35.75]) slot_y(4.4, 0, -t - eps, t + 2 * eps);
     }
 }

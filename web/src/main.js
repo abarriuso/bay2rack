@@ -1,7 +1,7 @@
 import './style.css';
 import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
 import { Viewer } from './viewer.js';
-import { parseCustomizer, scadLiteral, fromPreset } from './customizer.js';
+import { parseCustomizer, scadLiteral, fromPreset, same } from './customizer.js';
 import { t, lang, setLang, applyI18n } from './i18n.js';
 import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from './help.js';
 import { initTooltips } from './tooltip.js';
@@ -10,12 +10,36 @@ import { ICONS } from './icons.js';
 const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
-const FILLS = ['keystone', 'buttons', 'vent', 'cable', 'led', 'label', 'blank'];
-const MODULES = ['ms105g', 'shelf', 'patch', 'buttons', 'vent', 'blank', 'cable', 'led', 'label'];
+const FILLS = ['keystone', 'buttons', 'fan80', 'vent', 'cable', 'led', 'label', 'blank'];
+const MODULES = ['ms105g', 'kvm2', 'uswflex', 'ux', 'dev1', 'dev2', 'shelf', 'patch', 'buttons', 'vent', 'blank', 'cable', 'led', 'label'];
+// device modules -> the parameters holding their size (W, H, D)
+const DEVICE_DIMS = {
+  ms105g: ['ms_w', 'ms_h', 'ms_d'], uswflex: ['usw_dims'], ux: ['ux_dims'], kvm2: ['kvm_a', 'kvm_b'],
+  dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'],
+};
+// ready-made examples (applied on top of the defaults)
+const EXAMPLES = {
+  homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm2',
+             spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
+  unifi: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ux',
+           spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass', scene: 'homelab' },
+  bezel: { bays: 3, fit: 'flush', front_style: 'bezel', filler_mode: 'integral', rack_modules: 'ms105g,kvm2',
+           spare_fill: 'keystone', scene: 'homelab' },
+  small: { bays: 2, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex',
+           spare_fill: 'buttons', scene: 'single' },
+};
 const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'cover', 'pass', 'none'];
 const SCREWS = ['M3', 'M4', 'M5', 'M6', '10-32', '12-24'];
 const FIXINGS = ['heatset', 'tap', 'nut_trap', 'square_nut', 'channel'];
 const TESTS = ['test_bay', 'test_rack', 'test_keystone'];
+// filament colours: [adapter, fillers, modules] - slightly different so the parts read apart
+const FILAMENTS = {
+  black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
+  blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
+};
+const UI_DEFAULT = { filament: 'black', cables: true, side: true };
+const UI = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
+const saveUI = () => { try { localStorage.setItem('ui', JSON.stringify(UI)); } catch { /* private mode */ } };
 
 const $ = (s) => document.querySelector(s);
 const h = (tag, { dataset, ...props } = {}, ...kids) => {
@@ -40,7 +64,7 @@ function calc(v) {
   const stack = (v.bays - 1) * pitch + bayH - v.height_clearance;
   const base = bezel ? (v.bays - 1) * pitch + v.bezel_h1 - v.bezel_clearance : stack;
   const flushUnits = Math.floor((base + 0.001) / U);
-  const units = v.units_override > 0 ? v.units_override : v.fit === 'overhang' ? v.bays : flushUnits;
+  const units = v.fit === 'panel' ? 0 : v.units_override > 0 ? v.units_override : v.fit === 'overhang' ? v.bays : flushUnits;
   const frameH = !bezel && v.fit === 'overhang' ? Math.max(units * U, base) : base;
   const spare = frameH - units * U;
   const hasSpare = spare >= v.min_spare;
@@ -54,6 +78,7 @@ const usedMods = (v, units) => { const m = splitList(v.rack_modules); return Arr
 
 // ---------------------------------------------------------------- engine
 const viewer = new Viewer($('#view'));
+if (import.meta.env.DEV) window.__b2r = { viewer, S };
 const worker = new Worker(new URL('./openscad-worker.js', import.meta.url), { type: 'module' });
 const jobs = new Map();
 let nextJob = 1;
@@ -77,7 +102,7 @@ const runJob = (defines, out) => new Promise((resolve) => {
   worker.postMessage({ type: 'run', id, defines, out });
 });
 const definesFor = (v) => Object.entries(v)
-  .filter(([k, x]) => S.params[k] && (x !== S.defaults[k] || k === 'part'))
+  .filter(([k, x]) => S.params[k] && (!same(x, S.defaults[k]) || k === 'part'))
   .map(([k, x]) => `${k}=${scadLiteral(S.params[k], x)}`);
 
 function setStatus(text, kind = '') {
@@ -155,6 +180,7 @@ function renderSteps() {
   const mods = usedMods(v, c.units);
   const panel = v.part === 'rack_panel';
 
+  if (v.part === 'assembly') add('example', examplesEditor());
   if (v.part.startsWith('test_')) add('test', segmented('part', TESTS, (x) => t(x)));
   if (panel) {
     add('panel', segmented('panel_u', [1, 2, 3, 4], (x) => `${x}U`), chips('panel_fill', FILLS, (x) => t('fill_' + x)));
@@ -167,8 +193,11 @@ function renderSteps() {
     add('fit', cards('fit', [
       { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: `${c.flushUnits}U + ${num(c.flushSpare)} mm ${t('free')}` },
       { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
+      { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
     ]));
     if (c.units > 0) add('contents', contentsEditor(mods));
+    const devs = [...new Set(mods)].filter((m) => DEVICE_DIMS[m]);
+    if (devs.length) add('devices', devicesEditor(devs));
     if (c.hasSpare) add('fill', chips('spare_fill', FILLS, (x) => t('fill_' + x)));
   }
   const fills = panel ? [v.panel_fill] : c.zones;
@@ -187,6 +216,48 @@ function contentsEditor(mods) {
   return h('div', { className: 'rows' }, mods.map((m, k) => h('label', { className: 'row', dataset: { tip: tipOf('mod:' + m) } },
     h('span', { className: 'u', textContent: k === 0 ? `U${k + 1} · ${t('top')}` : `U${k + 1}` }),
     select(null, MODULES.map((x) => [x, t('mod_' + x)]), m, (val) => set(k, val)))));
+}
+
+function examplesEditor() {
+  const v = S.values;
+  const active = Object.entries(EXAMPLES).find(([, ex]) => Object.entries(ex).every(([k, x]) => v[k] === x))?.[0];
+  return h('div', { className: 'chips' }, Object.keys(EXAMPLES).map((k) => h('button', {
+    type: 'button', className: `chip${active === k ? ' active' : ''}`, dataset: { tip: t('ex_' + k + '_tip') },
+    onclick: () => update({ ...EXAMPLES[k] }),
+  }, t('ex_' + k))));
+}
+
+// W x H x D of every device module in the rack, editable
+function devicesEditor(devs) {
+  const v = S.values;
+  const field = (val, set, label) => h('label', { className: 'dim' }, h('small', { textContent: label }),
+    h('input', { type: 'number', step: 'any', min: 1, className: 'num', value: val, onchange: (e) => set(Number(e.target.value)) }));
+  const rows = [];
+  for (const m of devs) {
+    for (const name of DEVICE_DIMS[m]) {
+      const p = S.params[name];
+      if (!p) continue;
+      const title = m === 'kvm2' ? t(name === 'kvm_a' ? 'dev_jetkvm' : 'dev_nanokvm') : t('mod_' + m);
+      let inputs;
+      if (m === 'ms105g') {
+        inputs = ['ms_w', 'ms_h', 'ms_d'].map((k, i) => field(v[k], (x) => update({ [k]: x }), t('dim_' + i)));
+      } else if (p.type === 'vector') {
+        inputs = v[name].map((x, i) => field(x, (nx) => { const a = [...v[name]]; a[i] = nx; update({ [name]: a }); }, t('dim_' + i)));
+      } else {
+        inputs = [field(v[name], (x) => update({ [name]: x }), t('dim_2'))];
+      }
+      const changed = m === 'ms105g' ? ['ms_w', 'ms_h', 'ms_d'].some((k) => v[k] !== S.defaults[k])
+        : JSON.stringify(v[name]) !== JSON.stringify(S.defaults[name]);
+      rows.push(h('div', { className: 'dev-row', dataset: { tip: tipOf('mod:' + m) } },
+        h('div', { className: 'dev-title' }, h('b', { textContent: title }),
+          changed ? h('button', { type: 'button', className: 'link', textContent: t('resetDims'),
+            onclick: () => update(m === 'ms105g' ? { ms_w: S.defaults.ms_w, ms_h: S.defaults.ms_h, ms_d: S.defaults.ms_d }
+              : { [name]: S.defaults[name] }) }) : null),
+        h('div', { className: 'dims' }, inputs)));
+      if (m === 'ms105g') break;
+    }
+  }
+  return [h('div', { className: 'devs' }, rows), h('small', { className: 'hint', textContent: t('devHint') })];
 }
 
 function portsEditor(max) {
@@ -230,7 +301,16 @@ function previewEditor() {
     segmented('scene', ['homelab', 'single'], (x) => t('scene_' + x), stepHelp('scene')),
     select(null, caseOpts, v.case_view === 'none' ? 'none' : v.case_model,
       (val) => update(val === 'none' ? { case_view: 'none' } : { case_view: 'tower', case_model: val })),
+    h('div', { className: 'swatches', dataset: { tip: t('filamentTip') } },
+      h('span', { className: 'label', textContent: t('filament') }),
+      Object.entries(FILAMENTS).map(([name, hex]) => h('button', {
+        type: 'button', className: `swatch${UI.filament === name ? ' active' : ''}`, title: t('fil_' + name),
+        style: `--c:#${hex[0].toString(16).padStart(6, '0')}`,
+        onclick: () => { UI.filament = name; saveUI(); viewer.setFilament(FILAMENTS[name]); renderSteps(); },
+      }))),
     h('div', { className: 'toggles' },
+      toggle(t('cables'), UI.cables, (on) => { UI.cables = on; saveUI(); viewer.setVisible('cables', on); }),
+      toggle(t('sidePanel'), UI.side, (on) => { UI.side = on; saveUI(); viewer.setVisible('side', on); }),
       toggle(t('devices'), v.demo_devices === 'homelab', (on) => update({ demo_devices: on ? 'homelab' : 'generic' })),
       toggle(t('hardware'), v.show_hardware, (on) => update({ show_hardware: on })),
       toggle(t('explode'), v.explode > 0, (on) => update({ explode: on ? 25 : 0 }))),
@@ -283,6 +363,11 @@ function control(p) {
     box.onchange = () => set(Number(box.value));
     input = h('span', { className: 'slider' }, range, box);
     input.setValue = (x) => { range.value = x; box.value = x; };
+  } else if (p.widget === 'vector') {
+    const boxes = p.value.map((_, i) => h('input', { type: 'number', step: 'any', className: 'num',
+      onchange: () => set(boxes.map((b) => Number(b.value))) }));
+    input = h('span', { className: 'vec' }, boxes);
+    input.setValue = (x) => boxes.forEach((b, i) => { b.value = x[i]; });
   } else if (p.widget === 'number') {
     input = h('input', { type: 'number', step: 'any', className: 'num' });
     input.onchange = () => set(Number(input.value));
@@ -304,7 +389,7 @@ function buildAdvanced() {
 function syncAdvanced() {
   for (const p of Object.values(S.params)) {
     p.input?.setValue(S.values[p.name]);
-    p.input?.closest('.param')?.classList.toggle('modified', S.values[p.name] !== S.defaults[p.name]);
+    p.input?.closest('.param')?.classList.toggle('modified', !same(S.values[p.name], S.defaults[p.name]));
   }
 }
 
@@ -317,7 +402,7 @@ function matchingVariant() {
     if (x.params.part && x.params.part !== v.part) return false;
     if (x.params.module_type && x.params.module_type !== v.module_type) return false;
     if (x.params.cover_type && x.params.cover_type !== v.cover_type) return false;
-    return Object.keys(want).every((k) => VIEW_ONLY.has(k) || want[k] === v[k]);
+    return Object.keys(want).every((k) => VIEW_ONLY.has(k) || same(want[k], v[k]));
   });
 }
 function showPrebuilt() {
@@ -333,7 +418,7 @@ function showPrebuilt() {
 // ---------------------------------------------------------------- URL hash (shareable settings)
 function writeHash() {
   const q = new URLSearchParams();
-  for (const [k, x] of Object.entries(S.values)) if (x !== S.defaults[k]) q.set(k, String(x));
+  for (const [k, x] of Object.entries(S.values)) if (!same(x, S.defaults[k])) q.set(k, Array.isArray(x) ? x.join(',') : String(x));
   history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ','));
 }
 function readHash() {
@@ -354,9 +439,16 @@ async function render() {
   const values = { ...S.values };
   const ext = values.part === 'assembly' ? '3mf' : 'stl';
   setStatus(t('rendering'), 'busy');
-  const res = await runJob(definesFor(values), 'out.' + ext);
+  const defs = definesFor(values);
+  if (ext === '3mf') defs.push('web_scene=true');
+  const res = await runJob(defs, 'out.' + ext);
   S.busy = false;
-  showResult(res, ext, values);
+  try {
+    showResult(res, ext, values);
+  } catch (e) {
+    console.error(e);
+    setStatus(t('failed'), 'error');
+  }
   if (S.dirty || S.wantRender) render();
 }
 
@@ -370,7 +462,17 @@ function showResult(res, ext, values) {
   const homelab = values.part === 'assembly' && values.case_view === 'tower' && values.scene === 'homelab';
   const top = values.bays * 43.18 + 25;
   const focus = values.part === 'assembly' && !homelab ? { min: [-95, -40, -25], max: [95, 40, top] } : null;
-  viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus });
+  const scene = { cables: [] };
+  for (const l of res.logs) {
+    const m = l.match(/^ECHO: "SCENE (.*)"$/);
+    if (!m) continue;
+    try {
+      const d = JSON.parse(m[1]);
+      if (d.cable) scene.cables.push(d.cable); else Object.assign(scene, d);
+    } catch { /* ignore a malformed line */ }
+  }
+  viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
+  $('#caseName').textContent = ext === '3mf' && scene.case ? scene.case.name : '';
   S.lastKey = key;
   if (S.result) URL.revokeObjectURL(S.result.url);
   S.result = { url: URL.createObjectURL(new Blob([res.data])), name: `bay2rack-${values.part}.${ext}` };
@@ -380,7 +482,7 @@ function showResult(res, ext, values) {
 
 function showEchoes(echoes, errors) {
   const bom = echoes.filter((e) => e.startsWith('BOM | ')).map((e) => e.slice(6));
-  const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e)), ...errors];
+  const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e) && !/^NOTE: preview case/.test(e)), ...errors];
   $('#bom').replaceChildren(...(bom.length ? bom : [t('nothing')]).map((b) => {
     const [what, ...rest] = bomText(b).split(': ');
     return h('li', {}, rest.length ? [h('b', { textContent: what }), ' ' + rest.join(': ')] : what);
@@ -437,7 +539,7 @@ async function downloadKit() {
     ];
     zip['bay2rack/README.txt'] = strToU8(lines.join('\n'));
     zip['bay2rack/settings.json'] = strToU8(JSON.stringify(Object.fromEntries(
-      Object.entries(v).filter(([k, x]) => x !== S.defaults[k])), null, 2));
+      Object.entries(v).filter(([k, x]) => !same(x, S.defaults[k]))), null, 2));
     const blob = new Blob([zipSync(zip, { level: 6 })], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
     h('a', { href: url, download: `bay2rack-kit-${v.bays}bay.zip` }).click();
@@ -453,6 +555,7 @@ async function downloadKit() {
 // ---------------------------------------------------------------- chrome
 function applyTheme(th) {
   document.documentElement.dataset.theme = th;
+  viewer.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
   try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }
@@ -504,6 +607,9 @@ async function boot() {
   S.catalog = catalog;
   S.values = { ...S.defaults };
   readHash();
+  viewer.setFilament(FILAMENTS[UI.filament] ?? FILAMENTS.black);
+  viewer.show.cables = UI.cables;
+  viewer.show.side = UI.side;
   wire();
   buildAdvanced();
   refresh();
