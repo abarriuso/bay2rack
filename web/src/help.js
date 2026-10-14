@@ -53,8 +53,8 @@ const STEP_HELP = {
     es: 'Encendido y reset con interruptores de teclado normales (compatibles Cherry MX, cualquier tecla 1u) y LEDs de encendido y de disco, conectados al cabezal del panel frontal de la placa.\nAnillo: el LED asoma por un avellanado con aro. Halo: un aro de luz alrededor de cada tecla. Brillo oculto: la luz atraviesa una piel de 0,6 mm y se ilumina el icono grabado (imprímelo en un color claro).',
   },
   scene: {
-    en: 'Homelab: this PC as the router, two old client PCs and an access point next to it. Cable colours are VLANs: the cables leave the case through printed brackets in two PCI slots and run to the patch panel.',
-    es: 'Homelab: este PC como router, con dos PCs cliente antiguos y un punto de acceso al lado. Los colores de los cables son VLANs: salen de la caja por chapas impresas en dos ranuras PCI y llegan al patch panel.',
+    en: 'Homelab: this PC as the router (with a 4-port network card), a Proxmox node, a TrueNAS box and an access point next to it. Cable colours are VLANs: the cables leave the case through printed brackets in two PCI slots and run to the patch panel.',
+    es: 'Homelab: este PC como router (con una tarjeta de red de 4 puertos), y al lado un nodo Proxmox, un NAS con TrueNAS y un punto de acceso. Los colores de los cables son VLANs: salen de la caja por chapas impresas en dos ranuras PCI y llegan al patch panel.',
   },
   fans: {
     en: '40 mm fans (40 x 40 x 10 or x 20) behind round openings, screwed with M3. Three fit side by side between the rack posts. Wire them to a fan header (5 or 12 V).',

@@ -1,3 +1,5 @@
+import '@fontsource-variable/archivo/wdth.css';
+import '@fontsource-variable/martian-mono/standard.css';
 import './style.css';
 import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
 import { Viewer } from './viewer.js';
@@ -668,7 +670,7 @@ function startShowcase() {
   if (hero || !S.params.bays || new URLSearchParams(location.search).has('nohero')) return;
   const values = { ...S.defaults, ...EXAMPLES[SHOWCASE] };
   hero = startHero({
-    el: $('#hero'), caption: $('#heroCaption'), replay: $('#heroReplay'), legend: $('#heroLegend'),
+    el: $('#hero'), caption: $('#heroCaption'), step: $('#heroStep'), replay: $('#heroReplay'), legend: $('#heroLegend'),
     onReady: () => $('#heroStage').classList.add('live'),
     runJob, definesFor, values, mods: usedMods(values, calc(values).units),
     filament: FILAMENTS[UI.filament] ?? FILAMENTS.black,
@@ -677,15 +679,62 @@ function startShowcase() {
   if (import.meta.env.DEV) window.__b2r.hero = hero;
 }
 
+// dev only: save a build as GLB for the Blender video (docs/blender/)
+if (import.meta.env.DEV) {
+  window.__b2r.exportBuild = async (name, patch) => {
+    const { exportBuild } = await import('./export-glb.js');
+    const values = { ...S.defaults, ...patch };
+    return exportBuild({ name, values, mods: usedMods(values, calc(values).units), runJob, definesFor,
+      filament: FILAMENTS[UI.filament] ?? FILAMENTS.black });
+  };
+}
+
+// one line of facts for a build: bays, rack units and what fills the strip
+function buildSpec(k) {
+  const v = { ...S.defaults, ...EXAMPLES[k] };
+  const c = calc(v);
+  const mods = usedMods(v, c.units).filter((m) => m !== 'blank');
+  return [
+    t('spec_bays', { n: v.bays }),
+    c.units > 0 ? t('spec_units', { n: c.units }) : t('opt_panel'),
+    ...c.zones.map((z) => t('fill_' + z)),
+    t('spec_mods', { n: mods.length }),
+  ].join(' · ');
+}
+
 function renderGallery() {
-  $('#galleryGrid').replaceChildren(...GALLERY.map((k) => h('figure', { className: 'shot' },
-    h('img', { src: `${BASE}img/gallery/${k}.webp`, alt: t('ex_' + k), loading: 'lazy', width: 800, height: 600,
-      onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
-    h('figcaption', {},
-      h('h4', { textContent: t('ex_' + k) }),
-      h('p', { textContent: t('ex_' + k + '_tip') }),
-      h('button', { type: 'button', className: 'pill', textContent: t('gallery_load'),
-        onclick: () => { applyExample(k); $('#build').scrollIntoView(); } })))));
+  $('#galleryGrid').replaceChildren(...GALLERY.map((k, i) => {
+    const v = { ...S.defaults, ...EXAMPLES[k] };
+    const units = calc(v).units;
+    return h('figure', { className: `shot${i === 0 ? ' feature' : ''}` },
+      h('span', { className: 'shot-img' },
+        h('img', { src: `${BASE}img/gallery/${k}.webp`, alt: t('ex_' + k), loading: 'lazy', decoding: 'async', width: 1200, height: 900,
+          onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
+        h('span', { className: 'tape', textContent: units > 0 ? `${units}U` : t('opt_panel') })),
+      h('figcaption', {},
+        h('span', { className: 'spec', textContent: buildSpec(k) }),
+        h('h4', { textContent: t('ex_' + k) }),
+        h('p', { textContent: t('ex_' + k + '_tip') }),
+        h('button', { type: 'button', className: 'load', onclick: () => { applyExample(k); $('#build').scrollIntoView(); } },
+          t('gallery_load'), h('span', { 'aria-hidden': 'true', textContent: '→' }))));
+  }));
+}
+
+// bays -> rack units, computed with the same rules as the configurator (and config.scad)
+function renderBayTable() {
+  const rows = [1, 2, 3, 4, 5, 6].map((n) => {
+    const c = calc({ ...S.defaults, bays: n });
+    const bar = h('span', { className: 'u-bar', 'aria-hidden': 'true' },
+      Array.from({ length: c.flushUnits }, () => h('i')), c.flushSpare >= S.defaults.min_spare ? h('i', { className: 'spare' }) : null);
+    return h('tr', { className: n === 3 ? 'hl' : '' },
+      h('td', { textContent: String(n) }),
+      h('td', { textContent: `${num((n - 1) * 43.18 + 41.53)} mm` }),
+      h('td', {}, bar, `${c.flushUnits}U + ${num(c.flushSpare)} mm`),
+      h('td', { textContent: `${n}U · +${num(c.over)} mm` }));
+  });
+  $('#bayTable').replaceChildren(
+    h('thead', {}, h('tr', {}, ['th_bays', 'th_height', 'th_inside', 'th_out'].map((k) => h('th', { scope: 'col', textContent: t(k) })))),
+    h('tbody', {}, rows));
 }
 
 // ---------------------------------------------------------------- chrome
@@ -701,6 +750,8 @@ function wire() {
   initTooltips($('#tip'));
   $('#logo').replaceChildren(svgEl(ICONS.logo));
   for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
   let th = 'light';
   try { th = localStorage.getItem('theme') || 'light'; } catch { /* private mode */ }
   applyTheme(th);
@@ -711,6 +762,7 @@ function wire() {
     buildAdvanced();
     refresh();
     renderGallery();
+    renderBayTable();
     if (S.result) render();
   };
   const adv = $('#advanced');
@@ -753,6 +805,7 @@ async function boot() {
   buildAdvanced();
   refresh();
   renderGallery();
+  renderBayTable();
   if (S.engine === 'ready') startShowcase();
   S.wantRender = true;
   if (S.engine === 'ready') render();

@@ -173,6 +173,22 @@ function interior(g, c, xWall) {
   }
 }
 
+// 4-port server network card: bracket with the RJ45 ports and link LEDs at the rear, the board
+// inside the case (low profile, parallel to the floor in a tower) with its heatsink
+function networkCard(g, ports, x0, len, zc, d) {
+  g.add(box(x0, d - 0.6, zc - 9, len, 1.2, 18, tiled(MAT.brushed(0xc9ced4), 20)));
+  for (const [x, , z] of ports) {
+    g.add(box(x - 8, d - 0.2, z - 6.8, 16, 1.6, 13.6, MAT.plastic(0x0b0b0c, 0.7)));
+    g.add(box(x - 4.5, d + 1.3, z + 3, 9, 0.3, 1.2, MAT.gold()));
+    g.add(box(x - 7, d + 1.4, z - 6.4, 2.4, 0.3, 1.6, MAT.led(0x3ddc84, 2.4)));
+    g.add(box(x + 4.6, d + 1.4, z - 6.4, 2.4, 0.3, 1.6, MAT.led(0xf5d142, 2.2)));
+  }
+  const xr = x0 + len;
+  g.add(box(xr - 70, d - 168, zc - 6, 66, 166, 1.6, tiled(MAT.pcb(), 60)));
+  g.add(finStack(xr - 52, d - 120, zc - 4.4, 30, 30, 9));
+  g.add(box(xr - 6, d - 168, zc - 10, 6, 90, 4, MAT.gold()));          // edge connector into the x8 slot
+}
+
 export function buildCase(c) {
   const st = CASE_STYLES[c.id] ?? CASE_STYLES.obsidian750d;
   const g = new THREE.Group();
@@ -180,6 +196,7 @@ export function buildCase(c) {
   const [bayW, bayH, pitch, bezelW, bezelH1, cageT] = c.bay;
   const t = 1.4;
   const body = tiled(st.metal ? MAT.brushed(st.body) : MAT.powder(st.body), 50);
+  body.name = 'case_body';
 
   // chassis
   const winRect = st.window ? [70, z0 + 40, d - 110, h - 80] : null;
@@ -204,11 +221,14 @@ export function buildCase(c) {
   }
   // rear: I/O shield, PCI slots, rear fan, PSU grille
   g.add(box(w / 2 - 60, d - 0.5, z1 - 210, 44, 1, 160, MAT.plastic(0x2a2c30, 0.5)));
-  const [pz0, pl] = c.pci ?? [z1 - 380, 112];
+  // expansion slots: horizontal, stacked under the I/O shield (an ATX tower)
+  const [px0, pztop, ppitch, pl] = c.pci?.length === 4 ? c.pci : [w / 2 - 18 - 112, z1 - 236, 20.32, 112];
+  const slotZ = (i) => pztop - i * ppitch;
   for (let i = 0; i < 7; i++) {
-    if ((c.rearSlots ?? []).includes(i)) continue;      // printed cable / power brackets (from OpenSCAD) go there
-    g.add(box(-w / 2 + 40 + i * 20.32, d - 0.4, pz0, 16.4, 1, pl, tiled(MAT.brushed(0x8d9298), 20)));
+    if ((c.rearSlots ?? []).includes(i) || i === c.nic) continue;   // printed brackets (OpenSCAD) and the network card
+    g.add(box(px0, d - 0.4, slotZ(i) - 8.2, pl, 1, 16.4, tiled(MAT.brushed(0x8d9298), 20)));
   }
+  if (c.nic >= 0) networkCard(g, c.nicPorts ?? [], px0, pl, slotZ(c.nic), d);
   g.add(plane(-10, d + 0.6, z1 - 120, 120, 120, MAT.grille(0x0a0a0b), 'y'));
   g.add(plane(-w / 2 + 83, d + 0.6, z0 + 49, 80, 80, MAT.grille(0x0a0a0b), 'y'));
   // feet
@@ -377,18 +397,23 @@ export function buildCable(cb) {
 // everything at once, from the parsed SCENE lines
 export function buildScene(data) {
   const g = new THREE.Group();
-  const safe = (what, f) => { try { const o = f(); if (o) g.add(o); } catch (e) { console.warn(`scene: ${what} skipped`, e); } };
+  g.name = 'scene';
+  // every object gets a name (the Blender video pipeline animates them by name)
+  const safe = (what, f) => {
+    try { const o = f(); if (o) { o.name = what.replace(/\s+/g, '_'); g.add(o); } } catch (e) { console.warn(`scene: ${what} skipped`, e); }
+  };
   safe('case', () => data.case && buildCase(data.case));
   if (data.homelab && data.case) {
     const c = data.case;
     const hl = data.homelab;
     hl.clients.forEach((cl, i) => {
       const bays = { z0: c.z0, fd: c.fd, pitch: c.bay[2], bezelW: c.bay[3], bezelH1: c.bay[4], bezels: hl.clientBezels ?? [], port: hl.ports[i] };
-      safe(`client ${i}`, () => ((hl.types?.[i] ?? 'pc') === 'nas' ? buildNAS(cl, bays) : buildClient(i, cl, bays)));
+      const type = hl.types?.[i] ?? 'pc';
+      safe(type === 'nas' ? 'nas' : 'proxmox', () => (type === 'nas' ? buildNAS(cl, bays) : buildClient(i, cl, bays)));
     });
-    safe('access point', () => buildAP(hl.ap));
+    safe('ap', () => buildAP(hl.ap));
     if (hl.ont) safe('ont', () => buildONT(hl.ont));
   }
-  for (const cb of data.cables ?? []) safe('cable', () => buildCable(cb));
+  (data.cables ?? []).forEach((cb, i) => safe(`cable_${i}_vlan${cb.vlan ?? 'x'}`, () => buildCable(cb)));
   return g;
 }

@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@fontsource-variable/archivo':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource-variable/martian-mono':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@kreijstal/openscad-wasm':
         specifier: 2026.7.26-build.1
         version: 2026.7.26-build.1
@@ -20,6 +26,12 @@ importers:
         version: 8.3.4
 
 packages:
+
+  '@fontsource-variable/archivo@5.3.0':
+    resolution: {integrity: sha512-HogK8FJelrD1o7TlZlkIVtHgc20bO5PZRWE7mUeUTdMN055alznQV6/00J00IBeu8FQAH4s3zW9UJNvKExXf+g==}
+
+  '@fontsource-variable/martian-mono@5.3.0':
+    resolution: {integrity: sha512-0wVODx9ILwNnaYC4XCuSaFRYtj1Prd89MRVaSuv2ng6zLiQkS4SepaWEPefs7vqCZS8sbEOA8jb/4F5KNMnGdg==}
 
   '@kreijstal/openscad-wasm@2026.7.26-build.1':
     resolution: {integrity: sha512-TwaYORknfZiw5SGp2E8hq6eFKp8LNJfME4JNYtasV8/XCSR1szu4c3yByg2xXuQuZbVFLsvjEFoUy6TYQ5Z7ug==}
@@ -294,6 +306,10 @@ packages:
         optional: true
 
 snapshots:
+
+  '@fontsource-variable/archivo@5.3.0': {}
+
+  '@fontsource-variable/martian-mono@5.3.0': {}
 
   '@kreijstal/openscad-wasm@2026.7.26-build.1': {}
 

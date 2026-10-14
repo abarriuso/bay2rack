@@ -511,18 +511,30 @@ module access_point() {
     color([0.3, 0.75, 1]) translate(ap_pos + [0, 0, 38]) cylinder(d = 10, h = 0.6);
 }
 
-// rear PCI slots (same positions as the web viewer's case): centre x and z range of slot i
-function pci_cx(i) = -TC_W / 2 + 48 + i * 20.32;
-pci_z0 = tc_z1 - 380;
-pci_z1 = pci_z0 + PCI_L;
+// Rear of an ATX tower (same layout as the web viewer's case): the I/O shield under the top and
+// the seven expansion slots below it, horizontal and stacked; the motherboard side is +X.
+PCI_PITCH = 20.32;
+pci_xr = TC_W / 2 - 18;                                // motherboard end of the slots
+pci_x0 = pci_xr - PCI_L;
+pci_ztop = tc_z1 - 236;                                // centre of slot 0, just under the I/O shield
+function pci_cz(i) = pci_ztop - i * PCI_PITCH;
+function pci_x(along) = pci_xr - along;                // a point this far along a slot from the motherboard end
+// the printed bracket (built flat: X width, Y length, Z up) standing in slot i, its tab inside the case
+module in_slot(i) multmatrix([[0, -1, 0, pci_xr], [0, 0, -1, TC_D + 0.6], [1, 0, 0, pci_cz(i)], [0, 0, 0, 1]]) children();
 module rear_brackets() if (rear_slots)
-    for (b = [[pci_lan_slot, "lan"], [pci_power_slot, "power"]])
-        color(PRINT_C) translate([pci_cx(b[0]), TC_D + pci_t - 0.6, pci_z0]) rotate([90, 0, 0]) pci_bracket(b[1]);
+    for (b = [[pci_lan_slot, "lan"], [pci_power_slot, "power"]]) color(PRINT_C) in_slot(b[0]) pci_bracket(b[1]);
+
+// this PC is the router: a 4-port network card (Intel i350-T4 style) in an expansion slot
+nic_on = scene == "homelab" && router_nic_slot >= 0;
+function nic_port(j) = [pci_x(24 + j * 18), TC_D + 1, pci_cz(router_nic_slot)];
+io_nic = [TC_W / 2 - 38, TC_D - 3, tc_z1 - 150];       // motherboard LAN when there is no card
+lan_port = nic_on ? nic_port(1) : io_nic;
+wan_port = nic_on ? nic_port(0) : io_nic + [14, 0, 0];
 
 // keystone back -> along the inside of the case -> out through the rear LAN slot (or the back) -> target
 function inner_route(p, i) =
     let(xr = -TC_W / 2 + 26 + i * 7, zr = tc_z1 - 120 - i * 6, yb = zone_yf + 33,
-        xs = rear_slots ? pci_cx(pci_lan_slot) : xr, zs = rear_slots ? pci_z0 + 40 + i * 9 : zr)
+        xs = rear_slots ? pci_x(40 + i * 14) : xr, zs = rear_slots ? pci_cz(pci_lan_slot) : zr)
     [[p[0], yb, p[1]], [p[0], yb + 30, p[1] - 8], [xr, 150, p[1] - 30], [xs, TC_D - 60, zs], [xs, TC_D + 25, zs]];
 
 // The showcase network: this PC is the router (OPNsense / pfSense), the managed switch
@@ -550,26 +562,27 @@ function cord(a, ya, b, yb, lift = 4) =
 function cord_from(i) = sw_second != undef && i == 1 ? sw_ports_of(sw_second)[1] : sw_ports_of(sw_main)[i];
 function cord_route(i) = cord(cord_from(i), sw_yf, rj_ports[i], zone_yf);
 
-// cable through a pass-through cover, along the inside to a rear PCI slot and out
-function pass_route(a, q, slot, dz, tail) =
-    let(xp = pci_cx(slot), zp = pci_z0 + dz)
+// cable through a pass-through cover, along the inside to a rear expansion slot and out
+function pass_route(a, q, slot, along, tail) =
+    let(xp = pci_x(along), zp = pci_cz(slot))
     concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 20, a[1]], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
             [q[0], 60, q[1]], [TC_W / 2 - 30, 160, q[1] - 40]],
            rear_slots ? concat([[xp, TC_D - 60, zp], [xp, TC_D + 30, zp]], tail) : [[TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]]);
 function power_route() = pass_route(sw_jack_of(sw_main), pass_ports[len(pass_ports) - 1], pci_power_slot, 80,
-    [[pci_cx(pci_power_slot), TC_D + 60, tc_z0 + 8], [pci_cx(pci_power_slot) + 160, TC_D + 90, tc_z0 + 4]]);
-// router uplink: last switch port -> first pass-through -> inside to the motherboard NIC (rear I/O)
-io_nic = [TC_W / 2 - 38, TC_D - 3, tc_z1 - 150];
-function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4])
-    [[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], zone_yf - 26, q[1] + 6], [q[0], zone_yf - 18, q[1]],
-     [q[0], zone_yf + 4, q[1]], [q[0], 70, q[1] + 10], [TC_W / 2 - 34, 180, io_nic[2] - 30],
-     [io_nic[0] - 18, TC_D - 40, io_nic[2] - 20], [io_nic[0] - 18, TC_D + 20, io_nic[2] - 10],
-     [io_nic[0], TC_D + 28, io_nic[2]], [io_nic[0], TC_D + 4, io_nic[2]]];
-// WAN: the second NIC port to the fibre box on the floor behind the case
+    [[pci_x(80), TC_D + 60, tc_z0 + 8], [pci_x(80) + 160, TC_D + 90, tc_z0 + 4]]);
+// router LAN (trunk): last switch port -> first pass-through -> inside, out through the LAN slot -> card port 2
+function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4], p = lan_port,
+                              xs = pci_x(30), zs = pci_cz(pci_lan_slot) + 3)
+    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], zone_yf - 26, q[1] + 6], [q[0], zone_yf - 18, q[1]],
+            [q[0], zone_yf + 4, q[1]], [q[0], 70, q[1] + 10], [TC_W / 2 - 34, 180, q[1] - 40]],
+           rear_slots ? [[xs, TC_D - 60, zs], [xs, TC_D + 30, zs], [p[0] - 8, TC_D + 44, (zs + p[2]) / 2]]
+                      : [[p[0] - 18, TC_D - 40, p[2] - 20], [p[0] - 18, TC_D + 20, p[2] - 10]],
+           [[p[0], TC_D + 32, p[2]], [p[0], TC_D + 4, p[2]]]);
+// WAN: card port 1 to the fibre box on the floor behind the case
 ont_pos = [-TC_W / 2 - 40, TC_D + 120, tc_z0];
-function wan_route() = [[io_nic[0] + 14, TC_D + 4, io_nic[2]], [io_nic[0] + 14, TC_D + 40, io_nic[2] - 20],
-    [io_nic[0], TC_D + 70, tc_z0 + 60], [io_nic[0] - 40, TC_D + 110, tc_z0 + 6], [ont_pos[0] + 60, ont_pos[1] + 10, tc_z0 + 6],
-    [ont_pos[0] + 40, ont_pos[1], tc_z0 + 18]];
+function wan_route() = let(p = wan_port)
+    [[p[0], TC_D + 4, p[2]], [p[0], TC_D + 36, p[2]], [p[0] - 10, TC_D + 70, tc_z0 + 60], [p[0] - 40, TC_D + 110, tc_z0 + 6],
+     [ont_pos[0] + 60, ont_pos[1] + 10, tc_z0 + 6], [ont_pos[0] + 40, ont_pos[1], tc_z0 + 18]];
 
 // every cable of the scene: [colour, diameter, points, plug at start, plug at end, vlan]
 two_sw = sw_second != undef;
@@ -607,7 +620,9 @@ module scene_echo() {
             ",", jstr("bay"), ":", [bay_w, bay_h, bay_pitch, bezel_w, bezel_h1, case_wall_t],
             ",", jstr("window"), ":", jstr(case_window),
             ",", jstr("rearSlots"), ":", rear_slots ? [pci_lan_slot, pci_power_slot] : [],
-            ",", jstr("pci"), ":", [pci_z0, PCI_L], "}}"));
+            ",", jstr("pci"), ":", [pci_x0, pci_ztop, PCI_PITCH, PCI_L],
+            ",", jstr("nic"), ":", nic_on ? router_nic_slot : -1,
+            ",", jstr("nicPorts"), ":", [for (j = [0 : 3]) nic_port(j)], "}}"));
     if (case_view == "tower" && scene == "homelab") {
         echo(str("SCENE ", "{", jstr("homelab"), ":{",
             jstr("clients"), ":", [for (i = [0, 1]) [cl_x[i], CLIENTS[i][0], CLIENTS[i][1], CLIENTS[i][2], CLIENTS[i][3]]],
@@ -650,7 +665,10 @@ module assembly() {
         if (web_scene) {
             if (pi == "all" || pi == "adapter") scene_echo();
             if ((pi == "all" || pi == "clients") && case_view == "tower" && scene == "homelab") client_bezels();
-            if ((pi == "all" || pi == "clients") && case_view == "tower") rear_brackets();
+            if ((pi == "all" || pi == "clients" || pi == "brackets") && case_view == "tower") rear_brackets();
+            // one bezel of the Proxmox node on its own (the video swaps them)
+            for (k = [0, 1]) if (pi == str("bezel", k) && case_view == "tower" && scene == "homelab")
+                client_bezel(CLIENT_FILLS[k][0], cl_x[0], client_bezels_at()[k][0], CLIENT_FILLS[k][1]);
         }
         else {
             if (case_view == "ghost") case_ghost();

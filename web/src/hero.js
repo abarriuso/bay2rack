@@ -18,7 +18,7 @@ const SHOTS = [
   [16.0, [-1050, -1650, 820], [200, 150, -110]],
 ];
 
-export function startHero({ el, caption, replay, legend, onReady, runJob, definesFor, values, mods, filament }) {
+export function startHero({ el, caption, step, replay, legend, onReady, runJob, definesFor, values, mods, filament }) {
   const viewer = new Viewer(el);
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   viewer.setFilament(filament);
@@ -30,7 +30,8 @@ export function startHero({ el, caption, replay, legend, onReady, runJob, define
   replay?.addEventListener('click', () => { time = 0; userCam = false; viewer.controls.target.set(0, 0, 0); });
 
   // captions are looked up every frame, so they follow the language switch
-  const setCaption = (cap) => {
+  const setCaption = (cap, n = 0, total = 0) => {
+    if (step) step.textContent = total ? `${String(n).padStart(2, '0')}/${String(total).padStart(2, '0')}` : '';
     const text = typeof cap === 'function' ? cap() : t(cap);
     if (caption.textContent !== text) {
       caption.classList.remove('show');
@@ -101,13 +102,15 @@ export function startHero({ el, caption, replay, legend, onReady, runJob, define
     if (!still) time += dt;
     if (time > plan.end) time = 0;
     let cap = 'hero_intro';
-    for (const s of plan.tl) {
-      if (!s.g) continue;
+    let n = 1;
+    const total = plan.tl.length + 3;
+    plan.tl.forEach((s, i) => {
+      if (!s.g) return;
       const k = ease((time - s.at) / s.dur);
       s.g.position.set(s.from[0] * (1 - k), s.from[1] * (1 - k), s.from[2] * (1 - k));
       s.g.visible = time >= s.at - 0.2;
-      if (time >= s.at) cap = s.cap;
-    }
+      if (time >= s.at) { cap = s.cap; n = i + 2; }
+    });
     const kc = Math.min(1, Math.max(0, (time - plan.cablesAt) / plan.cablesDur));
     for (const c of plan.cables) {
       c.visible = kc > 0;
@@ -116,11 +119,11 @@ export function startHero({ el, caption, replay, legend, onReady, runJob, define
         else m.visible = kc >= 1;
       });
     }
-    if (kc > 0) cap = 'hero_cables';
+    if (kc > 0) { cap = 'hero_cables'; n = total - 1; }
     const kl = Math.min(1, Math.max(0, (time - plan.ledsAt) / 0.8));
     for (const [m, base] of plan.leds) m.emissiveIntensity = base * (0.05 + 0.95 * kl);
-    if (kl > 0) cap = 'hero_done';
-    setCaption(cap);
+    if (kl > 0) { cap = 'hero_done'; n = total; }
+    setCaption(cap, n, total);
     camera(time);
   });
 

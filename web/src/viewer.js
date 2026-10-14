@@ -92,7 +92,7 @@ export class Viewer {
   }
 
   setTheme(theme) {
-    this.scene.background = theme === 'dark' ? gradient('#2b3038', '#14161a') : gradient('#f7f8fa', '#dde2e9');
+    this.scene.background = theme === 'dark' ? gradient('#232a2e', '#0f1214') : gradient('#f1f3f2', '#d6dbd8');
   }
 
   resize() {

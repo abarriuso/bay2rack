@@ -85,25 +85,27 @@ export const TEX = {
 };
 
 const std = (o) => new THREE.MeshStandardMaterial(o);
+// every material carries a name: the Blender video pipeline finds the parts by it
+const named = (name, m) => { m.name = name; return m; };
 
 export const MAT = {
-  powder: (color) => std({ color, roughness: 0.62, metalness: 0.25, bumpMap: TEX.grain, bumpScale: 0.35 }),
-  brushed: (color) => std({ color, roughness: 0.34, metalness: 0.9, roughnessMap: TEX.brushed, bumpMap: TEX.brushed, bumpScale: 0.15 }),
-  plastic: (color, roughness = 0.5) => std({ color, roughness, metalness: 0, bumpMap: TEX.grain, bumpScale: 0.12 }),
-  gloss: (color) => std({ color, roughness: 0.22, metalness: 0 }),
-  mesh: (color) => std({ color, roughness: 0.45, metalness: 0.7, alphaMap: TEX.perforated, alphaTest: 0.5, side: THREE.DoubleSide }),
-  grille: (color) => std({ color, roughness: 0.4, metalness: 0.7, alphaMap: TEX.grille, alphaTest: 0.5, side: THREE.DoubleSide }),
-  glass: () => new THREE.MeshPhysicalMaterial({
+  powder: (color) => named('powder', std({ color, roughness: 0.62, metalness: 0.25, bumpMap: TEX.grain, bumpScale: 0.35 })),
+  brushed: (color) => named('brushed', std({ color, roughness: 0.34, metalness: 0.9, roughnessMap: TEX.brushed, bumpMap: TEX.brushed, bumpScale: 0.15 })),
+  plastic: (color, roughness = 0.5) => named('plastic', std({ color, roughness, metalness: 0, bumpMap: TEX.grain, bumpScale: 0.12 })),
+  gloss: (color) => named('gloss', std({ color, roughness: 0.22, metalness: 0 })),
+  mesh: (color) => named('mesh', std({ color, roughness: 0.45, metalness: 0.7, alphaMap: TEX.perforated, alphaTest: 0.5, side: THREE.DoubleSide })),
+  grille: (color) => named('grille', std({ color, roughness: 0.4, metalness: 0.7, alphaMap: TEX.grille, alphaTest: 0.5, side: THREE.DoubleSide })),
+  glass: () => named('glass', new THREE.MeshPhysicalMaterial({
     color: 0x9aa6b4, metalness: 0, roughness: 0.04, transmission: 0.92, thickness: 4, ior: 1.5,
-    transparent: true, opacity: 0.35, side: THREE.DoubleSide, envMapIntensity: 1.2 }),
-  steel: () => std({ color: 0xb9bec5, roughness: 0.38, metalness: 1, envMapIntensity: 0.7 }),
-  zinc: () => std({ color: 0xa9adb3, roughness: 0.42, metalness: 1, envMapIntensity: 0.7 }),
-  brass: () => std({ color: 0xd9b25a, roughness: 0.3, metalness: 1 }),
-  gold: () => std({ color: 0xe6bf55, roughness: 0.25, metalness: 1 }),
-  rubber: () => std({ color: 0x111112, roughness: 0.95, metalness: 0 }),
-  pcb: () => std({ map: TEX.pcb, roughness: 0.55, metalness: 0.1 }),
-  led: (color, k = 2.2) => std({ color, emissive: color, emissiveIntensity: k, roughness: 0.3, toneMapped: false }),
-  filament: (color) => std({ color, roughness: 0.58, metalness: 0, bumpMap: TEX.layers, bumpScale: 0.55 }),
+    transparent: true, opacity: 0.35, side: THREE.DoubleSide, envMapIntensity: 1.2 })),
+  steel: () => named('steel', std({ color: 0xb9bec5, roughness: 0.38, metalness: 1, envMapIntensity: 0.7 })),
+  zinc: () => named('zinc', std({ color: 0xa9adb3, roughness: 0.42, metalness: 1, envMapIntensity: 0.7 })),
+  brass: () => named('brass', std({ color: 0xd9b25a, roughness: 0.3, metalness: 1 })),
+  gold: () => named('gold', std({ color: 0xe6bf55, roughness: 0.25, metalness: 1 })),
+  rubber: () => named('rubber', std({ color: 0x111112, roughness: 0.95, metalness: 0 })),
+  pcb: () => named('pcb', std({ map: TEX.pcb, roughness: 0.55, metalness: 0.1 })),
+  led: (color, k = 2.2) => named('led', std({ color, emissive: color, emissiveIntensity: k, roughness: 0.3, toneMapped: false })),
+  filament: (color) => named('print', std({ color, roughness: 0.58, metalness: 0, bumpMap: TEX.layers, bumpScale: 0.55 })),
 };
 
 // Box projection UVs (mm / tile) so the procedural textures work on any mesh.
@@ -149,7 +151,11 @@ export function printSlot(hex) {
 
 export function materialFor(hex, filament) {
   const pi = printSlot(hex);
-  if (pi >= 0) return { mat: MAT.filament(filament[pi]), print: true, slot: pi };
+  if (pi >= 0) {
+    const mat = MAT.filament(filament[pi]);
+    mat.name = 'print_' + pi;
+    return { mat, print: true, slot: pi };
+  }
   if (near(hex, 0x124d29, 3)) return { mat: MAT.pcb() };                                   // Raspberry Pi boards
   if (near(hex, 0xbdc2c9) || near(hex, 0xb8bdc4)) return { mat: MAT.steel() };          // screws, metal keystones
   if (near(hex, 0xdbad42)) return { mat: MAT.brass() };                                   // heat-set inserts
