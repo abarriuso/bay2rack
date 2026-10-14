@@ -143,33 +143,27 @@ button:disabled { opacity: .45; cursor: default; }
   --rule: #2a3135; --signal: #6a9fff; --signal-ink: #08111f; --signal-soft: #17243a; --tape: #eef0ee; --tape-ink: #0b0d0f;
   background: var(--ground); color: var(--ink); color-scheme: dark;
 }
-/* the film is the hero: full width, the headline on the dark floor of every shot, the shots as chapters */
-.film {
-  position: relative; width: 100%; aspect-ratio: 16 / 8.2; min-height: 520px; max-height: calc(100vh - 58px);
-  overflow: hidden; background: var(--ground);
+/* text on the left, the film on the right (two thirds of the width), its shots as chapters underneath */
+.hero {
+  display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7.5fr); gap: clamp(28px, 3.5vw, 60px); align-items: center;
+  max-width: 1640px; margin: 0 auto; padding: clamp(28px, 4vw, 60px) var(--gutter) clamp(40px, 5vw, 76px);
 }
-.hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 45%; display: block; }
-.film-scrim {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 64%; pointer-events: none;
-  background: linear-gradient(to top, var(--ground) 6%, rgb(2 2 3 / .78) 46%, rgb(2 2 3 / 0));
+.hero-copy { display: grid; gap: var(--s-4); align-content: center; min-width: 0; }
+.hero h1 {
+  font-size: clamp(2.3rem, 1rem + 3.3vw, 4.4rem); line-height: .95; font-weight: 820; font-stretch: 116%;
+  letter-spacing: -.03em; margin: var(--s-2) 0 0;
 }
-.film-title {
-  position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; align-items: flex-end;
-  justify-content: space-between; gap: 24px; padding: 0 clamp(16px, 3.4vw, 56px) 92px;
-}
-.film-head { display: grid; gap: 14px; max-width: 900px; min-width: 0; }
-.film h1 {
-  font-size: clamp(2.6rem, 1rem + 5vw, 5.6rem); line-height: .94; font-weight: 820; font-stretch: 116%;
-  letter-spacing: -.03em; margin: 0;
-}
-.film-cta { padding-bottom: 6px; }
-.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero .lead { font-size: clamp(1rem, .95rem + .25vw, 1.15rem); color: var(--ink-2); max-width: 52ch; margin: 0; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--s-1); }
 .cta .btn { padding: 14px 20px; font-size: 16px; }
 .cta .btn.ghost { border-color: var(--ink); }
+.hero-media { margin: 0; display: grid; gap: 14px; min-width: 0; }
+.hero-stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--r); background: var(--ground); }
+.hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* chapters: one per shot of the film, the current one fills as it plays */
-.film-bar { position: relative; z-index: 2; margin-top: -76px; padding: 0 clamp(16px, 3.4vw, 56px); }
-.film-now { display: none; margin: 0 0 6px; font: 500 12px/1.35 var(--f-mono); font-stretch: 87.5%; }
+.film-bar { display: grid; gap: 4px; }
+.film-now { margin: 0; font: 500 12.5px/1.35 var(--f-mono); font-stretch: 87.5%; color: var(--ink); min-height: 1.35em; }
 .film-step { color: var(--signal); font-variant-numeric: tabular-nums; }
 .film-controls { display: flex; align-items: flex-start; gap: 14px; }
 .replay {
@@ -192,17 +186,11 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .chapter.now .name, .chapter:hover .name { color: var(--ink); }
 
-.hero-foot {
-  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px 32px; max-width: 1480px; margin: 0 auto;
-  padding: 44px clamp(16px, 3.4vw, 56px) clamp(56px, 7vw, 88px);
-}
-.hero-foot .lead { grid-column: span 7; min-width: 0; font-size: clamp(1.02rem, .95rem + .3vw, 1.18rem); color: var(--ink-2); max-width: 62ch; margin: 0; }
-.foot-cta { display: none; }
-.facts { grid-column: span 5; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-self: start; min-width: 0; }
+.facts { margin: var(--s-2) 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; min-width: 0; }
 .fact { border-top: 2px solid var(--rule); padding-top: 12px; display: grid; gap: 4px; min-width: 0; }
 .fact:first-child { border-top-color: var(--signal); }
 .fact dt { font: 600 11px/1.2 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.fact dd { margin: 0; font-weight: 750; font-stretch: 106%; font-size: clamp(1.05rem, .8rem + .6vw, 1.45rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fact dd { margin: 0; font-weight: 750; font-stretch: 106%; font-size: clamp(1rem, .8rem + .5vw, 1.3rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* the header goes dark while it sits on the film */
 .top.on-film {
@@ -521,7 +509,8 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* ------------------------------------------------------------ tablet */
 @media (max-width: 1080px) {
-  .hero-foot .lead, .facts { grid-column: 1 / -1; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .hero-copy { max-width: 760px; }
   .why { grid-template-columns: minmax(0, 1fr); }
   .uses { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -544,21 +533,15 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* ------------------------------------------------------------ phone */
 @media (max-width: 760px) {
-  .film { aspect-ratio: auto; height: min(460px, 118vw); min-height: 0; max-height: none; }
-  .hero-video { object-position: 55% 50%; }
-  .film-title { padding: 0 16px 18px; }
-  .film-cta { display: none; }
-  .film h1 { font-size: clamp(2.2rem, 1.2rem + 5vw, 3rem); font-stretch: 112%; }
-  .film-bar { margin-top: 0; padding: 14px 16px 0; }
-  .film-now { display: block; }
+  .hero { padding-top: var(--s-4); gap: var(--s-5); }
+  .hero-stage { border-radius: 4px; }
   .film-controls { align-items: center; }
   .chapters { gap: 4px; }
   .chapter { padding: 0; justify-content: center; }
   .chapter .name { display: none; }
-  .hero-foot { padding: 18px 16px 40px; gap: 18px; }
-  .foot-cta { display: grid; grid-column: 1 / -1; }
-  .foot-cta .btn { justify-content: center; }
+  .cta .btn { flex: 1 1 auto; justify-content: center; }
   .facts { gap: 12px; }
+  .fact dd { white-space: normal; font-size: 1rem; }
 }
 @media (max-width: 600px) {
   .top { gap: var(--s-2); }

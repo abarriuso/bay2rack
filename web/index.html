@@ -32,44 +32,39 @@
 
   <main>
     <section class="hero-band" id="top">
-      <div class="film" id="heroStage">
-        <video id="heroVideo" class="hero-video" autoplay muted loop playsinline preload="metadata"
-               poster="video/hero.webp" width="1600" height="900">
-          <source src="video/hero.webm" type="video/webm">
-          <source src="video/hero.mp4" type="video/mp4">
-        </video>
-        <div class="film-scrim" aria-hidden="true"></div>
-        <div class="film-title">
-          <div class="film-head">
-            <span class="tape" data-i18n="hero_eyebrow"></span>
-            <h1 data-i18n="hero_title"></h1>
-          </div>
-          <div class="cta film-cta">
+      <div class="hero">
+        <div class="hero-copy">
+          <span class="tape" data-i18n="hero_eyebrow"></span>
+          <h1 data-i18n="hero_title"></h1>
+          <p class="lead" data-i18n="hero_lead"></p>
+          <div class="cta">
             <a class="btn" href="#build"><span data-i18n="hero_cta"></span><span aria-hidden="true">→</span></a>
             <a class="btn ghost" href="#gallery" data-i18n="hero_cta2"></a>
           </div>
+          <dl class="facts">
+            <div class="fact"><dt data-i18n="fact_bays"></dt><dd data-i18n="fact_bays_v"></dd></div>
+            <div class="fact"><dt data-i18n="fact_face"></dt><dd>6" · M6</dd></div>
+            <div class="fact"><dt data-i18n="fact_kit"></dt><dd data-i18n="fact_kit_v"></dd></div>
+          </dl>
         </div>
-      </div>
-      <div class="film-bar">
-        <p class="film-now"><span id="heroStep" class="film-step"></span> <span id="heroCaption"></span></p>
-        <div class="film-controls">
-          <button id="heroReplay" class="replay" type="button" data-i18n-label="hero_replay">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>
-          </button>
-          <ol id="heroChapters" class="chapters"></ol>
-        </div>
-      </div>
-      <div class="hero-foot">
-        <p class="lead" data-i18n="hero_lead"></p>
-        <div class="cta foot-cta">
-          <a class="btn" href="#build"><span data-i18n="hero_cta"></span><span aria-hidden="true">→</span></a>
-          <a class="btn ghost" href="#gallery" data-i18n="hero_cta2"></a>
-        </div>
-        <dl class="facts">
-          <div class="fact"><dt data-i18n="fact_bays"></dt><dd data-i18n="fact_bays_v"></dd></div>
-          <div class="fact"><dt data-i18n="fact_face"></dt><dd>6" · M6</dd></div>
-          <div class="fact"><dt data-i18n="fact_kit"></dt><dd data-i18n="fact_kit_v"></dd></div>
-        </dl>
+        <figure class="hero-media" id="heroStage">
+          <div class="hero-stage">
+            <video id="heroVideo" class="hero-video" autoplay muted loop playsinline preload="metadata"
+                   poster="video/hero.webp" width="1600" height="900">
+              <source src="video/hero.webm" type="video/webm">
+              <source src="video/hero.mp4" type="video/mp4">
+            </video>
+          </div>
+          <figcaption class="film-bar">
+            <p class="film-now"><span id="heroStep" class="film-step"></span> <span id="heroCaption"></span></p>
+            <div class="film-controls">
+              <button id="heroReplay" class="replay" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>
+              </button>
+              <ol id="heroChapters" class="chapters"></ol>
+            </div>
+          </figcaption>
+        </figure>
       </div>
     </section>
 

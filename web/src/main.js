@@ -745,9 +745,9 @@ function wireHeroVideo() {
   new IntersectionObserver(([e]) => { if (e.isIntersecting && !matchMedia('(prefers-reduced-motion: reduce)').matches) video.play().catch(() => {}); else video.pause(); })
     .observe(video);
   // the header turns dark while it sits on the film
-  const film = $('#heroStage');
+  const band = $('#top');
   const top = $('.top');
-  const onScroll = () => top.classList.toggle('on-film', film.getBoundingClientRect().bottom > top.offsetHeight);
+  const onScroll = () => top.classList.toggle('on-film', band.getBoundingClientRect().bottom > top.offsetHeight);
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
   build();
