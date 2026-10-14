@@ -697,68 +697,21 @@ async function downloadKit() {
 }
 
 // ---------------------------------------------------------------- hero + gallery
-// the hero film: one chapter per shot (start in seconds, see scripts/blender/hero.py)
-const HERO_SHOTS = [0, 1.45, 4.25, 6.05, 8.4, 10.35, 11.85, 13.35];
+// the hero film: plays while on screen, paused for reduced motion; the header goes dark over it
 function wireHeroVideo() {
   const video = $('#heroVideo');
-  const list = $('#heroChapters');
-  let shown = -1;
-  let buttons = [];
-  const build = () => {
-    buttons = HERO_SHOTS.map((at, i) => h('button', {
-      type: 'button', className: 'chapter', 'aria-label': `${i + 1}/${HERO_SHOTS.length} · ${t('hero_s' + (i + 1))}`,
-      onclick: () => { video.currentTime = at + 0.05; video.play().catch(() => {}); },
-    }, h('span', { className: 'track' }, h('span', { className: 'fill' })),
-      h('span', { className: 'name', textContent: `${String(i + 1).padStart(2, '0')} ${t('ch_' + (i + 1))}` })));
-    list.replaceChildren(...buttons.map((b) => h('li', {}, b)));
-    shown = -1;
-  };
-  // the current chapter fills with the film; earlier ones are full, later ones empty
-  const paint = () => {
-    const now = video.currentTime;
-    const dur = video.duration || 17;
-    const i = Math.max(0, HERO_SHOTS.findLastIndex((at) => now >= at));
-    buttons.forEach((b, k) => {
-      const end = HERO_SHOTS[k + 1] ?? dur;
-      const f = k < i ? 1 : k > i ? 0 : Math.min(1, (now - HERO_SHOTS[k]) / (end - HERO_SHOTS[k]));
-      b.firstChild.firstChild.style.width = `${(f * 100).toFixed(1)}%`;
-      b.classList.toggle('now', k === i);
-    });
-    if (i !== shown) {
-      shown = i;
-      $('#heroStep').textContent = `${String(i + 1).padStart(2, '0')}/${String(HERO_SHOTS.length).padStart(2, '0')}`;
-      $('#heroCaption').textContent = t('hero_s' + (i + 1));
-    }
-  };
-  // repaint every frame while the hero is on screen, so the bars fill smoothly (timeupdate only fires ~4 times a second)
-  let raf = 0;
-  let visible = true;
-  const loop = () => { paint(); raf = visible ? requestAnimationFrame(loop) : 0; };
-  const run = () => { if (!raf && visible) raf = requestAnimationFrame(loop); };
-  video.addEventListener('playing', run);
-  video.addEventListener('seeked', paint);
-  $('#heroReplay').onclick = () => { video.currentTime = 0; video.play().catch(() => {}); };
-  const label = () => {
-    video.setAttribute('aria-label', t('hero_video_label'));
-    $('#heroReplay').setAttribute('aria-label', t('hero_replay'));
-  };
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { video.removeAttribute('autoplay'); video.pause(); }
-  // pause while scrolled away: no decoding in the background
-  new IntersectionObserver(([e]) => {
-    visible = e.isIntersecting;
-    if (visible && !matchMedia('(prefers-reduced-motion: reduce)').matches) { video.play().catch(() => {}); run(); } else video.pause();
-  }).observe(video);
-  // the header turns dark while it sits on the film
+  const label = () => video.setAttribute('aria-label', t('hero_video_label'));
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still) { video.removeAttribute('autoplay'); video.pause(); }
+  new IntersectionObserver(([e]) => { if (e.isIntersecting && !still) video.play().catch(() => {}); else video.pause(); })
+    .observe(video);
   const band = $('#top');
   const top = $('.top');
   const onScroll = () => top.classList.toggle('on-film', band.getBoundingClientRect().bottom > top.offsetHeight);
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
-  build();
   label();
-  paint();
-  run();
-  return () => { build(); label(); paint(); };
+  return label;
 }
 let heroRelabel = null;
 
