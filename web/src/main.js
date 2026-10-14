@@ -9,6 +9,7 @@ import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from '
 import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
 import { renderLegend } from './legend.js';
+import { startHero } from './hero.js';
 
 const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
@@ -147,6 +148,7 @@ worker.onmessage = ({ data: m }) => {
   if (m.type === 'ready') {
     S.engine = 'ready';
     setStatus(t('ready'), 'ok');
+    startAnimatedHero();
     if (S.wantRender) render();
   } else if (m.type === 'error') {
     S.engine = 'error';
@@ -693,7 +695,36 @@ function wireHeroVideo() {
   return () => { shown = -1; show(); };
 }
 let heroRelabel = null;
+let animatedHero = null;
 
+function startAnimatedHero() {
+  const el = $('#heroView');
+  if (!el || animatedHero || S.engine !== 'ready') return;
+  if (new URLSearchParams(location.search).has('nohero')) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const values = { ...S.defaults, ...EXAMPLES.router };
+  const units = calc(values).units;
+
+  animatedHero = startHero({
+    el,
+    caption: $('#heroCaption'),
+    replay: $('#heroReplay'),
+    legend: $('#heroLegend'),
+    onReady: () => {
+      $('#heroStage').classList.add('live');
+      $('#heroStep').hidden = true;
+    },
+
+    runJob,
+    definesFor,
+    values,
+    mods: usedMods(values, units),
+    filament: FILAMENTS[UI.filament] ?? FILAMENTS.black,
+  });
+
+  animatedHero.setTheme(document.documentElement.dataset.theme);
+}
 // dev only: save a build as GLB for the Blender video (docs/blender/)
 if (import.meta.env.DEV) {
   window.__b2r.exportBuild = async (name, patch, opts = {}) => {

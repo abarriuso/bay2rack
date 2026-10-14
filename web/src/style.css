@@ -513,3 +513,90 @@ button:disabled { opacity: .45; cursor: default; }
   .seg-btn { min-width: 34px; padding: 7px 4px; }
   .foot-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Animated 3D hero with video fallback */
+.hero-view {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .8s ease;
+}
+
+.hero-view canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-figure.live .hero-view {
+  opacity: 1;
+}
+
+.hero-figure.live .hero-video {
+  opacity: 0;
+}
+
+.hero-video {
+  transition: opacity .8s ease;
+}
+
+
+/* Animated 3D hero */
+.hero-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-view {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity .6s ease;
+}
+
+.hero-view canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#heroStage.live .hero-view {
+  opacity: 1;
+}
+
+#heroStage.live .hero-video {
+  opacity: 0;
+}
+
+.hero-video {
+  transition: opacity .6s ease;
+}
+
+#heroLegend {
+  position: absolute;
+  z-index: 3;
+  left: 12px;
+  bottom: 12px;
+}
+
+
+/* Align hero caption and replay button */
+#heroStage .stage-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#heroStage #heroCaption {
+  flex: 1;
+  min-width: 0;
+}
+
+#heroStage #heroReplay {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+  white-space: nowrap;
+}
