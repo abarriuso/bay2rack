@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Viewer } from './viewer.js';
 import { t } from './i18n.js';
+import { renderLegend } from './legend.js';
 
 const ease = (x) => { const k = Math.min(1, Math.max(0, x)); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
 const V = (a) => new THREE.Vector3(...a);
@@ -17,18 +18,20 @@ const SHOTS = [
   [16.0, [-1050, -1650, 820], [200, 150, -110]],
 ];
 
-export function startHero({ el, caption, replay, runJob, definesFor, values, mods, filament }) {
+export function startHero({ el, caption, replay, legend, onReady, runJob, definesFor, values, mods, filament }) {
   const viewer = new Viewer(el);
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   viewer.setFilament(filament);
   viewer.controls.enableZoom = false;
   let plan = null;
   let time = 0;
   let userCam = false;
   el.addEventListener('pointerdown', () => { userCam = true; });
-  replay?.addEventListener('click', () => { time = 0; userCam = false; });
+  replay?.addEventListener('click', () => { time = 0; userCam = false; viewer.controls.target.set(0, 0, 0); });
 
-  const setCaption = (key, extra = '') => {
-    const text = t(key) + extra;
+  // captions are looked up every frame, so they follow the language switch
+  const setCaption = (cap) => {
+    const text = typeof cap === 'function' ? cap() : t(cap);
     if (caption.textContent !== text) {
       caption.classList.remove('show');
       void caption.offsetWidth;
@@ -61,7 +64,7 @@ export function startHero({ el, caption, replay, runJob, definesFor, values, mod
     // things to animate
     const leds = [];
     viewer.scene.traverse((o) => {
-      for (const m of [].concat(o.material ?? [])) if (m.emissiveIntensity > 0.5) leds.push([m, m.emissiveIntensity]);
+      for (const m of [].concat(o.material ?? [])) if (m.emissive && m.emissive.getHex() !== 0) leds.push([m, m.emissiveIntensity]);
     });
     const cables = [];
     viewer.extras?.traverse((o) => { if (o.userData.role === 'cables') cables.push(o); });
@@ -69,11 +72,13 @@ export function startHero({ el, caption, replay, runJob, definesFor, values, mod
     let at = 1.2;
     tl.push({ g: viewer.groups.adapter, from: [0, -460, 0], at, dur: 1.6, cap: 'hero_adapter' });
     at += 1.8;
-    mods.forEach((m, k) => { tl.push({ g: viewer.groups[`module${k}`], from: [0, -340, 0], at, dur: 1.0, cap: 'hero_mod_' + m }); at += 1.15; });
+    mods.forEach((m, k) => { tl.push({ g: viewer.groups[`module${k}`], from: [0, -340, 0], at, dur: 1.0, cap: () => t('hero_mod', { name: t('mod_' + m.split(':')[0].replace('kvm2', 'kvm')) }) }); at += 1.15; });
     if (viewer.groups.filler) { tl.push({ g: viewer.groups.filler, from: [0, -300, 0], at, dur: 1.0, cap: 'hero_patch' }); at += 1.15; }
     if (viewer.groups.hardware) { tl.push({ g: viewer.groups.hardware, from: [0, -70, 0], at, dur: 0.8, cap: 'hero_screws' }); at += 1.0; }
     plan = { tl, cables, cablesAt: at, cablesDur: 2.4, leds, ledsAt: at + 2.6, end: 16 };
-    time = 0;
+    time = still ? plan.ledsAt + 1 : 0;
+    renderLegend(legend, scene);
+    onReady?.();
   }
 
   function camera(tm) {
@@ -93,7 +98,7 @@ export function startHero({ el, caption, replay, runJob, definesFor, values, mod
 
   viewer.hooks.push((dt) => {
     if (!plan) return;
-    time += dt;
+    if (!still) time += dt;
     if (time > plan.end) time = 0;
     let cap = 'hero_intro';
     for (const s of plan.tl) {

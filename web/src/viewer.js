@@ -6,7 +6,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { MAT, PRINT_HEX, boxUV, materialFor } from './materials.js';
+import { MAT, boxUV, materialFor } from './materials.js';
 import { buildScene } from './scene.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
@@ -141,13 +141,12 @@ export class Viewer {
         c.updateWorldMatrix(true, false);
         const src = [].concat(c.material)[0];
         const hex = src?.color ? src.color.getHex(THREE.SRGBColorSpace) : 0x808080;
-        const { mat, print } = materialFor(hex, this.filament);
+        const { mat, print, slot } = materialFor(hex, this.filament);
         let geo = c.geometry.clone().applyMatrix4(c.matrixWorld);
         if (print) {
           geo = boxUV(geo);
-          const i = PRINT_HEX.findIndex((p) => Math.abs(p - hex) < 0x030303);
-          this.printMats.push({ mat, i: i >= 0 ? i : 2 });
-        }
+          this.printMats.push({ mat, i: slot });
+        } else if (mat.map) geo = boxUV(geo, 40);           // textured parts (PCBs) need UVs too
         geo.computeVertexNormals();
         add(geo, mat);
       });

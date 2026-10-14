@@ -4,68 +4,141 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>bay2rack · old PC case → 6" homelab rack</title>
-  <meta name="description" content="Turn the 5.25 inch bays of an old PC case into a 6 inch mini rack for a cheap homelab. Configure it, see it mounted in 3D and download every STL in your browser.">
+  <meta name="description" content="Turn the 5.25 inch bays of an old PC case into a 6 inch mini rack for a cheap homelab: router with VLANs, switches, KVM, Raspberry Pi blades, patch panel. Configure it, see it mounted in 3D and download every STL in your browser.">
   <meta property="og:title" content="bay2rack · old PC case → 6&quot; homelab rack">
   <meta property="og:image" content="img/hero.png">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='26' height='24' rx='5' fill='%232563eb'/%3E%3Crect x='7' y='9' width='18' height='5' rx='1.5' fill='%23fff'/%3E%3Crect x='7' y='17' width='18' height='5' rx='1.5' fill='%23fff' opacity='.7'/%3E%3C/svg%3E">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="./">
+    <a class="brand" href="#top">
       <span id="logo" class="logo"></span>
       <span class="titles"><strong>bay2rack</strong><span data-i18n="subtitle"></span></span>
     </a>
     <nav>
+      <a class="nav-link" href="#why" data-i18n="nav_why"></a>
+      <a class="nav-link" href="#gallery" data-i18n="nav_gallery"></a>
+      <a class="nav-link strong" href="#build" data-i18n="nav_build"></a>
       <button id="theme" class="icon-btn" type="button" data-i18n-tip="theme" aria-label="theme"></button>
       <button id="lang" class="pill" type="button">ES</button>
       <a class="pill" href="https://github.com/abarriuso/bay2rack" data-i18n="source"></a>
     </nav>
   </header>
 
-  <div class="layout">
-    <aside class="panel">
-      <h2 class="panel-title" data-i18n="steps"></h2>
-      <div id="steps"></div>
-      <label class="toggle advanced">
-        <input type="checkbox" id="advanced"><span class="track"></span>
-        <span><b data-i18n="advanced"></b> <small data-i18n="advancedHint"></small></span>
-      </label>
-      <div id="form" class="advanced-form" hidden></div>
-    </aside>
+  <section class="hero" id="top">
+    <div class="hero-copy">
+      <p class="eyebrow" data-i18n="hero_eyebrow"></p>
+      <h1 data-i18n="hero_title"></h1>
+      <p class="lead" data-i18n="hero_lead"></p>
+      <ul class="points">
+        <li data-i18n="hero_p1"></li>
+        <li data-i18n="hero_p2"></li>
+        <li data-i18n="hero_p3"></li>
+      </ul>
+      <div class="cta">
+        <a class="primary" href="#build" data-i18n="hero_cta"></a>
+        <a class="pill" href="#gallery" data-i18n="hero_cta2"></a>
+      </div>
+    </div>
+    <figure class="hero-stage" id="heroStage">
+      <img class="poster" src="img/hero.png" alt="">
+      <div id="hero" class="hero-view"></div>
+      <figcaption id="heroCaption" class="hero-caption"></figcaption>
+      <ul id="heroLegend" class="legend" hidden></ul>
+      <button id="heroReplay" class="pill hero-replay" type="button" data-i18n="hero_replay"></button>
+    </figure>
+  </section>
 
-    <main class="stage">
-      <div class="viewer">
-        <div id="tabs" class="tabs"></div>
-        <div id="view" class="view"></div>
-        <div class="floatbar">
-          <span id="status" class="status"></span>
-          <span id="caseName" class="status case-name"></span>
-          <span class="spacer"></span>
-          <button id="fit" class="pill" type="button" data-i18n="resetView"></button>
-          <button id="share" class="pill" type="button" data-i18n="share"></button>
+  <section class="band" id="why">
+    <div class="wrap">
+      <h2 data-i18n="why_title"></h2>
+      <div class="story">
+        <p data-i18n="why_p1"></p>
+        <p data-i18n="why_p2"></p>
+        <p data-i18n="why_p3"></p>
+      </div>
+      <h3 class="sub" data-i18n="uses_title"></h3>
+      <div class="uses">
+        <article class="use"><span class="use-ico" data-icon="use_router"></span><h4 data-i18n="use_router_t"></h4><p data-i18n="use_router"></p></article>
+        <article class="use"><span class="use-ico" data-icon="use_kvm"></span><h4 data-i18n="use_kvm_t"></h4><p data-i18n="use_kvm"></p></article>
+        <article class="use"><span class="use-ico" data-icon="use_pi"></span><h4 data-i18n="use_pi_t"></h4><p data-i18n="use_pi"></p></article>
+        <article class="use"><span class="use-ico" data-icon="use_audio"></span><h4 data-i18n="use_audio_t"></h4><p data-i18n="use_audio"></p></article>
+        <article class="use"><span class="use-ico" data-icon="use_clients"></span><h4 data-i18n="use_clients_t"></h4><p data-i18n="use_clients"></p></article>
+        <article class="use"><span class="use-ico" data-icon="use_fit"></span><h4 data-i18n="use_fit_t"></h4><p data-i18n="use_fit"></p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band alt" id="gallery">
+    <div class="wrap">
+      <h2 data-i18n="gallery_title"></h2>
+      <p class="section-lead" data-i18n="gallery_lead"></p>
+      <div id="galleryGrid" class="gallery"></div>
+    </div>
+  </section>
+
+  <section class="band" id="how">
+    <div class="wrap">
+      <h2 data-i18n="how_title"></h2>
+      <ol class="how">
+        <li><b>1</b><h4 data-i18n="how_1_t"></h4><p data-i18n="how_1"></p></li>
+        <li><b>2</b><h4 data-i18n="how_2_t"></h4><p data-i18n="how_2"></p></li>
+        <li><b>3</b><h4 data-i18n="how_3_t"></h4><p data-i18n="how_3"></p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="build" id="build">
+    <div class="wrap build-head">
+      <h2 data-i18n="build_title"></h2>
+      <p class="section-lead" data-i18n="build_lead"></p>
+    </div>
+    <div class="layout">
+      <aside class="panel">
+        <h2 class="panel-title" data-i18n="steps"></h2>
+        <div id="steps"></div>
+        <label class="toggle advanced">
+          <input type="checkbox" id="advanced"><span class="track"></span>
+          <span><b data-i18n="advanced"></b> <small data-i18n="advancedHint"></small></span>
+        </label>
+        <div id="form" class="advanced-form" hidden></div>
+      </aside>
+
+      <div class="stage">
+        <div class="viewer">
+          <div id="tabs" class="tabs"></div>
+          <div id="view" class="view"></div>
+          <ul id="legend" class="legend" hidden></ul>
+          <div class="floatbar">
+            <span id="status" class="status"></span>
+            <span id="caseName" class="status case-name"></span>
+            <span class="spacer"></span>
+            <button id="fit" class="pill" type="button" data-i18n="resetView"></button>
+            <button id="share" class="pill" type="button" data-i18n="share"></button>
+          </div>
+        </div>
+        <div class="results">
+          <div class="downloads">
+            <button id="kit" class="primary" type="button" data-i18n="downloadKit"></button>
+            <label class="check"><input type="checkbox" id="withTests" checked><span data-i18n="withTests"></span></label>
+            <button id="download" class="pill" type="button" disabled></button>
+            <div id="prebuilt" class="prebuilt"></div>
+          </div>
+          <div class="cards-2">
+            <div class="card"><h3 data-i18n="bom"></h3><ul id="bom" class="bom"></ul></div>
+            <div class="card"><h3 data-i18n="warnings"></h3><ul id="warnings" class="warnings"></ul></div>
+          </div>
+          <details class="log"><summary data-i18n="log"></summary><pre id="log"></pre></details>
         </div>
       </div>
-      <section class="results">
-        <div class="downloads">
-          <button id="kit" class="primary" type="button" data-i18n="downloadKit"></button>
-          <label class="check"><input type="checkbox" id="withTests" checked><span data-i18n="withTests"></span></label>
-          <button id="download" class="pill" type="button" disabled></button>
-          <div id="prebuilt" class="prebuilt"></div>
-        </div>
-        <div class="cards-2">
-          <div class="card"><h3 data-i18n="bom"></h3><ul id="bom" class="bom"></ul></div>
-          <div class="card"><h3 data-i18n="warnings"></h3><ul id="warnings" class="warnings"></ul></div>
-        </div>
-        <details class="log"><summary data-i18n="log"></summary><pre id="log"></pre></details>
-      </section>
-    </main>
-  </div>
+    </div>
+  </section>
 
   <footer>
     <span data-i18n="footer"></span>
     <a href="https://github.com/openscad/openscad">OpenSCAD</a> ·
     <a href="https://www.npmjs.com/package/@kreijstal/openscad-wasm">WebAssembly build</a> ·
-    bay2rack CC BY-NC-SA 4.0
+    <a href="https://github.com/abarriuso/bay2rack">bay2rack</a> CC BY-NC-SA 4.0
   </footer>
 
   <div id="tip" class="tip" role="tooltip" hidden></div>

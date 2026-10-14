@@ -139,9 +139,18 @@ const near = (hex, ref, tol = 6) =>
 
 export const PRINT_HEX = [0x303236, 0x3f4146, 0x4d4f54];   // adapter, fillers, modules (PRINT_A/B/C)
 
+// which printed part a colour stands for (0 adapter, 1 fillers, 2 modules) or -1.
+// Every rack module adds its index to the red channel so it stays a separate object: PRINT_C + [k, 0, 0].
+export function printSlot(hex) {
+  const r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
+  if (Math.abs(g - 0x4f) <= 1 && Math.abs(b - 0x54) <= 1 && r >= 0x4c && r <= 0x4d + 40) return 2;
+  return PRINT_HEX.findIndex((p) => near(hex, p, 2));
+}
+
 export function materialFor(hex, filament) {
-  const pi = PRINT_HEX.findIndex((p) => near(hex, p, 2));
-  if (pi >= 0) return { mat: MAT.filament(filament[pi]), print: true };
+  const pi = printSlot(hex);
+  if (pi >= 0) return { mat: MAT.filament(filament[pi]), print: true, slot: pi };
+  if (near(hex, 0x124d29, 3)) return { mat: MAT.pcb() };                                   // Raspberry Pi boards
   if (near(hex, 0xbdc2c9) || near(hex, 0xb8bdc4)) return { mat: MAT.steel() };          // screws, metal keystones
   if (near(hex, 0xdbad42)) return { mat: MAT.brass() };                                   // heat-set inserts
   if (near(hex, 0x94999f)) return { mat: MAT.zinc() };                                    // nuts

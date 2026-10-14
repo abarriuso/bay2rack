@@ -217,6 +217,12 @@ export function buildCase(c) {
   // drive cage around the bays (visible through the window)
   const cage = tiled(MAT.brushed(0xa6abb2), 40);
   for (const s of [-1, 1]) g.add(box(s > 0 ? bayW / 2 : -bayW / 2 - cageT, 1, c.cz0, cageT, 200, c.cz1 - c.cz0, cage));
+  // the tabs the drives rest on: they run in the grooves of the adapter
+  for (let j = Math.ceil(c.cz0 / pitch); j <= Math.floor(c.cz1 / pitch) + 1; j++) {
+    const zt = j * pitch - (pitch - bayH) / 2;
+    if (zt < c.cz0 + 2 || zt > c.cz1 - 2) continue;
+    for (const s of [-1, 1]) for (const y of [14, 120]) g.add(box(s > 0 ? bayW / 2 - 2.2 : -bayW / 2, y, zt - 0.5, 2.2, 24, 1, cage));
+  }
 
   // front fascia with the adapter opening and the free bays
   const holes = [c.open];
@@ -243,14 +249,8 @@ export function buildCase(c) {
     g.add(box(-bezelW / 2 + 0.4, -fd + 0.8, zb + 0.4, bezelW - 0.8, fd + 6, bezelH1 - 0.8, coverMat, 1.2));
     g.add(box(-bezelW / 2 + 10, -fd + 0.6, zb + bezelH1 / 2 - 0.4, bezelW - 20, 0.4, 0.8, MAT.plastic(0x050506, 0.8)));
   }
-  // front door (Define style): hinged on the left, open
-  if (st.front === 'door') {
-    const door = new THREE.Group();
-    door.add(box(0, -5, 0, w - 4, 5, h - 30, tiled(MAT.brushed(0x2a2b2e), 60), 2));
-    door.position.set(-w / 2 + 1, -fd - 1, z0 + 14);
-    door.rotation.z = -1.95;
-    g.add(door);
-  }
+  // Define-style cases: the front door comes off to use the rack, only its hinge pins stay
+  if (st.front === 'door') for (const zh of [z0 + 60, z1 - 60]) g.add(cyl(-w / 2 + 4, -fd - 2, zh, 2.2, 14, MAT.zinc(), 'z'));
   frontIO(g, w / 2 - 34, -fd, z1 - 24, st.body < 0x808080);
   if (st.window) interior(g, c, winSide > 0 ? -w / 2 + t : w / 2 - t);
   return g;
@@ -338,6 +338,16 @@ export function buildAP(pos) {
   return g;
 }
 
+// fibre box (ONT) on the floor behind the server: the WAN cable ends here
+export function buildONT(pos) {
+  const g = new THREE.Group();
+  g.add(box(pos[0] - 70, pos[1] - 45, pos[2], 140, 95, 28, MAT.plastic(0xeeeeea, 0.4), 6));
+  g.add(box(pos[0] - 70, pos[1] - 45, pos[2] + 27.5, 140, 95, 1, MAT.plastic(0xdcdcd6, 0.5), 6));
+  [0x3ddc84, 0x3ddc84, 0x5ac8ff, 0x3ddc84].forEach((c, i) =>
+    g.add(box(pos[0] - 50 + i * 12, pos[1] - 45.6, pos[2] + 18, 5, 1, 2, MAT.led(c, 2))));
+  return g;
+}
+
 // ------------------------------------------------------------------ cables
 function plug(end, dir, color) {
   const g = new THREE.Group();
@@ -357,6 +367,7 @@ export function buildCable(cb) {
   const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal', 0.5);
   const g = new THREE.Group();
   g.userData.role = 'cables';
+  g.userData.vlan = cb.vlan;
   g.add(mesh(new THREE.TubeGeometry(curve, pts.length * 28, cb.d / 2, 12, false), MAT.gloss(color)));
   if (cb.plugs[0]) g.add(plug(pts[0], pts[0].clone().sub(pts[1]).normalize(), color));
   if (cb.plugs[1]) g.add(plug(pts.at(-1), pts.at(-1).clone().sub(pts.at(-2)).normalize(), color));
@@ -376,6 +387,7 @@ export function buildScene(data) {
       safe(`client ${i}`, () => ((hl.types?.[i] ?? 'pc') === 'nas' ? buildNAS(cl, bays) : buildClient(i, cl, bays)));
     });
     safe('access point', () => buildAP(hl.ap));
+    if (hl.ont) safe('ont', () => buildONT(hl.ont));
   }
   for (const cb of data.cables ?? []) safe('cable', () => buildCable(cb));
   return g;

@@ -2,7 +2,7 @@
 //   scad/      the OpenSCAD model (src/) - the browser renders it
 //   stl/       the pre-built STLs and their catalogue (stl/index.json)
 //   openscad/  OpenSCAD compiled to WebAssembly (+ fonts and licence texts) from node_modules
-import { cpSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,5 +21,6 @@ for (const f of ['openscad.js', 'openscad.wasm', 'BUILDINFO.txt']) copy(join(was
 copy(join(wasm, 'fonts'), 'openscad/fonts');
 copy(join(wasm, 'LICENSES'), 'openscad/LICENSES');
 copy(join(repo, 'docs', 'img', 'hero.png'), 'img/hero.png');
+if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'), 'img/gallery');
 
 console.log('static assets copied to web/public/');

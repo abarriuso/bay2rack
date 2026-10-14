@@ -71,6 +71,8 @@ units_override = 0; // [0:1:6]
 overhang_align = "center"; // [center, top, bottom]
 // Where the spare zone goes
 spare_pos = "top"; // [top, bottom, split]
+// split: share of the spare height that goes to the bottom zone
+spare_split = 0.5; // [0.2:0.01:0.8]
 // Spare zones smaller than this become plain frame rim
 min_spare = 4;
 
@@ -125,15 +127,25 @@ wall_t = 2.4;
 // How deep the sleeve goes into the bay
 sleeve_depth = 62;
 sleeve_style = "rails"; // [rails:Side rails only, box:Side + top and bottom plates]
+// Grooves for the metal tabs between the bays (the ledges the CD drives rest on), so you don't have to bend them flat
+bay_tabs = true;
+// Groove height, centred on the gap between two bays
+bay_tab_h = 5;
+// How far the tabs stick into the bay (the wall gets a rib inside to keep 1.2 mm behind the groove)
+bay_tab_d = 3;
 // Cut print-friendly windows in walls and plates
 lighten = true;
+// Stiffen the side walls that screw to the case: an inner lip along their top and bottom edge and a fillet into each rack post (all outside the rack opening, nothing in the rack touches them)
+wall_ribs = true;
+// Width of the inner lips
+wall_lip = 6;
 
 /* [Spare-zone filler] */
 // separate = screw-on panel you can swap (modular).  integral = features cut into the frame
 filler_mode = "separate"; // [separate:Separate screw-on panel, integral:Cut into the frame]
-spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan80]
+spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
 // Fill of the top zone when spare_pos = split
-spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan80]
+spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
 filler_t = 3;
 label_text = "HOMELAB";
 
@@ -141,7 +153,7 @@ label_text = "HOMELAB";
 // metal = holder cells for metal / shielded keystones (shape of the original design).  standard = plain cut-out for plastic keystones
 ks_style = "metal"; // [metal:Metal / shielded keystone - holder cells, standard:Standard plastic keystone - cut-out]
 ks_ports = 6; // [1:1:12]
-// Type of every port, comma separated (empty = ks_ports x ks_style): rj45m = metal RJ45 cell, rj45 hdmi usb = standard keystones, cover = plain cover, pass = cable pass-through cover, none = no hole
+// Type of every port, comma separated (empty = ks_ports x ks_style): rj45m = metal RJ45 cell, rj45 hdmi usb rca jack toslink = standard keystones, cover = plain cover, pass = cable pass-through cover, none = no hole
 ks_ports_list = "rj45m,rj45m,rj45m,cover,cover,pass";
 ks_labels = true;
 ks_label_start = 1;
@@ -196,10 +208,10 @@ led_style = "ring"; // [ring:Countersunk ring - the LED dome sticks out, halo:Ha
 led_protrude = 1.5;
 
 /* [Rack contents] */
-// What goes in each rack unit, top first (assembly preview and kit): ms105g, kvm2, uswflex, ux, dev1, dev2, shelf, patch, buttons, vent, blank, cable, led, label
-rack_modules = "ms105g,kvm2";
+// What goes in the rack, top first (assembly preview and kit): ms105g, kvm, pi, piblade (2U), uswflex, ux, dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, led, label. kvm and pi trays name their boxes after a colon, joined with +: kvm:jet+nano, kvm:nano+nano, pi:pi5, pi:pi4+pi4, piblade:pi5+pi5+pi5
+rack_modules = "ms105g,kvm:jet+nano";
 // Module made by part = rack_module
-module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm2:Two KVM over IP - JetKVM + NanoKVM, uswflex:UniFi USW-Flex-Mini switch mount, ux:UniFi Express mount, dev1:Your device 1 - dev1_dims, dev2:Your device 2 - dev2_dims, shelf:1U shelf for small devices, patch:1U keystone patch panel, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
+module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm:KVM over IP tray - 1 to 3 boxes (kvm_boxes), pi:Raspberry Pi tray - 1 or 2 boards flat (pi_boards), piblade:2U Raspberry Pi blades - up to 4 boards on edge (pi_boards), uswflex:UniFi USW-Flex-Mini switch mount, ux:UniFi Express mount, dev1:Your device 1 - dev1_dims, dev2:Your device 2 - dev2_dims, shelf:1U shelf for small devices, patch:1U keystone patch panel, fan40:1U panel with 40 mm fans, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
 
 /* [Device mounts] */
 // Mercusys MS105G 5-port switch, W x H x D from retailer spec sheets (VERIFY)
@@ -213,10 +225,22 @@ mount_lip = 1.5;
 mount_wall = 2.0;
 // Shelf depth for small devices (NanoKVM, Raspberry Pi...)
 shelf_depth = 100;
-// kvm2 module, left box: JetKVM, W x H x D (press / retailer figures - VERIFY)
-kvm_a = [43, 31, 60];
-// kvm2 module, right box: Sipeed NanoKVM Full, W x H x D (VERIFY)
-kvm_b = [40, 36, 40];
+// Boxes of the KVM tray made by part = rack_module, left to right, joined with + (1 to 3 if they fit): jet = JetKVM, nano = Sipeed NanoKVM, custom = kvm_custom
+kvm_boxes = "jet+nano";
+// JetKVM, W x H x D (press / retailer figures - VERIFY)
+jetkvm_dims = [43, 31, 60];
+// Sipeed NanoKVM Full (with its case), W x H x D (VERIFY)
+nanokvm_dims = [40, 36, 40];
+// Any other KVM box for the KVM tray (custom), W x H x D
+kvm_custom = [50, 25, 60];
+// Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
+pi_boards = "pi5";
+// Blade tray: distance between boards (26 fits a Pi 5 with the active cooler, use ~32 with PoE HATs)
+pi_blade_pitch = 26;
+// How the boards are screwed to the standoffs
+pi_fixing = "selftap"; // [selftap:M2.5 self-tapping screws, heatset:M2.5 heat-set inserts]
+// Standoff height under the boards
+pi_standoff = 5;
 // UniFi USW-Flex-Mini, W x H x D (Ubiquiti spec)
 usw_dims = [107.2, 21.2, 70.2];
 // UniFi Express (UX), W x H x D (Ubiquiti spec)
@@ -225,6 +249,14 @@ ux_dims = [98, 30, 98];
 dev1_dims = [100, 30, 80];
 // Your own device for the dev2 module, W x H x D
 dev2_dims = [60, 25, 60];
+
+/* [Fans] */
+// Opening in front of the fans: open = plain round hole, hex = hex grille
+fan_guard = "open"; // [open:Open round hole, hex:Hex grille]
+// 40 mm fans side by side in a fan40 module or fill
+fan40_count = 3; // [1:1:3]
+// Fan thickness (40 x 40 x 10 or x 20); sets the screw length
+fan40_t = 10; // [10, 20]
 
 /* [Rear cable slots] */
 // Printed brackets that replace two PCI slot covers: the network cables and the power cable leave the case through them
@@ -240,7 +272,7 @@ pci_t = 2.0;
 
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
-panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan80]
+panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
 panel_t = 3;
 // Horizontal slotting of panel holes
 panel_hole_slot = 2; // [0:0.5:6]

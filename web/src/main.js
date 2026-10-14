@@ -6,29 +6,52 @@ import { t, lang, setLang, applyI18n } from './i18n.js';
 import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from './help.js';
 import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
+import { renderLegend } from './legend.js';
+import { startHero } from './hero.js';
 
 const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
-const FILLS = ['keystone', 'buttons', 'fan80', 'vent', 'cable', 'led', 'label', 'blank'];
-const MODULES = ['ms105g', 'kvm2', 'uswflex', 'ux', 'dev1', 'dev2', 'shelf', 'patch', 'buttons', 'vent', 'blank', 'cable', 'led', 'label'];
+const FILLS = ['keystone', 'buttons', 'fan80', 'fan40', 'vent', 'cable', 'led', 'label', 'blank'];
+const MODULES = ['ms105g', 'uswflex', 'ux', 'kvm', 'pi', 'piblade', 'dev1', 'dev2', 'shelf', 'patch', 'fan40', 'buttons',
+  'vent', 'blank', 'cable', 'led', 'label'];
+// trays that hold a list of boxes, written "kvm:jet+nano": choices, how many, default
+const TRAYS = {
+  kvm: { items: ['jet', 'nano', 'custom'], max: 3, def: 'jet+nano' },
+  pi: { items: ['pi5', 'pi4', 'pi3', 'zero'], max: 2, def: 'pi5' },
+  piblade: { items: ['pi5', 'pi4', 'pi3'], max: 4, def: 'pi5+pi5+pi5' },
+};
+const KVM_DIMS = { jet: 'jetkvm_dims', nano: 'nanokvm_dims', custom: 'kvm_custom' };
 // device modules -> the parameters holding their size (W, H, D)
 const DEVICE_DIMS = {
-  ms105g: ['ms_w', 'ms_h', 'ms_d'], uswflex: ['usw_dims'], ux: ['ux_dims'], kvm2: ['kvm_a', 'kvm_b'],
-  dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'],
+  ms105g: ['ms_w', 'ms_h', 'ms_d'], uswflex: ['usw_dims'], ux: ['ux_dims'],
+  dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'], piblade: ['pi_blade_pitch'],
 };
-// ready-made examples (applied on top of the defaults)
+// ready-made builds: the examples step and the gallery (applied on top of the defaults)
 const EXAMPLES = {
-  homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm2',
-             spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
+  router: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,kvm:jet+nano',
+            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass', scene: 'homelab' },
+  homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm:jet+nano',
+             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
+  network: { bays: 5, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,ux,patch',
+             spare_pos: 'top', spare_fill: 'vent', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass', scene: 'homelab' },
+  pi: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,piblade:pi5+pi5+pi5+pi5',
+        spare_pos: 'top', spare_fill: 'vent', scene: 'single' },
+  kvm: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'kvm:jet+jet,kvm:nano+nano',
+         spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,hdmi,usb', scene: 'single' },
+  audio: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'pi:pi4,fan40',
+           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rca,rca,jack,toslink,rj45m,pass', scene: 'single' },
   unifi: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ux',
-           spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass', scene: 'homelab' },
-  bezel: { bays: 3, fit: 'flush', front_style: 'bezel', filler_mode: 'integral', rack_modules: 'ms105g,kvm2',
-           spare_fill: 'keystone', scene: 'homelab' },
-  small: { bays: 2, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex',
-           spare_fill: 'buttons', scene: 'single' },
+           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass', scene: 'homelab' },
+  client: { bays: 3, fit: 'panel', front_style: 'plate', filler_mode: 'integral', spare_pos: 'split', spare_split: 0.67,
+            spare_fill: 'fan80', spare_fill_2: 'buttons', scene: 'single' },
+  bezel: { bays: 3, fit: 'flush', front_style: 'bezel', filler_mode: 'integral', rack_modules: 'ms105g,kvm:jet+nano',
+           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
 };
-const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'cover', 'pass', 'none'];
+const EXAMPLE_KEYS = [...new Set(Object.values(EXAMPLES).flatMap(Object.keys))];
+const SHOWCASE = 'router';                 // the build the hero assembles
+const GALLERY = ['router', 'network', 'pi', 'kvm', 'audio', 'client', 'unifi', 'bezel'];
+const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'rca', 'jack', 'toslink', 'cover', 'pass', 'none'];
 const SCREWS = ['M3', 'M4', 'M5', 'M6', '10-32', '12-24'];
 const FIXINGS = ['heatset', 'tap', 'nut_trap', 'square_nut', 'channel'];
 const TESTS = ['test_bay', 'test_rack', 'test_keystone'];
@@ -74,11 +97,49 @@ function calc(v) {
 const splitList = (s) => String(s).split(',').map((x) => x.trim()).filter(Boolean);
 const ksTypes = (v) => (String(v.ks_ports_list).trim() ? splitList(v.ks_ports_list)
   : Array(Math.max(v.ks_ports, 1)).fill(v.ks_style === 'metal' ? 'rj45m' : 'rj45'));
-const usedMods = (v, units) => { const m = splitList(v.rack_modules); return Array.from({ length: units }, (_, k) => m[k] ?? 'blank'); };
+// rack modules: "kvm:jet+nano" = kind kvm with two boxes; a bare kvm / pi takes kvm_boxes / pi_boards
+const modKind = (m) => { const k = String(m).split(':')[0]; return k === 'kvm2' ? 'kvm' : k; };
+function modItems(m, v = S.values) {
+  const [k, spec] = String(m).split(':');
+  if (spec) return spec.split('+').filter(Boolean);
+  if (k === 'kvm2') return ['jet', 'nano'];
+  if (k === 'kvm') return String(v.kvm_boxes).split('+').filter(Boolean);
+  if (k === 'pi' || k === 'piblade') return String(v.pi_boards).split('+').filter(Boolean);
+  return [];
+}
+const modU = (m) => (modKind(m) === 'piblade' ? 2 : 1);
+const modLabel = (m) => {
+  const items = TRAYS[modKind(m)] ? modItems(m) : [];
+  return t('mod_' + modKind(m)) + (items.length ? ` · ${items.map((x) => t('box_' + x)).join(' + ')}` : '');
+};
+const modFile = (m) => String(m).replace(/[:+]/g, '-');
+// modules from the top like config.scad: one that no longer fits becomes a blank
+function placeMods(v, units) {
+  const list = splitList(v.rack_modules);
+  const out = [];
+  for (let top = 0, i = 0; top < units; i++) {
+    const m = list[i] ?? 'blank';
+    const u = top + modU(m) <= units ? modU(m) : 1;
+    out.push({ m: u === modU(m) ? m : 'blank', top, u });
+    top += u;
+  }
+  return out;
+}
+const usedMods = (v, units) => placeMods(v, units).map((p) => p.m);
+// will these boxes fit side by side in one tray? (default M6 posts: 122 mm between them; OpenSCAD has the last word)
+const OPENING = 122.1;
+function trayFits(kind, items, v) {
+  const sum = (a) => a.reduce((x, y) => x + y, 0);
+  if (kind === 'kvm') return sum(items.map((b) => v[KVM_DIMS[b]][0] + v.mount_clear)) + (items.length + 1) * v.mount_wall <= OPENING - 1
+    && Math.max(...items.map((b) => v[KVM_DIMS[b]][1] + v.mount_clear)) + 2 * v.mount_wall <= v.rack_u_h - 0.79;
+  if (kind === 'pi') return sum(items.map((b) => (b === 'zero' ? 65 : 56))) + (items.length - 1) * 3 <= OPENING - 6;
+  if (kind === 'piblade') return (items.length - 1) * v.pi_blade_pitch + 2 + v.pi_standoff + 18.4 <= OPENING - 6;
+  return true;
+}
 
 // ---------------------------------------------------------------- engine
 const viewer = new Viewer($('#view'));
-if (import.meta.env.DEV) window.__b2r = { viewer, S };
+if (import.meta.env.DEV) window.__b2r = { viewer, S, EXAMPLES, applyExample: (k) => applyExample(k) };
 const worker = new Worker(new URL('./openscad-worker.js', import.meta.url), { type: 'module' });
 const jobs = new Map();
 let nextJob = 1;
@@ -86,6 +147,7 @@ worker.onmessage = ({ data: m }) => {
   if (m.type === 'ready') {
     S.engine = 'ready';
     setStatus(t('ready'), 'ok');
+    startShowcase();
     if (S.wantRender) render();
   } else if (m.type === 'error') {
     S.engine = 'error';
@@ -177,7 +239,8 @@ function renderSteps() {
   const list = [];
   let n = 0;
   const add = (key, ...body) => list.push(step(++n, key, ...body));
-  const mods = usedMods(v, c.units);
+  const placed = placeMods(v, c.units);
+  const mods = placed.map((p) => p.m);
   const panel = v.part === 'rack_panel';
 
   if (v.part === 'assembly') add('example', examplesEditor());
@@ -195,14 +258,16 @@ function renderSteps() {
       { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
       { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
     ]));
-    if (c.units > 0) add('contents', contentsEditor(mods));
-    const devs = [...new Set(mods)].filter((m) => DEVICE_DIMS[m]);
+    if (c.units > 0) add('contents', contentsEditor(placed));
+    const devs = deviceEntries(mods);
     if (devs.length) add('devices', devicesEditor(devs));
-    if (c.hasSpare) add('fill', chips('spare_fill', FILLS, (x) => t('fill_' + x)));
+    if (c.hasSpare) add('fill', fillEditor());
   }
   const fills = panel ? [v.panel_fill] : c.zones;
   const usesPatch = fills.includes('keystone') || (!panel && mods.includes('patch'));
   const usesButtons = fills.includes('buttons') || (!panel && mods.includes('buttons'));
+  const usesFans = fills.includes('fan40') || (!panel && mods.includes('fan40'));
+  if (usesFans) add('fans', segmented('fan40_count', [1, 2, 3], (x) => `${x} × 40 mm`), segmented('fan40_t', [10, 20], (x) => `${x} mm`));
   if (usesPatch) add('ports', portsEditor(panel && v.panel_u > 1 ? 12 : 6));
   if (usesButtons) add('buttons', buttonsEditor());
   add('screw', chips('rack_screw', SCREWS, String),
@@ -211,52 +276,91 @@ function renderSteps() {
   $('#steps').replaceChildren(...list);
 }
 
-function contentsEditor(mods) {
+function contentsEditor(placed) {
+  const mods = placed.map((p) => p.m);
   const set = (k, val) => { const m = [...mods]; m[k] = val; update({ rack_modules: m.join(',') }); };
-  return h('div', { className: 'rows' }, mods.map((m, k) => h('label', { className: 'row', dataset: { tip: tipOf('mod:' + m) } },
-    h('span', { className: 'u', textContent: k === 0 ? `U${k + 1} · ${t('top')}` : `U${k + 1}` }),
-    select(null, MODULES.map((x) => [x, t('mod_' + x)]), m, (val) => set(k, val)))));
+  return h('div', { className: 'rows' }, placed.map((p, k) => {
+    const kind = modKind(p.m);
+    const u = p.u > 1 ? `U${p.top + 1}–${p.top + p.u}` : `U${p.top + 1}`;
+    const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind) } },
+      h('span', { className: 'u', textContent: p.top === 0 ? `${u} · ${t('top')}` : u }),
+      select(null, MODULES.map((x) => [x, t('mod_' + x)]), kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}` : val)));
+    return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`))] : row;
+  }));
 }
 
-function examplesEditor() {
+// the boxes of a KVM / Raspberry Pi tray, left to right, plus one empty slot to add another
+function trayEditor(kind, items, onChange) {
+  const T = TRAYS[kind];
+  const slots = [];
+  for (let i = 0; i < T.max && i <= items.length; i++) {
+    const opts = [...(i > 0 ? [['', t('box_none')]] : []), ...T.items.map((x) => [x, t('box_' + x)])];
+    slots.push(select(null, opts, items[i] ?? '', (val) => {
+      const next = [...items];
+      if (val) next[i] = val; else next.splice(i);
+      onChange(next.filter(Boolean));
+    }));
+  }
+  const fits = trayFits(kind, items, S.values);
+  return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, slots),
+    h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: t(fits ? 'tray_' + kind : 'trayNoFit') }));
+}
+
+function fillEditor() {
   const v = S.values;
-  const active = Object.entries(EXAMPLES).find(([, ex]) => Object.entries(ex).every(([k, x]) => v[k] === x))?.[0];
+  return [
+    segmented('spare_pos', ['top', 'bottom', 'split'], (x) => t('pos_' + x)),
+    v.spare_pos === 'split' ? h('small', { className: 'hint', textContent: t('fillBottom') }) : null,
+    chips('spare_fill', FILLS, (x) => t('fill_' + x)),
+    v.spare_pos === 'split' ? [h('small', { className: 'hint', textContent: t('fillTop') }), chips('spare_fill_2', FILLS, (x) => t('fill_' + x))] : null,
+  ];
+}
+
+// an example replaces every setting any example touches, the rest (view, screws...) stays
+function applyExample(k) {
+  const reset = Object.fromEntries(EXAMPLE_KEYS.filter((x) => x in S.defaults).map((x) => [x, S.defaults[x]]));
+  update({ ...reset, ...EXAMPLES[k], part: 'assembly' });
+}
+const exampleActive = (k, v = S.values) => Object.entries(EXAMPLES[k]).every(([key, x]) => same(v[key], x));
+
+function examplesEditor() {
   return h('div', { className: 'chips' }, Object.keys(EXAMPLES).map((k) => h('button', {
-    type: 'button', className: `chip${active === k ? ' active' : ''}`, dataset: { tip: t('ex_' + k + '_tip') },
-    onclick: () => update({ ...EXAMPLES[k] }),
+    type: 'button', className: `chip${exampleActive(k) ? ' active' : ''}`, dataset: { tip: t('ex_' + k + '_tip') },
+    onclick: () => applyExample(k),
   }, t('ex_' + k))));
 }
 
-// W x H x D of every device module in the rack, editable
-function devicesEditor(devs) {
+// the sizes you can edit for the devices in the rack: { name (null = MS105G), title, tip }
+function deviceEntries(mods) {
+  const out = new Map();
+  for (const m of mods) {
+    const k = modKind(m);
+    if (k === 'ms105g') out.set('ms', { name: null, title: t('mod_ms105g'), tip: 'mod:ms105g' });
+    else if (k === 'kvm') for (const b of modItems(m)) out.set(KVM_DIMS[b], { name: KVM_DIMS[b], title: t('box_' + b), tip: 'mod:kvm' });
+    else if (DEVICE_DIMS[k]) out.set(k, { name: DEVICE_DIMS[k][0], title: t(k === 'piblade' ? 'dev_bladePitch' : 'mod_' + k), tip: 'mod:' + k });
+  }
+  return [...out.values()].filter((e) => !e.name || S.params[e.name]);
+}
+
+// W x H x D of every device in the rack, editable
+function devicesEditor(entries) {
   const v = S.values;
   const field = (val, set, label) => h('label', { className: 'dim' }, h('small', { textContent: label }),
     h('input', { type: 'number', step: 'any', min: 1, className: 'num', value: val, onchange: (e) => set(Number(e.target.value)) }));
-  const rows = [];
-  for (const m of devs) {
-    for (const name of DEVICE_DIMS[m]) {
-      const p = S.params[name];
-      if (!p) continue;
-      const title = m === 'kvm2' ? t(name === 'kvm_a' ? 'dev_jetkvm' : 'dev_nanokvm') : t('mod_' + m);
-      let inputs;
-      if (m === 'ms105g') {
-        inputs = ['ms_w', 'ms_h', 'ms_d'].map((k, i) => field(v[k], (x) => update({ [k]: x }), t('dim_' + i)));
-      } else if (p.type === 'vector') {
-        inputs = v[name].map((x, i) => field(x, (nx) => { const a = [...v[name]]; a[i] = nx; update({ [name]: a }); }, t('dim_' + i)));
-      } else {
-        inputs = [field(v[name], (x) => update({ [name]: x }), t('dim_2'))];
-      }
-      const changed = m === 'ms105g' ? ['ms_w', 'ms_h', 'ms_d'].some((k) => v[k] !== S.defaults[k])
-        : JSON.stringify(v[name]) !== JSON.stringify(S.defaults[name]);
-      rows.push(h('div', { className: 'dev-row', dataset: { tip: tipOf('mod:' + m) } },
-        h('div', { className: 'dev-title' }, h('b', { textContent: title }),
-          changed ? h('button', { type: 'button', className: 'link', textContent: t('resetDims'),
-            onclick: () => update(m === 'ms105g' ? { ms_w: S.defaults.ms_w, ms_h: S.defaults.ms_h, ms_d: S.defaults.ms_d }
-              : { [name]: S.defaults[name] }) }) : null),
-        h('div', { className: 'dims' }, inputs)));
-      if (m === 'ms105g') break;
-    }
-  }
+  const MS = ['ms_w', 'ms_h', 'ms_d'];
+  const rows = entries.map(({ name, title, tip }) => {
+    let inputs;
+    if (!name) inputs = MS.map((k, i) => field(v[k], (x) => update({ [k]: x }), t('dim_' + i)));
+    else if (S.params[name].type === 'vector')
+      inputs = v[name].map((x, i) => field(x, (nx) => { const a = [...v[name]]; a[i] = nx; update({ [name]: a }); }, t('dim_' + i)));
+    else inputs = [field(v[name], (x) => update({ [name]: x }), t(name === 'pi_blade_pitch' ? 'dim_pitch' : 'dim_2'))];
+    const changed = !name ? MS.some((k) => v[k] !== S.defaults[k]) : !same(v[name], S.defaults[name]);
+    return h('div', { className: 'dev-row', dataset: { tip: tipOf(tip) } },
+      h('div', { className: 'dev-title' }, h('b', { textContent: title }),
+        changed ? h('button', { type: 'button', className: 'link', textContent: t('resetDims'),
+          onclick: () => update(!name ? Object.fromEntries(MS.map((k) => [k, S.defaults[k]])) : { [name]: S.defaults[name] }) }) : null),
+      h('div', { className: 'dims' }, inputs));
+  });
   return [h('div', { className: 'devs' }, rows), h('small', { className: 'hint', textContent: t('devHint') })];
 }
 
@@ -309,7 +413,10 @@ function previewEditor() {
         onclick: () => { UI.filament = name; saveUI(); viewer.setFilament(FILAMENTS[name]); renderSteps(); },
       }))),
     h('div', { className: 'toggles' },
-      toggle(t('cables'), UI.cables, (on) => { UI.cables = on; saveUI(); viewer.setVisible('cables', on); }),
+      toggle(t('cables'), UI.cables, (on) => {
+        UI.cables = on; saveUI(); viewer.setVisible('cables', on);
+        $('#legend').hidden = !on || !$('#legend').childElementCount;
+      }),
       toggle(t('sidePanel'), UI.side, (on) => { UI.side = on; saveUI(); viewer.setVisible('side', on); }),
       toggle(t('devices'), v.demo_devices === 'homelab', (on) => update({ demo_devices: on ? 'homelab' : 'generic' })),
       toggle(t('hardware'), v.show_hardware, (on) => update({ show_hardware: on })),
@@ -339,7 +446,7 @@ function renderTabs() {
     tab('tests', 'tabTests', true, () => update({ part: S.tests }), v.part.startsWith('test_')),
   ];
   let sub = null;
-  if (v.part === 'rack_module') sub = select('module_type', mods.map((m) => [m, t('mod_' + m)]));
+  if (v.part === 'rack_module') sub = select('module_type', mods.map((m) => [m, modLabel(m)]));
   if (v.part === 'keystone_cover') sub = select('cover_type', ['blank', 'pass'].map((x) => [x, t('cover_' + x)]));
   if (v.part.startsWith('test_')) { S.tests = v.part; sub = select('part', TESTS.map((x) => [x, t(x)])); }
   $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, sub)] : []));
@@ -472,6 +579,7 @@ function showResult(res, ext, values) {
     } catch { /* ignore a malformed line */ }
   }
   viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
+  renderLegend($('#legend'), ext === '3mf' && UI.cables ? scene : null);
   $('#caseName').textContent = ext === '3mf' && scene.case ? scene.case.name : '';
   S.lastKey = key;
   if (S.result) URL.revokeObjectURL(S.result.url);
@@ -502,7 +610,9 @@ function kitList(v) {
   }
   const mods = usedMods(v, c.units);
   for (const m of new Set(mods))
-    files.push({ name: `module-${m}.stl`, qty: mods.filter((x) => x === m).length, part: { part: 'rack_module', module_type: m } });
+    files.push({ name: `module-${modFile(m)}.stl`, qty: mods.filter((x) => x === m).length, part: { part: 'rack_module', module_type: m } });
+  if (v.rear_slots) for (const k of ['lan', 'power'])
+    files.push({ name: `pci-bracket-${k}.stl`, qty: 1, part: { part: 'pci_bracket', pci_kind: k } });
   const sets = c.zones.filter((z) => z === 'keystone').length + mods.filter((m) => m === 'patch').length;
   const types = ksTypes(v);
   for (const [kind, file] of [['cover', 'blank'], ['pass', 'pass']]) {
@@ -552,10 +662,37 @@ async function downloadKit() {
   }
 }
 
+// ---------------------------------------------------------------- hero + gallery
+let hero = null;
+function startShowcase() {
+  if (hero || !S.params.bays || new URLSearchParams(location.search).has('nohero')) return;
+  const values = { ...S.defaults, ...EXAMPLES[SHOWCASE] };
+  hero = startHero({
+    el: $('#hero'), caption: $('#heroCaption'), replay: $('#heroReplay'), legend: $('#heroLegend'),
+    onReady: () => $('#heroStage').classList.add('live'),
+    runJob, definesFor, values, mods: usedMods(values, calc(values).units),
+    filament: FILAMENTS[UI.filament] ?? FILAMENTS.black,
+  });
+  hero.setTheme(document.documentElement.dataset.theme);
+  if (import.meta.env.DEV) window.__b2r.hero = hero;
+}
+
+function renderGallery() {
+  $('#galleryGrid').replaceChildren(...GALLERY.map((k) => h('figure', { className: 'shot' },
+    h('img', { src: `${BASE}img/gallery/${k}.webp`, alt: t('ex_' + k), loading: 'lazy', width: 800, height: 600,
+      onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
+    h('figcaption', {},
+      h('h4', { textContent: t('ex_' + k) }),
+      h('p', { textContent: t('ex_' + k + '_tip') }),
+      h('button', { type: 'button', className: 'pill', textContent: t('gallery_load'),
+        onclick: () => { applyExample(k); $('#build').scrollIntoView(); } })))));
+}
+
 // ---------------------------------------------------------------- chrome
 function applyTheme(th) {
   document.documentElement.dataset.theme = th;
   viewer.setTheme(th);
+  hero?.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
   try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }
@@ -563,6 +700,7 @@ function applyTheme(th) {
 function wire() {
   initTooltips($('#tip'));
   $('#logo').replaceChildren(svgEl(ICONS.logo));
+  for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
   let th = 'light';
   try { th = localStorage.getItem('theme') || 'light'; } catch { /* private mode */ }
   applyTheme(th);
@@ -572,6 +710,7 @@ function wire() {
     $('#lang').textContent = lang === 'es' ? 'EN' : 'ES';
     buildAdvanced();
     refresh();
+    renderGallery();
     if (S.result) render();
   };
   const adv = $('#advanced');
@@ -613,6 +752,8 @@ async function boot() {
   wire();
   buildAdvanced();
   refresh();
+  renderGallery();
+  if (S.engine === 'ready') startShowcase();
   S.wantRender = true;
   if (S.engine === 'ready') render();
 }

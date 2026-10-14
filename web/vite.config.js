@@ -1,17 +1,17 @@
-import { createReadStream, existsSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
-const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'model/stl', '.md': 'text/markdown' };
+const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'model/stl', '.md': 'text/markdown', '.webp': 'image/webp', '.png': 'image/png' };
 
 // In dev, serve the model and the STLs straight from the repo so edits show up on reload
 // (the build copies them into public/ with scripts/copy-assets.mjs).
 const liveRepoFiles = () => ({
   name: 'bay2rack-live-files',
   configureServer(server) {
-    for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl']]) {
+    for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl'], ['/img/gallery/', 'docs/gallery']]) {
       server.middlewares.use(url, (req, res, next) => {
         const file = normalize(join(repo, dir, decodeURIComponent(req.url.split('?')[0])));
         if (!file.startsWith(join(repo, dir)) || !existsSync(file) || !statSync(file).isFile()) return next();
@@ -20,6 +20,19 @@ const liveRepoFiles = () => ({
         createReadStream(file).pipe(res);
       });
     }
+    // dev only: the page can save captures (gallery shots, GIF frames) into docs/
+    server.middlewares.use('/__save', (req, res) => {
+      const rel = new URL(req.url, 'http://x').searchParams.get('path') ?? '';
+      const file = normalize(join(repo, 'docs', rel));
+      if (req.method !== 'POST' || !file.startsWith(join(repo, 'docs'))) { res.statusCode = 400; res.end(); return; }
+      const parts = [];
+      req.on('data', (c) => parts.push(c));
+      req.on('end', () => {
+        mkdirSync(dirname(file), { recursive: true });
+        writeFileSync(file, Buffer.concat(parts));
+        res.end('ok');
+      });
+    });
   },
 });
 

@@ -36,8 +36,8 @@ frame_z1 = frame_z0 + frame_h;
 spare     = frame_h - units * U;
 has_spare = spare >= min_spare;
 
-sp_bot = !has_spare ? 0 : spare_pos == "bottom" ? spare : spare_pos == "split" ? spare / 2 : 0;
-sp_top = !has_spare ? 0 : spare_pos == "top"    ? spare : spare_pos == "split" ? spare / 2 : 0;
+sp_bot = !has_spare ? 0 : spare_pos == "bottom" ? spare : spare_pos == "split" ? spare * spare_split : 0;
+sp_top = !has_spare ? 0 : spare_pos == "top"    ? spare : spare_pos == "split" ? spare * (1 - spare_split) : 0;
 units_z0 = has_spare ? frame_z0 + sp_bot
          : overhang_align == "top"    ? frame_z1 - units * U
          : overhang_align == "bottom" ? frame_z0
@@ -55,8 +55,26 @@ B = with_insert(hw(bay_screw), bay_insert_d, bay_insert_l);
 ks_types  = ks_ports_list == "" ? [for (i = [0 : max(ks_ports, 1) - 1]) ks_style == "metal" ? "rj45m" : "rj45"]
           : str_split(ks_ports_list);
 rack_mods = str_split(rack_modules);
-function mod_at(u) = let(k = units - 1 - u) k < len(rack_mods) ? rack_mods[k] : "blank";   // u = 0 is the bottom unit
-used_mods = units > 0 ? [for (u = [0 : units - 1]) mod_at(u)] : [];
+// "kvm:jet+nano" -> kind "kvm", items ["jet", "nano"]; a bare "kvm" / "pi" takes kvm_boxes / pi_boards
+// ("kvm2" is the old name of the JetKVM + NanoKVM tray)
+function mod_kind(m) = let(p = str_split(m, ":")) len(p) == 0 ? "blank" : p[0] == "kvm2" ? "kvm" : p[0];
+function mod_items(m) = let(p = str_split(m, ":"), k = mod_kind(m))
+    len(p) > 1 ? str_split(p[1], "+")
+  : m == "kvm2" ? ["jet", "nano"]
+  : k == "kvm" ? str_split(kvm_boxes, "+")
+  : k == "pi" ? str_split(pi_boards, "+")
+  : [];
+function mod_u(m) = mod_kind(m) == "piblade" ? 2 : 1;                 // rack units taken by a module
+// modules placed from the top: [module, bottom unit (0 = bottom)]; one that no longer fits becomes a blank
+function place_mods(i, top) =
+    top <= 0 ? []
+  : i >= len(rack_mods) ? concat([["blank", top - 1]], place_mods(i, top - 1))
+  : mod_u(rack_mods[i]) <= top ? concat([[rack_mods[i], top - mod_u(rack_mods[i])]], place_mods(i + 1, top - mod_u(rack_mods[i])))
+  : concat([["blank", top - 1]], place_mods(i + 1, top - 1));
+placed_mods = units > 0 ? place_mods(0, units) : [];
+used_mods = [for (p = placed_mods) p[0]];
+// modules counted in the BOM: every unit of the assembly, or the one module being made
+bom_mods = part == "assembly" ? used_mods : part == "rack_module" ? [module_type] : [];
 
 // rack posts
 r_feat = rack_fixing == "heatset"    ? R[2]
@@ -126,23 +144,34 @@ module bom(label, n, s, L, head, f, H)
 n_dev  = 2 * len(rack_zs);
 n_fill = filler_mode == "separate" ? 2 * len(zones) : 0;
 n_bay  = bay_fixing == "none" ? 0 : 2 * len(bay_ys) * len(bay_zs);
-bom("rack accessories", n_dev, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
-bom("filler panels", n_fill, rack_screw, rack_L_fill, rack_screw_head, rack_fixing, R);
-bom("drive bay", n_bay, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
+// screws for what this part is: the whole assembly, or just the piece being printed
+bom_adapter = part == "assembly" || part == "adapter";
+bom("rack accessories", bom_adapter ? n_dev : 0, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
+bom("filler panels", part == "assembly" ? n_fill : (part == "filler" || part == "filler_2") && filler_mode == "separate" ? 2 : 0,
+    rack_screw, rack_L_fill, rack_screw_head, rack_fixing, R);
+bom("drive bay", bom_adapter ? n_bay : 0, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
+bom("rack module", part == "rack_module" ? 2 * len(panel_zs(mod_u(module_type))) : 0, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
+bom("rack panel", part == "rack_panel" ? 2 * len(panel_zs(panel_u)) : 0, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
 // keystone jacks and covers: one set per patch panel
 n_patch = part == "rack_panel" ? (panel_fill == "keystone" ? 1 : 0)
         : part == "rack_module" ? (module_type == "patch" ? 1 : 0)
         : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
            || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
           ? len([for (zn = zones) if (zn[2] == "keystone") 1])
-            + (part == "assembly" ? len([for (m = used_mods) if (m == "patch") 1]) : 0)
+            + len([for (m = bom_mods) if (m == "patch") 1])
         : 0;
 function ks_count(tp) = n_patch * len([for (x = ks_types) if (x == tp) 1]);
 KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],
-            ["usb", "USB keystone"], ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
+            ["usb", "USB keystone"], ["rca", "RCA keystone"], ["jack", "3.5 mm audio keystone"], ["toslink", "Toslink optical keystone"],
+            ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
 for (k = KS_NAMES) if (ks_count(k[0]) > 0) echo(str("BOM | keystones: ", ks_count(k[0]), " x ", k[1]));
-function ties_of(m) = m == "kvm2" ? 2 : (m == "ms105g" || m == "shelf" || m == "uswflex" || m == "ux" || m == "dev1" || m == "dev2") ? 1 : 0;
-n_ties = part == "assembly" ? sum_list([for (m = used_mods) ties_of(m)]) : part == "rack_module" ? ties_of(module_type) : 0;
+function ties_of(m) = mod_kind(m) == "kvm" ? len(mod_items(m))
+    : (m == "ms105g" || m == "shelf" || m == "uswflex" || m == "ux" || m == "dev1" || m == "dev2") ? 1 : 0;
+n_ties = sum_list([for (m = bom_mods) ties_of(m)]);
+n_pi = sum_list([for (m = bom_mods) mod_kind(m) == "pi" ? len(pi_list(mod_items(m)))
+                                      : mod_kind(m) == "piblade" ? len(blade_list(mod_items(m))) : 0]);
+if (n_pi > 0) echo(str("BOM | Raspberry Pi: ", 4 * n_pi, " x M2.5 x 6 screw",
+    pi_fixing == "heatset" ? str(" + ", 4 * n_pi, " x M2.5 heat-set insert (hole 3.6 mm)") : " (self-tapping into the standoffs)"));
 n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
       : part == "rack_module" ? (module_type == "buttons" ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
@@ -159,7 +188,14 @@ n_fan = part == "rack_panel" ? (panel_fill == "fan80" ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
          || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
         ? len([for (zn = zones) if (zn[2] == "fan80") 1]) : 0;
-if (n_fan > 0) echo(str("BOM | fan: ", n_fan, " x 80 mm fan (80 x 80 x 25) + 4 x fan screws"));
+if (n_fan > 0) echo(str("BOM | fan: ", n_fan, " x 80 mm fan (80 x 80 x 25) + ", 4 * n_fan, " x fan screws"));
+n_fan40 = fan40_count * (part == "rack_panel" ? (panel_fill == "fan40" ? 1 : 0)
+      : len([for (m = bom_mods) if (m == "fan40") 1])
+        + ((part == "assembly" || (part == "adapter" && filler_mode != "separate")
+            || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+           ? len([for (zn = zones) if (zn[2] == "fan40" && zn[1] - (filler_mode == "separate" ? 0.8 : 0) >= 41) 1]) : 0));
+if (n_fan40 > 0) echo(str("BOM | fans: ", n_fan40, " x 40 mm fan (40 x 40 x ", fan40_t, ") + ", 4 * n_fan40,
+                         " x M3 x ", fan40_t + 6, " screw + nut (5 or 12 V, to a fan header)"));
 if ((part == "assembly" && rear_slots) || part == "pci_bracket")
     echo(str("BOM | rear slots: ", part == "pci_bracket" ? 1 : 2, " x printed PCI-slot bracket",
              part == "pci_bracket" ? (pci_kind == "lan" ? " (network cables)" : " (power cable)") : " (network cables, power cable)", " + the case's slot screws"));

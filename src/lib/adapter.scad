@@ -44,12 +44,46 @@ module roof_window2d(a0, a1, y0, y1) {   // a = across, y = depth
         polygon([[a0, y0], [a1, y0], [a1, yr], [(a0 + a1) / 2, y1], [a0, yr]]);
 }
 
+// Metal tabs between the bays: many cages have lanced ledges in the gap between two
+// bays that the drives rest on. Each gap gets a groove along the whole sleeve depth,
+// and a rib on the inside so the wall keeps 1.2 mm of material behind the groove.
+function tab_z(k) = k * bay_pitch - (bay_pitch - bay_h) / 2;          // centre of the gap under bay k
+tab_zs = bay_tabs && bays > 1 ? [for (k = [1 : bays - 1]) tab_z(k)] : [];
+tab_rib = max(0, bay_tab_d + 1.2 - wall_t);
+module tab_ribs() for (s = [-1, 1], z = tab_zs)
+    translate([s > 0 ? sw - wall_t - tab_rib : -sw + wall_t - eps, 0, z - bay_tab_h / 2 - 1.2])
+        cube([tab_rib + eps, sleeve_depth, bay_tab_h + 2.4]);
+// through the rack posts too, unless a rack hole (or the nut channel) is at that height:
+// then the groove starts behind the posts (post_d, 10 mm: tabs that far forward are rare)
+function tab_in_post(z) = rack_fixing != "channel"
+    && len([for (rz = concat(rack_zs, filler_mode == "separate" ? [for (zn = zones) zn[0] + zn[1] / 2] : []))
+            if (abs(rz - z) < bay_tab_h / 2 + max(R[0], R[2]) / 2 + 1) 1]) == 0;
+module tab_grooves() for (s = [-1, 1], z = tab_zs) {
+    y0 = tab_in_post(z) ? -eps : post_d;
+    translate([s > 0 ? sw - bay_tab_d : -sw - eps, y0, z - bay_tab_h / 2]) cube([bay_tab_d + eps, sleeve_depth + 1 - y0, bay_tab_h]);
+}
+
+// Side wall stiffeners, kept between the rack opening (|x| > x_in) and the wall
+lip_w = wall_ribs ? max(0, min(wall_lip, sw - wall_t - x_in - 1)) : 0;
+fillet_d = wall_ribs ? 14 : 0;                                         // fillet length behind the post
+module wall_stiffeners() if (wall_ribs) {
+    for (s = [-1, 1]) mirror([s > 0 ? 0 : 1, 0, 0]) {
+        if (lip_w > 0) for (zz = [0, stack_h - wall_t])
+            translate([sw - wall_t - lip_w, post_d - eps, zz]) cube([lip_w + eps, sleeve_depth - post_d + eps, wall_t]);
+        // fillet from the back of the post into the wall (sloped, prints front-down without support)
+        z0 = max(0, pz0); z1 = min(stack_h, pz1);
+        if (z1 - z0 > 4) translate([0, 0, z0]) linear_extrude(z1 - z0)
+            polygon([[x_in, post_d - eps], [sw - wall_t + eps, post_d - eps], [sw - wall_t + eps, post_d + fillet_d]]);
+    }
+}
+
 module wall_windows() {
     rib = boss_d + 6;
-    cuts = concat([post_d + 5], [for (y = bay_ys) each [y - rib / 2, y + rib / 2]], [sleeve_depth - 6]);
+    cuts = concat([post_d + 5 + fillet_d], [for (y = bay_ys) each [y - rib / 2, y + rib / 2]], [sleeve_depth - 6]);
+    m = bay_tab_h / 2 + 2.4;                                         // keep the windows off the tab ribs
     for (k = [0 : bays - 1]) {
-        za = k == 0 ? 6 : k * bay_pitch + 3;
-        zb = k == bays - 1 ? stack_h - 6 : (k + 1) * bay_pitch - 3;
+        za = k == 0 ? 6 : bay_tabs ? tab_z(k) + m : k * bay_pitch + 3;
+        zb = k == bays - 1 ? stack_h - 6 : bay_tabs ? tab_z(k + 1) - m : (k + 1) * bay_pitch - 3;
         for (j = [0 : 2 : len(cuts) - 2])
             if (cuts[j + 1] - cuts[j] > 10 && zb - za > 10)
                 for (s = [-1, 1])
@@ -100,6 +134,8 @@ module sleeve() {
         for (s = [-1, 1]) translate([s > 0 ? sw - wall_t : -sw, 0, 0]) cube([wall_t, sleeve_depth, stack_h]);
         if (lighten) wall_windows();
     }
+    if (tab_rib > 0) tab_ribs();
+    wall_stiffeners();
     bosses();
     if (sleeve_style == "box")
         for (zz = [0, stack_h - wall_t]) difference() {
@@ -152,6 +188,7 @@ module adapter() {
         if (rack_fixing == "channel") for (s = [-1, 1]) channel_cut(s * hole_s / 2);
         else for (s = [-1, 1], z = rack_zs) rack_cut(s * hole_s / 2, z, s);
         bay_hole_cuts();
+        tab_grooves();
         bezel_groove_cuts();
     }
 }

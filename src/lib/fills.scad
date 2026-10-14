@@ -19,6 +19,7 @@ module fill_cut(type, w, h, t) {
     else if (type == "label") label_cut(w, h, t);
     else if (type == "buttons") buttons_cut(w, h, t);
     else if (type == "fan80") fan80_cut(w, h, t);
+    else if (type == "fan40") fan40_cut(w, h, t);
 }
 
 // ---------------------------------------------------------------------
@@ -200,17 +201,38 @@ module buttons_cut(w, h, t) {
 }
 
 // ---------------------------------------------------------------------
-//  80 mm fan: hex-hole grille + the four fan screw holes (71.5 mm apart).
+//  80 mm fan: round opening (or hex grille) + the four fan screw holes (71.5 mm apart).
 //  The fan sits behind the plate; needs a zone at least 82 mm tall (2 bays).
 // ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+//  40 mm fans (fan40_count, 1 to 3) side by side: round openings (or grilles) and the
+//  32 mm screw squares. The fans sit behind the plate, between the rack posts.
+// ---------------------------------------------------------------------
+function fan40_pitch(w) = fan40_count < 2 ? 0 : min(46, (min(w, 2 * x_in - 1) - 40) / (fan40_count - 1));
+function fan40_xs(w) = [for (i = [0 : fan40_count - 1]) (i - (fan40_count - 1) / 2) * fan40_pitch(w)];
+module fan40_cut(w, h, t) {
+    if (h < 41) echo(str("WARNING: 40 mm fans need a zone at least 41 mm tall, this one is ", h, " mm"));
+    else if (fan40_count > 1 && fan40_pitch(w) < 40.3)
+        echo(str("WARNING: ", fan40_count, " fans of 40 mm do not fit side by side here - use fewer fans"));
+    else for (x = fan40_xs(w)) translate([x, 0, h / 2]) {
+        xz_extrude(-t - eps, t + 2 * eps) if (fan_guard == "open") circle(d = 38, $fn = 96);
+            else intersection() {
+                circle(d = 37, $fn = 72);
+                union() for (r = [-4 : 4], c = [-4 : 4]) translate([c * 6 + (abs(r) % 2) * 3, r * 5.2]) circle(d = 4.9, $fn = 6);
+            }
+        for (sx = [-1, 1], sz = [-1, 1]) translate([sx * 16, 0, sz * 16]) slot_y(3.4, 0, -t - eps, t + 2 * eps);
+    }
+}
+
 module fan80_cut(w, h, t) {
     if (h < 82 || w < 82) echo(str("WARNING: an 80 mm fan needs an 82 x 82 mm zone, this one is ", w, " x ", h, " mm - use 2 bays"));
     else translate([0, 0, h / 2]) {
-        xz_extrude(-t - eps, t + 2 * eps) intersection() {
-            circle(d = 76, $fn = 96);
-            union() for (r = [-6 : 6], c = [-6 : 6])
-                translate([c * 7 + (abs(r) % 2) * 3.5, r * 6.06]) circle(d = 5.6, $fn = 6);
-        }
+        xz_extrude(-t - eps, t + 2 * eps) if (fan_guard == "open") circle(d = 77, $fn = 144);
+            else intersection() {
+                circle(d = 76, $fn = 96);
+                union() for (r = [-6 : 6], c = [-6 : 6])
+                    translate([c * 7 + (abs(r) % 2) * 3.5, r * 6.06]) circle(d = 5.6, $fn = 6);
+            }
         for (sx = [-1, 1], sz = [-1, 1]) translate([sx * 35.75, 0, sz * 35.75]) slot_y(4.4, 0, -t - eps, t + 2 * eps);
     }
 }

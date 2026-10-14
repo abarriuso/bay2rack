@@ -146,6 +146,11 @@ module tower_case() {
             cube([case_wall_t, 200, tc_cz1 - tc_cz0]);
         for (zz = [tc_cz0 - case_wall_t, tc_cz1]) translate([-bay_w / 2 - case_wall_t, 1, zz])
             cube([bay_w + 2 * case_wall_t, 200, case_wall_t]);
+        // the tabs the drives rest on (the adapter has grooves for them)
+        for (s = [-1, 1], j = [ceil(tc_cz0 / bay_pitch) : floor(tc_cz1 / bay_pitch) + 1], y = [14, 120]) {
+            z = j * bay_pitch - (bay_pitch - bay_h) / 2;
+            if (z > tc_cz0 + 2 && z < tc_cz1 - 2) translate([s > 0 ? bay_w / 2 - 2.2 : -bay_w / 2, y, z - 0.5]) cube([2.2, 24, 1]);
+        }
     }
     // motherboard + PSU, for scale
     color([0.12, 0.32, 0.2]) translate([TC_W / 2 - 22, TC_D - 262, tc_z1 - 30 - 305]) cube([1.6, 244, 305]);
@@ -217,7 +222,8 @@ module nanokvm_model(yf, zb, x = -34) {
 
 // JetKVM: black aluminium box with a 1.69in colour touch screen on the front
 module jetkvm_model(x, yf, zc) {
-    color([0.08, 0.08, 0.09]) translate([x - kvm_a[0] / 2, yf, zc - kvm_a[1] / 2]) cube([kvm_a[0], kvm_a[2], kvm_a[1]]);
+    d = jetkvm_dims;
+    color([0.08, 0.08, 0.09]) translate([x - d[0] / 2, yf, zc - d[1] / 2]) cube([d[0], d[2], d[1]]);
     color([0.02, 0.02, 0.03]) translate([x - 17, yf - 0.1, zc - 12]) cube([34, 0.2, 24]);
     color([0.36, 0.55, 1.0]) translate([x - 15, yf - 0.2, zc + 4]) cube([30, 0.1, 6]);        // screen UI
     color([0.35, 0.85, 1.0]) translate([x - 15, yf - 0.2, zc - 9]) cube([20, 0.1, 3]);
@@ -225,10 +231,66 @@ module jetkvm_model(x, yf, zc) {
 }
 // Sipeed NanoKVM Full: white box, small OLED on the front
 module nanokvm_front(x, yf, zc) {
-    color([0.94, 0.94, 0.93]) translate([x - kvm_b[0] / 2, yf, zc - kvm_b[1] / 2]) cube([kvm_b[0], kvm_b[2], kvm_b[1]]);
+    d = nanokvm_dims;
+    color([0.94, 0.94, 0.93]) translate([x - d[0] / 2, yf, zc - d[1] / 2]) cube([d[0], d[2], d[1]]);
     color([0.03, 0.03, 0.04]) translate([x - 11, yf - 0.1, zc + 2]) cube([22, 0.2, 10]);
     color([0.35, 0.85, 1.0]) for (r = [0 : 2]) translate([x - 9, yf - 0.2, zc + 4 + r * 2.6]) cube([10 + (r % 2) * 6, 0.1, 1]);
     color([0.02, 0.02, 0.02]) translate([x - 6, yf - 0.1, zc - 11]) cube([12, 0.2, 7]);
+}
+
+// any other KVM box: grey body with a status LED
+module kvm_custom_model(x, yf, zc) {
+    d = kvm_custom;
+    color([0.2, 0.21, 0.23]) translate([x - d[0] / 2, yf, zc - d[1] / 2]) cube([d[0], d[2], d[1]]);
+    color([0.2, 0.95, 0.4]) translate([x + d[0] / 2 - 7, yf - 0.2, zc + d[1] / 2 - 5]) cube([3, 0.1, 1.5]);
+}
+module kvm_box_model(b, x, yf, zc) {
+    if (b == "jet") jetkvm_model(x, yf, zc);
+    else if (b == "nano") nanokvm_front(x, yf, zc);
+    else kvm_custom_model(x, yf, zc);
+}
+
+// Raspberry Pi boards, port edge at y = y0, underside at z = zb
+PI_PCB = [18, 77, 41] / 255;                           // the web viewer gives this green a PCB texture
+PI_METAL = [189, 194, 201] / 255;                      // shielded jacks: steel
+module pi_board_model(b, x0, y0, zb) {
+    S = pi_spec(b);
+    color(PI_PCB) translate([x0, y0, zb]) cube([S[0], S[1], 1.4]);
+    zt = zb + 1.4;
+    if (b == "zero") {
+        color([0.75, 0.76, 0.78]) translate([x0 + 25, y0 + 8, zt]) cube([15, 14, 2.2]);          // SoC can
+        color(PI_METAL) translate([x0 + 6.8, y0 - 0.6, zt]) cube([11.2, 7.5, 3.3]);              // mini HDMI
+        for (x = [41.4, 54]) color(PI_METAL) translate([x0 + x - 4, y0 - 1, zt]) cube([8, 5.6, 2.8]);   // micro USB
+        color([0.05, 0.05, 0.05]) translate([x0 + 7, y0 + 25, zt]) cube([51, 5, 2.5]);          // GPIO pads / header
+    } else {
+        eth_x = b == "pi4" ? 45.75 : 10.25;                // Pi 4 has the Ethernet jack on the other side
+        usb_x = b == "pi4" ? [9, 27] : [29.1, 47];
+        color(PI_METAL) translate([x0 + eth_x - 8, y0 - S[4], zt]) cube([16, 21, 13.5]);
+        rj45_port(x0 + eth_x, zt + 6.5, y0 - S[4] - 0.05);
+        for (i = [0, 1]) {
+            color(PI_METAL) translate([x0 + usb_x[i] - 7.3, y0 - S[4], zt]) cube([14.6, 17.5, 16]);
+            for (k = [0, 1]) color(b == "pi3" || (b == "pi4" ? i == 0 : i == 1) ? [0.04, 0.04, 0.05] : [0.12, 0.3, 0.85])
+                translate([x0 + usb_x[i] - 6.2, y0 - S[4] - 0.1, zt + 2 + k * 7.6]) cube([12.4, 0.3, 5]);
+        }
+        color([0.05, 0.05, 0.05]) translate([x0 + S[0] - 6, y0 + 85 - 58, zt]) cube([5, 51, 8.5]);   // GPIO header
+        color([0.7, 0.72, 0.75]) translate([x0 + 20, y0 + 85 - 34, zt]) cube([15, 15, 1.4]);    // SoC
+        if (b == "pi5") {                                   // active cooler
+            color([0.45, 0.47, 0.5]) translate([x0 + 6, y0 + 85 - 62, zt + 1.4]) cube([40, 34, 6]);
+            color([0.08, 0.08, 0.09]) translate([x0 + 26, y0 + 85 - 45, zt + 7.4]) cylinder(d = 26, h = 2.5);
+        }
+    }
+}
+// blades: the board stands on edge, components towards +X, USB-C edge on top
+module pi_blade_models(items, yb, z) {
+    L = blade_list(items);
+    for (i = [0 : len(L) - 1])
+        translate([blade_xb(L, i), 0, z + blade_zb + 56]) multmatrix([[0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, 0], [0, 0, 0, 1]])
+            pi_board_model(L[i], 0, yb + pi_spec(L[i])[4] + 0.2, 0);
+}
+module pi_models(items, yb, z) {
+    L = pi_list(items);
+    x0 = pi_x0s(items);
+    for (i = [0 : len(L) - 1]) pi_board_model(L[i], x0[i], yb + pi_spec(L[i])[4] + 0.2, z + pi_zb);
 }
 
 // UniFi USW-Flex-Mini: white body, five ports and USB-C on the port face
@@ -268,6 +330,18 @@ module jack_model(tp, yf) {
             linear_extrude(0.3) polygon([[-7, -2.2], [7, -2.2], [7, 0.6], [5.6, 2.2], [-5.6, 2.2], [-7, 0.6]]);
         if (tp == "usb") { color([0.05, 0.05, 0.06]) translate([-6, yf + 0.3, -1.5]) cube([12, 0.3, 5]);
                            color([0.2, 0.35, 0.85]) translate([-5, yf + 0.25, -0.2]) cube([10, 0.3, 1.6]); }
+    } else if (tp == "rca" || tp == "jack" || tp == "toslink") {          // audio keystones: black body
+        color([0.1, 0.1, 0.11]) translate([-7.2, yf + 0.4, -8]) cube([14.4, 24, 16]);
+        if (tp == "rca") {
+            color([0.8, 0.66, 0.3]) translate([0, yf + 0.3, 0]) rotate([90, 0, 0]) cylinder(d = 8.4, h = 3.2, $fn = 32);
+            color([0.85, 0.15, 0.15]) translate([0, yf + 0.25, 0]) rotate([90, 0, 0]) cylinder(d = 11, h = 0.3, $fn = 32);
+            color([0.03, 0.03, 0.03]) translate([0, yf - 2.95, 0]) rotate([90, 0, 0]) cylinder(d = 3.2, h = 0.3, $fn = 16);
+        }
+        if (tp == "jack") {
+            color([0.6, 0.62, 0.65]) translate([0, yf + 0.3, 0]) rotate([90, 0, 0]) cylinder(d = 7, h = 0.4, $fn = 32);
+            color([0.03, 0.03, 0.03]) translate([0, yf - 0.15, 0]) rotate([90, 0, 0]) cylinder(d = 3.6, h = 0.3, $fn = 16);
+        }
+        if (tp == "toslink") color([0.03, 0.03, 0.03]) translate([-3.6, yf + 0.25, -3]) cube([7.2, 0.3, 6]);
     } else if (tp == "cover" || tp == "pass") {
         color(PRINT_C) translate([0, yf - 1.2, 0]) mirror([0, 0, 1]) rotate([-90, 0, 0])
             keystone_cover(tp == "pass" ? "pass" : "blank");
@@ -299,28 +373,36 @@ module buttons_models(w, h, z0, yf) {
     }
 }
 
-module fill_devices(type, w, h, z0, yf) {
+// yf = front face of the plate, t = its thickness (the fans sit behind it)
+module fill_devices(type, w, h, z0, yf, t = 3) {
     if (type == "keystone")
         for (p = ks_layout(w, h, len(ks_types))) translate([p[0], 0, z0 + p[1]]) jack_model(ks_types[p[3]], yf);
     else if (type == "buttons") buttons_models(w, h, z0, yf);
+    else if (type == "fan40" && h >= 41) for (x = fan40_xs(w)) fan_model(40, fan40_t, x, yf + t + 0.2, z0 + h / 2);
+    else if (type == "fan80" && h >= 82) fan_model(80, 25, 0, yf + t + 0.2, z0 + h / 2);
 }
 
 // the printed rack modules, with their devices
-module rack_contents() if (units > 0) for (u = [0 : units - 1]) if (preview_item == "all" || preview_index == units - 1 - u) {
-    z = units_z0 + u * U + 0.395;
-    m = mod_at(u);
+module rack_contents() for (k = [0 : len(placed_mods) - 1]) if (preview_item == "all" || preview_index == k) {
+    m = placed_mods[k][0];
+    z = units_z0 + placed_mods[k][1] * U + 0.395;
     yb = -ft - explode;                                // back face of the module plate
-    color(PRINT_C + [units - 1 - u, 0, 0] / 255) translate([0, yb, z]) rack_module(m);
+    color(PRINT_C + [k, 0, 0] / 255) translate([0, yb, z]) rack_module(m);
     if (demo_devices == "homelab") {
         if (m == "ms105g") ms105g_model(yb + 0.2, z + ms_z0 + ms_ch / 2);
         else if (m == "uswflex") uswflex_model(yb + 0.2, z + tunnel_z0(dev_c(usw_dims)[1]) + dev_c(usw_dims)[1] / 2);
         else if (m == "ux") ux_model(yb + 0.2, z + tunnel_z0(dev_c(ux_dims)[1]) + dev_c(ux_dims)[1] / 2);
         else if (m == "dev1") dev_model(dev1_dims, yb + 0.2, z + tunnel_z0(dev_c(dev1_dims)[1]) + dev_c(dev1_dims)[1] / 2);
         else if (m == "dev2") dev_model(dev2_dims, yb + 0.2, z + tunnel_z0(dev_c(dev2_dims)[1]) + dev_c(dev2_dims)[1] / 2);
-        else if (m == "kvm2") {
-            jetkvm_model(kvm_xa, yb + 0.2, z + tunnel_z0(kvm_c(kvm_a)[1]) + kvm_c(kvm_a)[1] / 2);
-            nanokvm_front(kvm_xb, yb + 0.2, z + tunnel_z0(kvm_c(kvm_b)[1]) + kvm_c(kvm_b)[1] / 2);
+        else if (mod_kind(m) == "kvm") {
+            L = kvm_list(mod_items(m));
+            cs = kvm_cs(mod_items(m));
+            xs = kvm_xs(mod_items(m));
+            for (i = [0 : len(L) - 1]) kvm_box_model(L[i], xs[i], yb + 0.2, z + tunnel_z0(cs[i][1]) + cs[i][1] / 2);
         }
+        else if (mod_kind(m) == "pi") pi_models(mod_items(m), yb, z);
+        else if (mod_kind(m) == "piblade") pi_blade_models(mod_items(m), yb, z);
+        else if (m == "fan40") fill_devices("fan40", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t, panel_t);
         else if (m == "shelf") nanokvm_model(yb + 6, z + shelf_z + 2);
         else if (m == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
         else if (m == "buttons") fill_devices("buttons", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
@@ -335,7 +417,7 @@ function zone_z0(zn) = zn_sep ? zn[0] + 0.4 : zn[0];
 zone_yf = zn_sep ? -ft - filler_t - 2 * explode : -ft;
 
 module zone_devices() if (demo_devices == "homelab")
-    for (zn = zones) fill_devices(zn[2], zone_w(), zone_h(zn), zone_z0(zn), zone_yf);
+    for (zn = zones) fill_devices(zn[2], zone_w(), zone_h(zn), zone_z0(zn), zone_yf, zn_sep ? filler_t : ft);
 
 module dummy_devices() {
     rack_contents();
@@ -358,8 +440,17 @@ patch_ports = len(ks_zone) == 0 ? [] :
     [for (p = ks_layout(zone_w(), zone_h(ks_zone[0]), len(ks_types))) [p[0], zone_z0(ks_zone[0]) + p[1], ks_types[p[3]]]];
 rj_ports = [for (p = patch_ports) if (p[2] == "rj45m" || p[2] == "rj45") p];
 pass_ports = [for (p = patch_ports) if (p[2] == "pass") p];
-sw_units = units > 0 ? [for (u = [0 : units - 1]) if (mod_at(u) == "ms105g") u] : [];
-sw_zc = len(sw_units) > 0 ? units_z0 + sw_units[0] * U + 0.395 + ms_z0 + ms_ch / 2 : 0;
+// switches in the rack: the managed UniFi one is the main switch when there are two
+function sw_ch(m) = m == "ms105g" ? ms_ch : dev_c(usw_dims)[1];
+function sw_zc_of(p) = units_z0 + p[1] * U + 0.395 + tunnel_z0(sw_ch(p[0])) + sw_ch(p[0]) / 2;
+sw_list = concat([for (p = placed_mods) if (p[0] == "uswflex") p], [for (p = placed_mods) if (p[0] == "ms105g") p]);
+sw_main = len(sw_list) > 0 ? sw_list[0] : undef;
+sw_second = len(sw_list) > 1 ? sw_list[1] : undef;
+function sw_ports_of(p) = p[0] == "ms105g" ? ms_ports(sw_zc_of(p))
+                        : [for (i = [0 : 4]) [-usw_dims[0] / 2 + 14 + i * 15, sw_zc_of(p)]];
+function sw_jack_of(p) = p[0] == "ms105g" ? [ms_w / 2 - 10, sw_zc_of(p) - 1] : [usw_dims[0] / 2 - 9.5, sw_zc_of(p)];
+sw_units = [for (p = sw_list) p[1]];
+sw_zc = len(sw_list) > 0 ? sw_zc_of(sw_main) : 0;
 sw_yf = -ft - explode + 0.2;
 
 // clients: old towers next to the server, fronts in line with it
@@ -388,19 +479,20 @@ module client_bezel(fill, x, zb, nb = 1) {
             union() { plate(w, h, t, 0.8); fill_add(fill, w - 20, h, t); }
             fill_cut(fill, w - 20, h, t);
         }
-        if (fill == "buttons") buttons_models(w - 20, h, 0, -t);
-        if (fill == "fan80") fan80_model(0, 2, h / 2);
+        fill_devices(fill, w - 20, h, 0, -t, t);
     }
 }
 module client_bezels() for (k = [0, 1]) client_bezel(CLIENT_FILLS[k][0], cl_x[0], client_bezels_at()[k][0], CLIENT_FILLS[k][1]);
-module fan80_model(x, y, zc) {
+// square fan of size s and thickness th, front face at y, centred on (x, zc)
+module fan_model(s, th, x, y, zc) {
+    k = s / 80;
     color([0.07, 0.07, 0.08]) difference() {
-        translate([x - 40, y, zc - 40]) cube([80, 25, 80]);
-        translate([x, y - 1, zc]) rotate([-90, 0, 0]) cylinder(d = 76, h = 27);
+        translate([x - s / 2, y, zc - s / 2]) cube([s, th, s]);
+        translate([x, y - 1, zc]) rotate([-90, 0, 0]) cylinder(d = s * 0.95, h = th + 2);
     }
-    color([0.07, 0.07, 0.08]) translate([x, y + 4, zc]) rotate([-90, 0, 0]) cylinder(d = 30, h = 18);
-    color([0.12, 0.12, 0.13]) for (a = [0 : 6]) translate([x, y + 8, zc]) rotate([0, a * 360 / 7, 0])
-        translate([0, 0, 15]) rotate([0, 0, 25]) cube([12, 1.4, 22], center = true);
+    color([0.07, 0.07, 0.08]) translate([x, y + th * 0.16, zc]) rotate([-90, 0, 0]) cylinder(d = 30 * k, h = th * 0.72);
+    color([0.12, 0.12, 0.13]) for (a = [0 : 6]) translate([x, y + th * 0.32, zc]) rotate([0, a * 360 / 7, 0])
+        translate([0, 0, 15 * k]) rotate([0, 0, 25]) cube([12 * k, 1.4, 22 * k], center = true);
 }
 
 function client_port(i) = i == 0 ? [cl_x[0] - CLIENTS[0][0] / 2 + 34, CLIENTS[0][2] - tc_fd, tc_z0 + CLIENTS[0][1] - 70]
@@ -433,9 +525,14 @@ function inner_route(p, i) =
         xs = rear_slots ? pci_cx(pci_lan_slot) : xr, zs = rear_slots ? pci_z0 + 40 + i * 9 : zr)
     [[p[0], yb, p[1]], [p[0], yb + 30, p[1] - 8], [xr, 150, p[1] - 30], [xs, TC_D - 60, zs], [xs, TC_D + 25, zs]];
 
-CABLE_COLORS = [[0.15, 0.45, 0.9], [0.92, 0.75, 0.12], [0.85, 0.85, 0.87]];
+// The showcase network: this PC is the router (OPNsense / pfSense), the managed switch
+// carries the VLANs, the access point gets a trunk. Cable colour = VLAN.
+VLANS = [[10, "Management", [0.62, 0.64, 0.68]], [20, "Servers", [0.18, 0.68, 0.36]], [30, "Clients", [0.16, 0.46, 0.92]],
+         [40, "Wi-Fi / IoT", [0.58, 0.32, 0.86]], [0, "Trunk", [0.95, 0.77, 0.16]], [-1, "WAN", [0.84, 0.2, 0.22]]];
+function vlan_c(id) = [for (v = VLANS) if (v[0] == id) v[2]][0];
+LINK_VLAN = [30, 20, 0];                               // old PC, NAS, access point (trunk with VLAN 30 + 40)
 n_links = min(len(rj_ports), 3);
-n_cords = len(sw_units) > 0 ? min(len(rj_ports), 4) : 0;
+n_cords = len(sw_list) > 0 ? n_links : 0;
 
 function link_route(i) =
     let(p = rj_ports[i], r = inner_route(p, i), last = r[len(r) - 1], zf = tc_z0 + 12 + i * 6,
@@ -445,23 +542,44 @@ function link_route(i) =
             : [last, [last[0], TC_D + 30, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 95, tc_z1 + 12], [ap_pos[0] + 20, ap_pos[1] + 82, tc_z1 + 14]])
     concat(r, [for (k = [1 : len(out) - 1]) out[k]]);
 
-function cord_route(i) =
-    let(s = ms_ports(sw_zc)[i], p = rj_ports[i])
-    [[s[0], sw_yf - 2, s[1]], [s[0], sw_yf - 14, s[1]], [s[0], sw_yf - 28, s[1] + 4],
-     [p[0], zone_yf - 28, p[1] - 4], [p[0], zone_yf - 14, p[1]], [p[0], zone_yf - 2, p[1]]];
+// front patch cord between two points [x, z] on faces at y = ya and y = yb
+function cord(a, ya, b, yb, lift = 4) =
+    [[a[0], ya - 2, a[1]], [a[0], ya - 14, a[1]], [a[0], min(ya, yb) - 28, a[1] + lift],
+     [b[0], min(ya, yb) - 28, b[1] - lift], [b[0], yb - 14, b[1]], [b[0], yb - 2, b[1]]];
+// which switch port feeds patch port i: with two switches the NAS hangs off the second one
+function cord_from(i) = sw_second != undef && i == 1 ? sw_ports_of(sw_second)[1] : sw_ports_of(sw_main)[i];
+function cord_route(i) = cord(cord_from(i), sw_yf, rj_ports[i], zone_yf);
 
-function power_route() =
-    let(q = pass_ports[0], jx = ms_w / 2 - 10, xp = pci_cx(pci_power_slot), zp = pci_z0 + 80)
-    concat([[jx, sw_yf - 2, sw_zc - 1], [jx, sw_yf - 20, sw_zc - 1], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
+// cable through a pass-through cover, along the inside to a rear PCI slot and out
+function pass_route(a, q, slot, dz, tail) =
+    let(xp = pci_cx(slot), zp = pci_z0 + dz)
+    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 20, a[1]], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
             [q[0], 60, q[1]], [TC_W / 2 - 30, 160, q[1] - 40]],
-           rear_slots ? [[xp, TC_D - 60, zp], [xp, TC_D + 30, zp], [xp, TC_D + 60, tc_z0 + 8], [xp + 160, TC_D + 90, tc_z0 + 4]]
-                      : [[TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]]);
+           rear_slots ? concat([[xp, TC_D - 60, zp], [xp, TC_D + 30, zp]], tail) : [[TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]]);
+function power_route() = pass_route(sw_jack_of(sw_main), pass_ports[len(pass_ports) - 1], pci_power_slot, 80,
+    [[pci_cx(pci_power_slot), TC_D + 60, tc_z0 + 8], [pci_cx(pci_power_slot) + 160, TC_D + 90, tc_z0 + 4]]);
+// router uplink: last switch port -> first pass-through -> inside to the motherboard NIC (rear I/O)
+io_nic = [TC_W / 2 - 38, TC_D - 3, tc_z1 - 150];
+function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4])
+    [[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], zone_yf - 26, q[1] + 6], [q[0], zone_yf - 18, q[1]],
+     [q[0], zone_yf + 4, q[1]], [q[0], 70, q[1] + 10], [TC_W / 2 - 34, 180, io_nic[2] - 30],
+     [io_nic[0] - 18, TC_D - 40, io_nic[2] - 20], [io_nic[0] - 18, TC_D + 20, io_nic[2] - 10],
+     [io_nic[0], TC_D + 28, io_nic[2]], [io_nic[0], TC_D + 4, io_nic[2]]];
+// WAN: the second NIC port to the fibre box on the floor behind the case
+ont_pos = [-TC_W / 2 - 40, TC_D + 120, tc_z0];
+function wan_route() = [[io_nic[0] + 14, TC_D + 4, io_nic[2]], [io_nic[0] + 14, TC_D + 40, io_nic[2] - 20],
+    [io_nic[0], TC_D + 70, tc_z0 + 60], [io_nic[0] - 40, TC_D + 110, tc_z0 + 6], [ont_pos[0] + 60, ont_pos[1] + 10, tc_z0 + 6],
+    [ont_pos[0] + 40, ont_pos[1], tc_z0 + 18]];
 
-// every cable of the scene: [colour, diameter, points, plug at start, plug at end]
+// every cable of the scene: [colour, diameter, points, plug at start, plug at end, vlan]
+two_sw = sw_second != undef;
 cables = concat(
-    n_links > 0 ? [for (i = [0 : n_links - 1]) [CABLE_COLORS[i], CABLE_D, link_route(i), false, i < 2]] : [],
-    n_cords > 0 ? [for (i = [0 : n_cords - 1]) [[0.2, 0.75, 0.38], 4.6, cord_route(i), true, true]] : [],
-    len(sw_units) > 0 && len(pass_ports) > 0 ? [[[0.05, 0.05, 0.05], 3.2, power_route(), false, false]] : []);
+    n_links > 0 ? [for (i = [0 : n_links - 1]) [vlan_c(LINK_VLAN[i]), CABLE_D, link_route(i), false, i < 2, LINK_VLAN[i]]] : [],
+    n_cords > 0 ? [for (i = [0 : n_cords - 1]) [vlan_c(LINK_VLAN[i]), 4.6, cord_route(i), true, true, LINK_VLAN[i]]] : [],
+    two_sw ? [[vlan_c(20), 4.6, cord(sw_ports_of(sw_main)[1], sw_yf, sw_ports_of(sw_second)[0], sw_yf, 10), true, true, 20]] : [],
+    len(sw_list) > 0 && len(pass_ports) > 1 ? [[vlan_c(0), 4.6, uplink_route(), true, true, 0]] : [],
+    rear_slots ? [[vlan_c(-1), CABLE_D, wan_route(), true, true, -1]] : [],
+    len(sw_list) > 0 && len(pass_ports) > 0 ? [[[0.05, 0.05, 0.05], 3.2, power_route(), false, false, -2]] : []);
 
 module homelab_scene() {
     client_pc(cl_x[0], CLIENTS[0]);
@@ -497,10 +615,11 @@ module scene_echo() {
             ",", jstr("clientBezels"), ":", [for (b = client_bezels_at()) [b[0], (b[1] - 1) * bay_pitch + bezel_h1]],
 
             ",", jstr("ports"), ":", [client_port(0), client_port(1)],
-            ",", jstr("ap"), ":", ap_pos, "}}"));
+            ",", jstr("ap"), ":", ap_pos, ",", jstr("ont"), ":", ont_pos,
+            ",", jstr("vlans"), ":", [for (v = VLANS) [v[0], v[2]]], "}}"));
         for (c = cables)
             echo(str("SCENE ", "{", jstr("cable"), ":{", jstr("c"), ":", c[0], ",", jstr("d"), ":", c[1],
-                     ",", jstr("p"), ":", c[2], ",", jstr("plugs"), ":", [c[3], c[4]], "}}"));
+                     ",", jstr("p"), ":", c[2], ",", jstr("plugs"), ":", [c[3], c[4]], ",", jstr("vlan"), ":", c[5], "}}"));
     }
 }
 

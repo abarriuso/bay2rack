@@ -46,7 +46,9 @@ module rack_panel() rack_panel_u(panel_u, panel_fill);
 // one U of the rack contents
 module rack_module(type) {
     if (type == "ms105g") switch_mount();
-    else if (type == "kvm2") kvm2_mount();
+    else if (mod_kind(type) == "kvm") kvm_mount(mod_items(type));
+    else if (mod_kind(type) == "pi") pi_mount(mod_items(type));
+    else if (mod_kind(type) == "piblade") pi_blade_mount(mod_items(type));
     else if (type == "uswflex") dev_mount(usw_dims);
     else if (type == "ux") dev_mount(ux_dims);
     else if (type == "dev1") dev_mount(dev1_dims);
@@ -60,6 +62,8 @@ module rack_module(type) {
 // ---------------------------------------------------------------------
 // A device slides into a tunnel from the back, the window lip in the plate stops it and a
 // zip tie behind it holds it. Used by the switch and the KVM mounts.
+shelf_z = 2.5;                                        // floor bottom of the shelf and Pi trays inside the plate
+YZ = [[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]];   // 2D (y, z) -> 3D, extruded along X
 function tunnel_z0(ch) = (U - 0.79 - ch) / 2;          // cavity bottom, centred in the 1U plate
 
 module tunnel_add(x, cw, ch, d)
@@ -94,25 +98,94 @@ module switch_mount() {
     }
 }
 
-// two small KVM-over-IP boxes side by side (JetKVM + NanoKVM by default), screens visible in front
+// KVM-over-IP tray: 1 to 3 boxes side by side, each in its own tunnel, screens visible in front.
+// Neighbouring tunnels share a wall when space is short, otherwise they are kvm_gap apart.
+function kvm_dims(b) = b == "jet" ? jetkvm_dims : b == "nano" ? nanokvm_dims : kvm_custom;
 function kvm_c(k) = [k[0] + mount_clear, k[1] + mount_clear, k[2] + mount_clear + 6];
 kvm_gap = 12;
-kvm_xa = -(kvm_gap / 2 + mount_wall + kvm_c(kvm_a)[0] / 2);
-kvm_xb = kvm_gap / 2 + mount_wall + kvm_c(kvm_b)[0] / 2;
+function kvm_list(items) = len(items) == 0 ? ["nano"] : [for (i = [0 : min(len(items), 3) - 1]) items[i]];
+function kvm_cs(items) = [for (b = kvm_list(items)) kvm_c(kvm_dims(b))];
+function kvm_wsum(items) = sum_list([for (c = kvm_cs(items)) c[0]]);
+function kvm_space(items) = let(n = len(kvm_cs(items)))       // wall-to-wall distance between cavities
+    n < 2 ? 0 : min(kvm_gap + 2 * mount_wall, max(mount_wall, (2 * x_in - 6 - 2 * mount_wall - kvm_wsum(items)) / (n - 1)));
+function kvm_xs(items) = let(cs = kvm_cs(items), n = len(cs), sp = kvm_space(items), tot = kvm_wsum(items) + (n - 1) * sp)
+    [for (i = [0 : n - 1]) -tot / 2 + sum_list([for (j = [0 : i]) cs[j][0]]) - cs[i][0] / 2 + i * sp];
+function kvm_fits(items) = let(cs = kvm_cs(items))
+    kvm_wsum(items) + (len(cs) + 1) * mount_wall <= 2 * x_in - 1 && max([for (c = cs) c[1]]) + 2 * mount_wall <= U - 0.79;
 
-module kvm2_mount() {
-    A = kvm_c(kvm_a);
-    B = kvm_c(kvm_b);
-    if (max(A[1], B[1]) + 2 * mount_wall > U - 0.79) echo("WARNING: a KVM box is too tall for 1U");
+module kvm_mount(items) {
+    L = kvm_list(items);
+    cs = kvm_cs(items);
+    xs = kvm_xs(items);
+    if (len(items) > 3) echo("WARNING: a KVM tray takes 3 boxes at most");
+    if (!kvm_fits(items))
+        echo(str("WARNING: the KVM boxes ", L, " do not fit in one 1U tray - use fewer boxes or two trays"));
     difference() {
         union() {
             plate(panel_w, U - 0.79, panel_t, 0.6);
-            tunnel_add(kvm_xa, A[0], A[1], A[2]);
-            tunnel_add(kvm_xb, B[0], B[1], B[2]);
+            for (i = [0 : len(cs) - 1]) tunnel_add(xs[i], cs[i][0], cs[i][1], cs[i][2]);
         }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
-        tunnel_cut(kvm_xa, A[0], A[1], A[2], kvm_a[2]);
-        tunnel_cut(kvm_xb, B[0], B[1], B[2], kvm_b[2]);
+        for (i = [0 : len(cs) - 1]) tunnel_cut(xs[i], cs[i][0], cs[i][1], cs[i][2], kvm_dims(L[i])[2]);
+    }
+}
+
+// ---------------------------------------------------------------------
+//  Raspberry Pi tray: boards flat on four standoffs, the port edge facing
+//  the front window. Pi 5 / 4 / 3: USB + Ethernet in front, USB-C and HDMI
+//  on the left side. Zero / Zero 2 W: HDMI and both micro USB in front.
+//  Board coordinates: x from the left edge, y from the port edge backwards.
+// ---------------------------------------------------------------------
+// [width across the front, depth, mounting holes, front window [w, h above the board], port overhang]
+function pi_spec(b) = b == "zero"
+    ? [65, 30, [[3.5, 3.5], [61.5, 3.5], [3.5, 26.5], [61.5, 26.5]], [57, 9], 1.0]
+    : [56, 85, [[3.5, 23.5], [52.5, 23.5], [3.5, 81.5], [52.5, 81.5]], [53, 17.5], 2.6];
+function pi_list(items) = len(items) == 0 ? ["pi5"] : [for (i = [0 : min(len(items), 2) - 1]) items[i]];
+pi_tw = 2 * x_in - 4;                                 // tray floor width (passes between the rack posts)
+pi_zb = shelf_z + 2 + pi_standoff;                    // board underside above the module bottom
+function pi_wsum(items) = sum_list([for (b = pi_list(items)) pi_spec(b)[0]]);
+function pi_gap(items) = len(pi_list(items)) < 2 ? 0 : min(20, (pi_tw - 2 - pi_wsum(items)));
+// left edge of each board; one big board sits to the right so its USB-C / HDMI plugs have room
+function pi_x0s(items) = let(L = pi_list(items), g = pi_gap(items))
+    len(L) == 1 ? [L[0] == "zero" ? -pi_spec("zero")[0] / 2 : pi_tw / 2 - 4 - pi_spec(L[0])[0]]
+  : [-(pi_wsum(items) + g) / 2, -(pi_wsum(items) + g) / 2 + pi_spec(L[0])[0] + g];
+function pi_fits(items) = pi_wsum(items) + (len(pi_list(items)) - 1) * 3 <= pi_tw - 2;
+
+module pi_mount(items) {
+    L = pi_list(items);
+    x0 = pi_x0s(items);
+    h = U - 0.79;
+    d = max([for (b = L) pi_spec(b)[4] + pi_spec(b)[1]]) + 8;
+    hole = pi_fixing == "heatset" ? 3.6 : 2.2;
+    if (len(items) > 2) echo("WARNING: a Raspberry Pi tray takes 2 boards at most");
+    if (!pi_fits(items)) echo(str("WARNING: the boards ", L, " do not fit side by side in one tray - use two trays"));
+    else if (len(L) == 2 && L[0] != "zero" && L[1] != "zero")
+        echo("NOTE: two boards side by side leave no room for USB-C plugs - power them with PoE HATs");
+    // full-height side walls only where no board is in the way, low rails elsewhere
+    function clear_at(x) = len([for (i = [0 : len(L) - 1]) if (x + 2 > x0[i] - 0.6 && x < x0[i] + pi_spec(L[i])[0] + 0.6) 1]) == 0;
+    walls = [-pi_tw / 2, pi_tw / 2 - 2];
+    difference() {
+        union() {
+            plate(panel_w, h, panel_t, 0.6);
+            translate([-pi_tw / 2, -eps, shelf_z]) cube([pi_tw, d, 2]);
+            for (x = walls) translate([x, -eps, shelf_z])
+                cube([2, d, clear_at(x) ? 12 : pi_standoff + 1]);
+            for (x = walls) if (clear_at(x)) translate([x, 0, 0])
+                multmatrix(YZ) linear_extrude(2) polygon([[-eps, shelf_z + 2], [16, shelf_z + 2], [-eps, shelf_z + 18]]);
+            // standoffs
+            for (i = [0 : len(L) - 1], p = pi_spec(L[i])[2])
+                translate([x0[i] + p[0], pi_spec(L[i])[4] + p[1], shelf_z + 2 - eps]) cylinder(d = 6.2, h = pi_standoff + eps, $fn = 28);
+        }
+        panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        for (i = [0 : len(L) - 1]) {
+            S = pi_spec(L[i]);
+            // port window, from just under the board to the top of the tallest port
+            translate([x0[i] + (S[0] - S[3][0]) / 2, -panel_t - 1, pi_zb + 0.4]) cube([S[3][0], panel_t + 2, S[3][1] + 1.4]);
+            for (p = S[2]) translate([x0[i] + p[0], S[4] + p[1], shelf_z + 2 + pi_standoff - 6]) cylinder(d = hole, h = 6.5, $fn = 16);
+            // airflow slots under the board, along the depth
+            for (k = [0 : floor((S[0] - 20) / 9) - 1])
+                translate([x0[i] + 10 + k * 9, S[4] + 10, shelf_z - 1]) cube([5, max(S[1] - 20, 4), 4]);
+        }
     }
 }
 
@@ -161,8 +234,6 @@ function YZ_X() = [[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]];
 
 // 1U shelf for small devices (NanoKVM, Raspberry Pi, a small router...)
 shelf_w = 2 * x_in - 8;
-shelf_z = 2.5;                                        // shelf floor bottom inside the 1U plate
-YZ = [[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]];   // 2D (y, z) -> 3D, extruded along X
 
 module shelf_mount() {
     h = U - 0.79;
@@ -184,6 +255,63 @@ module shelf_mount() {
         // zip-tie slot pairs across the shelf
         for (y = [22, 62], x = [-34, 34]) for (dx = [-6, 6])
             translate([x + dx - 1.6, y, shelf_z - 1]) cube([3.2, 4.4, 4]);
+    }
+}
+
+// ---------------------------------------------------------------------
+//  2U Raspberry Pi blades: up to four Pi 5 / 4 / 3 standing on edge, each
+//  screwed to its own fin, the USB / Ethernet edge in a front window and
+//  the USB-C / HDMI edge on top. Built front-down like the other modules:
+//  the standoffs have a 45 degree chin so they print without supports.
+// ---------------------------------------------------------------------
+function blade_list(items) = let(L = [for (b = items) if (b != "zero") b])
+    len(L) == 0 ? ["pi5"] : [for (i = [0 : min(len(L), 4) - 1]) L[i]];
+blade_zb = shelf_z + 5;                               // bottom edge of the boards
+blade_fin = 2;
+function blade_span(n) = (n - 1) * pi_blade_pitch + blade_fin + pi_standoff + 1.4 + 17;
+function blade_xf(items, i) = -blade_span(len(blade_list(items))) / 2 + i * pi_blade_pitch;   // left face of fin i
+function blade_xb(items, i) = blade_xf(items, i) + blade_fin + pi_standoff;                    // board underside
+
+module pi_blade_mount(items) {
+    L = blade_list(items);
+    n = len(L);
+    h = 2 * U - 0.79;
+    S = pi_spec("pi5");
+    d = S[4] + S[1] + 8;
+    fh = blade_zb + S[0] + 4 - shelf_z;                // fin height above the floor bottom
+    hole = pi_fixing == "heatset" ? 3.6 : 2.2;
+    if (len([for (b = items) if (b == "zero") 1]) > 0) echo("WARNING: Zero boards go in the flat pi tray, not in the blades");
+    if (len(items) > 4) echo("WARNING: the blade tray takes 4 boards at most");
+    if (blade_span(n) > pi_tw - 2) echo(str("WARNING: ", n, " blades at ", pi_blade_pitch, " mm do not fit between the rack posts - lower pi_blade_pitch or use fewer boards"));
+    difference() {
+        union() {
+            plate(panel_w, h, panel_t, 0.6);
+            translate([-pi_tw / 2, -eps, shelf_z]) cube([pi_tw, d, 2]);
+            for (i = [0 : n - 1]) {
+                xf = blade_xf(L, i);
+                translate([xf, -eps, shelf_z]) cube([blade_fin, d, fh]);
+                // standoffs with a chin towards the plate (the print bed)
+                for (p = S[2]) translate([xf + blade_fin - eps, S[4] + p[1], blade_zb + S[0] - p[0]])
+                    hull() {
+                        translate([0, -3, -3]) cube([pi_standoff + eps, 6, 6]);
+                        translate([0, -3 - pi_standoff, -3]) cube([eps, 6, 6]);
+                    }
+            }
+            // rear tie bar across the fins tops
+            translate([blade_xf(L, 0), d - 6, shelf_z + fh - 4]) cube([blade_xf(L, n - 1) - blade_xf(L, 0) + blade_fin, 6, 4]);
+        }
+        panel_holes(panel_zs(2), panel_t, panel_hole_slot);
+        for (i = [0 : n - 1]) {
+            xb = blade_xb(L, i);
+            // port window: the jacks stand 17 mm off the board
+            translate([xb - 1, -panel_t - 1, blade_zb + (S[0] - S[3][0]) / 2]) cube([1.4 + 18, panel_t + 2, S[3][0]]);
+            for (p = S[2]) translate([xb - pi_standoff - 0.5, S[4] + p[1], blade_zb + S[0] - p[0]])
+                rotate([0, 90, 0]) cylinder(d = hole, h = pi_standoff + 1, $fn = 16);
+            // airflow windows in the fins, clear of the standoffs
+            xf = blade_xf(L, i);
+            for (y = [S[4] + 31, S[4] + 52]) translate([xf - 1, y, blade_zb + 12])
+                cube([blade_fin + 2, 12, S[0] - 24]);
+        }
     }
 }
 
@@ -245,7 +373,9 @@ module test_bay() {
     // one right-hand corner: frame strip + wall with the bay holes of one bay
     intersection() {
         adapter();
-        translate([x_in - eps, -ft - 1, min(frame_z0, 0) - 1]) cube([fw / 2 - x_in + 1, sleeve_depth + ft + 2, bay_h + 2]);
+        // one bay high, or up to the first tab groove so that fits too
+        translate([x_in - eps, -ft - 1, min(frame_z0, 0) - 1])
+            cube([fw / 2 - x_in + 1, sleeve_depth + ft + 2, len(tab_zs) > 0 ? bay_pitch + 6 : bay_h + 2]);
     }
 }
 
