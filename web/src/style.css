@@ -186,11 +186,6 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .chapter.now .name, .chapter:hover .name { color: var(--ink); }
 
-.facts { margin: var(--s-2) 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; min-width: 0; }
-.fact { border-top: 2px solid var(--rule); padding-top: 12px; display: grid; gap: 4px; min-width: 0; }
-.fact:first-child { border-top-color: var(--signal); }
-.fact dt { font: 600 11px/1.2 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
-.fact dd { margin: 0; font-weight: 750; font-stretch: 106%; font-size: clamp(1rem, .8rem + .5vw, 1.3rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* the header goes dark while it sits on the film */
 .top.on-film {
@@ -540,8 +535,6 @@ button:disabled { opacity: .45; cursor: default; }
   .chapter { padding: 0; justify-content: center; }
   .chapter .name { display: none; }
   .cta .btn { flex: 1 1 auto; justify-content: center; }
-  .facts { gap: 12px; }
-  .fact dd { white-space: normal; font-size: 1rem; }
 }
 @media (max-width: 600px) {
   .top { gap: var(--s-2); }

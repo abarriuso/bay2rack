@@ -730,11 +730,13 @@ function wireHeroVideo() {
       $('#heroCaption').textContent = t('hero_s' + (i + 1));
     }
   };
+  // repaint every frame while the hero is on screen, so the bars fill smoothly (timeupdate only fires ~4 times a second)
   let raf = 0;
-  const loop = () => { paint(); raf = video.paused ? 0 : requestAnimationFrame(loop); };
-  video.addEventListener('play', () => { if (!raf) raf = requestAnimationFrame(loop); });
+  let visible = true;
+  const loop = () => { paint(); raf = visible ? requestAnimationFrame(loop) : 0; };
+  const run = () => { if (!raf && visible) raf = requestAnimationFrame(loop); };
+  video.addEventListener('playing', run);
   video.addEventListener('seeked', paint);
-  video.addEventListener('timeupdate', () => { if (!raf) paint(); });
   $('#heroReplay').onclick = () => { video.currentTime = 0; video.play().catch(() => {}); };
   const label = () => {
     video.setAttribute('aria-label', t('hero_video_label'));
@@ -742,8 +744,10 @@ function wireHeroVideo() {
   };
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) { video.removeAttribute('autoplay'); video.pause(); }
   // pause while scrolled away: no decoding in the background
-  new IntersectionObserver(([e]) => { if (e.isIntersecting && !matchMedia('(prefers-reduced-motion: reduce)').matches) video.play().catch(() => {}); else video.pause(); })
-    .observe(video);
+  new IntersectionObserver(([e]) => {
+    visible = e.isIntersecting;
+    if (visible && !matchMedia('(prefers-reduced-motion: reduce)').matches) { video.play().catch(() => {}); run(); } else video.pause();
+  }).observe(video);
   // the header turns dark while it sits on the film
   const band = $('#top');
   const top = $('.top');
@@ -753,6 +757,7 @@ function wireHeroVideo() {
   build();
   label();
   paint();
+  run();
   return () => { build(); label(); paint(); };
 }
 let heroRelabel = null;
