@@ -17,3 +17,6 @@ build/
 
 # Blender video pipeline: exported scenes and rendered frames (large, regenerated)
 docs/blender/
+
+# Python
+__pycache__/
