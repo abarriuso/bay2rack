@@ -241,6 +241,18 @@ button:disabled { opacity: .45; cursor: default; }
 /* ------------------------------------------------------------ configurator */
 .build { padding-block: clamp(48px, 7vw, 88px) 0; }
 .build-head { margin-bottom: var(--s-5); }
+.examples { margin-bottom: var(--s-5); }
+.examples summary {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--s-3); cursor: pointer; list-style: none;
+  padding: var(--s-3) var(--s-4); border: 1px solid var(--rule); border-radius: var(--r); background: var(--plate);
+  font-weight: 600;
+}
+.examples summary::-webkit-details-marker { display: none; }
+.examples summary::before { content: '▸'; color: var(--ink-3); transition: transform .15s; }
+.examples[open] summary::before { transform: rotate(90deg); }
+.examples summary small { font-weight: 400; color: var(--ink-3); }
+.examples summary:hover { border-color: var(--ink-3); }
+#examplesList { padding: var(--s-3) 0 0; }
 .layout {
   --panel-w: 410px; --top-h: 57px;
   display: grid; grid-template-columns: var(--panel-w) minmax(0, 1fr); align-items: start; max-width: 1680px; margin: 0 auto;
@@ -485,7 +497,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 @media (max-width: 900px) {
   .nav { display: none; }
-  .layout { display: flex; flex-direction: column; background: none; }
+  .layout { display: flex; flex-direction: column; align-items: stretch; background: none; }
   /* viewer, then the steps, then downloads and the bill of materials */
   .stage { display: contents; }
   /* the model stays in sight while you go down the steps */

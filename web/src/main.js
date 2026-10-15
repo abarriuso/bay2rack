@@ -242,7 +242,6 @@ function renderSteps() {
   const mods = placed.map((p) => p.m);
   const panel = v.part === 'rack_panel';
 
-  add('example', examplesEditor());          // always first, so the steps don't jump when you switch tabs
   if (v.part.startsWith('test_')) add('test', segmented('part', TESTS, (x) => t(x)));
   if (panel) {
     add('panel', segmented('panel_u', [1, 2, 3, 4], (x) => `${x}U`), chips('panel_fill', FILLS, (x) => t('fill_' + x)));
@@ -273,6 +272,7 @@ function renderSteps() {
     h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))));
   if (v.part === 'assembly') add('preview', previewEditor());
   $('#steps').replaceChildren(...list);
+  $('#examplesList').replaceChildren(examplesEditor());
 }
 
 function contentsEditor(placed) {
