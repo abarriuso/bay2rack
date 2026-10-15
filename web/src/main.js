@@ -721,7 +721,7 @@ async function downloadKit() {
 }
 
 // ---------------------------------------------------------------- hero + gallery
-// the hero film: plays while on screen, paused for reduced motion; the header goes dark over it
+// the hero film: plays while on screen, paused for reduced motion
 function wireHeroVideo() {
   const video = $('#heroVideo');
   const label = () => video.setAttribute('aria-label', t('hero_video_label'));
@@ -729,11 +729,6 @@ function wireHeroVideo() {
   if (still) { video.removeAttribute('autoplay'); video.pause(); }
   new IntersectionObserver(([e]) => { if (e.isIntersecting && !still) video.play().catch(() => {}); else video.pause(); })
     .observe(video);
-  const band = $('#top');
-  const top = $('.top');
-  const onScroll = () => top.classList.toggle('on-film', band.getBoundingClientRect().bottom > top.offsetHeight);
-  addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
   label();
   return label;
 }

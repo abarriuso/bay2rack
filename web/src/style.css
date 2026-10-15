@@ -153,12 +153,6 @@ button:disabled { opacity: .45; cursor: default; }
 .hero-stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--r); background: var(--ground); }
 .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* the header goes dark while it sits on the film */
-.top.on-film {
-  --ground: #020203; --plate: #121518; --ink: #eef0ee; --ink-2: #a9b1b7; --ink-3: #7f8a92; --rule: #2a3135;
-  --signal: #6a9fff; --signal-ink: #08111f; color: var(--ink); background: rgb(2 2 3 / .82); border-bottom-color: #1c2024;
-}
-
 /* cable colour key (hero and configurator) */
 .legend {
   position: absolute; z-index: 2; left: 10px; top: 10px; margin: 0; padding: 8px 10px; list-style: none; display: grid; gap: 3px;
