@@ -34,12 +34,10 @@ Evolution of the original
 
 ### The film
 
-![3 bays, 5 bays, a Raspberry Pi cluster: the same parts, other builds](docs/video/builds.gif)
+![3 bays, 5 bays, a Raspberry Pi cluster](docs/video/builds.gif)
 
-The hero of the site is rendered in Blender from the same models (`scripts/blender/`): a beige 90s **sleeper**
-opens up, the modern server inside floats in the open, everything snaps back, the adapter and the rack modules fly
-into the bays, the cables leave through the PCI slots coloured by VLAN, and the Proxmox node next to it trades its
-fan for a Raspberry Pi blade cluster.
+Blender 5.2, Cycles (HIP), 1600×900, 30 fps, 17 s. `scripts/blender/hero.py` builds the scene from GLB exports of the
+web viewer; `scripts/blender/encode.py` grades it and writes MP4 (H.264), WebM (VP9) and the GIFs.
 
 | | | |
 |---|---|---|
