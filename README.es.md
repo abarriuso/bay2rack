@@ -251,15 +251,6 @@ stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md
 docs/img/, docs/gallery/ imágenes del README y de la web
 ```
 
-## Hoja de ruta / ideas
-
-- [ ] Distancias entre agujeros verificadas para racks comerciales de 6" (se agradecen PRs con medidas)
-- [x] Bandejas para dispositivos sin orejas de rack (switches, KVMs, Raspberry Pi, cualquier tamaño)
-- [ ] Una especificación abierta de la interfaz bahía-rack (montaje en bahía, perfiles del frontal, volumen de los
-      módulos), para que otros puedan hacer módulos compatibles
-- [ ] Opción de clip sin herramientas para cajas sin tornillos laterales
-- [ ] Relleno pasacables con cepillo o pasamuros
-
 ## Licencia
 
 [CC BY-NC-SA 4.0](LICENSE): puedes compartirlo y modificarlo citando al autor y con la misma

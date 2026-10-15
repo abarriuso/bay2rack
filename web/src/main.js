@@ -813,14 +813,15 @@ function applyTheme(th) {
   document.documentElement.dataset.theme = th;
   viewer.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
+  // the browser's own bars (Safari on iPhone) take the colour of the page
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
   try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }
 
 function wire() {
   initTooltips($('#tip'));
   for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
   let th = 'light';
   try { th = localStorage.getItem('theme') || 'light'; } catch { /* private mode */ }
   applyTheme(th);
@@ -845,6 +846,25 @@ function wire() {
   showAdv();
   $('#fit').onclick = () => viewer.fit();
   $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
+  // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
+  const narrow = matchMedia('(max-width: 900px)');
+  const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.viewer').after($('.results')));
+  narrow.addEventListener('change', placeResults);
+  placeResults();
+  // narrow screens: the header hides while scrolling down and over the full-screen configurator
+  let lastY = scrollY;
+  const head = () => {
+    const y = scrollY;
+    const r = $('.layout').getBoundingClientRect();
+    const inApp = r.top <= 1 && r.bottom >= innerHeight - 1;
+    const root = document.documentElement.classList;
+    if (!narrow.matches || y < 80) root.remove('head-off');
+    else if (inApp || y > lastY + 6) root.add('head-off');
+    else if (y < lastY - 6) root.remove('head-off');
+    if (Math.abs(y - lastY) > 6) lastY = y;
+  };
+  addEventListener('scroll', head, { passive: true });
+  narrow.addEventListener('change', head);
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
   $('#kit').onclick = downloadKit;
   $('#share').onclick = async () => {

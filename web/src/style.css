@@ -61,7 +61,7 @@
 /* each section fills the screen under the header and the scroll settles on the nearest one
    (proximity, so the long configurator still scrolls freely) */
 html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); scroll-snap-type: y proximity; -webkit-text-size-adjust: 100%; }
-:root { --top-h: 57px; }
+:root { --top-h: calc(57px + env(safe-area-inset-top, 0px)); }
 .hero-band, .band, .build { scroll-snap-align: start; }
 .hero-band, .band { min-height: calc(100svh - var(--top-h)); display: grid; align-content: center; }
 .hero-band > *, .band > * { min-width: 0; width: 100%; }
@@ -102,7 +102,7 @@ code { font-family: var(--f-mono); font-size: .78em; font-stretch: 87.5%; }
 .btn:hover, .primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--ink); }
 .btn.ghost:hover { background: var(--plate); filter: none; }
-.btn.small { padding: 7px 12px; font-size: 14px; }
+.btn.small { height: 36px; padding: 0 12px; font-size: 14px; }
 .pill, .icon-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   border: 1px solid var(--rule); background: var(--plate); border-radius: var(--r-s); padding: 7px 12px;
@@ -116,8 +116,10 @@ button:disabled { opacity: .45; cursor: default; }
 
 /* ------------------------------------------------------------ header */
 .top {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30;
-  display: flex; align-items: center; gap: var(--s-4); padding: 10px var(--gutter);
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px)) 10px max(var(--gutter), env(safe-area-inset-left, 0px));
+  transition: transform .25s ease;
   background: color-mix(in srgb, var(--ground) 86%, transparent); backdrop-filter: saturate(1.2) blur(12px);
   border-bottom: 1px solid var(--rule);
 }
@@ -266,7 +268,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* the steps scroll on their own and stay in sight while the page goes down to the results */
 .panel {
-  position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--top-h)); max-height: calc(100vh - var(--top-h));
+  position: sticky; top: var(--top-h); max-height: calc(100vh - var(--top-h));
   overflow: auto; padding: var(--s-5) var(--s-4) var(--s-6) max(var(--s-4), calc(var(--gutter) - 8px));
   overscroll-behavior: contain; min-width: 0;
 }
@@ -500,19 +502,26 @@ button:disabled { opacity: .45; cursor: default; }
 }
 @media (max-width: 900px) {
   .nav { display: none; }
-  .layout { display: flex; flex-direction: column; align-items: stretch; background: none; }
-  /* viewer, then the steps, then downloads and the bill of materials */
-  .stage { display: contents; }
-  /* the model stays in sight while you go down the steps */
-  /* edge to edge right under the header, so the steps slide cleanly underneath it */
-  .viewer {
-    order: -1; margin: 0; height: min(42vh, 440px); min-height: 260px; flex: none;
-    border-radius: 0; border-width: 0 0 1px;
-    position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--top-h)); z-index: 5;
-    box-shadow: 0 10px 18px -12px rgb(0 0 0 / .45);
+  /* the configurator is one screen: the 3D view on top, the steps (and then the downloads) scroll on their
+     own below it, so nothing slides under the view and each area keeps its own touch */
+  /* on phones the site header slides away while you scroll down and comes back when you scroll up */
+  html.head-off .top { transform: translateY(-100%); }
+  /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
+  .layout {
+    display: flex; flex-direction: column; align-items: stretch; background: none;
+    height: 100svh; height: 100dvh; scroll-snap-align: start; scroll-margin-top: calc(-1 * var(--top-h));
+    border-block: 0;
   }
-  .results { order: 1; padding: var(--s-5) var(--gutter) var(--s-6); border-top: 1px solid var(--rule); }
-  .panel { position: static; max-height: none; overflow: visible; background: var(--plate); border-top: 1px solid var(--rule); padding: var(--s-4) max(var(--gutter), calc((100% - 680px) / 2)) var(--s-6); }
+  .stage { display: contents; }
+  .viewer { order: -1; margin: 0; height: min(42svh, 440px); min-height: 220px; flex: none; border-radius: 0; border-width: 0 0 1px; }
+  .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
+  .panel {
+    position: static; flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior-y: auto;
+    background: var(--plate);
+    padding: var(--s-4) max(var(--gutter), calc((100% - 680px) / 2)) calc(var(--s-6) + env(safe-area-inset-bottom, 0px));
+  }
+  /* moved inside the steps by main.js on narrow screens */
+  .panel .results { padding: var(--s-5) 0 0; margin-top: var(--s-4); border-top: 1px solid var(--rule); }
   .downloads .primary { flex: 1 1 100%; }
   .prebuilt { margin-left: 0; }
   .how { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }

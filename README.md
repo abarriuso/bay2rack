@@ -251,15 +251,6 @@ stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md
 docs/img/, docs/gallery/ README and site images
 ```
 
-## Roadmap / ideas
-
-- [ ] Verified hole spacings for commercial 6" racks (PRs with measurements welcome)
-- [x] Trays for devices without rack ears (switches, KVMs, Raspberry Pi, any size)
-- [ ] An open spec for the bay-to-rack interface (bay mount, rack face profiles, module envelope), so other
-      people can make compatible modules
-- [ ] Tool-less clip option for cases without side screws
-- [ ] Brush or grommet cable fill
-
 ## License
 
 [CC BY-NC-SA 4.0](LICENSE): you may share and remix it with attribution, under the same
