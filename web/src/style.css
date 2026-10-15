@@ -14,9 +14,6 @@
   --signal-soft: #dce6f7;
   --tape: #16191c;          /* label-maker tape */
   --tape-ink: #f2f3ef;
-  --frame: #16191c;         /* the rack around the hero */
-  --frame-ink: #e6e9e7;
-  --trunk: #e3b419;         /* trunk cable yellow */
   --ok: #16803c;
   --warn: #9a5806;
   --note: #5c6770;
@@ -40,7 +37,7 @@
   :root:not([data-theme="light"]) {
     --ground: #0f1214; --plate: #171b1e; --plate-2: #1d2226; --ink: #e8ebe9; --ink-2: #a7b0b6; --ink-3: #85909a;
     --rule: #2a3135; --signal: #5d97ff; --signal-ink: #08111f; --signal-soft: #17243a;
-    --tape: #e8ebe9; --tape-ink: #111416; --frame: #050607; --frame-ink: #e6e9e7; --trunk: #e3b419;
+    --tape: #e8ebe9; --tape-ink: #111416;
     --ok: #4ade80; --warn: #f2b84b; --note: #9aa5ad; --stage: #1a1f22;
     --tip-bg: #e8ebe9; --tip-ink: #111416; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
     color-scheme: dark;
@@ -49,7 +46,7 @@
 :root[data-theme="dark"] {
   --ground: #0f1214; --plate: #171b1e; --plate-2: #1d2226; --ink: #e8ebe9; --ink-2: #a7b0b6; --ink-3: #85909a;
   --rule: #2a3135; --signal: #5d97ff; --signal-ink: #08111f; --signal-soft: #17243a;
-  --tape: #e8ebe9; --tape-ink: #111416; --frame: #050607; --frame-ink: #e6e9e7; --trunk: #e3b419;
+  --tape: #e8ebe9; --tape-ink: #111416;
   --ok: #4ade80; --warn: #f2b84b; --note: #9aa5ad; --stage: #1a1f22;
   --tip-bg: #e8ebe9; --tip-ink: #111416; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
   color-scheme: dark;
@@ -133,8 +130,8 @@ button:disabled { opacity: .45; cursor: default; }
 /* ------------------------------------------------------------ hero */
 /* the band takes the black of the film, so the video has no edge: the page opens into it */
 .hero-band {
-  --ground: #020203; --plate: #121518; --plate-2: #181c1f; --ink: #eef0ee; --ink-2: #a9b1b7; --ink-3: #7f8a92;
-  --rule: #2a3135; --signal: #6a9fff; --signal-ink: #08111f; --signal-soft: #17243a; --tape: #eef0ee; --tape-ink: #0b0d0f;
+  --ground: #020203; --plate: #171b1e; --plate-2: #1d2226; --ink: #e8ebe9; --ink-2: #a7b0b6; --ink-3: #85909a;
+  --rule: #2a3135; --tape: #e8ebe9; --tape-ink: #111416;
   background: var(--ground); color: var(--ink); color-scheme: dark;
 }
 /* text on the left, the film on the right (two thirds of the width) */
@@ -230,12 +227,12 @@ button:disabled { opacity: .45; cursor: default; }
   color: var(--signal); font-weight: 650; font-size: .93rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
 }
 
-/* how it works: three steps along a trunk cable */
+/* how it works: three steps along a patch cable */
 .how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-5); position: relative; }
 .how li { position: relative; display: grid; gap: var(--s-2); align-content: start; }
-/* the trunk cable from one step to the next */
+/* the cable from one step to the next */
 .how li:not(:last-child)::after {
-  content: ""; position: absolute; z-index: 0; left: 36px; right: calc(-1 * var(--s-5)); top: 17px; height: 3px; background: var(--trunk);
+  content: ""; position: absolute; z-index: 0; left: 36px; right: calc(-1 * var(--s-5)); top: 17px; height: 3px; background: var(--signal);
 }
 .how b {
   position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--ground);
@@ -296,7 +293,7 @@ button:disabled { opacity: .45; cursor: default; }
   cursor: pointer; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; transition: background .15s, color .15s;
 }
 .seg-btn:hover { color: var(--ink); }
-.seg-btn.active { background: var(--ink); color: var(--ground); }
+.seg-btn.active { background: var(--signal); color: var(--signal-ink); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chips.small .chip { font-size: 12.5px; padding: 5px 9px; }
@@ -305,7 +302,7 @@ button:disabled { opacity: .45; cursor: default; }
   font-size: 14px; transition: border-color .15s, background .15s;
 }
 .chip:hover { border-color: var(--ink-3); }
-.chip.active { background: var(--ink); border-color: var(--ink); color: var(--ground); }
+.chip.active { background: var(--signal); border-color: var(--signal); color: var(--signal-ink); }
 
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; }
 .card-btn {
@@ -399,7 +396,7 @@ button:disabled { opacity: .45; cursor: default; }
   background: color-mix(in srgb, var(--plate) 88%, transparent); backdrop-filter: blur(8px); color: var(--ink-2);
 }
 .tab:hover:not(:disabled) { color: var(--ink); }
-.tab.active { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+.tab.active { background: var(--signal); color: var(--signal-ink); border-color: var(--signal); }
 .tab-sub { flex: none; }
 .tab-sub .select { width: auto; max-width: 260px; padding: 5px 10px; background: var(--plate); }
 .floatbar { position: absolute; z-index: 2; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
