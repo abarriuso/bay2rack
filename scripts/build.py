@@ -37,7 +37,9 @@ FAMILIES = {
     "bezel-flush": "Exact 5.25in drive bezel, flush with the case front, patch panel cut into the bezel.",
     "bezel-overhang": "Exact 5.25in drive bezel, N U of rack panels overlapping the case front.",
     "panels": "Standalone 6in rack panels for any 6in rack.",
-    "modules": "1U rack modules: switch mount, shelf, button panel, patch panel.",
+    "modules": "Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, 40 mm fans, patch and button panels.",
+    "bezels": "Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 mm fan.",
+    "rear": "Printed brackets for two PCI slots: the network cables and the power cable leave the case through them.",
     "covers": "Keystone covers for unused ports, pushed in from the front.",
     "tests": "Small test prints: check them before printing a full adapter.",
 }
@@ -79,6 +81,17 @@ def panel(name, title, u, fill, **extra):
                    [("", {})], flat=True)
 
 
+def module(name, title, kind):
+    return variant(f"modules/{name}", title, {"part": "rack_module", "module_type": kind}, [("", {})], flat=True)
+
+
+def bezel(name, title, bays, front_style="bezel", **extra):
+    # no rack units: the whole bezel is the fill, cut straight into the frame
+    return variant(f"bezels/{name}", title, {"bays": bays, "fit": "panel", "front_style": front_style,
+                                             "filler_mode": "integral", **extra},
+                   [("adapter.stl", {"part": "adapter"})])
+
+
 def test(name, title, part, **extra):
     return variant(f"tests/{name}", title, {"part": part, **extra}, [("", {})], flat=True)
 
@@ -90,20 +103,32 @@ VARIANTS = (
     + [plate_overhang(1), plate_overhang(2), plate_overhang(3, "center")]
     + [bezel_flush(b) for b in (1, 2, 3)]
     + [bezel_overhang(1), bezel_overhang(2, "center"), bezel_overhang(3, "center")]
-    + [variant("bezel-flush/1bay-buttons", "1 bay bezel: power key (MX) + LEDs, for the client PCs",
-               {"bays": 1, "fit": "flush", "front_style": "bezel", "filler_mode": "integral", "spare_fill": "buttons", "btn_count": 1},
-               [("adapter.stl", {"part": "adapter"})]),
-       variant("bezel-flush/1bay-vent", "1 bay bezel with vents, for the client PCs",
-               {"bays": 1, "fit": "flush", "front_style": "bezel", "filler_mode": "integral", "spare_fill": "vent"},
-               [("adapter.stl", {"part": "adapter"})])]
+    + [bezel("1bay-buttons", "1 bay: power key (MX) + LEDs", 1, spare_fill="buttons", btn_count=1),
+       bezel("1bay-vent", "1 bay with vents", 1, spare_fill="vent"),
+       bezel("2bay-fan80", "2 bays: 80 mm fan", 2, spare_fill="fan80"),
+       bezel("3bay-buttons-fan80", "3 bays: 80 mm fan + power / reset keys", 3, front_style="plate",
+             spare_pos="split", spare_split=0.67, spare_fill="fan80", spare_fill_2="buttons")]
     + [panel("1U-patch6", "1U, 6 keystones", 1, "keystone"),
        panel("1U-vent", "1U, vented", 1, "vent"),
        panel("1U-blank", "1U, blank", 1, "blank"),
-       panel("2U-patch12", "2U, 12 keystones", 2, "keystone", ks_ports=12)]
-    + [variant("modules/ms105g", "Mercusys MS105G switch mount (1U)", {"part": "rack_module", "module_type": "ms105g"}, [("", {})], flat=True),
-       variant("modules/shelf", "1U shelf for small devices", {"part": "rack_module", "module_type": "shelf"}, [("", {})], flat=True),
-       variant("modules/buttons", "1U button panel: MX keys + power / HDD LEDs", {"part": "rack_module", "module_type": "buttons"}, [("", {})], flat=True),
-       variant("modules/patch6", "1U patch panel, 6 keystone ports", {"part": "rack_module", "module_type": "patch"}, [("", {})], flat=True),
+       panel("2U-patch12", "2U, 12 keystones", 2, "keystone", ks_ports=12),
+       panel("1U-fan40", "1U, three 40 mm fans", 1, "fan40")]
+    + [module("ms105g", "Mercusys MS105G switch tray (1U)", "ms105g"),
+       module("uswflex", "UniFi USW-Flex-Mini tray (1U)", "uswflex"),
+       module("ux", "UniFi Express tray (1U)", "ux"),
+       module("kvm-jet-nano", "KVM tray: JetKVM + NanoKVM (1U)", "kvm:jet+nano"),
+       module("kvm-jet-jet", "KVM tray: two JetKVM (1U)", "kvm:jet+jet"),
+       module("kvm-nano-nano", "KVM tray: two NanoKVM (1U)", "kvm:nano+nano"),
+       module("pi5", "Raspberry Pi 5 / 4 / 3 tray, one board (1U)", "pi:pi5"),
+       module("pi-x2", "Raspberry Pi tray, two boards with PoE HATs (1U)", "pi:pi5+pi5"),
+       module("pi-zero", "Raspberry Pi Zero tray (1U)", "pi:zero"),
+       module("piblade-x4", "Raspberry Pi blades, four boards on edge (2U)", "piblade:pi5+pi5+pi5+pi5"),
+       module("fan40", "Three 40 mm fans (1U)", "fan40"),
+       module("shelf", "Shelf for small devices (1U)", "shelf"),
+       module("buttons", "Button panel: MX keys + power / HDD LEDs (1U)", "buttons"),
+       module("patch6", "Patch panel, 6 keystone ports (1U)", "patch"),
+       variant("rear/pci-lan", "PCI-slot bracket for the network cables", {"part": "pci_bracket", "pci_kind": "lan"}, [("", {})], flat=True),
+       variant("rear/pci-power", "PCI-slot bracket for the power cable", {"part": "pci_bracket", "pci_kind": "power"}, [("", {})], flat=True),
        variant("covers/keystone-blank", "Plain keystone cover", {"part": "keystone_cover", "cover_type": "blank"}, [("", {})], flat=True),
        variant("covers/keystone-pass", "Keystone cable pass-through cover", {"part": "keystone_cover", "cover_type": "pass"}, [("", {})], flat=True)]
     + [test("bay-plate", "Bay screw corner, plate front", "test_bay"),

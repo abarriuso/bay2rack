@@ -191,7 +191,6 @@ module tower_case() {
 PRINT_A = [48, 50, 54] / 255;                         // adapter
 PRINT_B = [63, 65, 70] / 255;                         // filler panels
 PRINT_C = [77, 79, 84] / 255;                         // rack modules and covers
-MOD_COLOR = PRINT_C;
 
 module rj45_port(x, z, yf) {     // dark socket with the latch notch, front at yf
     color([0.04, 0.04, 0.05]) translate([x - 6, yf - 0.05, z - 4.5]) cube([12, 0.3, 9]);
@@ -419,11 +418,7 @@ zone_yf = zn_sep ? -ft - filler_t - 2 * explode : -ft;
 module zone_devices() if (demo_devices == "homelab")
     for (zn = zones) fill_devices(zn[2], zone_w(), zone_h(zn), zone_z0(zn), zone_yf, zn_sep ? filler_t : ft);
 
-module dummy_devices() {
-    rack_contents();
-    zone_devices();
-}
-// (assembly() calls rack_contents and zone_devices directly so the hero can render them apart)
+// assembly() calls rack_contents and zone_devices on their own, so each can be rendered apart (preview_item)
 
 // --- homelab scene: client PCs, access point, network cables ------------
 CABLE_D = 5.2;
@@ -449,8 +444,6 @@ sw_second = len(sw_list) > 1 ? sw_list[1] : undef;
 function sw_ports_of(p) = p[0] == "ms105g" ? ms_ports(sw_zc_of(p))
                         : [for (i = [0 : 4]) [-usw_dims[0] / 2 + 14 + i * 15, sw_zc_of(p)]];
 function sw_jack_of(p) = p[0] == "ms105g" ? [ms_w / 2 - 10, sw_zc_of(p) - 1] : [usw_dims[0] / 2 - 9.5, sw_zc_of(p)];
-sw_units = [for (p = sw_list) p[1]];
-sw_zc = len(sw_list) > 0 ? sw_zc_of(sw_main) : 0;
 sw_yf = -ft - explode + 0.2;
 
 // clients: old towers next to the server, fronts in line with it

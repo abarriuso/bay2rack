@@ -82,6 +82,38 @@
             "front_style": "bezel",
             "hole_pattern": "center"
         },
+        "bezels/1bay-buttons": {
+            "bays": "1",
+            "fit": "panel",
+            "front_style": "bezel",
+            "filler_mode": "integral",
+            "spare_fill": "buttons",
+            "btn_count": "1"
+        },
+        "bezels/1bay-vent": {
+            "bays": "1",
+            "fit": "panel",
+            "front_style": "bezel",
+            "filler_mode": "integral",
+            "spare_fill": "vent"
+        },
+        "bezels/2bay-fan80": {
+            "bays": "2",
+            "fit": "panel",
+            "front_style": "bezel",
+            "filler_mode": "integral",
+            "spare_fill": "fan80"
+        },
+        "bezels/3bay-buttons-fan80": {
+            "bays": "3",
+            "fit": "panel",
+            "front_style": "plate",
+            "filler_mode": "integral",
+            "spare_pos": "split",
+            "spare_split": "0.67",
+            "spare_fill": "fan80",
+            "spare_fill_2": "buttons"
+        },
         "panels/1U-patch6": {
             "part": "rack_panel",
             "panel_u": "1",
@@ -103,9 +135,54 @@
             "panel_fill": "keystone",
             "ks_ports": "12"
         },
+        "panels/1U-fan40": {
+            "part": "rack_panel",
+            "panel_u": "1",
+            "panel_fill": "fan40"
+        },
         "modules/ms105g": {
             "part": "rack_module",
             "module_type": "ms105g"
+        },
+        "modules/uswflex": {
+            "part": "rack_module",
+            "module_type": "uswflex"
+        },
+        "modules/ux": {
+            "part": "rack_module",
+            "module_type": "ux"
+        },
+        "modules/kvm-jet-nano": {
+            "part": "rack_module",
+            "module_type": "kvm:jet+nano"
+        },
+        "modules/kvm-jet-jet": {
+            "part": "rack_module",
+            "module_type": "kvm:jet+jet"
+        },
+        "modules/kvm-nano-nano": {
+            "part": "rack_module",
+            "module_type": "kvm:nano+nano"
+        },
+        "modules/pi5": {
+            "part": "rack_module",
+            "module_type": "pi:pi5"
+        },
+        "modules/pi-x2": {
+            "part": "rack_module",
+            "module_type": "pi:pi5+pi5"
+        },
+        "modules/pi-zero": {
+            "part": "rack_module",
+            "module_type": "pi:zero"
+        },
+        "modules/piblade-x4": {
+            "part": "rack_module",
+            "module_type": "piblade:pi5+pi5+pi5+pi5"
+        },
+        "modules/fan40": {
+            "part": "rack_module",
+            "module_type": "fan40"
         },
         "modules/shelf": {
             "part": "rack_module",
@@ -118,6 +195,14 @@
         "modules/patch6": {
             "part": "rack_module",
             "module_type": "patch"
+        },
+        "rear/pci-lan": {
+            "part": "pci_bracket",
+            "pci_kind": "lan"
+        },
+        "rear/pci-power": {
+            "part": "pci_bracket",
+            "pci_kind": "power"
         },
         "covers/keystone-blank": {
             "part": "keystone_cover",

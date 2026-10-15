@@ -245,9 +245,8 @@ button:disabled { opacity: .45; cursor: default; }
 .how li:not(:last-child)::after {
   content: ""; position: absolute; z-index: 0; left: 36px; right: calc(-1 * var(--s-5)); top: 17px; height: 3px; background: var(--trunk);
 }
-.how b { position: relative; z-index: 1; }
 .how b {
-  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--ground);
+  position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--ground);
   font: 700 15px var(--f-mono); box-shadow: 0 0 0 6px var(--ground); margin-bottom: var(--s-2);
 }
 .how h4 { font-size: 1.1rem; font-weight: 720; font-stretch: 104%; }

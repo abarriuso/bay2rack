@@ -5,7 +5,9 @@
   "bezel-flush": "Exact 5.25in drive bezel, flush with the case front, patch panel cut into the bezel.",
   "bezel-overhang": "Exact 5.25in drive bezel, N U of rack panels overlapping the case front.",
   "panels": "Standalone 6in rack panels for any 6in rack.",
-  "modules": "1U rack modules: switch mount, shelf, button panel, patch panel.",
+  "modules": "Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, 40 mm fans, patch and button panels.",
+  "bezels": "Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 mm fan.",
+  "rear": "Printed brackets for two PCI slots: the network cables and the power cable leave the case through them.",
   "covers": "Keystone covers for unused ports, pushed in from the front.",
   "tests": "Small test prints: check them before printing a full adapter."
  },
@@ -27,8 +29,8 @@
     "plate-flush/1bay-0U/filler-blank.stl"
    ],
    "bom": [
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -52,8 +54,8 @@
    ],
    "bom": [
     "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -77,8 +79,8 @@
    ],
    "bom": [
     "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -102,8 +104,8 @@
    ],
    "bom": [
     "rack accessories: 18 x M6 x 12 button head  +  18 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "drive bay: 8 x M3 x 5 pan head  +  8 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -283,6 +285,88 @@
    ]
   },
   {
+   "path": "bezels/1bay-buttons",
+   "family": "bezels",
+   "title": "1 bay: power key (MX) + LEDs",
+   "params": {
+    "bays": 1,
+    "fit": "panel",
+    "front_style": "bezel",
+    "filler_mode": "integral",
+    "spare_fill": "buttons",
+    "btn_count": 1
+   },
+   "files": [
+    "bezels/1bay-buttons/adapter.stl"
+   ],
+   "bom": [
+    "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "buttons: 1 x Cherry MX compatible keyboard switch + 1u keycap (power)",
+    "buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires"
+   ]
+  },
+  {
+   "path": "bezels/1bay-vent",
+   "family": "bezels",
+   "title": "1 bay with vents",
+   "params": {
+    "bays": 1,
+    "fit": "panel",
+    "front_style": "bezel",
+    "filler_mode": "integral",
+    "spare_fill": "vent"
+   },
+   "files": [
+    "bezels/1bay-vent/adapter.stl"
+   ],
+   "bom": [
+    "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+   ]
+  },
+  {
+   "path": "bezels/2bay-fan80",
+   "family": "bezels",
+   "title": "2 bays: 80 mm fan",
+   "params": {
+    "bays": 2,
+    "fit": "panel",
+    "front_style": "bezel",
+    "filler_mode": "integral",
+    "spare_fill": "fan80"
+   },
+   "files": [
+    "bezels/2bay-fan80/adapter.stl"
+   ],
+   "bom": [
+    "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws"
+   ]
+  },
+  {
+   "path": "bezels/3bay-buttons-fan80",
+   "family": "bezels",
+   "title": "3 bays: 80 mm fan + power / reset keys",
+   "params": {
+    "bays": 3,
+    "fit": "panel",
+    "front_style": "plate",
+    "filler_mode": "integral",
+    "spare_pos": "split",
+    "spare_split": 0.67,
+    "spare_fill": "fan80",
+    "spare_fill_2": "buttons"
+   },
+   "files": [
+    "bezels/3bay-buttons-fan80/adapter.stl"
+   ],
+   "bom": [
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)",
+    "buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires",
+    "fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws"
+   ]
+  },
+  {
    "path": "panels/1U-patch6",
    "family": "panels",
    "title": "1U, 6 keystones",
@@ -295,9 +379,7 @@
     "panels/1U-patch6.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "rack panel: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -316,9 +398,7 @@
     "panels/1U-vent.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+    "rack panel: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)"
    ]
   },
   {
@@ -334,9 +414,7 @@
     "panels/1U-blank.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
+    "rack panel: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)"
    ]
   },
   {
@@ -353,18 +431,33 @@
     "panels/2U-patch12.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "rack panel: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
    ]
   },
   {
+   "path": "panels/1U-fan40",
+   "family": "panels",
+   "title": "1U, three 40 mm fans",
+   "params": {
+    "part": "rack_panel",
+    "panel_u": 1,
+    "panel_fill": "fan40"
+   },
+   "files": [
+    "panels/1U-fan40.stl"
+   ],
+   "bom": [
+    "rack panel: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header)"
+   ]
+  },
+  {
    "path": "modules/ms105g",
    "family": "modules",
-   "title": "Mercusys MS105G switch mount (1U)",
+   "title": "Mercusys MS105G switch tray (1U)",
    "params": {
     "part": "rack_module",
     "module_type": "ms105g"
@@ -373,16 +466,174 @@
     "modules/ms105g.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/uswflex",
+   "family": "modules",
+   "title": "UniFi USW-Flex-Mini tray (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "uswflex"
+   },
+   "files": [
+    "modules/uswflex.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/ux",
+   "family": "modules",
+   "title": "UniFi Express tray (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "ux"
+   },
+   "files": [
+    "modules/ux.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/kvm-jet-nano",
+   "family": "modules",
+   "title": "KVM tray: JetKVM + NanoKVM (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "kvm:jet+nano"
+   },
+   "files": [
+    "modules/kvm-jet-nano.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "zip ties: 4 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/kvm-jet-jet",
+   "family": "modules",
+   "title": "KVM tray: two JetKVM (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "kvm:jet+jet"
+   },
+   "files": [
+    "modules/kvm-jet-jet.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "zip ties: 4 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/kvm-nano-nano",
+   "family": "modules",
+   "title": "KVM tray: two NanoKVM (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "kvm:nano+nano"
+   },
+   "files": [
+    "modules/kvm-nano-nano.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "zip ties: 4 x 2.5-3.6 mm cable tie (holds the device)"
+   ]
+  },
+  {
+   "path": "modules/pi5",
+   "family": "modules",
+   "title": "Raspberry Pi 5 / 4 / 3 tray, one board (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "pi:pi5"
+   },
+   "files": [
+    "modules/pi5.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs)"
+   ]
+  },
+  {
+   "path": "modules/pi-x2",
+   "family": "modules",
+   "title": "Raspberry Pi tray, two boards with PoE HATs (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "pi:pi5+pi5"
+   },
+   "files": [
+    "modules/pi-x2.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "Raspberry Pi: 8 x M2.5 x 6 screw (self-tapping into the standoffs)"
+   ]
+  },
+  {
+   "path": "modules/pi-zero",
+   "family": "modules",
+   "title": "Raspberry Pi Zero tray (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "pi:zero"
+   },
+   "files": [
+    "modules/pi-zero.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs)"
+   ]
+  },
+  {
+   "path": "modules/piblade-x4",
+   "family": "modules",
+   "title": "Raspberry Pi blades, four boards on edge (2U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "piblade:pi5+pi5+pi5+pi5"
+   },
+   "files": [
+    "modules/piblade-x4.stl"
+   ],
+   "bom": [
+    "rack module: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "Raspberry Pi: 16 x M2.5 x 6 screw (self-tapping into the standoffs)"
+   ]
+  },
+  {
+   "path": "modules/fan40",
+   "family": "modules",
+   "title": "Three 40 mm fans (1U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "fan40"
+   },
+   "files": [
+    "modules/fan40.stl"
+   ],
+   "bom": [
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header)"
    ]
   },
   {
    "path": "modules/shelf",
    "family": "modules",
-   "title": "1U shelf for small devices",
+   "title": "Shelf for small devices (1U)",
    "params": {
     "part": "rack_module",
     "module_type": "shelf"
@@ -391,16 +642,14 @@
     "modules/shelf.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
    ]
   },
   {
    "path": "modules/buttons",
    "family": "modules",
-   "title": "1U button panel: MX keys + power / HDD LEDs",
+   "title": "Button panel: MX keys + power / HDD LEDs (1U)",
    "params": {
     "part": "rack_module",
     "module_type": "buttons"
@@ -409,9 +658,7 @@
     "modules/buttons.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)",
     "buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires"
    ]
@@ -419,7 +666,7 @@
   {
    "path": "modules/patch6",
    "family": "modules",
-   "title": "1U patch panel, 6 keystone ports",
+   "title": "Patch panel, 6 keystone ports (1U)",
    "params": {
     "part": "rack_module",
     "module_type": "patch"
@@ -428,12 +675,40 @@
     "modules/patch6.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "rack module: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
+   ]
+  },
+  {
+   "path": "rear/pci-lan",
+   "family": "rear",
+   "title": "PCI-slot bracket for the network cables",
+   "params": {
+    "part": "pci_bracket",
+    "pci_kind": "lan"
+   },
+   "files": [
+    "rear/pci-lan.stl"
+   ],
+   "bom": [
+    "rear slots: 1 x printed PCI-slot bracket (network cables) + the case's slot screws"
+   ]
+  },
+  {
+   "path": "rear/pci-power",
+   "family": "rear",
+   "title": "PCI-slot bracket for the power cable",
+   "params": {
+    "part": "pci_bracket",
+    "pci_kind": "power"
+   },
+   "files": [
+    "rear/pci-power.stl"
+   ],
+   "bom": [
+    "rear slots: 1 x printed PCI-slot bracket (power cable) + the case's slot screws"
    ]
   },
   {
@@ -447,11 +722,7 @@
    "files": [
     "covers/keystone-blank.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   },
   {
    "path": "covers/keystone-pass",
@@ -464,11 +735,7 @@
    "files": [
     "covers/keystone-pass.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   },
   {
    "path": "tests/bay-plate",
@@ -480,11 +747,7 @@
    "files": [
     "tests/bay-plate.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   },
   {
    "path": "tests/bay-bezel",
@@ -497,11 +760,7 @@
    "files": [
     "tests/bay-bezel.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   },
   {
    "path": "tests/rack-M6-heatset",
@@ -513,11 +772,7 @@
    "files": [
     "tests/rack-M6-heatset.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   },
   {
    "path": "tests/keystone-metal",
@@ -530,11 +785,7 @@
    "files": [
     "tests/keystone-metal.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   },
   {
    "path": "tests/keystone-standard",
@@ -547,11 +798,7 @@
    "files": [
     "tests/keystone-standard.stl"
    ],
-   "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
-    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
-   ]
+   "bom": []
   }
  ]
 }

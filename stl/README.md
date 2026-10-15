@@ -10,10 +10,10 @@ Plate front, flush: N-1 U inside the bay stack + a swappable filler in the spare
 
 | Variant | Files | Hardware |
 |---|---|---|
-| **1bay-0U**<br>1 bay, 0U + spare zone | [`adapter.stl`](plate-flush/1bay-0U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/1bay-0U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/1bay-0U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/1bay-0U/filler-blank.stl) | filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 2 x M3 x 5 pan head + 2 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
-| **2bay-1U**<br>2 bays, 1U + spare zone | [`adapter.stl`](plate-flush/2bay-1U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/2bay-1U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/2bay-1U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/2bay-1U/filler-blank.stl) | rack accessories: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 4 x M3 x 5 pan head + 4 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
-| **3bay-2U**<br>3 bays, 2U + spare zone | [`adapter.stl`](plate-flush/3bay-2U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/3bay-2U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/3bay-2U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/3bay-2U/filler-blank.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
-| **4bay-3U**<br>4 bays, 3U + spare zone | [`adapter.stl`](plate-flush/4bay-3U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/4bay-3U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/4bay-3U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/4bay-3U/filler-blank.stl) | rack accessories: 18 x M6 x 12 button head + 18 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 8 x M3 x 5 pan head + 8 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **1bay-0U**<br>1 bay, 0U + spare zone | [`adapter.stl`](plate-flush/1bay-0U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/1bay-0U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/1bay-0U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/1bay-0U/filler-blank.stl) | drive bay: 2 x M3 x 5 pan head + 2 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **2bay-1U**<br>2 bays, 1U + spare zone | [`adapter.stl`](plate-flush/2bay-1U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/2bay-1U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/2bay-1U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/2bay-1U/filler-blank.stl) | rack accessories: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 4 x M3 x 5 pan head + 4 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **3bay-2U**<br>3 bays, 2U + spare zone | [`adapter.stl`](plate-flush/3bay-2U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/3bay-2U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/3bay-2U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/3bay-2U/filler-blank.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **4bay-3U**<br>4 bays, 3U + spare zone | [`adapter.stl`](plate-flush/4bay-3U/adapter.stl)<br>[`filler-keystone6.stl`](plate-flush/4bay-3U/filler-keystone6.stl)<br>[`filler-vent.stl`](plate-flush/4bay-3U/filler-vent.stl)<br>[`filler-blank.stl`](plate-flush/4bay-3U/filler-blank.stl) | rack accessories: 18 x M6 x 12 button head + 18 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 8 x M3 x 5 pan head + 8 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
 
 ## plate-overhang
 
@@ -51,21 +51,52 @@ Standalone 6in rack panels for any 6in rack.
 
 | Variant | Files | Hardware |
 |---|---|---|
-| **1U-patch6**<br>1U, 6 keystones | [`1U-patch6.stl`](panels/1U-patch6.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
-| **1U-vent**<br>1U, vented | [`1U-vent.stl`](panels/1U-vent.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **1U-blank**<br>1U, blank | [`1U-blank.stl`](panels/1U-blank.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **2U-patch12**<br>2U, 12 keystones | [`2U-patch12.stl`](panels/2U-patch12.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **1U-patch6**<br>1U, 6 keystones | [`1U-patch6.stl`](panels/1U-patch6.stl) | rack panel: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **1U-vent**<br>1U, vented | [`1U-vent.stl`](panels/1U-vent.stl) | rack panel: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm) |
+| **1U-blank**<br>1U, blank | [`1U-blank.stl`](panels/1U-blank.stl) | rack panel: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm) |
+| **2U-patch12**<br>2U, 12 keystones | [`2U-patch12.stl`](panels/2U-patch12.stl) | rack panel: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **1U-fan40**<br>1U, three 40 mm fans | [`1U-fan40.stl`](panels/1U-fan40.stl) | rack panel: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header) |
 
 ## modules
 
-1U rack modules: switch mount, shelf, button panel, patch panel.
+Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, 40 mm fans, patch and button panels.
 
 | Variant | Files | Hardware |
 |---|---|---|
-| **ms105g**<br>Mercusys MS105G switch mount (1U) | [`ms105g.stl`](modules/ms105g.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
-| **shelf**<br>1U shelf for small devices | [`shelf.stl`](modules/shelf.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
-| **buttons**<br>1U button panel: MX keys + power / HDD LEDs | [`buttons.stl`](modules/buttons.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires |
-| **patch6**<br>1U patch panel, 6 keystone ports | [`patch6.stl`](modules/patch6.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+| **ms105g**<br>Mercusys MS105G switch tray (1U) | [`ms105g.stl`](modules/ms105g.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
+| **uswflex**<br>UniFi USW-Flex-Mini tray (1U) | [`uswflex.stl`](modules/uswflex.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
+| **ux**<br>UniFi Express tray (1U) | [`ux.stl`](modules/ux.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
+| **kvm-jet-nano**<br>KVM tray: JetKVM + NanoKVM (1U) | [`kvm-jet-nano.stl`](modules/kvm-jet-nano.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 4 x 2.5-3.6 mm cable tie (holds the device) |
+| **kvm-jet-jet**<br>KVM tray: two JetKVM (1U) | [`kvm-jet-jet.stl`](modules/kvm-jet-jet.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 4 x 2.5-3.6 mm cable tie (holds the device) |
+| **kvm-nano-nano**<br>KVM tray: two NanoKVM (1U) | [`kvm-nano-nano.stl`](modules/kvm-nano-nano.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 4 x 2.5-3.6 mm cable tie (holds the device) |
+| **pi5**<br>Raspberry Pi 5 / 4 / 3 tray, one board (1U) | [`pi5.stl`](modules/pi5.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs) |
+| **pi-x2**<br>Raspberry Pi tray, two boards with PoE HATs (1U) | [`pi-x2.stl`](modules/pi-x2.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>Raspberry Pi: 8 x M2.5 x 6 screw (self-tapping into the standoffs) |
+| **pi-zero**<br>Raspberry Pi Zero tray (1U) | [`pi-zero.stl`](modules/pi-zero.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs) |
+| **piblade-x4**<br>Raspberry Pi blades, four boards on edge (2U) | [`piblade-x4.stl`](modules/piblade-x4.stl) | rack module: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>Raspberry Pi: 16 x M2.5 x 6 screw (self-tapping into the standoffs) |
+| **fan40**<br>Three 40 mm fans (1U) | [`fan40.stl`](modules/fan40.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header) |
+| **shelf**<br>Shelf for small devices (1U) | [`shelf.stl`](modules/shelf.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
+| **buttons**<br>Button panel: MX keys + power / HDD LEDs (1U) | [`buttons.stl`](modules/buttons.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires |
+| **patch6**<br>Patch panel, 6 keystone ports (1U) | [`patch6.stl`](modules/patch6.stl) | rack module: 6 x M6 x 12 button head + 6 x M6 heat-set insert (hole 8 x 12.7 mm)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
+
+## bezels
+
+Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 mm fan.
+
+| Variant | Files | Hardware |
+|---|---|---|
+| **1bay-buttons**<br>1 bay: power key (MX) + LEDs | [`adapter.stl`](bezels/1bay-buttons/adapter.stl) | drive bay: 2 x M3 x 5 pan head + 2 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>buttons: 1 x Cherry MX compatible keyboard switch + 1u keycap (power)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires |
+| **1bay-vent**<br>1 bay with vents | [`adapter.stl`](bezels/1bay-vent/adapter.stl) | drive bay: 2 x M3 x 5 pan head + 2 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
+| **2bay-fan80**<br>2 bays: 80 mm fan | [`adapter.stl`](bezels/2bay-fan80/adapter.stl) | drive bay: 4 x M3 x 5 pan head + 4 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws |
+| **3bay-buttons-fan80**<br>3 bays: 80 mm fan + power / reset keys | [`adapter.stl`](bezels/3bay-buttons-fan80/adapter.stl) | drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires<br>fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws |
+
+## rear
+
+Printed brackets for two PCI slots: the network cables and the power cable leave the case through them.
+
+| Variant | Files | Hardware |
+|---|---|---|
+| **pci-lan**<br>PCI-slot bracket for the network cables | [`pci-lan.stl`](rear/pci-lan.stl) | rear slots: 1 x printed PCI-slot bracket (network cables) + the case's slot screws |
+| **pci-power**<br>PCI-slot bracket for the power cable | [`pci-power.stl`](rear/pci-power.stl) | rear slots: 1 x printed PCI-slot bracket (power cable) + the case's slot screws |
 
 ## covers
 
@@ -73,8 +104,8 @@ Keystone covers for unused ports, pushed in from the front.
 
 | Variant | Files | Hardware |
 |---|---|---|
-| **keystone-blank**<br>Plain keystone cover | [`keystone-blank.stl`](covers/keystone-blank.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **keystone-pass**<br>Keystone cable pass-through cover | [`keystone-pass.stl`](covers/keystone-pass.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
+| **keystone-blank**<br>Plain keystone cover | [`keystone-blank.stl`](covers/keystone-blank.stl) | - |
+| **keystone-pass**<br>Keystone cable pass-through cover | [`keystone-pass.stl`](covers/keystone-pass.stl) | - |
 
 ## tests
 
@@ -82,8 +113,8 @@ Small test prints: check them before printing a full adapter.
 
 | Variant | Files | Hardware |
 |---|---|---|
-| **bay-plate**<br>Bay screw corner, plate front | [`bay-plate.stl`](tests/bay-plate.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **bay-bezel**<br>Bay screw corner, bezel front (checks flushness) | [`bay-bezel.stl`](tests/bay-bezel.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **rack-M6-heatset**<br>Rack hole spacing bar, M6 heat-set | [`rack-M6-heatset.stl`](tests/rack-M6-heatset.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **keystone-metal**<br>One metal keystone holder cell | [`keystone-metal.stl`](tests/keystone-metal.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **keystone-standard**<br>One standard keystone cut-out | [`keystone-standard.stl`](tests/keystone-standard.stl) | rack accessories: 12 x M6 x 12 button head + 12 x M6 heat-set insert (hole 8 x 12.7 mm)<br>filler panels: 2 x M6 x 12 button head + 2 x M6 heat-set insert (hole 8 x 12.7 mm)<br>drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
+| **bay-plate**<br>Bay screw corner, plate front | [`bay-plate.stl`](tests/bay-plate.stl) | - |
+| **bay-bezel**<br>Bay screw corner, bezel front (checks flushness) | [`bay-bezel.stl`](tests/bay-bezel.stl) | - |
+| **rack-M6-heatset**<br>Rack hole spacing bar, M6 heat-set | [`rack-M6-heatset.stl`](tests/rack-M6-heatset.stl) | - |
+| **keystone-metal**<br>One metal keystone holder cell | [`keystone-metal.stl`](tests/keystone-metal.stl) | - |
+| **keystone-standard**<br>One standard keystone cut-out | [`keystone-standard.stl`](tests/keystone-standard.stl) | - |

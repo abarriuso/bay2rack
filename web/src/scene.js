@@ -109,7 +109,6 @@ const CASE_STYLES = {
   // a "sleeper": a 90s beige tower outside, a modern server inside
   sleeper:      { body: 0xcbc2a8, front: 'retro', frontColor: 0xd6cdb4, window: false, top: 'solid', sleeper: true },
 };
-const BEIGE = 0xd6cdb4;
 
 // a named sub-group of a case: the Blender video moves these as single parts
 function part(parent, name) {

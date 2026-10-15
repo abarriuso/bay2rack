@@ -235,9 +235,4 @@ export class Viewer {
     this.controls.update();
   }
 
-  // PNG of the current view
-  snapshot() {
-    this.composer.render();
-    return this.renderer.domElement.toDataURL('image/png');
-  }
 }
