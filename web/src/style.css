@@ -459,6 +459,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .foot-brand { display: grid; gap: 6px; }
 .foot-brand p, .foot-tech { color: var(--ink-3); font-size: 13.5px; }
+.foot-wip a { color: var(--ink); font-weight: 600; }
 .foot-made { font-size: 14px; }
 .foot-made a { font-weight: 650; }
 .foot a { text-underline-offset: 3px; }
