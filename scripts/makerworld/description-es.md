@@ -6,6 +6,8 @@ VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch panel, en el fron
 
 Se atornilla a las bahías como una unidad. Los accesorios de rack se atornillan al adaptador.
 
+**Sobre las fotos:** las fotos reales son de la primera versión del adaptador, de 2 bahías: 1U para el switch más el patch panel como panel aparte. Los archivos son la versión actual, que añade ranuras para las pestañas metálicas entre bahías y paredes laterales más rígidas (mira los renders).
+
 **Configúralo en el navegador, con vista 3D de la caja:** https://abarriuso.github.io/bay2rack/
 (elige las bahías, cada U del rack y cada puerto keystone, y descarga un kit con todos los STL y la lista de materiales).
 Código y documentación: https://github.com/abarriuso/bay2rack

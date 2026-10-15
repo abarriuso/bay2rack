@@ -6,6 +6,8 @@ Raspberry Pi blades and a patch panel, right in the front of the case.
 
 It screws into the bays like a drive. The rack accessories screw into the adapter.
 
+**About the photos:** the real photos show the first version of the adapter, 2 bays: 1U for the switch plus the patch panel as a separate panel. The files here are the current version, which adds grooves for the metal tabs between the bays and stiffer side walls (see the renders).
+
 **Configure it in your browser, with a 3D preview of the case:** https://abarriuso.github.io/bay2rack/
 (choose the bays, every rack unit and every keystone port, then download a kit with every STL and the bill of materials).
 Source and docs: https://github.com/abarriuso/bay2rack
