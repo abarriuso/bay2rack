@@ -125,6 +125,11 @@ def main():
         shutil.copy2(ROOT / "stl" / src, OUT / "stl" / name)
     for name, src in IMAGES:
         Image.open(ROOT / src).convert("RGB").save(OUT / "images" / name, optimize=True)
+    # covers: both on the rack front of the router, 4:3 for the web and 3:4 for the app
+    (OUT / "covers").mkdir()
+    front = Image.open(ROOT / "docs/img/film/front.webp").convert("RGB")       # 1600 x 900
+    front.crop((180, 0, 1380, 900)).save(OUT / "covers" / "cover-4x3.png", optimize=True)
+    front.crop((462, 0, 1137, 900)).save(OUT / "covers" / "cover-3x4.png", optimize=True)
     for f in ("description-en.md", "description-es.md"):
         shutil.copy2(ROOT / "scripts" / "makerworld" / f, OUT / f)
     shutil.copy2(ROOT / "LICENSE", OUT / "LICENSE.txt")
