@@ -14,7 +14,6 @@
   <a class="skip" href="#build" data-i18n="nav_build"></a>
   <header class="top">
     <a class="brand" href="#top" aria-label="bay2rack">
-      <span id="logo" class="logo"></span>
       <span class="wordmark">bay2rack</span>
     </a>
     <nav class="nav" aria-label="sections">
@@ -71,6 +70,9 @@
           <p class="table-note" data-i18n="table_note"></p>
         </div>
       </div>
+    </section>
+
+    <section class="band alt" id="uses">
       <div class="wrap">
         <h3 class="sub" data-i18n="uses_title"></h3>
         <div class="uses">
@@ -84,18 +86,22 @@
       </div>
     </section>
 
-    <section class="band alt" id="gallery">
+    <section class="band" id="gallery">
       <div class="wrap">
         <div class="section-head">
           <span class="tape" data-i18n="gallery_tape"></span>
           <h2 data-i18n="gallery_title"></h2>
           <p class="section-lead" data-i18n="gallery_lead"></p>
         </div>
+        <div class="gallery-nav">
+          <button type="button" class="icon-btn" id="galPrev" aria-label="previous">←</button>
+          <button type="button" class="icon-btn" id="galNext" aria-label="next">→</button>
+        </div>
         <div id="galleryGrid" class="gallery"></div>
       </div>
     </section>
 
-    <section class="band" id="how">
+    <section class="band alt" id="how">
       <div class="wrap">
         <div class="section-head">
           <span class="tape" data-i18n="how_tape"></span>

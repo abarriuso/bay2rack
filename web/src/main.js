@@ -762,11 +762,19 @@ function buildSpec(k) {
   ].join(' · ');
 }
 
+// the gallery is one row that scrolls sideways: the arrows move it by a card
+const galleryStep = (dir) => {
+  const g = $('#galleryGrid');
+  g.scrollBy({ left: dir * (g.firstElementChild?.offsetWidth ?? 300), behavior: 'smooth' });
+};
+$('#galPrev').onclick = () => galleryStep(-1);
+$('#galNext').onclick = () => galleryStep(1);
+
 function renderGallery() {
-  $('#galleryGrid').replaceChildren(...GALLERY.map((k, i) => {
+  $('#galleryGrid').replaceChildren(...GALLERY.map((k) => {
     const v = { ...S.defaults, ...EXAMPLES[k] };
     const units = calc(v).units;
-    return h('figure', { className: `shot${i === 0 ? ' feature' : ''}` },
+    return h('figure', { className: 'shot' },
       h('span', { className: 'shot-img' },
         h('img', { src: `${BASE}img/gallery/${k}.webp`, alt: t('ex_' + k), loading: 'lazy', decoding: 'async', width: 1200, height: 900,
           onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
@@ -815,7 +823,6 @@ function applyTheme(th) {
 
 function wire() {
   initTooltips($('#tip'));
-  $('#logo').replaceChildren(svgEl(ICONS.logo));
   for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
