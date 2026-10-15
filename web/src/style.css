@@ -510,9 +510,12 @@ button:disabled { opacity: .45; cursor: default; }
   /* viewer, then the steps, then downloads and the bill of materials */
   .stage { display: contents; }
   /* the model stays in sight while you go down the steps */
+  /* edge to edge right under the header, so the steps slide cleanly underneath it */
   .viewer {
-    order: -1; margin: var(--s-3) var(--gutter); height: min(42vh, 440px); min-height: 260px; flex: none;
-    position: sticky; top: calc(env(safe-area-inset-top, 0px) + 66px); z-index: 5; box-shadow: 0 -10px 0 10px var(--ground);
+    order: -1; margin: 0; height: min(42vh, 440px); min-height: 260px; flex: none;
+    border-radius: 0; border-width: 0 0 1px;
+    position: sticky; top: calc(env(safe-area-inset-top, 0px) + var(--top-h)); z-index: 5;
+    box-shadow: 0 10px 18px -12px rgb(0 0 0 / .45);
   }
   .results { order: 1; padding: var(--s-5) var(--gutter) var(--s-6); border-top: 1px solid var(--rule); }
   .panel { position: static; max-height: none; overflow: visible; background: var(--plate); border-top: 1px solid var(--rule); padding: var(--s-4) max(var(--gutter), calc((100% - 680px) / 2)) var(--s-6); }
