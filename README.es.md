@@ -2,38 +2,59 @@
 
 *[Read in English](README.md)*
 
-Adaptador paramétrico en OpenSCAD que se atornilla a las bahías de 5,25" de una caja de PC antigua y las convierte
-en un **mini rack de 6"**. Dale a esa caja una segunda vida como el corazón de un homelab barato de iniciación: el
-rack admite módulos impresos (soporte para el switch Mercusys MS105G, bandeja para un NanoKVM o una Raspberry Pi,
-patch panel, botonera…), y el espacio que sobra en la pila de bahías se convierte en un **patch panel de keystones integrado**.
+Las torres traían bahías de 5,25" para los lectores de CD. Las cajas nuevas ya no, pero el ATX no ha cambiado: esa caja
+antigua sigue admitiendo una placa base moderna. **bay2rack** es un adaptador paramétrico en OpenSCAD que se atornilla
+a esas bahías y las convierte en un **mini rack de 6"**, para que una torre antigua sea el corazón de un homelab barato:
+un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch panel, en el frontal de la caja.
 
-![Un PC antiguo convertido en servidor de homelab, con dos PCs cliente y un punto de acceso](docs/img/hero.png)
+![Un sleeper beige de los 90 se despliega: dentro, un servidor moderno; sus bahías de 5,25" se convierten en un rack](docs/video/assemble.gif)
 
-> **[Abre el generador web](https://abarriuso.github.io/bay2rack/)**: elige las bahías, el frontal, qué va en cada U
-> del rack y cada puerto del patch panel, míralo montado en una caja de PC real y descarga un **kit (.zip)** con todos
-> los STL y la lista de materiales. Todo se ejecuta en tu navegador.
+> **[Abre el generador web](https://abarriuso.github.io/bay2rack/)**: parte de un montaje ya hecho, elige las bahías,
+> qué va en cada U del rack y en cada puerto del patch panel, míralo montado en una caja de PC real (o en un sleeper de
+> los 90) y descarga un **kit (.zip)** con todos los STL y la lista de materiales. Todo se ejecuta en tu navegador.
 >
-> **¿Solo quieres imprimir?** Todas las variantes están ya generadas en [`stl/`](stl/README.md), con la tornillería que necesita cada una.
-> Imprime primero las [piezas de prueba](stl/README.md#tests).
+> **¿Solo quieres imprimir?** Las variantes ya generadas están en [`stl/`](stl/README.md), con los tornillos e insertos
+> que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests).
 
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
 
 ---
 
+## Qué puedes montar
+
+| | |
+|---|---|
+| ![Router + VLANs](docs/gallery/router.webp) **Router + VLANs**: el PC corre OPNsense / pfSense con una tarjeta de red de 4 puertos; un switch UniFi gestionable lleva las VLANs, un segundo switch los servidores, JetKVM + NanoKVM, patch panel | ![Rack de red](docs/gallery/network.webp) **Rack de red**: 5 bahías, dos switches, un UniFi Express y un patch panel completo |
+| ![Clúster de Raspberry Pi](docs/gallery/pi.webp) **Clúster de Raspberry Pi**: un switch UniFi y cuatro Raspberry Pi 5 de pie en blades de 2U | ![Puesto de KVM](docs/gallery/kvm.webp) **Puesto de KVM**: dos bandejas, dos JetKVM y dos NanoKVM, keystones HDMI y USB |
+| ![Audio](docs/gallery/audio.webp) **Audio**: un streamer con Raspberry Pi 4, tres ventiladores de 40 mm, keystones RCA, jack de 3,5 mm y Toslink | ![Botonera + ventilador de 80 mm](docs/gallery/client.webp) **Caja Proxmox / TrueNAS**: sin rack, solo un bisel con un ventilador de 80 mm y una botonera de encendido / reset |
+| ![UniFi](docs/gallery/unifi.webp) **UniFi**: switch Flex Mini y UniFi Express | ![Bisel enrasado](docs/gallery/bezel.webp) **Bisel enrasado**: un bisel de 5,25" exacto, enrasado con el frontal de la caja |
+
+### El vídeo
+
+Blender 5.2, Cycles (HIP), 1600×900, 60 fps (30 fps más los fotogramas intermedios, `--between`), 17 s.
+`scripts/blender/hero.py` monta la escena a partir de exportaciones GLB del visor web; `scripts/blender/encode.py` hace
+el etalonaje y genera MP4 (H.264), WebM (VP9) y el GIF.
+
+| | | |
+|---|---|---|
+| ![El sleeper se despliega](docs/img/film/unfold.webp) | ![Un servidor moderno dentro](docs/img/film/server.webp) | ![El frontal del rack](docs/img/film/front.webp) |
+| ![Cables por las ranuras PCI](docs/img/film/cables.webp) | ![Blades de Raspberry Pi en el nodo Proxmox](docs/img/film/pi-cluster.webp) | ![El homelab](docs/img/film/hero.webp) |
+
 ## Un homelab con PCs antiguos
 
-El servidor lleva su rack en las bahías: el switch, un KVM por IP y el patch panel. Los cables de red de las demás
-máquinas (dos PCs cliente antiguos y un punto de acceso) entran por detrás de la caja y terminan en los keystones de
-detrás del patch panel; unos latiguillos cortos por delante los conectan al switch. El cable del propio switch vuelve
-a entrar por una tapa pasacables.
+El router lleva su rack en las bahías: los switches, los KVM por IP y el patch panel. Los cables de red de las demás
+máquinas (un nodo Proxmox, una caja TrueNAS y un punto de acceso) entran por **soportes impresos en dos ranuras PCI**
+de la parte trasera y terminan en los keystones de detrás del patch panel; unos latiguillos cortos por delante los
+conectan a los switches. Los colores de los cables son VLANs: clientes, servidores, el troncal al punto de acceso y la
+WAN, de la tarjeta de red del router a la caja de fibra.
 
 ![Cables desde la parte trasera de la caja hasta el patch panel](docs/img/homelab.png)
 
 ## El problema de la altura
 
-Una bahía de 5,25" mide 41,53 mm de alto y las bahías apiladas se repiten cada ~43,18 mm.
-Una U de rack mide 44,45 mm. Por eso **N bahías nunca alojan N U dentro del hueco**, y el déficit crece 1,27 mm por cada bahía:
+Una bahía de 5,25" mide 41,53 mm de alto y las bahías apiladas se repiten cada ~43,18 mm. Una U de rack mide 44,45 mm.
+Por eso **N bahías nunca alojan N U dentro del hueco**, y el déficit crece 1,27 mm por cada bahía:
 
 | Bahías | Alto del hueco | Flush (dentro) | Zona libre | Overhang (N U) | Los paneles sobresalen |
 |------:|------:|------:|------:|------:|------:|
@@ -74,19 +95,29 @@ los agujeros del rack:
 | Módulo | |
 |---|---|
 | `ms105g` | Switch **Mercusys MS105G** de 5 puertos (105 × 70 × 24,9 mm): entra por detrás en un túnel, la ventana frontal deja libres los 5 puertos y la clavija, una brida por detrás lo sujeta |
-| `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños: NanoKVM, Raspberry Pi, un mini router… |
+| `uswflex`, `ux` | **UniFi USW-Flex-Mini** (gestionable, VLANs) y **UniFi Express** en el mismo tipo de túnel |
+| `kvm:jet+nano` | **Bandeja de KVM por IP**: de 1 a 3 cajas a elegir una al lado de otra (`jet` JetKVM, `nano` NanoKVM, `custom`), p. ej. `kvm:nano+nano`; avisa si no caben |
+| `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2.5, USB y Ethernet por delante; dos placas una al lado de otra con PoE HAT |
+| `piblade:pi5+pi5+pi5+pi5` | **Blades de Raspberry Pi de 2U**: hasta cuatro placas de canto, cada una en su aleta, con separadores que se imprimen sin soportes |
+| `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
+| `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas |
+| `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños |
 | `patch` | Patch panel de 1U con los puertos que elijas |
 | `buttons` | Botonera de 1U (ver abajo) |
 | `vent`, `blank`, `cable`, `led`, `label` | Paneles con rejilla, ciegos, pasacables, tira LED y etiqueta grabada |
+
+Un módulo puede ocupar más de una U (los blades ocupan 2U): el rack se llena desde arriba y un módulo que ya no cabe
+se convierte en una tapa ciega.
 
 ![Soporte del switch, bandeja y tapa pasacables](docs/img/modules.png)
 
 ## Keystones
 
 El patch panel admite de 1 a 12 puertos (añade filas automáticamente) con números grabados opcionales.
-`ks_ports_list` define **cada puerto**: `rj45m` (RJ45 metálico / apantallado), `rj45`, `hdmi`, `usb` (keystones
-estándar), `cover` (tapa lisa impresa para un puerto sin usar), `pass` (tapa pasacables partida que abraza un cable,
-p. ej. el de alimentación del switch) o `none`. Las dos tapas se meten desde delante y hacen clic tras la boca.
+`ks_ports_list` define **cada puerto**: `rj45m` (RJ45 metálico / apantallado), `rj45`, `hdmi`, `usb`, `rca`, `jack`
+(3,5 mm), `toslink` (keystones estándar), `cover` (tapa lisa impresa para un puerto sin usar), `pass` (tapa pasacables
+partida que abraza un cable, p. ej. el de alimentación del switch) o `none`. Las dos tapas se meten desde delante y
+hacen clic tras la boca.
 
 - **Celda metálica** (por defecto, `ks_style = metal`), replicada del adaptador original: boca frontal de 15 × 16,5 mm,
   rampa para la patilla, cavidad de 24,3 mm y labios traseros que retienen el conector, que entra por detrás. Mide 9,5 mm
@@ -107,6 +138,20 @@ imprimibles con la cara frontal sobre la cama:
 - `glow`: invisible apagado; el LED atraviesa una piel de 0,6 mm y se ilumina el icono grabado (imprímelo en blanco o natural).
 
 ![Botonera: anillo, halo y brillo oculto](docs/img/buttons.png)
+
+## Entra como una unidad
+
+| Adaptador v2, por detrás | Por delante |
+|---|---|
+| ![Adaptador v2 por detrás: ranuras para las pestañas por fuera, nervios, labios e insertos para los tornillos de bahía por dentro](docs/img/adapter-v2-back.webp) | ![Adaptador v2 por delante: marco y postes del rack](docs/img/adapter-v2-front.webp) |
+
+- **Ranuras para las pestañas metálicas entre bahías.** Muchas cajas tienen unos salientes troquelados en el hueco
+  entre dos bahías sobre los que se apoyan las unidades. El adaptador tiene una ranura para ellos a lo largo de toda la
+  guía (con un nervio por dentro para que la pared no pierda rigidez), así que no hace falta doblarlos.
+- **Paredes laterales rígidas**: un labio interior en sus bordes superior e inferior y un chaflán hacia cada poste del
+  rack, todo fuera de la abertura del rack.
+- Tornillos de bahía con inserto térmico o tuerca; las aberturas de ventilador de 80 y 40 mm son agujeros redondos sin
+  nada delante del ventilador.
 
 ## Estándar de rack
 
@@ -148,13 +193,13 @@ y `section` corta el modelo para ver cada fijación dentro del plástico.
 
 Por defecto se sigue SFF-8551 / EIA-741 (dispositivos de 5,25"): 146,05 mm de ancho, 41,53 mm de alto,
 bisel de 148 × 42,3 mm y agujeros laterales M3 a 10 mm sobre la base de cada bahía y a 47,4 mm del frente.
-El agujero trasero a 126,65 mm y la segunda fila a 21,84 mm son opcionales. **Cada caja es distinta, así que comprueba estas cotas**
-con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slot` o usar `bay_std = custom`.
+El agujero trasero a 126,65 mm y la segunda fila a 21,84 mm son opcionales. **Cada caja es distinta, así que comprueba
+estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slot` o usar `bay_std = custom`.
 
 ## Impresión
 
-- Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los techos de las
-  ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.
+- Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los
+  techos de las ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.
 - Se recomienda PETG o ABS/ASA dentro de una caja caliente; el PLA sirve si la caja está fresca.
 - 3–4 perímetros y 20–30 % de relleno.
 - La versión de 3 bahías ocupa 148 × 128 mm en la cama y mide unos 66–70 mm de alto.
@@ -165,8 +210,8 @@ con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slo
 
 - **Generador web:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) ejecuta OpenSCAD compilado a
   WebAssembly en el navegador: un modo sencillo paso a paso con ayuda al pasar el ratón, un modo avanzado con todos los
-  parámetros, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit .zip con todos los STL. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
-
+  parámetros, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit
+  .zip con todos los STL. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
 - **Customizer de OpenSCAD:** abre `src/bay2rack.scad` y ve a *Window → Customizer*. Cada variante es un preset del
   desplegable. F5 previsualiza (el adaptador aparece montado en una torre, `case_view`) y F6 renderiza.
 - **Línea de comandos:**
@@ -176,7 +221,8 @@ con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slo
 - **Regenerarlo todo:** `python scripts/build.py` rehace los presets, todos los STL y `stl/README.md`.
   `python scripts/render_docs.py` rehace las imágenes.
 
-Cada render muestra una línea resumen, la lista de materiales y un `WARNING`/`NOTE` cuando los tornillos, insertos o rellenos no caben.
+Cada render muestra una línea resumen, la lista de materiales y un `WARNING`/`NOTE` cuando los tornillos, insertos o
+rellenos no caben.
 
 ## Estructura del repositorio
 
@@ -193,10 +239,20 @@ src/lib/
   preview.scad           tornillería, cortes y torre de PC (solo previsualización)
 scripts/build.py         tabla de variantes -> presets + stl/ + stl/README.md
 scripts/render_docs.py   imágenes del README
-web/                     visor y generador web (GitHub Pages)
+scripts/blender/         vídeo: hero.py (escena, materiales, animación), encode.py (etalonaje + MP4 / WebM / GIF)
+web/                     visor y generador web (GitHub Pages, Vite + pnpm)
 stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md
-docs/img/                imágenes del README
+docs/img/, docs/gallery/ imágenes del README y de la web
 ```
+
+## Hoja de ruta / ideas
+
+- [ ] Distancias entre agujeros verificadas para racks comerciales de 6" (se agradecen PRs con medidas)
+- [x] Bandejas para dispositivos sin orejas de rack (switches, KVMs, Raspberry Pi, cualquier tamaño)
+- [ ] Una especificación abierta de la interfaz bahía-rack (montaje en bahía, perfiles del frontal, volumen de los
+      módulos), para que otros puedan hacer módulos compatibles
+- [ ] Opción de clip sin herramientas para cajas sin tornillos laterales
+- [ ] Relleno pasacables con cepillo o pasamuros
 
 ## Licencia
 

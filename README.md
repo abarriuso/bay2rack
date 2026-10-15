@@ -32,8 +32,9 @@ Evolution of the original
 
 ### The film
 
-Blender 5.2, Cycles (HIP), 1600×900, 30 fps, 17 s. `scripts/blender/hero.py` builds the scene from GLB exports of the
-web viewer; `scripts/blender/encode.py` grades it and writes MP4 (H.264), WebM (VP9) and the GIFs.
+Blender 5.2, Cycles (HIP), 1600×900, 60 fps (30 fps plus the in-between frames, `--between`), 17 s.
+`scripts/blender/hero.py` builds the scene from GLB exports of the web viewer; `scripts/blender/encode.py` grades it
+and writes MP4 (H.264), WebM (VP9) and the GIF.
 
 | | | |
 |---|---|---|
