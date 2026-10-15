@@ -181,6 +181,7 @@ function update(patch) {
 function refresh() {
   renderSteps();
   renderTabs();
+  renderBayTable();
   syncAdvanced();
   showPrebuilt();
   writeHash();
@@ -208,10 +209,10 @@ function cards(param, options, extra) {
     { cls: 'card-btn', extra, tip: o.tip })));
 }
 
-// options: [[value, label]]; onPick(value) or update({param: value})
+// options: [[value, label, disabled?]]; onPick(value) or update({param: value})
 function select(param, options, current, onPick) {
   const sel = h('select', { className: 'select', onchange: () => (onPick ? onPick(sel.value) : update({ [param]: sel.value })) },
-    options.map(([v, l]) => h('option', { value: v, textContent: l })));
+    options.map(([v, l, off]) => h('option', { value: v, textContent: l, disabled: !!off })));
   sel.value = current ?? S.values[param];
   return sel;
 }
@@ -226,7 +227,7 @@ function step(n, key, ...body) {
   const help = stepHelp(key);
   return h('section', { className: 'step' },
     h('header', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
-      h('span', { className: 'num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
+      h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
       help ? h('button', { type: 'button', className: 'info', 'aria-label': 'info', textContent: 'i' }) : null),
     h('div', { className: 'body' }, body));
 }
@@ -242,7 +243,7 @@ function renderSteps() {
   const mods = placed.map((p) => p.m);
   const panel = v.part === 'rack_panel';
 
-  if (v.part === 'assembly') add('example', examplesEditor());
+  add('example', examplesEditor());          // always first, so the steps don't jump when you switch tabs
   if (v.part.startsWith('test_')) add('test', segmented('part', TESTS, (x) => t(x)));
   if (panel) {
     add('panel', segmented('panel_u', [1, 2, 3, 4], (x) => `${x}U`), chips('panel_fill', FILLS, (x) => t('fill_' + x)));
@@ -277,13 +278,15 @@ function renderSteps() {
 
 function contentsEditor(placed) {
   const mods = placed.map((p) => p.m);
+  const units = placed.reduce((n, p) => n + p.u, 0);
   const set = (k, val) => { const m = [...mods]; m[k] = val; update({ rack_modules: m.join(',') }); };
   return h('div', { className: 'rows' }, placed.map((p, k) => {
     const kind = modKind(p.m);
     const u = p.u > 1 ? `U${p.top + 1}–${p.top + p.u}` : `U${p.top + 1}`;
     const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind) } },
       h('span', { className: 'u', textContent: p.top === 0 ? `${u} · ${t('top')}` : u }),
-      select(null, MODULES.map((x) => [x, t('mod_' + x)]), kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}` : val)));
+      // a 2U module is only offered where two units are left
+      select(null, MODULES.map((x) => [x, t('mod_' + x), modU(x) > units - p.top]), kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}` : val)));
     return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`))] : row;
   }));
 }
@@ -293,7 +296,8 @@ function trayEditor(kind, items, onChange) {
   const T = TRAYS[kind];
   const slots = [];
   for (let i = 0; i < T.max && i <= items.length; i++) {
-    const opts = [...(i > 0 ? [['', t('box_none')]] : []), ...T.items.map((x) => [x, t('box_' + x)])];
+    // the empty slot reads "+ add"; in a filled one the same entry removes the box
+    const opts = [...(i > 0 ? [['', t(items[i] ? 'box_remove' : 'box_none')]] : []), ...T.items.map((x) => [x, t('box_' + x)])];
     slots.push(select(null, opts, items[i] ?? '', (val) => {
       const next = [...items];
       if (val) next[i] = val; else next.splice(i);
@@ -316,7 +320,7 @@ function fillEditor() {
   const c = calc(v);
   const split = v.spare_pos === 'split';
   const zone = (param, other, height, label, setShare) => h('div', { className: 'zone' },
-    h('div', { className: 'zone-head' }, h('b', { textContent: label }), h('span', { className: 'zone-size', textContent: `${num(height)} mm` })),
+    h('div', { className: 'zone-head' }, h('b', { textContent: label }), h('span', { className: 'zone-size', dataset: { zone: param }, textContent: `${num(height)} mm` })),
     h('div', { className: 'chips' }, FILLS.map((f) => {
       const need = fillMin(f);
       const share = split ? setShare(need, fillMin(v[other])) : null;
@@ -327,7 +331,16 @@ function fillEditor() {
         extra: () => (height < need - 0.01 && share != null ? { spare_split: share } : {}),
       });
     })));
-  if (!split) return [segmented('spare_pos', ['top', 'bottom', 'split'], (x) => t('pos_' + x)),
+  // splitting the strip: the fill you had keeps the height it needs (bottom zone), the new top zone gets the rest
+  const where = h('div', { className: 'seg' }, ['top', 'bottom', 'split'].map((x) => choice('spare_pos', x, t('pos_' + x), {
+    cls: 'seg-btn',
+    extra: (val) => {
+      if (val !== 'split' || split) return {};
+      const sh = Math.min(0.8, Math.max(0.5, fillMin(v.spare_fill) / c.spare + 0.004));
+      return { spare_split: Math.round(sh * 100) / 100, ...(c.spare * (1 - sh) < fillMin(v.spare_fill_2) - 0.01 ? { spare_fill_2: 'vent' } : {}) };
+    },
+  })));
+  if (!split) return [where,
     zone('spare_fill', null, c.spare, t(v.spare_pos === 'top' ? 'fillTop' : 'fillBottom'), () => null)];
   // the bottom zone gets spare * split, the top one the rest; a share that gives `need` mm to one zone while
   // the other keeps `keep` mm, or null
@@ -337,10 +350,16 @@ function fillEditor() {
     return sh >= 0.2 && sh <= 0.8 && other >= keep - 0.01 ? Math.round(sh * 100) / 100 : null;
   };
   return [
-    segmented('spare_pos', ['top', 'bottom', 'split'], (x) => t('pos_' + x)),
+    where,
     zone('spare_fill_2', 'spare_fill', c.spare * (1 - v.spare_split), t('fillTop'), shareFor(false)),
     h('div', { className: 'split' },
       h('input', { type: 'range', min: 0.2, max: 0.8, step: 0.01, value: v.spare_split, 'aria-label': t('fillShare'),
+        // the zone heights follow the slider while you drag; the model updates when you let go
+        oninput: (e) => {
+          const sh = Number(e.target.value);
+          for (const [z, x] of [['spare_fill', sh], ['spare_fill_2', 1 - sh]])
+            $(`.zone-size[data-zone="${z}"]`).textContent = `${num(c.spare * x)} mm`;
+        },
         onchange: (e) => update({ spare_split: Number(e.target.value) }) }),
       h('button', { type: 'button', className: 'pill', textContent: t('fillSwap'), dataset: { tip: t('fillSwapTip') },
         onclick: () => update({ spare_fill: v.spare_fill_2, spare_fill_2: v.spare_fill, spare_split: Math.round((1 - v.spare_split) * 100) / 100 }) })),
@@ -758,15 +777,17 @@ function renderGallery() {
 
 // bays -> rack units, computed with the same rules as the configurator (and config.scad)
 function renderBayTable() {
+  const mm = (x) => Number(x).toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });   // columns line up
   const rows = [1, 2, 3, 4, 5, 6].map((n) => {
     const c = calc({ ...S.defaults, bays: n });
     const bar = h('span', { className: 'u-bar', 'aria-hidden': 'true' },
       Array.from({ length: c.flushUnits }, () => h('i')), c.flushSpare >= S.defaults.min_spare ? h('i', { className: 'spare' }) : null);
-    return h('tr', { className: n === 3 ? 'hl' : '' },
+    // the row of the bay count chosen in the configurator
+    return h('tr', { className: n === S.values.bays ? 'hl' : '' },
       h('td', { textContent: String(n) }),
-      h('td', { textContent: `${num((n - 1) * 43.18 + 41.53)} mm` }),
-      h('td', {}, bar, `${c.flushUnits}U + ${num(c.flushSpare)} mm`),
-      h('td', { textContent: `${n}U · +${num(c.over)} mm` }));
+      h('td', { textContent: `${mm(c.flushUnits * S.defaults.rack_u_h + c.flushSpare)} mm` }),
+      h('td', {}, bar, `${c.flushUnits}U + ${mm(c.flushSpare)} mm`),
+      h('td', { textContent: `${n}U · +${mm(c.over)} mm` }));
   });
   $('#bayTable').replaceChildren(
     h('thead', {}, h('tr', {}, ['th_bays', 'th_height', 'th_inside', 'th_out'].map((k) => h('th', { scope: 'col', textContent: t(k) })))),
@@ -797,7 +818,6 @@ function wire() {
     buildAdvanced();
     refresh();
     renderGallery();
-    renderBayTable();
     heroRelabel?.();
     if (S.result) render();
   };
@@ -851,7 +871,6 @@ async function boot() {
   buildAdvanced();
   refresh();
   renderGallery();
-  renderBayTable();
   heroRelabel = wireHeroVideo();
   S.wantRender = true;
   if (S.engine === 'ready') render();

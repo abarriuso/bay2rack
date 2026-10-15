@@ -197,7 +197,7 @@ button:disabled { opacity: .45; cursor: default; }
 .bay-table td { font-family: var(--f-mono); font-size: 13px; font-stretch: 87.5%; white-space: nowrap; }
 .bay-table td:first-child { font-family: var(--f-display); font-size: 15px; font-weight: 700; font-stretch: 100%; }
 .bay-table tr.hl td { background: var(--signal-soft); }
-.u-bar { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 10px; }
+.u-bar { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 10px; width: 108px; }   /* fixed, so the numbers line up */
 .u-bar i { width: 14px; height: 9px; background: var(--signal); border-radius: 1px; }
 .u-bar i.spare { width: 7px; background: var(--ink-3); opacity: .55; }
 .table-note { color: var(--ink-3); font-size: 13px; margin-top: var(--s-3); max-width: 80ch; }
@@ -269,7 +269,7 @@ button:disabled { opacity: .45; cursor: default; }
 .step:first-child { border-top: 0; padding-top: 4px; }
 .step header { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-3); cursor: help; }
 .step h3 { font-size: 1rem; font-weight: 700; font-stretch: 104%; flex: 1; }
-.num {
+.step-num {
   width: 24px; height: 24px; border-radius: var(--r-s); display: grid; place-items: center; flex: none;
   background: var(--tape); color: var(--tape-ink); font: 600 11px var(--f-mono);
 }
@@ -370,12 +370,13 @@ button:disabled { opacity: .45; cursor: default; }
 .param.modified .name::after { content: " •"; color: var(--signal); font-weight: 700; }
 .param input[type=checkbox] { justify-self: end; width: 18px; height: 18px; accent-color: var(--signal); }
 .param input, .param select, .dim input { min-width: 0; }
+.param .num, .param .text, .param .select, .dim .num { font-size: 13.5px; }
 .param .num, .param .text { width: 100%; padding: 5px 8px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--plate-2); text-align: right; font-variant-numeric: tabular-nums; }
 .param .text { text-align: left; }
 .slider { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 6px; align-items: center; }
 .slider input[type=range] { width: 100%; accent-color: var(--signal); }
 
-.stage { display: grid; grid-template-rows: minmax(380px, 1fr) auto; min-height: 0; min-width: 0; padding: var(--s-4) var(--gutter) var(--s-4) var(--s-5); gap: var(--s-4); overflow: auto; }
+.stage { display: grid; grid-template-rows: max(380px, calc(100% - 64px)) auto; min-height: 0; min-width: 0; padding: var(--s-4) var(--gutter) var(--s-4) var(--s-5); gap: var(--s-4); overflow: auto; }
 .viewer { position: relative; min-height: 360px; border-radius: var(--r); overflow: hidden; background: var(--stage); border: 1px solid var(--rule); }
 .view { position: absolute; inset: 0; }
 .view canvas { width: 100%; height: 100%; display: block; }
@@ -489,9 +490,15 @@ button:disabled { opacity: .45; cursor: default; }
 @media (max-width: 900px) {
   .nav { display: none; }
   .layout { display: flex; flex-direction: column; height: auto; }
-  .stage { order: -1; display: flex; flex-direction: column; padding: var(--s-3) var(--gutter); overflow: visible; }
-  .viewer { height: min(62vh, 560px); min-height: 320px; flex: none; }
-  .panel { overflow: visible; border-right: 0; border-top: 1px solid var(--rule); padding: var(--s-4) var(--gutter) var(--s-6); }
+  /* viewer, then the steps, then downloads and the bill of materials */
+  .stage { display: contents; }
+  /* the model stays in sight while you go down the steps */
+  .viewer {
+    order: -1; margin: var(--s-3) var(--gutter); height: min(42vh, 440px); min-height: 260px; flex: none;
+    position: sticky; top: calc(env(safe-area-inset-top, 0px) + 66px); z-index: 5; box-shadow: 0 -10px 0 10px var(--ground);
+  }
+  .results { order: 1; padding: var(--s-5) var(--gutter) var(--s-6); border-top: 1px solid var(--rule); }
+  .panel { overflow: visible; border-right: 0; border-top: 1px solid var(--rule); padding: var(--s-4) max(var(--gutter), calc((100% - 680px) / 2)) var(--s-6); }
   .downloads .primary { flex: 1 1 100%; }
   .prebuilt { margin-left: 0; }
   .how { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
