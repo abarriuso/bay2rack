@@ -27,7 +27,6 @@ BEZEL = {"front_style": "bezel", "filler_mode": "integral"}
 
 # name: (camera, raw size, viewall, params)  - raw size is 2x the card size
 VIEWS = {
-    "hero":            ("-760,-1500,820,300,180,-90", "2400,1350", False, {}),
     "homelab-back":    ("1150,1650,800,240,260,-60", "1200,900", False, {}),
     "rack-close":      ("-170,-330,150,0,0,60", "1200,900", False, {"scene": "single", "case_view": "none"}),
     "mounted-bezel":   (CLOSE, "1200,900", False, {**BEZEL, "scene": "single"}),
@@ -54,7 +53,6 @@ VIEWS = {
 }
 
 SHEETS = {
-    "hero.png":     (1, [("hero", None)]),
     "homelab.png":  (2, [("homelab-back", "cables: back of the case -> patch panel"),
                          ("rack-close", "MS105G switch · NanoKVM shelf · patch panel")]),
     "variants.png": (3, [("pf-1", "plate-flush · 1 bay · 6-port patch"),

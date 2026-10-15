@@ -16,6 +16,10 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 > **¿Solo quieres imprimir?** Las variantes ya generadas están en [`stl/`](stl/README.md), con los tornillos e insertos
 > que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests).
 
+> **Trabajo en proceso.** ¿Has encontrado un defecto, una pieza que no encaja en tu caja o un problema al imprimir?
+> [Abre un issue](https://github.com/abarriuso/bay2rack/issues) con fotos y el modelo de tu caja. Se agradecen pull requests con medidas de otras cajas
+> y accesorios de rack, módulos nuevos y correcciones.
+
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
 
@@ -69,7 +73,7 @@ El diseño lo resuelve con **un único modelo paramétrico** en vez de un modelo
 
 ## Variantes
 
-Dos elecciones independientes dan cuatro familias, y cada una está disponible para 1–4 bahías:
+Dos elecciones independientes dan cuatro familias. Los archivos ya generados cubren 1–3 bahías (1–4 en `plate-flush`); el modelo llega hasta 6:
 
 | | **Flush**: N−1 U + zona libre, no sobresale nada | **Overhang**: N bahías = N U |
 |---|---|---|

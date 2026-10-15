@@ -8,6 +8,8 @@ Se atornilla a las bahías como una unidad. Los accesorios de rack se atornillan
 
 **Sobre las fotos:** las fotos reales son de la primera versión del adaptador, de 2 bahías: 1U para el switch más el patch panel como panel aparte. Los archivos son la versión actual, que añade ranuras para las pestañas metálicas entre bahías y paredes laterales más rígidas (mira los renders).
 
+**Trabajo en proceso, se agradece la ayuda.** Es un proyecto en marcha. Si algo no encaja en tu caja, una pieza sale mal o encuentras un defecto, cuéntamelo en los comentarios o abre un issue en GitHub (https://github.com/abarriuso/bay2rack/issues), con fotos y el modelo de tu caja si puedes. Se agradecen pull requests con medidas de otras cajas y accesorios de rack, módulos nuevos y correcciones.
+
 **Configúralo en el navegador, con vista 3D de la caja:** https://abarriuso.github.io/bay2rack/
 (elige las bahías, cada U del rack y cada puerto keystone, y descarga un kit con todos los STL y la lista de materiales).
 Código y documentación: https://github.com/abarriuso/bay2rack
@@ -25,7 +27,7 @@ Código y documentación: https://github.com/abarriuso/bay2rack
 - **Piezas de prueba**: imprímelas primero y compruébalas con tu caja.
 
 Todo lo demás (otro número de bahías, otros switches, las medidas de tus dispositivos, tornillos M4/M5/10-32/12-24,
-tuercas en vez de insertos...) está en el modelo paramétrico: usa **Personalizar** aquí o el configurador web.
+tuercas en vez de insertos...) está en el modelo paramétrico: usa el configurador web, o abre el archivo .scad en OpenSCAD.
 
 ## Impresión
 

@@ -9,6 +9,7 @@
 - description-en.md / description-es.md: the text for the model page.
 The STL folder of the repo stays the source; run scripts/build.py first if the model changed.
 """
+import html
 import re
 import shutil
 import struct
@@ -91,6 +92,46 @@ def flatten():
     return path
 
 
+def to_html(md):
+    """The description as HTML for MakerWorld's editor (titles, paragraphs, lists, bold, links)."""
+    out, para, in_list = [], [], False
+
+    def inline(s):
+        s = html.escape(s, quote=False)
+        s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+        return re.sub(r"(https://[^\s)<]+)", r'<a href="\1">\1</a>', s)
+
+    def flush():
+        if para:
+            out.append("<p>" + inline(" ".join(para)) + "</p>")
+            para.clear()
+    for line in md.split("\n"):
+        if line.startswith("- "):
+            flush()
+            if not in_list:
+                out.append("<ul>")
+                in_list = True
+            out.append("<li>" + inline(line[2:]) + "</li>")
+            continue
+        if line.startswith("  ") and in_list:                 # a list item that wraps
+            out[-1] = out[-1][:-5] + " " + inline(line.strip()) + "</li>"
+            continue
+        if in_list:
+            out.append("</ul>")
+            in_list = False
+        if line.startswith("#"):
+            flush()
+            out.append("<h2>" + inline(line.lstrip("# ")) + "</h2>")
+        elif not line.strip():
+            flush()
+        else:
+            para.append(line.strip())
+    flush()
+    if in_list:
+        out.append("</ul>")
+    return "".join(out)
+
+
 def triangles(path):
     """Triangle count and bounding box of an ASCII or binary STL."""
     b = path.read_bytes()
@@ -117,21 +158,23 @@ def check(scad):
 
 
 def main():
-    shutil.rmtree(OUT, ignore_errors=True)
-    (OUT / "stl").mkdir(parents=True)
-    (OUT / "images").mkdir()
+    # only what this script makes: real photos and anything else you put in build/makerworld/ stay
+    for d in ("stl", "images", "covers"):
+        shutil.rmtree(OUT / d, ignore_errors=True)
+        (OUT / d).mkdir(parents=True)
     scad = flatten()
     for name, src in STLS:
         shutil.copy2(ROOT / "stl" / src, OUT / "stl" / name)
     for name, src in IMAGES:
         Image.open(ROOT / src).convert("RGB").save(OUT / "images" / name, optimize=True)
     # covers: both on the rack front of the router, 4:3 for the web and 3:4 for the app
-    (OUT / "covers").mkdir()
     front = Image.open(ROOT / "docs/img/film/front.webp").convert("RGB")       # 1600 x 900
     front.crop((180, 0, 1380, 900)).save(OUT / "covers" / "cover-4x3.png", optimize=True)
     front.crop((462, 0, 1137, 900)).save(OUT / "covers" / "cover-3x4.png", optimize=True)
     for f in ("description-en.md", "description-es.md"):
         shutil.copy2(ROOT / "scripts" / "makerworld" / f, OUT / f)
+        md = (ROOT / "scripts" / "makerworld" / f).read_text(encoding="utf-8")
+        (OUT / f.replace(".md", ".html")).write_text(to_html(md), encoding="utf-8")
     shutil.copy2(ROOT / "LICENSE", OUT / "LICENSE.txt")
     if "--no-check" not in sys.argv:
         check(scad)

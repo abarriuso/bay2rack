@@ -20,7 +20,7 @@ copy(join(repo, 'stl'), 'stl');
 for (const f of ['openscad.js', 'openscad.wasm', 'BUILDINFO.txt']) copy(join(wasm, f), `openscad/${f}`);
 copy(join(wasm, 'fonts'), 'openscad/fonts');
 copy(join(wasm, 'LICENSES'), 'openscad/LICENSES');
-copy(join(repo, 'docs', 'img', 'hero.png'), 'img/hero.png');
+copy(join(repo, 'docs', 'img', 'og.jpg'), 'img/og.jpg');
 if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'), 'img/gallery');
 // the hero film (the GIFs next to it are for the README only)
 for (const f of ['hero.mp4', 'hero.webm', 'hero.webp'])

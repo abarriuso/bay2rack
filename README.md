@@ -16,6 +16,10 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 > **Just want to print?** Pre-built variants are in [`stl/`](stl/README.md), with the screws and inserts they need.
 > Print the [test pieces](stl/README.md#tests) first.
 
+> **Work in progress.** Found a defect, a part that doesn't fit your case or a print problem? [Open an issue](https://github.com/abarriuso/bay2rack/issues)
+> with photos and your case model. Measurements of other cases and rack gear, new modules and fixes are welcome as
+> pull requests.
+
 Evolution of the original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
 
@@ -69,7 +73,7 @@ The design handles this with **one parametric model** instead of one model per b
 
 ## Variants
 
-Two independent choices give four families, each available for 1–4 bays:
+Two independent choices give four families. The pre-built files cover 1–3 bays (1–4 for `plate-flush`); the model goes up to 6:
 
 | | **Flush**: N−1 U + spare zone, nothing sticks out | **Overhang**: N bays = N U |
 |---|---|---|

@@ -63,7 +63,7 @@ def main():
         "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", "-an", os.path.join(OUT, "hero.webm"))
     # poster = the last frame (the hero shot), also the og:image
     run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", os.path.join(OUT, "hero.webp"))
-    run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", os.path.join(REPO, "docs", "img", "hero.png"))
+    run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", "-q:v", "3", os.path.join(REPO, "docs", "img", "og.jpg"))   # link preview
     # README: the unfold + assembly, a short GIF with their own palette (a few MB each)
     for name, extra, width, fps in (("assemble.gif", ["-ss", "1.45", "-t", "4.6"], 560, 12),):
         pal = os.path.join(BL, "palette.png")

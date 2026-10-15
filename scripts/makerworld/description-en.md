@@ -8,6 +8,8 @@ It screws into the bays like a drive. The rack accessories screw into the adapte
 
 **About the photos:** the real photos show the first version of the adapter, 2 bays: 1U for the switch plus the patch panel as a separate panel. The files here are the current version, which adds grooves for the metal tabs between the bays and stiffer side walls (see the renders).
 
+**Work in progress, help welcome.** This is an ongoing project. If something doesn't fit your case, a part prints badly or you find a defect, tell me in the comments or open an issue on GitHub (https://github.com/abarriuso/bay2rack/issues), with photos and your case model if you can. Measurements of other cases and rack gear, new modules and fixes are welcome as pull requests.
+
 **Configure it in your browser, with a 3D preview of the case:** https://abarriuso.github.io/bay2rack/
 (choose the bays, every rack unit and every keystone port, then download a kit with every STL and the bill of materials).
 Source and docs: https://github.com/abarriuso/bay2rack
@@ -24,7 +26,7 @@ Source and docs: https://github.com/abarriuso/bay2rack
 - **Test pieces**: print these first and check them against your case.
 
 Anything else (other bay counts, other switches, your own device sizes, M4/M5/10-32/12-24 screws, nut traps
-instead of inserts...) is in the parametric model: use **Customize** here or the web configurator.
+instead of inserts...) is in the parametric model: use the web configurator, or open the .scad file in OpenSCAD.
 
 ## Print
 
