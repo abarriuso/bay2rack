@@ -86,7 +86,7 @@ def flatten():
     out = out.replace("/* [Preview] */", "/* [Hidden] */", 1)
     out = out.replace("//  This file only holds the parameters; the geometry lives in lib/.",
                       "//  MakerWorld build: one file (the repo keeps the geometry in src/lib/).\n"
-                      "//  Configurator with a 3D preview: https://abarriuso.github.io/bay2rack/")
+                      "//  Configurator with a 3D preview: https://bay2rack.pages.dev/")
     path = OUT / "bay2rack-makerworld.scad"
     path.write_text(out, encoding="utf-8", newline="\n")
     return path

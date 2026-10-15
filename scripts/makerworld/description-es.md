@@ -10,7 +10,7 @@ Se atornilla a las bahías como una unidad. Los accesorios de rack se atornillan
 
 **Trabajo en proceso, se agradece la ayuda.** Es un proyecto en marcha. Si algo no encaja en tu caja, una pieza sale mal o encuentras un defecto, cuéntamelo en los comentarios o abre un issue en GitHub (https://github.com/abarriuso/bay2rack/issues), con fotos y el modelo de tu caja si puedes. Se agradecen pull requests con medidas de otras cajas y accesorios de rack, módulos nuevos y correcciones.
 
-**Configúralo en el navegador, con vista 3D de la caja:** https://abarriuso.github.io/bay2rack/
+**Configúralo en el navegador, con vista 3D de la caja:** https://bay2rack.pages.dev/
 (elige las bahías, cada U del rack y cada puerto keystone, y descarga un kit con todos los STL y la lista de materiales).
 Código y documentación: https://github.com/abarriuso/bay2rack
 

@@ -9,7 +9,7 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 
 ![A beige 90s sleeper unfolds: a modern server inside, its 5.25" bays become a rack](docs/video/assemble.gif)
 
-> **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: start from a ready-made build, choose the bays,
+> **[Open the web generator](https://bay2rack.pages.dev/)**: start from a ready-made build, choose the bays,
 > what goes in every rack unit and every patch panel port, see it mounted in a real PC case (or a 90s sleeper), and
 > download a **kit (.zip)** with every STL and the bill of materials. It all runs in your browser.
 >
@@ -211,7 +211,7 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 
 ## Customizing
 
-- **Web generator:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) runs OpenSCAD compiled to
+- **Web generator:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) runs OpenSCAD compiled to
   WebAssembly in the browser: a simple step-by-step mode with hover help, an advanced mode with every parameter,
   shareable links, the bill of materials, single-part STL / coloured 3MF downloads and a kit .zip with every STL.
   The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
@@ -246,7 +246,7 @@ scripts/build.py         variant table -> presets + stl/ + stl/README.md
 scripts/render_docs.py   README images
 scripts/test_models.py   model tests (CI)
 scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF)
-web/                     browser viewer + generator (GitHub Pages, Vite + pnpm)
+web/                     browser viewer + generator (Cloudflare Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md
 docs/img/, docs/gallery/ README and site images
 ```

@@ -10,7 +10,7 @@ It screws into the bays like a drive. The rack accessories screw into the adapte
 
 **Work in progress, help welcome.** This is an ongoing project. If something doesn't fit your case, a part prints badly or you find a defect, tell me in the comments or open an issue on GitHub (https://github.com/abarriuso/bay2rack/issues), with photos and your case model if you can. Measurements of other cases and rack gear, new modules and fixes are welcome as pull requests.
 
-**Configure it in your browser, with a 3D preview of the case:** https://abarriuso.github.io/bay2rack/
+**Configure it in your browser, with a 3D preview of the case:** https://bay2rack.pages.dev/
 (choose the bays, every rack unit and every keystone port, then download a kit with every STL and the bill of materials).
 Source and docs: https://github.com/abarriuso/bay2rack
 

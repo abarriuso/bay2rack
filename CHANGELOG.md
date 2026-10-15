@@ -3,6 +3,11 @@
 Versions follow `MAJOR.MINOR.PATCH`. The adapter itself has its own generation number (adapter v1, v2), the one
 on the photos and in the MakerWorld notes.
 
+## Unreleased
+
+- The web generator moves to Cloudflare Pages: https://bay2rack.pages.dev/ (the old GitHub Pages address redirects there).
+- Ready-made builds in a collapsible box before the steps; the 3D view keeps its full width on phones.
+
 ## 0.2.0 — 2026-10-15
 
 **Adapter v2**

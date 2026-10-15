@@ -2,7 +2,7 @@
 //   scad/      the OpenSCAD model (src/) - the browser renders it
 //   stl/       the pre-built STLs and their catalogue (stl/index.json)
 //   openscad/  OpenSCAD compiled to WebAssembly (+ fonts and licence texts) from node_modules
-import { cpSync, existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -25,5 +25,17 @@ if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'
 // the hero film (the GIFs next to it are for the README only)
 for (const f of ['hero.mp4', 'hero.webm', 'hero.webp'])
   if (existsSync(join(repo, 'docs', 'video', f))) copy(join(repo, 'docs', 'video', f), `video/${f}`);
+
+// Cloudflare Pages cache rules: the hashed bundles never change, the rest is checked again after a day
+// (the model and the STLs keep the default, so a push shows up at once)
+writeFileSync(join(pub, '_headers'), `/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/openscad/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/video/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+/img/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+`);
 
 console.log('static assets copied to web/public/');

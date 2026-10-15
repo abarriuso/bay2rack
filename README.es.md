@@ -9,7 +9,7 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 
 ![Un sleeper beige de los 90 se despliega: dentro, un servidor moderno; sus bahías de 5,25" se convierten en un rack](docs/video/assemble.gif)
 
-> **[Abre el generador web](https://abarriuso.github.io/bay2rack/)**: parte de un montaje ya hecho, elige las bahías,
+> **[Abre el generador web](https://bay2rack.pages.dev/)**: parte de un montaje ya hecho, elige las bahías,
 > qué va en cada U del rack y en cada puerto del patch panel, míralo montado en una caja de PC real (o en un sleeper de
 > los 90) y descarga un **kit (.zip)** con todos los STL y la lista de materiales. Todo se ejecuta en tu navegador.
 >
@@ -212,7 +212,7 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 
 ## Personalizar
 
-- **Generador web:** [abarriuso.github.io/bay2rack](https://abarriuso.github.io/bay2rack/) ejecuta OpenSCAD compilado a
+- **Generador web:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) ejecuta OpenSCAD compilado a
   WebAssembly en el navegador: un modo sencillo paso a paso con ayuda al pasar el ratón, un modo avanzado con todos los
   parámetros, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit
   .zip con todos los STL. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
@@ -246,7 +246,7 @@ scripts/build.py         tabla de variantes -> presets + stl/ + stl/README.md
 scripts/render_docs.py   imágenes del README
 scripts/test_models.py   tests del modelo (CI)
 scripts/blender/         vídeo: hero.py (escena, materiales, animación), encode.py (etalonaje + MP4 / WebM / GIF)
-web/                     visor y generador web (GitHub Pages, Vite + pnpm)
+web/                     visor y generador web (Cloudflare Pages, Vite + pnpm)
 stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md
 docs/img/, docs/gallery/ imágenes del README y de la web
 ```
