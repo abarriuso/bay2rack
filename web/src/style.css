@@ -525,7 +525,10 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* ------------------------------------------------------------ phone */
 @media (max-width: 760px) {
-  .hero { padding-top: var(--s-4); gap: var(--s-5); }
+  /* phone: title and text, then the film, then the buttons under it */
+  .hero { padding-top: var(--s-4); gap: var(--s-4); }
+  .hero-copy { display: contents; }
+  .cta { order: 1; margin-top: 0; }
   .hero-stage { border-radius: 4px; }
   .cta .btn { flex: 1 1 auto; justify-content: center; }
 }
