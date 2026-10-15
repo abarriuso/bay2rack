@@ -143,6 +143,10 @@ motherboard's front-panel header. Three LED designs, all printable front face do
 
 ## It goes in like a drive
 
+| Adapter v2, from behind | From the front |
+|---|---|
+| ![Adapter v2 from behind: tab grooves outside, ribs, lips and bay-screw inserts inside](docs/img/adapter-v2-back.webp) | ![Adapter v2 from the front: frame and rack posts](docs/img/adapter-v2-front.webp) |
+
 - **Grooves for the metal tabs between the bays.** Many cages have lanced ledges in the gap between two bays that
   the drives rest on. The adapter has a groove for them along the whole sleeve (with a rib inside so the wall keeps
   its strength), so you don't have to bend them flat.
