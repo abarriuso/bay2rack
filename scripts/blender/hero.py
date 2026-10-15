@@ -7,6 +7,7 @@ Run (Blender 5.2):
   blender -b -P scripts/blender/hero.py -- --still 140            one frame -> docs/blender/still_0140.png
   blender -b -P scripts/blender/hero.py -- --preview               fast 640x360 pass of the whole film
   blender -b -P scripts/blender/hero.py -- --render [--frames A-B] final Cycles frames -> docs/blender/frames/
+  blender -b -P scripts/blender/hero.py -- --between                in-between frames for 60 fps (h_####.png)
   add --save to keep docs/blender/hero.blend, --lowres for 960x540
 
 Shot list (30 fps, 510 frames, 17 s):
@@ -578,6 +579,20 @@ def main():
         for f in str(still).split(","):
             sc.frame_set(int(f))
             sc.render.filepath = os.path.join(SRC, f"still_{int(f):04d}.png")
+            bpy.ops.render.render(write_still=True)
+        return
+    if arg("--between"):
+        # 60 fps from the 30 fps render: only the in-between frames (f + 0.5), saved as h_####.png next to
+        # f_####.png; the shutter doubles so their motion blur matches the 30 fps frames. Skips frames done.
+        sc.render.motion_blur_shutter *= 2
+        fr = arg("--frames")
+        a, b = map(int, fr.split("-")) if fr and fr is not True else (1, END - 1)
+        for f in range(a, b + 1):
+            out = os.path.join(SRC, "frames", f"h_{f:04d}.png")
+            if os.path.exists(out):
+                continue
+            sc.frame_set(f, subframe=0.5)
+            sc.render.filepath = out
             bpy.ops.render.render(write_still=True)
         return
     if preview or arg("--render"):

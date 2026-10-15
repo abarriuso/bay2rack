@@ -9,8 +9,6 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 
 ![A beige 90s sleeper unfolds: a modern server inside, its 5.25" bays become a rack](docs/video/assemble.gif)
 
-**[▶ Watch the full film](https://abarriuso.github.io/bay2rack/)** (rendered in Blender from the same models).
-
 > **[Open the web generator](https://abarriuso.github.io/bay2rack/)**: start from a ready-made build, choose the bays,
 > what goes in every rack unit and every patch panel port, see it mounted in a real PC case (or a 90s sleeper), and
 > download a **kit (.zip)** with every STL and the bill of materials. It all runs in your browser.
@@ -33,8 +31,6 @@ Evolution of the original
 | ![UniFi](docs/gallery/unifi.webp) **UniFi**: Flex Mini switch and UniFi Express | ![Flush bezel](docs/gallery/bezel.webp) **Flush bezel**: an exact 5.25" bezel, flush with the case front |
 
 ### The film
-
-![3 bays, 5 bays, a Raspberry Pi cluster](docs/video/builds.gif)
 
 Blender 5.2, Cycles (HIP), 1600×900, 30 fps, 17 s. `scripts/blender/hero.py` builds the scene from GLB exports of the
 web viewer; `scripts/blender/encode.py` grades it and writes MP4 (H.264), WebM (VP9) and the GIFs.

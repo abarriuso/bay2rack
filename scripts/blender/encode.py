@@ -36,10 +36,27 @@ def main():
             "-preset", "fast", os.path.join(BL, "preview.mp4"))
         return
     os.makedirs(OUT, exist_ok=True)
+    fps = FPS
+    frames = os.path.join(BL, "frames")
+    if os.path.exists(os.path.join(frames, "h_0001.png")) and "--fps30" not in sys.argv:
+        # 60 fps: interleave f_n and the in-between h_n (hero.py --between) into one numbered sequence
+        seq = os.path.join(BL, "seq60")
+        shutil.rmtree(seq, ignore_errors=True)
+        os.makedirs(seq)
+        n = 0
+        for i in range(1, 10000):
+            f = os.path.join(frames, f"f_{i:04d}.png")
+            if not os.path.exists(f):
+                break
+            for p in (f, os.path.join(frames, f"h_{i:04d}.png")):
+                if os.path.exists(p):
+                    n += 1
+                    os.link(p, os.path.join(seq, f"s_{n:05d}.png"))
+        src, fps = os.path.join(seq, "s_%05d.png"), FPS * 2
     graded = os.path.join(BL, "graded.mov")
     # one graded master (lossless-ish), then every delivery format from it
     if "--gifs" not in sys.argv:
-        run("-framerate", str(FPS), "-i", src, "-vf", LOOK, "-c:v", "prores_ks", "-profile:v", "3", graded)
+        run("-framerate", str(fps), "-i", src, "-vf", LOOK, "-c:v", "prores_ks", "-profile:v", "3", graded)
     run("-i", graded, "-vf", "scale=1600:-2,format=yuv420p", "-c:v", "libx264", "-crf", "21", "-preset", "slow",
         "-movflags", "+faststart", "-an", os.path.join(OUT, "hero.mp4"))
     run("-i", graded, "-vf", "scale=1600:-2,format=yuv420p", "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "34",
@@ -47,9 +64,8 @@ def main():
     # poster = the last frame (the hero shot), also the og:image
     run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", os.path.join(OUT, "hero.webp"))
     run("-sseof", "-0.05", "-i", graded, "-frames:v", "1", "-vf", "scale=1600:-2", os.path.join(REPO, "docs", "img", "hero.png"))
-    # README: the unfold + assembly and the build changes, short GIFs with their own palette (a few MB each)
-    for name, extra, width, fps in (("assemble.gif", ["-ss", "1.45", "-t", "4.6"], 560, 12),
-                                    ("builds.gif", ["-ss", "8.4", "-t", "5.0"], 480, 12)):
+    # README: the unfold + assembly, a short GIF with their own palette (a few MB each)
+    for name, extra, width, fps in (("assemble.gif", ["-ss", "1.45", "-t", "4.6"], 560, 12),):
         pal = os.path.join(BL, "palette.png")
         run(*extra, "-i", graded, "-vf", f"fps={fps},scale={width}:-1:flags=lanczos,palettegen=max_colors=128:stats_mode=diff", pal)
         run(*extra, "-i", graded, "-i", pal, "-lavfi",
