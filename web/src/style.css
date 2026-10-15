@@ -182,10 +182,10 @@ button:disabled { opacity: .45; cursor: default; }
 .bay-table thead th { font: 600 11px/1.2 var(--f-mono); font-stretch: 87.5%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); border-bottom-color: var(--ink); }
 .bay-table td { font-family: var(--f-mono); font-size: 13px; font-stretch: 87.5%; white-space: nowrap; }
 .bay-table td:first-child { font-family: var(--f-display); font-size: 15px; font-weight: 700; font-stretch: 100%; }
-.bay-table tr.hl td { background: var(--signal-soft); }
-.u-bar { display: inline-flex; gap: 2px; vertical-align: middle; margin-right: 10px; width: 108px; }   /* fixed, so the numbers line up */
-.u-bar i { width: 14px; height: 9px; background: var(--signal); border-radius: 1px; }
-.u-bar i.spare { width: 7px; background: var(--ink-3); opacity: .55; }
+.bay-table td.scale { width: 34%; min-width: 160px; }
+.u-scale { display: flex; gap: 2px; height: 12px; }
+.u-scale i { flex-basis: 0; background: var(--signal); border-radius: 1px; }
+.u-scale i.spare { background: var(--ink-3); opacity: .45; }
 .table-note { color: var(--ink-3); font-size: 13px; margin-top: var(--s-3); max-width: 80ch; }
 
 .sub { margin: clamp(48px, 7vw, 80px) 0 var(--s-5); font-size: 1.3rem; font-weight: 720; font-stretch: 108%; }
@@ -399,6 +399,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .status.ok { color: var(--ok); }
 .status.error { color: var(--warn); }
+.warn-badge { cursor: pointer; color: var(--warn); border-color: var(--warn); font-weight: 600; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .results { display: grid; gap: var(--s-4); }

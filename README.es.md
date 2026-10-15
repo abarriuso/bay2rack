@@ -1,6 +1,6 @@
 # bay2rack — caja de PC antigua → rack de 6" para tu homelab
 
-*[Read in English](README.md)*
+*[Read in English](README.md)* · [![Model tests](https://github.com/abarriuso/bay2rack/actions/workflows/models.yml/badge.svg)](https://github.com/abarriuso/bay2rack/actions/workflows/models.yml)
 
 Las torres traían bahías de 5,25" para los lectores de CD. Las cajas nuevas ya no, pero el ATX no ha cambiado: esa caja
 antigua sigue admitiendo una placa base moderna. **bay2rack** es un adaptador paramétrico en OpenSCAD que se atornilla
@@ -18,7 +18,7 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 
 > **Trabajo en proceso.** ¿Has encontrado un defecto, una pieza que no encaja en tu caja o un problema al imprimir?
 > [Abre un issue](https://github.com/abarriuso/bay2rack/issues) con fotos y el modelo de tu caja. Se agradecen pull requests con medidas de otras cajas
-> y accesorios de rack, módulos nuevos y correcciones.
+> y accesorios de rack, módulos nuevos y correcciones. Cajas probadas: [lista de compatibilidad](docs/CASES.md) · cambios: [CHANGELOG](CHANGELOG.md).
 
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
@@ -226,7 +226,8 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
   `python scripts/render_docs.py` rehace las imágenes.
 
 Cada render muestra una línea resumen, la lista de materiales y un `WARNING`/`NOTE` cuando los tornillos, insertos o
-rellenos no caben.
+rellenos no caben. `python scripts/test_models.py` genera los casos límite (1–6 bahías, cada frontal, relleno, tornillo,
+fijación y módulo) y todos los montajes del configurador, y los comprueba; se ejecuta en cada push.
 
 ## Estructura del repositorio
 
@@ -243,6 +244,7 @@ src/lib/
   preview.scad           tornillería, cortes y torre de PC (solo previsualización)
 scripts/build.py         tabla de variantes -> presets + stl/ + stl/README.md
 scripts/render_docs.py   imágenes del README
+scripts/test_models.py   tests del modelo (CI)
 scripts/blender/         vídeo: hero.py (escena, materiales, animación), encode.py (etalonaje + MP4 / WebM / GIF)
 web/                     visor y generador web (GitHub Pages, Vite + pnpm)
 stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md

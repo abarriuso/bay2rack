@@ -1,6 +1,6 @@
 # bay2rack — old PC case → 6" homelab rack
 
-*[Leer en español](README.es.md)*
+*[Leer en español](README.es.md)* · [![Model tests](https://github.com/abarriuso/bay2rack/actions/workflows/models.yml/badge.svg)](https://github.com/abarriuso/bay2rack/actions/workflows/models.yml)
 
 Towers used to come with 5.25" bays for CD drives. New cases don't, but ATX hasn't changed: that old case still
 takes a modern motherboard. **bay2rack** is a parametric OpenSCAD adapter that screws into those bays and turns them
@@ -18,7 +18,7 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 
 > **Work in progress.** Found a defect, a part that doesn't fit your case or a print problem? [Open an issue](https://github.com/abarriuso/bay2rack/issues)
 > with photos and your case model. Measurements of other cases and rack gear, new modules and fixes are welcome as
-> pull requests.
+> pull requests. Cases reported so far: [compatibility list](docs/CASES.md) · changes: [CHANGELOG](CHANGELOG.md).
 
 Evolution of the original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
@@ -226,6 +226,8 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
   `python scripts/render_docs.py` regenerates the images.
 
 Every render prints a summary line, the BOM and a `WARNING`/`NOTE` whenever the screws, inserts or fills don't fit.
+`python scripts/test_models.py` renders the edge cases (1–6 bays, every front, fill, screw, fixing and module) and
+every ready-made build of the configurator, and checks them; it runs on every push.
 
 ## Repository layout
 
@@ -242,6 +244,7 @@ src/lib/
   preview.scad           hardware models, sections, PC tower (preview only)
 scripts/build.py         variant table -> presets + stl/ + stl/README.md
 scripts/render_docs.py   README images
+scripts/test_models.py   model tests (CI)
 scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF)
 web/                     browser viewer + generator (GitHub Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md

@@ -181,7 +181,6 @@ function update(patch) {
 function refresh() {
   renderSteps();
   renderTabs();
-  renderBayTable();
   syncAdvanced();
   showPrebuilt();
   writeHash();
@@ -651,6 +650,12 @@ function showEchoes(echoes, errors) {
   $('#warnings').replaceChildren(...(warn.length ? warn : [t('allGood')]).map((w) =>
     h('li', { className: /^(WARNING|ERROR)/.test(w) ? 'warn' : /^NOTE/.test(w) ? 'note' : 'good',
               textContent: warnText(w.replace(/^(WARNING|NOTE): ?/, '')) })));
+  // something does not fit: say so on the viewer itself, the list is further down
+  const bad = warn.filter((w) => /^(WARNING|ERROR)/.test(w));
+  const badge = $('#warnBadge');
+  badge.hidden = !bad.length;
+  badge.textContent = `⚠ ${t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length })}`;
+  badge.dataset.tip = bad.map((w) => warnText(w.replace(/^(WARNING|ERROR): ?/, ''))).join('\n');
 }
 
 // ---------------------------------------------------------------- kit download
@@ -775,22 +780,28 @@ function renderGallery() {
   }));
 }
 
-// bays -> rack units, computed with the same rules as the configurator (and config.scad)
+// bays -> rack units, computed with the same rules as the configurator (and config.scad). The bar is to scale:
+// one blue block per rack unit, grey for the strip left over, against the tallest stack (6 bays).
 function renderBayTable() {
   const mm = (x) => Number(x).toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });   // columns line up
+  const U = S.defaults.rack_u_h;
+  const stack = (c) => c.flushUnits * U + c.flushSpare;
+  const tallest = stack(calc({ ...S.defaults, bays: 6 }));
   const rows = [1, 2, 3, 4, 5, 6].map((n) => {
     const c = calc({ ...S.defaults, bays: n });
-    const bar = h('span', { className: 'u-bar', 'aria-hidden': 'true' },
-      Array.from({ length: c.flushUnits }, () => h('i')), c.flushSpare >= S.defaults.min_spare ? h('i', { className: 'spare' }) : null);
-    // the row of the bay count chosen in the configurator
-    return h('tr', { className: n === S.values.bays ? 'hl' : '' },
+    const h0 = stack(c);
+    const bar = h('span', { className: 'u-scale', style: `width:${(100 * h0 / tallest).toFixed(1)}%`, 'aria-hidden': 'true' },
+      Array.from({ length: c.flushUnits }, () => h('i', { style: `flex-grow:${U}` })),
+      h('i', { className: 'spare', style: `flex-grow:${c.flushSpare.toFixed(2)}` }));
+    return h('tr', {},
       h('td', { textContent: String(n) }),
-      h('td', { textContent: `${mm(c.flushUnits * S.defaults.rack_u_h + c.flushSpare)} mm` }),
-      h('td', {}, bar, `${c.flushUnits}U + ${mm(c.flushSpare)} mm`),
-      h('td', { textContent: `${n}U · +${mm(c.over)} mm` }));
+      h('td', { textContent: `${mm(h0)} mm` }),
+      h('td', { className: 'scale' }, bar),
+      h('td', { textContent: t('inside_v', { u: c.flushUnits, s: mm(c.flushSpare) }) }),
+      h('td', { textContent: t('out_v', { n, s: mm(c.over) }) }));
   });
   $('#bayTable').replaceChildren(
-    h('thead', {}, h('tr', {}, ['th_bays', 'th_height', 'th_inside', 'th_out'].map((k) => h('th', { scope: 'col', textContent: t(k) })))),
+    h('thead', {}, h('tr', {}, ['th_bays', 'th_height', 'th_scale', 'th_inside', 'th_out'].map((k) => h('th', { scope: 'col', textContent: t(k) })))),
     h('tbody', {}, rows));
 }
 
@@ -818,6 +829,7 @@ function wire() {
     buildAdvanced();
     refresh();
     renderGallery();
+    renderBayTable();
     heroRelabel?.();
     if (S.result) render();
   };
@@ -830,6 +842,7 @@ function wire() {
   adv.onchange = showAdv;
   showAdv();
   $('#fit').onclick = () => viewer.fit();
+  $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
   $('#kit').onclick = downloadKit;
   $('#share').onclick = async () => {
@@ -871,6 +884,7 @@ async function boot() {
   buildAdvanced();
   refresh();
   renderGallery();
+  renderBayTable();
   heroRelabel = wireHeroVideo();
   S.wantRender = true;
   if (S.engine === 'ready') render();

@@ -134,6 +134,7 @@
             <div class="floatbar">
               <span id="status" class="status"></span>
               <span id="caseName" class="status case-name"></span>
+              <button id="warnBadge" class="status warn-badge" type="button" hidden></button>
               <span class="spacer"></span>
               <button id="fit" class="pill" type="button" data-i18n="resetView"></button>
               <button id="share" class="pill" type="button" data-i18n="share"></button>
@@ -148,7 +149,7 @@
             </div>
             <div class="cards-2">
               <div class="card"><h3 data-i18n="bom"></h3><ul id="bom" class="bom"></ul></div>
-              <div class="card"><h3 data-i18n="warnings"></h3><ul id="warnings" class="warnings"></ul></div>
+              <div class="card" id="warningsCard"><h3 data-i18n="warnings"></h3><ul id="warnings" class="warnings"></ul></div>
             </div>
             <details class="log"><summary data-i18n="log"></summary><pre id="log"></pre></details>
           </div>

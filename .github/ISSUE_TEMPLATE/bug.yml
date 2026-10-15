@@ -1,0 +1,26 @@
+name: Problem
+description: A part that prints badly, a defect in the model, or something wrong in the configurator
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected and what you got.
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Configurator link or file
+      description: The Copy link button of the configurator, or the file from stl/.
+  - type: textarea
+    id: details
+    attributes:
+      label: Photos, warnings, OpenSCAD log
+      description: Photos of the print, the Heads-up list or the OpenSCAD log of the configurator.
+  - type: input
+    id: setup
+    attributes:
+      label: Printer, material, browser
+      placeholder: e.g. Prusa MK4, PETG / Firefox 140
