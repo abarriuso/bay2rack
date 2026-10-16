@@ -17,7 +17,7 @@
 
 /* [Part to render] */
 // What to render. "assembly" is a preview only, do not print it.
-part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), filler_labels:Multicolour letters of the filler, rack_module_labels:Multicolour letters of a rack module, rack_panel_labels:Multicolour letters of the rack panel, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
+part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), button_cap:Retro button cap (btn_cap), button_carrier:Retro button switch carrier, filler_labels:Multicolour letters of the filler, rack_module_labels:Multicolour letters of a rack module, rack_panel_labels:Multicolour letters of the rack panel, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
 // Lay printable parts front-face down on the bed
 print_orientation = true;
 
@@ -216,6 +216,14 @@ cover_cable_d = 6.5; // [3:0.5:12]
 /* [Button panel] */
 // Power / reset keys use normal keyboard switches (Cherry MX compatible: 14 mm cut-out, 1.5 mm plate)
 btn_count = 2; // [1:Power only, 2:Power + reset]
+// mx = keyboard switches + keycaps.  metal = the round metal PC push buttons you buy (anti-vandal, LED ring, nut behind).  retro = 90s PC front: printed buttons on 12 x 12 tactile switches, POWER / HDD LEDs, pinstripes
+btn_type = "mx"; // [mx:Keyboard switch + keycap, metal:Metal PC push button, retro:Retro PC - printed buttons on tactile switches]
+// Mounting hole of the metal push buttons
+btn_metal_d = 16; // [12, 16, 19, 22]
+// Retro: a third button and LED, TURBO
+btn_turbo = false;
+// Printed button made by part = button_cap
+btn_cap = "power"; // [power, reset, turbo]
 mx_cut = 14.0; // [13.5:0.05:14.5]
 mx_plate_t = 1.5; // [1.2:0.1:2]
 // Power and disk-activity LEDs
@@ -392,6 +400,15 @@ else if (part == "rack_panel_labels") printable(panel_t) fill_labels(panel_fill,
 else if (part == "rack_module_labels") {
     if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front") module_labels(module_type);
     else printable(panel_t) module_labels(module_type);
+}
+else if (part == "button_cap") button_cap(btn_cap);
+else if (part == "button_carrier") {
+    if (btn_type != "retro") echo("WARNING: the switch carrier is for btn_type = retro");
+    // the carrier of the first button panel (a spare zone, else a 1U module)
+    bz = [for (zn = zones) if (zn[2] == "buttons") zn];
+    hh = len(bz) > 0 ? bz[0][1] - (filler_mode == "separate" ? 0.8 : 0) : U - 0.79;
+    if (print_orientation) translate([0, 0, rt_switch_y + 2]) rotate([-90, 0, 0]) button_carrier(hh);
+    else button_carrier(hh);
 }
 else if (part == "rack_module_lid") {
     if (mod_kind(module_type) != "nkvm") echo("WARNING: only the NanoKVM bay (module_type = nkvm:side / nkvm:front) has a lid");

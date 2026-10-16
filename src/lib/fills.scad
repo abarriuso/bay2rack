@@ -127,14 +127,16 @@ module vent_cut(w, h, t) {
                     rotate([90, 0, 0]) mirror([0, 0, 1]) linear_extrude(0.01) rslot2d(fw, 2.4);
         } else xz_extrude(-t - eps, t + 2 * eps) translate([0, h / 2]) intersection() {
             offset(r = 3) offset(delta = -3) square([fw, fh], center = true);
-            if (vent_style == "hex") {
-                p = 7.2;                                // 6 mm across flats, 1.2 mm webs
-                for (r = [-ceil(fh / p) : ceil(fh / p)], c = [-ceil(fw / p) : ceil(fw / p)])
-                    translate([c * p + (r % 2 == 0 ? 0 : p / 2), r * p * 0.866]) rotate(30) circle(d = 6 / cos(30), $fn = 6);
-            } else if (vent_style == "dots") {
-                p = 6;
-                for (r = [-ceil(fh / p) : ceil(fh / p)], c = [-ceil(fw / p) : ceil(fw / p)])
-                    translate([c * p + (r % 2 == 0 ? 0 : p / 2), r * p * 0.866]) circle(d = 4, $fn = 20);
+            if (vent_style == "hex" || vent_style == "dots") {
+                // only whole holes: rows and columns that fit, centred, every other row shifted half a pitch
+                hex = vent_style == "hex";
+                p = hex ? 7.2 : 6;                      // hex: 6 mm across flats, 1.2 mm webs.  dots: 4 mm holes
+                r0 = hex ? 6 / 2 / cos(30) : 2;         // hole radius (hex: to its corners)
+                rows = max(1, floor((fh - 2 * r0) / (p * 0.866)) + 1);
+                cols = max(1, floor((fw - 2 * r0 - p / 2) / p) + 1);
+                for (r = [0 : rows - 1], c = [0 : cols - 1])
+                    translate([(c - (cols - 1) / 2) * p + (r % 2 == 0 ? -p / 4 : p / 4), (r - (rows - 1) / 2) * p * 0.866])
+                        if (hex) rotate(30) circle(r = r0, $fn = 6); else circle(r = r0, $fn = 20);
             } else {
                 n = floor((fw - 3) / 6) + 1;
                 for (i = [0 : 1 : n - 1]) translate([(i - (n - 1) / 2) * 6, 0])
@@ -219,57 +221,167 @@ module icon2d(kind, s) {
     }
 }
 
-module buttons_check(w, h)
-    if (h < mx_cut + 13 || w < (btn_count >= 2 ? 100 : 60))
-        echo(str("WARNING: the button panel needs about ", btn_count >= 2 ? 100 : 60, " x ", mx_cut + 13, " mm"));
+// ---- what goes where, for each button type -----------------------------------------------------
+//   mx    = keyboard switches (Cherry MX) + keycaps, power and HDD LEDs
+//   metal = the round metal PC push buttons you buy (anti-vandal, nut behind; the power one has its own LED ring)
+//   retro = a 90s PC front: printed POWER / RESET (/ TURBO) buttons on 12 x 12 tactile switches held by a
+//           printed carrier behind the panel, POWER / HDD (/ TURBO) LEDs, engraved labels and pinstripes
+// keys [x, z, kind, w, h] (w, h: retro cap size), leds [x, z, kind]
+rt_zc = 2;                                          // retro row above the zone centre (labels go under it)
+RT_CAPS = [["power", 24, 14], ["reset", 12, 8], ["turbo", 12, 8]];
+function rt_cap(kind) = [for (c = RT_CAPS) if (c[0] == kind) c][0];
+// right to left: the big POWER, RESET, TURBO; then the LEDs POWER - TURBO - HDD (left to right) and pinstripes
+function rt_keys(h) = let(zc = h / 2 + rt_zc)
+    concat([[37, zc, "power", 24, 14]], btn_count >= 2 ? [[11, zc, "reset", 12, 8]] : [],
+           btn_turbo ? [[btn_count >= 2 ? -7 : 11, zc, "turbo", 12, 8]] : []);
+function rt_left(h) = min([for (k = rt_keys(h)) k[0] - k[3] / 2]) - 2.4;       // left edge of the buttons + collar
+function rt_posts(h) = [[rt_left(h) - 4.2, h / 2 + rt_zc], [37 + 12 + 2.4 + 4.2, h / 2 + rt_zc]];   // carrier screws
+function rt_leds(h) = let(n = btn_turbo ? 3 : 2, x1 = rt_posts(h)[0][0] - 3.5 - 7.5, zc = h / 2 + rt_zc)
+    [for (i = [0 : n - 1]) [x1 - (n - 1 - i) * 12, zc + 1, btn_turbo ? ["power", "turbo", "hdd"][i] : ["power", "hdd"][i]]];
+function btn_keys(w, h) =
+    btn_type == "retro" ? rt_keys(h)
+  : btn_type == "metal" ? let(zc = h / 2 + 2) (btn_count >= 2 ? [[-30, zc, "power"], [30, zc, "reset"]] : [[-16, zc, "power"]])
+  : btn_layout(w, h)[0];
+function btn_leds(w, h) =
+    btn_type == "retro" ? rt_leds(h)
+  : btn_type == "metal" ? [[btn_count >= 2 ? 0 : 16, h / 2 + 2, "hdd"]]
+  : [for (k = btn_layout(w, h)[1]) [k[0], led_style == "halo" ? k[1] - mx_cut / 2 - halo_gap - halo_w / 2 : k[1], k[2]]];
+// the halo needs a keyboard switch; the other buttons take a plain LED ring instead
+btn_led_style = btn_type != "mx" && led_style == "halo" ? "ring" : led_style;
+
+module buttons_check(w, h) {
+    need = btn_type == "retro" ? [118, 30] : btn_type == "metal" ? [btn_count >= 2 ? 90 : 60, btn_metal_d + 12]
+         : [btn_count >= 2 ? 100 : 60, mx_cut + 13];
+    if (h < need[1] || w < need[0])
+        echo(str("WARNING: the button panel needs about ", need[0], " x ", need[1], " mm, this zone is ", w, " x ", h, " mm"));
+}
+
+// LED holder tube behind the plate
+module led_tube(k) translate([k[0], -eps, k[1]]) rotate([-90, 0, 0]) cylinder(d = led_d + 3.4, h = 8);
+
+// one LED hole (style: ring / halo / glow) with its icon
+module led_cut(k, t, style, icon = true) {
+    stop = style == "ring" ? led_body - led_protrude : t - 0.6;    // where the LED flange stops, from the front face
+    translate([k[0], 0, k[1]]) {
+        if (style == "glow") {
+            slot_y(led_d + 0.4, 0, -t + 0.6, t + 9);                                     // blind hole, 0.6 mm skin
+            xz_extrude(-t - eps, 0.3 + eps) icon2d(k[2] == "hdd" ? "hdd" : "power", 4.4);    // the icon lights up
+        } else if (style == "halo") {
+            slot_y(led_d + 0.2, 0, -t + 0.4, t + 9);                                     // shines into the ring
+        } else {
+            slot_y(led_d + 0.25, 0, -t - eps, t + 9);
+            translate([0, -t - eps, 0]) rotate([-90, 0, 0]) cylinder(d1 = led_d + 3.2, d2 = led_d + 0.25, h = 1.5);
+            xz_extrude(-t - eps, 0.5 + eps) difference() { circle(d = led_d + 6.4); circle(d = led_d + 5.4); }
+            if (icon) xz_extrude(-t - eps, 0.6 + eps) translate([0, -led_d / 2 - 6]) icon2d(k[2] == "hdd" ? "hdd" : "power", 4.2);
+        }
+        slot_y(led_flange + 0.3, 0, -t + max(stop, 0.4), 12);     // wider bore for the LED flange
+    }
+}
 
 module buttons_add(w, h, t) {
-    L = btn_layout(w, h);
-    for (k = L[1]) {
-        lz = led_style == "halo" ? k[1] - mx_cut / 2 - halo_gap - halo_w / 2 : k[1];
-        // LED holder tube behind the plate
-        translate([k[0], -eps, lz]) rotate([-90, 0, 0]) cylinder(d = led_d + 3.4, h = 8);
-    }
+    for (k = btn_leds(w, h)) led_tube(k);
+    // retro: two posts with heat-set inserts for the switch carrier
+    if (btn_type == "retro") for (p = rt_posts(h)) translate([p[0], -eps, p[1]]) rotate([-90, 0, 0])
+        cylinder(d = 7, h = rt_carrier_y + eps, $fn = 28);
 }
 
 module buttons_cut(w, h, t) {
     buttons_check(w, h);
-    L = btn_layout(w, h);
-    for (k = L[0]) {
-        // MX cut-out through, plate thinned to 1.5 mm from behind so the clips catch
-        xz_extrude(-t - eps, t + 2 * eps) translate([k[0], k[1]]) square(mx_cut, center = true);
-        if (t > mx_plate_t + 0.1)
-            xz_extrude(-t + mx_plate_t, t - mx_plate_t + 2 * eps) translate([k[0], k[1]]) square(mx_cut + 1.6, center = true);
-        if (led_style == "halo") {   // light ring with four corner bridges
-            xz_extrude(-t - eps, t + 2 * eps) translate([k[0], k[1]]) difference() {
-                square(mx_cut + 2 * (halo_gap + halo_w), center = true);
-                square(mx_cut + 2 * halo_gap, center = true);
-                for (sx = [-1, 1], sz = [-1, 1]) translate([sx * (mx_cut / 2 + halo_gap), sz * (mx_cut / 2 + halo_gap)])
-                    square(2 * halo_w + 1.2, center = true);
+    if (btn_type == "retro") retro_cut(w, h, t);
+    else for (k = btn_keys(w, h)) {
+        if (btn_type == "metal") {
+            translate([k[0], 0, k[1]]) slot_y(btn_metal_d + 0.3, 0, -t - eps, t + 2 * eps);
+            xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - btn_metal_d / 2 - 5.5]) icon2d(k[2], 4.6);
+        } else {
+            // MX cut-out through, plate thinned to 1.5 mm from behind so the clips catch
+            xz_extrude(-t - eps, t + 2 * eps) translate([k[0], k[1]]) square(mx_cut, center = true);
+            if (t > mx_plate_t + 0.1)
+                xz_extrude(-t + mx_plate_t, t - mx_plate_t + 2 * eps) translate([k[0], k[1]]) square(mx_cut + 1.6, center = true);
+            if (led_style == "halo") {   // light ring with four corner bridges
+                xz_extrude(-t - eps, t + 2 * eps) translate([k[0], k[1]]) difference() {
+                    square(mx_cut + 2 * (halo_gap + halo_w), center = true);
+                    square(mx_cut + 2 * halo_gap, center = true);
+                    for (sx = [-1, 1], sz = [-1, 1]) translate([sx * (mx_cut / 2 + halo_gap), sz * (mx_cut / 2 + halo_gap)])
+                        square(2 * halo_w + 1.2, center = true);
+                }
             }
+            // engraved icon under the key
+            xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - mx_cut / 2 - (led_style == "halo" ? 7.5 : 5.2)])
+                icon2d(k[2], 4.6);
         }
-        // engraved icon under the key
-        xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - mx_cut / 2 - (led_style == "halo" ? 7.5 : 5.2)])
-            icon2d(k[2], 4.6);
     }
-    for (k = L[1]) {
-        lz = led_style == "halo" ? k[1] - mx_cut / 2 - halo_gap - halo_w / 2 : k[1];
-        // where the LED flange stops, measured from the front face
-        stop = led_style == "ring" ? led_body - led_protrude : t - 0.6;
-        translate([k[0], 0, lz]) {
-            if (led_style == "glow") {
-                slot_y(led_d + 0.4, 0, -t + 0.6, t + 9);                                   // blind hole, 0.6 mm skin
-                xz_extrude(-t - eps, 0.3 + eps) icon2d(k[2] == "hdd" ? "hdd" : "power", 4.4);  // the icon lights up
-            } else if (led_style == "halo") {
-                slot_y(led_d + 0.2, 0, -t + 0.4, t + 9);                                   // shines into the ring
-            } else {
-                slot_y(led_d + 0.25, 0, -t - eps, t + 9);
-                translate([0, -t - eps, 0]) rotate([-90, 0, 0]) cylinder(d1 = led_d + 3.2, d2 = led_d + 0.25, h = 1.5);
-                xz_extrude(-t - eps, 0.5 + eps) difference() { circle(d = led_d + 6.4); circle(d = led_d + 5.4); }
-                xz_extrude(-t - eps, 0.6 + eps) translate([0, -led_d / 2 - 6]) icon2d(k[2] == "hdd" ? "hdd" : "power", 4.2);
-            }
-            // wider bore for the LED flange from the stop to the back of the tube
-            slot_y(led_flange + 0.3, 0, -t + max(stop, 0.4), 12);
+    for (k = btn_leds(w, h)) led_cut(k, t, btn_led_style, btn_type != "retro");
+    if (btn_type == "retro") for (p = rt_posts(h)) translate([p[0], rt_carrier_y + eps, p[1]]) rotate([90, 0, 0])
+        cylinder(d = hw("M3")[2], h = hw("M3")[3] + 0.3, $fn = 24);     // heat-set inserts for the carrier screws
+    if (btn_type == "retro") for (k = btn_leds(w, h))                 // retro LEDs are named, not drawn
+        xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - led_d / 2 - 5.5])
+            text(upper(k[2]), size = 2.1, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+}
+
+// ---- retro ---------------------------------------------------------------------------------------
+// y along the press: cap front 1.5 mm proud of the panel, a 45 deg collar seats it in the back of the
+// opening (it centres the cap and keeps it in), the stem reaches the tactile switch in the carrier
+rt_collar = 2.4;                                     // 45 deg collar, ends at the back face of the panel
+rt_flange = 0.6;
+rt_stem = 1.5;
+rt_tact = [12, 7.3, 3.6];                            // 12 x 12 tactile switch: size, height to the actuator top, body
+rt_carrier_y = rt_flange + rt_stem + 0.2 + rt_tact[1] - rt_tact[2];   // front of the carrier (body of the switch)
+rt_switch_y = rt_carrier_y + rt_tact[2];             // switch base
+rt_carrier_t = rt_switch_y + 2 - rt_carrier_y;
+function upper(s) = chr([for (c = s) let(o = ord(c)) o >= 97 && o <= 122 ? o - 32 : o]);
+
+module rt_opening2d(cw, ch, grow = 0) offset(r = 1.5 + grow) square([cw - 3 + 0.6, ch - 3 + 0.6], center = true);
+
+module retro_cut(w, h, t) {
+    zc = h / 2 + rt_zc;
+    for (k = rt_keys(h)) translate([k[0], 0, k[1]]) {
+        xz_extrude(-t - eps, t + 2 * eps) rt_opening2d(k[3], k[4]);
+        // the seat of the collar, widening 45 deg to the back face
+        hull() for (g = [0, 1]) translate([0, -min(rt_collar, t - 0.6) + g * (min(rt_collar, t - 0.6) + eps), 0])
+            rotate([90, 0, 0]) mirror([0, 0, 1]) linear_extrude(0.01) rt_opening2d(k[3], k[4], g * min(rt_collar, t - 0.6));
+        // its name under it
+        xz_extrude(-t - eps, 0.6 + eps) translate([0, -k[4] / 2 - 4.2])
+            text(upper(k[2]), size = 2.4, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+    }
+    // pinstripes like the beige cases: two across the top, and a block on the left where there is room
+    for (z = [h - 3.6, h - 6]) if (z > zc + 9)
+        xz_extrude(-t - eps, 0.5 + eps) translate([0, z]) rslot2d(w - 8, 1);
+    x1 = min([for (k = rt_leds(h)) k[0]]) - 9;
+    if (x1 > -w / 2 + 14) for (i = [0 : 3])
+        xz_extrude(-t - eps, 0.6 + eps) translate([(-w / 2 + 5 + x1) / 2, zc + 6 - i * 4]) rslot2d(x1 - (-w / 2 + 5), 1.2);
+}
+
+// a printed button: in its own coordinates, front face at z = 0 (prints face-down), the press along +z
+module button_cap(kind = btn_cap) {
+    c = rt_cap(kind);
+    t = filler_t;
+    body = t + 1.5 - min(rt_collar, t - 0.6);
+    cl = min(rt_collar, t - 0.6);
+    linear_extrude(body) rt_opening2d(c[1] - 0.6, c[2] - 0.6);
+    translate([0, 0, body - eps]) hull() {
+        linear_extrude(0.01) rt_opening2d(c[1] - 0.6, c[2] - 0.6);
+        translate([0, 0, cl]) linear_extrude(0.01) rt_opening2d(c[1] - 0.6, c[2] - 0.6, cl);
+    }
+    translate([0, 0, body + cl - eps]) linear_extrude(rt_flange + eps) rt_opening2d(c[1] - 0.6, c[2] - 0.6, cl);
+    translate([0, 0, body + cl + rt_flange - eps]) cylinder(d = 5, h = rt_stem + eps, $fn = 28);
+}
+
+// the carrier with the tactile switches, screwed onto the two posts behind the panel; panel coordinates
+// (x across, z up from the zone bottom, y back from the panel back face). Prints back face down.
+module button_carrier(h = U - 0.79) {
+    P = rt_posts(h);
+    x0 = P[0][0] - 4; x1 = P[1][0] + 4;
+    zc = h / 2 + rt_zc;
+    difference() {
+        translate([x0, rt_carrier_y, zc - 8]) cube([x1 - x0, rt_carrier_t, 16]);
+        for (k = rt_keys(h)) translate([k[0], 0, zc]) {
+            translate([-6.2, rt_carrier_y - eps, -6.2]) cube([12.4, rt_tact[2] + eps, 12.4]);          // the switch body
+            for (sx = [-1, 1], sz = [-1, 1]) translate([sx * 6.25, rt_switch_y - 1, sz * 2.5])         // its four legs
+                rotate([-90, 0, 0]) cylinder(d = 1.6, h = 4, $fn = 12);
+        }
+        for (p = P) translate([p[0], rt_carrier_y - 1, p[1]]) rotate([-90, 0, 0]) {
+            cylinder(d = 3.4, h = rt_carrier_t + 2, $fn = 20);
+            translate([0, 0, rt_carrier_t - 1]) cylinder(d = 6.4, h = 3, $fn = 24);      // screw head
         }
     }
 }

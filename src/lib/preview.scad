@@ -367,6 +367,32 @@ module jack_model(tp, yf) {
 
 // keyboard switch + keycap and the LEDs of a button panel
 module buttons_models(w, h, z0, yf) {
+    t = 3;
+    if (btn_type == "retro") {
+        // printed caps (PRINT_C, they print with the modules), the carrier, the black switches
+        for (k = rt_keys(h)) color(k[2] == "power" ? [0.86, 0.84, 0.78] : PRINT_C) translate([k[0], yf - 1.5, z0 + k[1]])
+            rotate([-90, 0, 0]) button_cap(k[2]);
+        color(PRINT_C) translate([0, yf + t, z0]) button_carrier(h);
+        for (k = rt_keys(h)) color([0.1, 0.1, 0.11]) translate([k[0] - 6, yf + t + rt_carrier_y, z0 + k[1] - 6]) cube([12, rt_tact[2], 12]);
+        for (k = rt_leds(h)) color(k[2] == "power" ? [0.2, 0.95, 0.4] : k[2] == "hdd" ? [1, 0.55, 0.1] : [1, 0.9, 0.2])
+            translate([k[0], yf - led_protrude, z0 + k[1]]) rotate([-90, 0, 0]) {
+                translate([0, 0, led_d / 2]) cylinder(d = led_d, h = led_body - led_d / 2);
+                translate([0, 0, led_d / 2]) sphere(d = led_d);
+            }
+    } else if (btn_type == "metal") {
+        for (k = btn_keys(w, h)) translate([k[0], yf, z0 + k[1]]) rotate([90, 0, 0]) {
+            color([0.75, 0.77, 0.8]) cylinder(d = btn_metal_d + 3, h = 1.6);                  // the steel ring
+            color([0.68, 0.7, 0.73]) cylinder(d = btn_metal_d - 3, h = 2);                    // the push face
+            if (k[2] == "power") color([0.2, 0.55, 1]) translate([0, 0, 1.6]) linear_extrude(0.2)
+                difference() { circle(d = btn_metal_d - 1.2); circle(d = btn_metal_d - 2.2); }   // its LED ring
+        }
+        for (k = btn_leds(w, h)) color([0.2, 0.55, 1]) translate([k[0], yf - led_protrude, z0 + k[1]]) rotate([-90, 0, 0]) {
+            translate([0, 0, led_d / 2]) cylinder(d = led_d, h = led_body - led_d / 2);
+            translate([0, 0, led_d / 2]) sphere(d = led_d);
+        }
+    } else mx_models(w, h, z0, yf);
+}
+module mx_models(w, h, z0, yf) {
     L = btn_layout(w, h);
     for (k = L[0]) translate([k[0], 0, z0 + k[1]]) {
         color([0.18, 0.18, 0.2]) translate([-7, yf - 5, -7]) cube([14, 5 + 6, 14]);

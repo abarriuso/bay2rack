@@ -31,6 +31,8 @@ cases += [
     ("nkvm/front-2ks", {"bays": 3, "rack_modules": "nkvm:front", "nkvm_keystones": 2}),
     ("nkvm/split-multicolour", {"bays": 3, "rack_modules": "nkvm:side,patch", "nkvm_split": True, "labels_multicolour": True}),
     ("labels/multicolour-names", {"bays": 4, "rack_modules": "patch,label,vent", "labels_multicolour": True, "ks_names": "WAN,LAN,,NAS"}),
+    ("buttons/retro-integral", {"bays": 3, "front_style": "bezel", "filler_mode": "integral", "spare_fill": "buttons", "btn_type": "retro", "btn_turbo": True}),
+    ("buttons/metal-module", {"bays": 4, "rack_modules": "buttons,patch", "btn_type": "metal"}),
     ("split-spare", {"bays": 4, "spare_pos": "split", "spare_fill": "label", "spare_fill_2": "vent", "labels_multicolour": True}),
 ]
 

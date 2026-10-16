@@ -189,10 +189,22 @@ n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
         ? len([for (zn = zones) if (zn[2] == "buttons") 1])
           + (part == "assembly" ? len([for (m = used_mods) if (m == "buttons") 1]) : 0)
       : 0;
+n_keys = btn_count + (btn_type == "retro" && btn_turbo ? 1 : 0);
 if (n_btn > 0) {
-    echo(str("BOM | buttons: ", n_btn * btn_count, " x Cherry MX compatible keyboard switch + 1u keycap (",
-             btn_count >= 2 ? "power, reset" : "power", ")"));
-    echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
+    if (btn_type == "metal") {
+        echo(str("BOM | buttons: ", n_btn * btn_count, " x ", btn_metal_d, " mm metal push button, momentary, LED ring (",
+                 btn_count >= 2 ? "power, reset" : "power", ")"));
+        echo(str("BOM | buttons: ", n_btn, " x ", led_d, " mm dome LED (disk activity) + front-panel header wires"));
+    } else if (btn_type == "retro") {
+        echo(str("BOM | buttons: ", n_btn * n_keys, " x 12 x 12 mm tactile switch (12 x 12 x 7.3) + the printed caps (part = button_cap)"));
+        echo(str("BOM | buttons: ", n_btn * (btn_turbo ? 3 : 2), " x ", led_d, " mm dome LED (power green, HDD amber",
+                 btn_turbo ? ", turbo yellow" : "", ") + front-panel header wires"));
+        echo(str("BOM | buttons: ", n_btn * 2, " x M3 x 12 screw + ", n_btn * 2, " x M3 heat-set insert (switch carrier)"));
+    } else {
+        echo(str("BOM | buttons: ", n_btn * btn_count, " x Cherry MX compatible keyboard switch + 1u keycap (",
+                 btn_count >= 2 ? "power, reset" : "power", ")"));
+        echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
+    }
 }
 n_fan = part == "rack_panel" ? (panel_fill == "fan80" ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")

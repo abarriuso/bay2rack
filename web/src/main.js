@@ -578,9 +578,15 @@ function portNames(types) {
 }
 
 function buttonsEditor() {
+  const v = S.values;
   return [
+    cards('btn_type', ['mx', 'metal', 'retro'].map((x) => ({ value: x, label: t('btnType_' + x), sub: t('btnType_' + x + '_sub') }))),
     segmented('btn_count', [1, 2], (x) => t('btn_' + x)),
-    cards('led_style', ['ring', 'halo', 'glow'].map((s) => ({ value: s, label: t('led_' + s), sub: t('led_' + s + '_sub'), tip: tipOf('led:' + s) }))),
+    v.btn_type === 'metal' ? segmented('btn_metal_d', [12, 16, 19, 22], (x) => `${x} mm`) : null,
+    v.btn_type === 'retro' ? toggle(t('btnTurbo'), v.btn_turbo, (on) => update({ btn_turbo: on })) : null,
+    v.btn_type === 'mx'
+      ? cards('led_style', ['ring', 'halo', 'glow'].map((s) => ({ value: s, label: t('led_' + s), sub: t('led_' + s + '_sub'), tip: tipOf('led:' + s) })))
+      : null,
     segmented('led_d', [3, 5], (x) => t('led_' + x)),
   ];
 }
@@ -620,6 +626,8 @@ function pieceLabel(f, v) {
   if (p.part === 'rack_module_lid') return `${t('mod_nkvm')} · ${t('piece_lid')}${qty}`;
   if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t('piece_pocket')}${qty}`;
   if (p.part === 'pci_bracket') return t('piece_pci_' + p.pci_kind);
+  if (p.part === 'button_cap') return `${t('piece_button')} · ${p.btn_cap.toUpperCase()}${qty}`;
+  if (p.part === 'button_carrier') return `${t('piece_carrier')}${qty}`;
   if (p.part === 'keystone_cover') return `${t('piece_cover')} · ${t('cover_' + p.cover_type)}${qty}`;
   if (p.part.startsWith('test_')) return `${t('piece_test')} · ${t(p.part)}`;
   return f.name;
@@ -829,6 +837,12 @@ function kitList(v, withTests = $('#withTests').checked) {
       if (v.nkvm_split && modItems(m)[0] !== 'front')
         files.push({ name: `module-${modFile(m)}-pocket.stl`, qty, part: { part: 'rack_module_bay', module_type: m } });
     }
+  }
+  const btnSets = c.zones.filter((z) => z === 'buttons').length + mods.filter((m) => m === 'buttons').length;
+  if (btnSets && v.btn_type === 'retro') {
+    for (const cap of ['power', ...(v.btn_count >= 2 ? ['reset'] : []), ...(v.btn_turbo ? ['turbo'] : [])])
+      files.push({ name: `button-${cap}.stl`, qty: btnSets, part: { part: 'button_cap', btn_cap: cap } });
+    files.push({ name: 'button-carrier.stl', qty: btnSets, part: { part: 'button_carrier' } });
   }
   if (v.rear_slots) for (const k of ['lan', 'power'])
     files.push({ name: `pci-bracket-${k}.stl`, qty: 1, part: { part: 'pci_bracket', pci_kind: k } });
