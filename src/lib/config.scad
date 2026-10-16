@@ -92,7 +92,9 @@ pz1 = min(frame_z1, stack_h);
 function pat(p) = p == "eia" ? [6.35, 22.225, 38.1]
                 : p == "eia_outer" ? [6.35, 38.1]
                 : p == "center" ? [22.225] : [];
-rack_zs = units > 0 ? [for (u = [0 : units - 1]) for (o = pat(hole_pattern)) units_z0 + u * U + o] : [];
+// auto: EIA-310 inside the bays; one centred hole per U when the units stick out (the outer EIA holes would break out of the frame)
+hole_pat = hole_pattern == "auto" ? (fit == "overhang" ? "center" : "eia") : hole_pattern;
+rack_zs = units > 0 ? [for (u = [0 : units - 1]) for (o = pat(hole_pat)) units_z0 + u * U + o] : [];
 
 // bay holes
 bay_ys = concat([bay_hole_y1 + bay_hole_offset], use_hole_y2 ? [bay_hole_y2 + bay_hole_offset] : []);

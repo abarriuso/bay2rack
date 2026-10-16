@@ -164,7 +164,8 @@ def run(exe, case):
         summary = re.search(r"bay2rack \| bays=\d+.*units=(\d+)U", log)
         if not summary:
             problems.append("no summary line")
-        elif defines.get("hole_pattern", "eia") == "eia" and int(summary.group(1)) > 0:
+        elif int(summary.group(1)) > 0 and (defines.get("hole_pattern", "auto") == "eia"
+                                          or (defines.get("hole_pattern", "auto") == "auto" and defines.get("fit") != "overhang")):
             bom = re.search(r"BOM \| rack accessories: (\d+) x", log)
             want = 6 * int(summary.group(1))
             if not bom or int(bom.group(1)) != want:

@@ -27,7 +27,7 @@ module filler_panel(zn) {
 }
 
 // rack hole heights of an n-U panel (panel bottom at z = 0)
-function panel_zs(n) = [for (u = [0 : n - 1]) for (o = pat(hole_pattern)) u * U + o - 0.395];
+function panel_zs(n) = [for (u = [0 : n - 1]) for (o = pat(hole_pat)) u * U + o - 0.395];
 
 module rack_panel_u(n, fill) {
     h = n * U - 0.79;

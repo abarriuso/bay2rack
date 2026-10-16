@@ -5,9 +5,9 @@ name: Model tests
 on:
   push:
     branches: [main]
-    paths: [src/**, scripts/test_models.py, web/src/main.js, .github/workflows/models.yml]
+    paths: [src/**, scripts/test_models.py, scripts/check_assemblies.py, web/src/main.js, .github/workflows/models.yml]
   pull_request:
-    paths: [src/**, scripts/test_models.py, web/src/main.js, .github/workflows/models.yml]
+    paths: [src/**, scripts/test_models.py, scripts/check_assemblies.py, web/src/main.js, .github/workflows/models.yml]
   workflow_dispatch:
 
 permissions:
@@ -22,3 +22,4 @@ jobs:
       - run: sudo apt-get update -q && sudo apt-get install -yq openscad
       - run: openscad --version
       - run: python3 scripts/test_models.py -j 4
+      - run: python3 scripts/check_assemblies.py

@@ -149,7 +149,7 @@ const PARAM_ES = {
   custom_panel_w: ['Ancho de panel', 'Solo con estándar propio.'],
   custom_hole_spacing: ['Distancia entre agujeros', 'Entre centros de los agujeros izquierdo y derecho.'],
   rack_u_h: ['Altura de 1U', ''],
-  hole_pattern: ['Patrón de agujeros', 'EIA-310 (3 por U), 2 por U o 1 centrado.'],
+  hole_pattern: ['Patrón de agujeros', 'Auto (EIA-310 dentro de las bahías, 1 centrado si las U sobresalen), EIA-310 (3 por U), 2 por U o 1 centrado.'],
   rack_screw: ['Tornillo de rack', 'Norma del mini rack de 10": M6, 10-32 o 12-24.'],
   rack_screw_head: ['Cabeza', 'Botón, allen, avellanada (añade avellanado) o alomada.'],
   rack_screw_len: ['Largo del tornillo', 'En mm (0 = el largo estándar adecuado, automático).'],

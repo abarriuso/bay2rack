@@ -242,7 +242,8 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
   `python scripts/render_docs.py` rehace las imágenes.
 
 Cada render muestra una línea resumen, la lista de materiales y un `WARNING`/`NOTE` cuando los tornillos, insertos o
-rellenos no caben. `python scripts/test_models.py` genera los casos límite (1–6 bahías, cada frontal, relleno, tornillo,
+rellenos no caben. `python scripts/check_assemblies.py  todos los ejemplos y combinaciones bahías x encaje x frontal, sin avisos (CI)
+scripts/test_models.py` genera los casos límite (1–6 bahías, cada frontal, relleno, tornillo,
 fijación y módulo) y todos los montajes del configurador, y los comprueba; se ejecuta en cada push.
 
 ## Estructura del repositorio

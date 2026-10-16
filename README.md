@@ -261,6 +261,7 @@ src/lib/
 scripts/build.py         variant table -> presets + stl/ + stl/README.md
 scripts/render_docs.py   README images
 scripts/test_models.py   model tests (CI)
+scripts/check_assemblies.py  every example and bays x fit x front assembly, no warnings (CI)
 scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF)
 web/                     browser viewer + generator (Cloudflare Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md

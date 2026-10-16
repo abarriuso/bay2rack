@@ -84,7 +84,7 @@ custom_panel_w = 152.4; // [120:0.1:260]
 custom_hole_spacing = 134.9; // [100:0.05:245]
 // Height of one rack unit
 rack_u_h = 44.45; // [40:0.01:50]
-hole_pattern = "eia"; // [eia:EIA-310 - 3 holes per U, eia_outer:2 holes per U - outer, center:1 hole per U - centre, none:No holes]
+hole_pattern = "auto"; // [auto:Auto - EIA inside the bays / centre when the units stick out, eia:EIA-310 - 3 holes per U, eia_outer:2 holes per U - outer, center:1 hole per U - centre, none:No holes]
 
 /* [Rack hardware] */
 // 10in mini rack convention: M6, 10-32 or 12-24
