@@ -42,10 +42,10 @@ function makeParam(name, { type, value }, spec, desc) {
   const p = { name, type, value, desc, widget: type === 'bool' ? 'check' : type === 'string' ? 'text' : type === 'vector' ? 'vector' : 'number' };
   if (spec == null) return p;
   const s = spec.trim();
-  if (type === 'number' && /^-?[\d.]+(:-?[\d.]+){1,2}$/.test(s)) {
+  if ((type === 'number' || type === 'vector') && /^-?[\d.]+(:-?[\d.]+){1,2}$/.test(s)) {
     const n = s.split(':').map(Number);
     if (n.length === 2) [p.min, p.max] = n; else [p.min, p.step, p.max] = n;
-    p.widget = 'slider';
+    if (type === 'number') p.widget = 'slider';          // a vector keeps its boxes, each one limited to the range
   } else {
     p.options = s.split(',').map((o) => {
       const t = o.trim();
@@ -55,6 +55,20 @@ function makeParam(name, { type, value }, spec, desc) {
     p.widget = 'select';
   }
   return p;
+}
+
+// a typed value kept inside the parameter's range (and rounded to its step)
+export function clampValue(p, v) {
+  const one = (x) => {
+    let y = Number.isFinite(x) ? x : (p.min ?? 0);
+    if (p.min != null) y = Math.max(p.min, y);
+    if (p.max != null) y = Math.min(p.max, y);
+    if (p.step) y = Math.round((y - (p.min ?? 0)) / p.step) * p.step + (p.min ?? 0);
+    return Number(y.toFixed(4));
+  };
+  if (p.type === 'vector') return v.map((x) => one(Number(x)));
+  if (p.type === 'number') return one(Number(v));
+  return v;
 }
 
 // value -> OpenSCAD literal for -D

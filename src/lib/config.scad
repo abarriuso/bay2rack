@@ -237,3 +237,34 @@ for (z = rack_zs) {
     else if (z - r_feat / 2 < pz0 || z + r_feat / 2 > pz1)
         echo(str("WARNING: rack hole at z=", z, " is outside the posts (only the frame holds it)"));
 }
+
+// ---------------------------------------------------------------------
+//  Parameter checks: values that are in range one by one but do not go together
+// ---------------------------------------------------------------------
+KS_TYPES = ["rj45m", "rj45", "hdmi", "usb", "rca", "jack", "toslink", "cover", "pass", "none"];
+MOD_KINDS = ["ms105g", "kvm", "kvm2", "pi", "piblade", "nkvm", "uswflex", "ux", "dev1", "dev2", "shelf", "patch",
+             "fan40", "buttons", "vent", "blank", "cable", "led", "label"];
+function known(x, list) = len([for (y = list) if (y == x) 1]) > 0;
+for (tp = ks_types) if (!known(tp, KS_TYPES)) echo(str("WARNING: unknown keystone type '", tp, "' in ks_ports_list - use ", KS_TYPES));
+for (m = concat(rack_mods, [module_type])) if (!known(mod_kind(m), MOD_KINDS))
+    echo(str("WARNING: unknown rack module '", m, "' - it is made as a blank panel"));
+for (m = rack_mods) {
+    k = mod_kind(m);
+    for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "front"]
+                                        : (k == "pi" || k == "piblade") ? ["pi5", "pi4", "pi3", "zero"] : [b]))
+        echo(str("WARNING: '", b, "' is not a box of the ", k, " module (", m, ")"));
+}
+if (fw < bay_w - 2 * sleeve_clearance)
+    echo("WARNING: frame_w_override is narrower than the sleeve - the frame no longer covers the bay");
+if (custom_hole_spacing > custom_panel_w - 8 && rack_std == "custom")
+    echo("WARNING: custom_hole_spacing puts the rack holes outside the panel - lower it or widen custom_panel_w");
+for (z = concat([bay_hole_z1], use_hole_z2 ? [bay_hole_z2] : []))
+    if (z < 3 || z > bay_h - 3) echo(str("WARNING: bay side hole at ", z, " mm is outside the bay height (", bay_h, " mm)"));
+if (use_hole_y2 && abs(bay_hole_y2 - bay_hole_y1) < 10)
+    echo("WARNING: the two bay side holes are less than 10 mm apart - turn use_hole_y2 off");
+if (rear_slots && pci_lan_slot == pci_power_slot)
+    echo("WARNING: pci_lan_slot and pci_power_slot are the same slot");
+if (bezel_mode && bezel_depth > sleeve_depth)
+    echo("WARNING: bezel_depth is deeper than the sleeve - raise sleeve_depth");
+if (mount_lip * 2 >= min(ms_w, ms_h))
+    echo("WARNING: mount_lip closes the switch window - lower it");

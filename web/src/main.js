@@ -3,7 +3,7 @@ import '@fontsource-variable/martian-mono/standard.css';
 import './style.css';
 import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
 import { Viewer } from './viewer.js';
-import { parseCustomizer, scadLiteral, fromPreset, same } from './customizer.js';
+import { parseCustomizer, scadLiteral, fromPreset, same, clampValue } from './customizer.js';
 import { t, lang, setLang, applyI18n } from './i18n.js';
 import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from './help.js';
 import { initTooltips } from './tooltip.js';
@@ -174,8 +174,10 @@ function setStatus(text, kind = '') {
 }
 
 // ---------------------------------------------------------------- state changes
+// every value that comes in (steps, advanced form, link) stays inside its parameter's range
+const clamped = (patch) => Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, S.params[k] ? clampValue(S.params[k], v) : v]));
 function update(patch) {
-  Object.assign(S.values, patch);
+  Object.assign(S.values, clamped(patch));
   refresh();
   schedule();
 }
@@ -409,6 +411,7 @@ function devicesEditor(entries) {
   const v = S.values;
   const field = (val, set, label) => h('label', { className: 'dim' }, h('small', { textContent: label }),
     h('input', { type: 'number', step: 'any', min: 1, className: 'num', value: val, onchange: (e) => set(Number(e.target.value)) }));
+  // (update() keeps every size inside its parameter's range; the box then shows the kept value)
   const MS = ['ms_w', 'ms_h', 'ms_d'];
   const rows = entries.map(({ name, title, tip }) => {
     let inputs;
@@ -534,7 +537,7 @@ function control(p) {
     input = h('span', { className: 'slider' }, range, box);
     input.setValue = (x) => { range.value = x; box.value = x; };
   } else if (p.widget === 'vector') {
-    const boxes = p.value.map((_, i) => h('input', { type: 'number', step: 'any', className: 'num',
+    const boxes = p.value.map((_, i) => h('input', { type: 'number', step: 'any', min: p.min, max: p.max, className: 'num',
       onchange: () => set(boxes.map((b) => Number(b.value))) }));
     input = h('span', { className: 'vec' }, boxes);
     input.setValue = (x) => boxes.forEach((b, i) => { b.value = x[i]; });
@@ -592,7 +595,7 @@ function writeHash() {
   history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ','));
 }
 function readHash() {
-  for (const [k, s] of new URLSearchParams(location.hash.slice(1))) if (S.params[k]) S.values[k] = fromPreset(S.params[k], s);
+  for (const [k, s] of new URLSearchParams(location.hash.slice(1))) if (S.params[k]) S.values[k] = clampValue(S.params[k], fromPreset(S.params[k], s));
 }
 
 // ---------------------------------------------------------------- render

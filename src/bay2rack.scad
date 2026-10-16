@@ -26,27 +26,27 @@ print_orientation = true;
 bays = 3; // [1:1:6]
 // Bay standard
 bay_std = "sff"; // [sff:5.25in - SFF-8551 / EIA-741, custom:Custom]
-custom_bay_w = 146.05;
-custom_bay_h = 41.53;
+custom_bay_w = 146.05; // [120:0.05:160]
+custom_bay_h = 41.53; // [30:0.01:50]
 // Bay-to-bay vertical pitch in a stacked cage (VERIFY)
-custom_bay_pitch = 43.18;
+custom_bay_pitch = 43.18; // [35:0.01:50]
 // Width of a 5.25in drive bezel
-custom_bezel_w = 148.0;
+custom_bezel_w = 148.0; // [130:0.1:160]
 // Removed from the sleeve's total width
-sleeve_clearance = 0.3;
+sleeve_clearance = 0.3; // [0:0.05:1.5]
 // Removed from the stack height
-height_clearance = 0.4;
+height_clearance = 0.4; // [0:0.05:2]
 // Side hole distance from the case front plane (VERIFY)
-bay_hole_y1 = 47.40;
+bay_hole_y1 = 47.40; // [5:0.05:200]
 // Optional rear side hole (VERIFY)
-bay_hole_y2 = 126.65;
+bay_hole_y2 = 126.65; // [5:0.05:200]
 use_hole_y2 = false;
 // Side hole height above each bay's bottom (VERIFY)
-bay_hole_z1 = 10.0;
-bay_hole_z2 = 21.84;
+bay_hole_z1 = 10.0; // [2:0.01:40]
+bay_hole_z2 = 21.84; // [2:0.01:40]
 use_hole_z2 = false;
 // Shift all side holes in depth
-bay_hole_offset = 0;
+bay_hole_offset = 0; // [-20:0.1:20]
 // Elongate side holes along depth (ignored for heat-set)
 bay_hole_slot = 0; // [0:0.5:10]
 
@@ -54,11 +54,11 @@ bay_hole_slot = 0; // [0:0.5:10]
 // plate = flat frame behind the rack panels.  bezel = exact 5.25in drive bezel, flush with the case front like an original drive
 front_style = "plate"; // [plate:Plate frame, bezel:Exact 5.25in drive bezel]
 // Single-bay drive bezel height (SFF-8551 - VERIFY)
-bezel_h1 = 42.30;
+bezel_h1 = 42.30; // [35:0.01:50]
 // How far a drive bezel sits in front of the drive chassis = how deep your case front is (VERIFY)
-bezel_depth = 8.0;
+bezel_depth = 8.0; // [2:0.5:25]
 // Removed from bezel width and height so it slips into the case opening
-bezel_clearance = 0.3;
+bezel_clearance = 0.3; // [0:0.05:1.5]
 // Cosmetic grooves where stacked drive bezels would meet
 bezel_grooves = true;
 
@@ -74,16 +74,16 @@ spare_pos = "top"; // [top, bottom, split]
 // split: share of the spare height that goes to the bottom zone
 spare_split = 0.5; // [0.2:0.01:0.8]
 // Spare zones smaller than this become plain frame rim
-min_spare = 4;
+min_spare = 4; // [0:0.5:20]
 
 /* [Rack standard] */
 // 6in wide, built with the 10in mini rack rules: EIA-310 holes, 1U = 44.45, same 8.74 mm edge-to-hole inset
 rack_std = "6in"; // [6in:6in - 10in mini rack conventions, custom:Custom]
-custom_panel_w = 152.4;
+custom_panel_w = 152.4; // [120:0.1:260]
 // Horizontal centre-to-centre distance between rack holes
-custom_hole_spacing = 134.9;
+custom_hole_spacing = 134.9; // [100:0.05:245]
 // Height of one rack unit
-rack_u_h = 44.45;
+rack_u_h = 44.45; // [40:0.01:50]
 hole_pattern = "eia"; // [eia:EIA-310 - 3 holes per U, eia_outer:2 holes per U - outer, center:1 hole per U - centre, none:No holes]
 
 /* [Rack hardware] */
@@ -91,14 +91,14 @@ hole_pattern = "eia"; // [eia:EIA-310 - 3 holes per U, eia_outer:2 holes per U -
 rack_screw = "M6"; // [M3, M4, M5, M6, 10-32, 12-24]
 rack_screw_head = "button"; // [button:Button head - ISO 7380, socket:Socket head - ISO 4762, countersunk:Countersunk - ISO 10642, pan:Pan head - ISO 7045]
 // Screw length in mm (0 = pick the right standard length automatically)
-rack_screw_len = 0;
+rack_screw_len = 0; // [0:1:40]
 rack_fixing = "heatset"; // [heatset:Heat-set inserts, tap:Self-tapping pilot hole, nut_trap:Hex nut trap - back, square_nut:Square nut side slot, channel:Sliding square-nut channel - any height]
 // Hole for your heat-set insert (0 = table value)
-rack_insert_d = 0;
+rack_insert_d = 0; // [0:0.05:12]
 // Length of your heat-set insert (0 = table value)
-rack_insert_l = 0;
+rack_insert_l = 0; // [0:0.1:20]
 // Ear thickness of your rack accessories (for screw length)
-accessory_panel_t = 2.5;
+accessory_panel_t = 2.5; // [0.5:0.1:8]
 // Horizontal elongation of rack holes, absorbs spacing differences (clearance-based fixings only)
 rack_hole_slot = 0; // [0:0.5:6]
 
@@ -106,39 +106,39 @@ rack_hole_slot = 0; // [0:0.5:6]
 bay_screw = "M3"; // [M3, 6-32]
 bay_screw_head = "pan"; // [pan:Pan head, button:Button head, socket:Socket head, countersunk:Countersunk]
 // Screw length in mm (0 = automatic)
-bay_screw_len = 0;
+bay_screw_len = 0; // [0:1:20]
 bay_fixing = "heatset"; // [heatset:Heat-set insert, tap:Self-tapping pilot hole, nut:Hex nut pocket inside, clearance:Plain clearance + loose nut, none:No holes]
-bay_insert_d = 0;
-bay_insert_l = 0;
+bay_insert_d = 0; // [0:0.05:8]
+bay_insert_l = 0; // [0:0.1:12]
 // Sheet thickness of your drive cage (for screw length)
-case_wall_t = 0.8;
+case_wall_t = 0.8; // [0.3:0.05:3]
 
 /* [Frame and sleeve] */
 // Front frame width (0 = bezel width, 148)
-frame_w_override = 0;
+frame_w_override = 0; // [0:0.5:160]
 // Plate-style frame thickness (bezel style uses bezel_depth)
-frame_t = 4;
-frame_chamfer = 0.8;
+frame_t = 4; // [2:0.5:10]
+frame_chamfer = 0.8; // [0:0.1:2]
 // Rim kept above/below every opening
-frame_rim = 2.5;
+frame_rim = 2.5; // [1:0.5:8]
 // Depth of the rack-screw posts behind the frame
-post_d = 10;
-wall_t = 2.4;
+post_d = 10; // [6:0.5:25]
+wall_t = 2.4; // [1.2:0.1:5]
 // How deep the sleeve goes into the bay
-sleeve_depth = 62;
+sleeve_depth = 62; // [20:1:200]
 sleeve_style = "rails"; // [rails:Side rails only, box:Side + top and bottom plates]
 // Grooves for the metal tabs between the bays (the ledges the CD drives rest on), so you don't have to bend them flat
 bay_tabs = true;
 // Groove height, centred on the gap between two bays
-bay_tab_h = 5;
+bay_tab_h = 5; // [2:0.5:10]
 // How far the tabs stick into the bay (the wall gets a rib inside to keep 1.2 mm behind the groove)
-bay_tab_d = 3;
+bay_tab_d = 3; // [0.5:0.5:6]
 // Cut print-friendly windows in walls and plates
 lighten = true;
 // Stiffen the side walls that screw to the case: an inner lip along their top and bottom edge and a fillet into each rack post (all outside the rack opening, nothing in the rack touches them)
 wall_ribs = true;
 // Width of the inner lips
-wall_lip = 6;
+wall_lip = 6; // [2:0.5:15]
 
 /* [Spare-zone filler] */
 // separate = screw-on panel you can swap (modular).  integral = features cut into the frame
@@ -146,7 +146,7 @@ filler_mode = "separate"; // [separate:Separate screw-on panel, integral:Cut int
 spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
 // Fill of the top zone when spare_pos = split
 spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
-filler_t = 3;
+filler_t = 3; // [1.5:0.5:6]
 label_text = "HOMELAB";
 
 /* [Keystone patch] */
@@ -156,56 +156,56 @@ ks_ports = 6; // [1:1:12]
 // Type of every port, comma separated (empty = ks_ports x ks_style): rj45m = metal RJ45 cell, rj45 hdmi usb rca jack toslink = standard keystones, cover = plain cover, pass = cable pass-through cover, none = no hole
 ks_ports_list = "rj45m,rj45m,rj45m,cover,cover,pass";
 ks_labels = true;
-ks_label_start = 1;
+ks_label_start = 1; // [0:1:99]
 
 /* [Keystone - metal holder cell] */
 // Cavity width
-ksm_w = 15.0;
+ksm_w = 15.0; // [13:0.05:18]
 // Front opening height
-ksm_face_h = 16.5;
+ksm_face_h = 16.5; // [14:0.05:19]
 // 45 deg chamfer under the front opening
-ksm_chamfer = 2.0;
+ksm_chamfer = 2.0; // [0:0.1:4]
 // Cavity height behind the opening
-ksm_cav_h = 24.3;
+ksm_cav_h = 24.3; // [20:0.05:30]
 // Depth where the latch ramp reaches the cavity top
-ksm_ramp_d = 4.87;
+ksm_ramp_d = 4.87; // [2:0.05:9]
 // Depth where the rear lips start
-ksm_lip_d = 8.05;
+ksm_lip_d = 8.05; // [5:0.05:12]
 // Rear lip heights (they catch the jack)
-ksm_lip_top = 2.0;
-ksm_lip_bot = 2.5;
+ksm_lip_top = 2.0; // [0.5:0.1:4]
+ksm_lip_bot = 2.5; // [0.5:0.1:4]
 // Total cell depth from the front face
-ksm_depth = 9.5;
-ksm_wall = 2.0;
-ksm_pitch = 20.0;
+ksm_depth = 9.5; // [6:0.1:14]
+ksm_wall = 2.0; // [1.2:0.1:4]
+ksm_pitch = 20.0; // [16:0.5:30]
 
 /* [Keystone - standard cut-out] */
 // Cut-out (standard jack ~14.5 x 16.0)
-ks_w = 14.9;
-ks_h = 16.4;
-ks_pitch = 19.0;
+ks_w = 14.9; // [13:0.05:17]
+ks_h = 16.4; // [14:0.05:19]
+ks_pitch = 19.0; // [16:0.5:30]
 // Plate thickness where the jack clips in
-ks_plate_t = 2.0;
+ks_plate_t = 2.0; // [1:0.1:3]
 
 /* [Keystone covers] */
 // Printed covers for unused ports, pushed in from the front (part = keystone_cover)
 cover_type = "blank"; // [blank:Plain cover, pass:Cable pass-through - split so it clips around a cable]
 // Clearance per side in the port
-cover_clear = 0.25;
+cover_clear = 0.25; // [0:0.05:0.8]
 // Cable diameter for the pass-through
-cover_cable_d = 6.5;
+cover_cable_d = 6.5; // [3:0.5:12]
 
 /* [Button panel] */
 // Power / reset keys use normal keyboard switches (Cherry MX compatible: 14 mm cut-out, 1.5 mm plate)
 btn_count = 2; // [1:Power only, 2:Power + reset]
-mx_cut = 14.0;
-mx_plate_t = 1.5;
+mx_cut = 14.0; // [13.5:0.05:14.5]
+mx_plate_t = 1.5; // [1.2:0.1:2]
 // Power and disk-activity LEDs
 led_d = 3; // [3:3 mm, 5:5 mm]
 // halo = light ring around each key. ring = countersunk hole with an engraved ring and the LED dome sticking out. glow = hidden: the light shines through a thin skin and the engraved icon lights up
 led_style = "ring"; // [ring:Countersunk ring - the LED dome sticks out, halo:Halo ring of light around each key, glow:Hidden glow - the icon lights up through a thin skin]
 // How far the LED dome sticks out of the front (ring style)
-led_protrude = 1.5;
+led_protrude = 1.5; // [0:0.1:4]
 
 /* [Rack contents] */
 // What goes in the rack, top first (assembly preview and kit): ms105g, kvm, pi, piblade (2U), nkvm, uswflex, ux, dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, led, label. kvm and pi trays name their boxes after a colon, joined with +: kvm:jet+nano, kvm:nano+nano, pi:pi5, pi:pi4+pi4, piblade:pi5+pi5+pi5, nkvm:side, nkvm:front
@@ -215,32 +215,32 @@ module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm:KVM over IP
 
 /* [Device mounts] */
 // Mercusys MS105G 5-port switch, W x H x D from retailer spec sheets (VERIFY)
-ms_w = 105;
-ms_h = 24.9;
-ms_d = 70;
+ms_w = 105; // [50:0.1:125]
+ms_h = 24.9; // [10:0.1:40]
+ms_d = 70; // [20:1:200]
 // Clearance around the device
-mount_clear = 0.6;
+mount_clear = 0.6; // [0:0.1:2]
 // Lip around the front window that stops the device
-mount_lip = 1.5;
-mount_wall = 2.0;
+mount_lip = 1.5; // [0.5:0.5:5]
+mount_wall = 2.0; // [1.2:0.1:4]
 // Shelf depth for small devices (NanoKVM, Raspberry Pi...)
-shelf_depth = 100;
+shelf_depth = 100; // [30:1:200]
 // Boxes of the KVM tray made by part = rack_module, left to right, joined with + (1 to 3 if they fit): jet = JetKVM, nano = Sipeed NanoKVM, custom = kvm_custom
 kvm_boxes = "jet+nano";
 // JetKVM, W x H x D (press / retailer figures - VERIFY)
-jetkvm_dims = [43, 31, 60];
+jetkvm_dims = [43, 31, 60]; // [5:0.1:200]
 // Sipeed NanoKVM Full (with its case), W x H x D (VERIFY)
-nanokvm_dims = [40, 36, 40];
+nanokvm_dims = [40, 36, 40]; // [5:0.1:200]
 // Any other KVM box for the KVM tray (custom), W x H x D
-kvm_custom = [50, 25, 60];
+kvm_custom = [50, 25, 60]; // [5:0.1:200]
 // NanoKVM bay (module nkvm:side or nkvm:front): Sipeed NanoKVM Lite lying flat, length (Ethernet end to HDMI / USB end) x height x width (VERIFY)
-nkvm_dims = [37, 15, 23];
+nkvm_dims = [37, 15, 23]; // [10:0.1:80]
 // Its Ethernet port: width, height, height above the bottom of the board (nkvm:front cuts it through the plate)
-nkvm_rj45 = [16, 13.5, 1];
+nkvm_rj45 = [16, 13.5, 1]; // [0:0.1:20]
 // Keystone openings on the left of the NanoKVM bay
 nkvm_keystones = 0; // [0:1:2]
 // nkvm:side - room in the pocket for the plugs: Ethernet on the left, HDMI / USB on the right
-nkvm_plugs = [32, 42];
+nkvm_plugs = [32, 42]; // [0:1:60]
 // nkvm:side - the lid: a frame round the NanoKVM, or a long one over the whole pocket (the plugs hidden behind it)
 nkvm_lid = "frame"; // [frame:Frame round the NanoKVM, full:Long lid over the whole pocket]
 // nkvm:side - three pieces: the plate and the pocket printed apart and screwed together (M3 heat-set inserts)
@@ -248,19 +248,19 @@ nkvm_split = false;
 // Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
 pi_boards = "pi5";
 // Blade tray: distance between boards (26 fits a Pi 5 with the active cooler, use ~32 with PoE HATs)
-pi_blade_pitch = 26;
+pi_blade_pitch = 26; // [18:0.5:45]
 // How the boards are screwed to the standoffs
 pi_fixing = "selftap"; // [selftap:M2.5 self-tapping screws, heatset:M2.5 heat-set inserts]
 // Standoff height under the boards
-pi_standoff = 5;
+pi_standoff = 5; // [2:0.5:12]
 // UniFi USW-Flex-Mini, W x H x D (Ubiquiti spec)
-usw_dims = [107.2, 21.2, 70.2];
+usw_dims = [107.2, 21.2, 70.2]; // [5:0.1:200]
 // UniFi Express (UX), W x H x D (Ubiquiti spec)
-ux_dims = [98, 30, 98];
+ux_dims = [98, 30, 98]; // [5:0.1:200]
 // Your own device for the dev1 module, W x H x D
-dev1_dims = [100, 30, 80];
+dev1_dims = [100, 30, 80]; // [5:0.1:200]
 // Your own device for the dev2 module, W x H x D
-dev2_dims = [60, 25, 60];
+dev2_dims = [60, 25, 60]; // [5:0.1:200]
 
 /* [Fans] */
 // Opening in front of the fans: open = plain round hole, hex = hex grille
@@ -274,18 +274,18 @@ fan40_t = 10; // [10, 20]
 // Printed brackets that replace two PCI slot covers: the network cables and the power cable leave the case through them
 rear_slots = true;
 // PCI slot used by the network cables (0 = top)
-pci_lan_slot = 5;
+pci_lan_slot = 5; // [0:1:6]
 // PCI slot used by the power cable
-pci_power_slot = 6;
+pci_power_slot = 6; // [0:1:6]
 // Bracket made by part = pci_bracket
 pci_kind = "lan"; // [lan:Network cables - keyhole slot, power:Power cable - round hole + strain relief]
 // Bracket thickness (steel ones are ~0.9 mm, most cases take 2 mm)
-pci_t = 2.0;
+pci_t = 2.0; // [0.8:0.1:3]
 
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
 panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
-panel_t = 3;
+panel_t = 3; // [2:0.5:6]
 // Horizontal slotting of panel holes
 panel_hole_slot = 2; // [0:0.5:6]
 
