@@ -24,7 +24,7 @@ Código y documentación: https://github.com/abarriuso/bay2rack
   **2U**: cuatro blades de Raspberry Pi.
 - **Bisel sin rack**: ventilador de 80 mm + botonera, para los demás PCs del homelab.
 - **Tapas de keystone** (lisa y pasacables) y **soportes para ranuras PCI** para meter los cables por detrás.
-- **Piezas de prueba**: imprímelas primero y compruébalas con tu caja. Si el keystone, la funda o un inserto quedan justos u holgados, ajusta su tolerancia en el configurador web (`ks_fit`, `sleeve_clearance`, `rack_insert_d`) antes de imprimir el resto.
+- **Piezas de prueba**: imprímelas primero y compruébalas con tu caja. Si el keystone, la funda o un inserto quedan justos u holgados, cámbialo en el paso «Ajustes de impresión» del configurador web antes de imprimir el resto.
 
 Todo lo demás (otro número de bahías, otros switches, las medidas de tus dispositivos, tornillos M4/M5/10-32/12-24,
 tuercas en vez de insertos...) está en el modelo paramétrico: usa el configurador web, o abre el archivo .scad en OpenSCAD.

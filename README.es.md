@@ -215,8 +215,8 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 > | `test_rack` | la separación de los agujeros del rack y sus insertos | no cuadran los agujeros: `rack_hole_slot` | el inserto gira: baja `rack_insert_d`; entra torcido: súbelo |
 >
 > El resto funciona igual: `cover_clear` para las tapas de keystone, `mount_clear` para los dispositivos de los
-> módulos del rack, `nkvm_insert_d` y `bay_insert_d` para los insertos pequeños. En el generador web están en
-> **Avanzado**.
+> módulos del rack, `nkvm_insert_d` y `bay_insert_d` para los insertos pequeños. En el generador web están en el paso
+> **Ajustes de impresión**.
 
 - Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los
   techos de las ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.

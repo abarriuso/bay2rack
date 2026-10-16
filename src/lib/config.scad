@@ -139,10 +139,12 @@ function fix_str(f, H, s) =
     f == "heatset" ? str(s, " heat-set insert (hole ", H[2], " x ", H[3], " mm)")
   : (f == "nut_trap" || f == "nut" || f == "clearance") ? str(s, " hex nut (", H[4], " mm AF)")
   : (f == "square_nut" || f == "channel") ? str(s, " square nut (", H[6], " mm)")
+  : f == "adapter" ? "(into the adapter's fixings - nothing else to buy)"
   : "";
 module bom(label, n, s, L, head, f, H)
     if (n > 0) echo(str("BOM | ", label, ": ", n, " x ", s, " x ", len_str(s, L), " ", head_name(head),
-                        fix_str(f, H, s) == "" ? "" : str("  +  ", n, " x ", fix_str(f, H, s))));
+                        f == "adapter" ? str("  ", fix_str(f, H, s))
+                      : fix_str(f, H, s) == "" ? "" : str("  +  ", n, " x ", fix_str(f, H, s))));
 n_dev  = 2 * len(rack_zs);
 n_fill = filler_mode == "separate" ? 2 * len(zones) : 0;
 n_bay  = bay_fixing == "none" ? 0 : 2 * len(bay_ys) * len(bay_zs);
@@ -152,8 +154,8 @@ bom("rack accessories", bom_adapter ? n_dev : 0, rack_screw, rack_L_dev, rack_sc
 bom("filler panels", part == "assembly" ? n_fill : (part == "filler" || part == "filler_2") && filler_mode == "separate" ? 2 : 0,
     rack_screw, rack_L_fill, rack_screw_head, rack_fixing, R);
 bom("drive bay", bom_adapter ? n_bay : 0, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
-bom("rack module", part == "rack_module" ? 2 * len(panel_zs(mod_u(module_type))) : 0, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
-bom("rack panel", part == "rack_panel" ? 2 * len(panel_zs(panel_u)) : 0, rack_screw, rack_L_dev, rack_screw_head, rack_fixing, R);
+bom("rack module", part == "rack_module" ? 2 * len(panel_zs(mod_u(module_type))) : 0, rack_screw, rack_L_dev, rack_screw_head, "adapter", R);
+bom("rack panel", part == "rack_panel" ? 2 * len(panel_zs(panel_u)) : 0, rack_screw, rack_L_dev, rack_screw_head, "adapter", R);
 // keystone jacks and covers: one set per patch panel
 n_patch = part == "rack_panel" ? (panel_fill == "keystone" ? 1 : 0)
         : part == "rack_module" ? (module_type == "patch" ? 1 : 0)

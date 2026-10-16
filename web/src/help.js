@@ -303,6 +303,12 @@ export function paramHelp(p) {
 
 // bill-of-materials lines come from OpenSCAD in English
 const BOM_ES = [
+  [/\(into the adapter's fixings - nothing else to buy\)/, '(a las fijaciones del adaptador, no hace falta nada más)'],
+  [/NanoKVM bay lid/, 'tapa de la bahía NanoKVM'], [/NanoKVM bay plate to pocket/, 'frontal de la bahía NanoKVM a la bahía'],
+  [/from the back/, 'por detrás'], [/\(in the plate\)/, '(en el frontal)'], [/countersunk/, 'avellanado'],
+  [/tactile switch/, 'micropulsador'], [/the printed caps \(part = button_cap\)/, 'los botones impresos'],
+  [/switch carrier/, 'soporte de los micropulsadores'], [/metal push button, momentary, LED ring/, 'pulsador metálico, sin enclavamiento, con anillo LED'],
+  [/power green, HDD amber/, 'power verde, HDD ámbar'], [/turbo yellow/, 'turbo amarillo'],
   [/^rack accessories:/, 'Accesorios del rack:'], [/^filler panels:/, 'Relleno:'], [/^drive bay:/, 'Bahía:'],
   [/^keystones:/, 'Keystones:'], [/^zip ties:/, 'Bridas:'], [/^buttons:/, 'Botonera:'],
   [/button head/g, 'cabeza botón'], [/socket head/g, 'allen'], [/countersunk/g, 'avellanado'], [/pan head/g, 'cabeza alomada'],

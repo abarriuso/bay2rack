@@ -23,7 +23,7 @@ Source and docs: https://github.com/abarriuso/bay2rack
   three 40 mm fans, 6-port patch panel, power / reset buttons with MX switches. **2U**: four Raspberry Pi blades.
 - **Bezel without a rack**: 80 mm fan + power / reset buttons, for the other PCs of the homelab.
 - **Keystone covers** (blank and cable pass-through) and **PCI-slot brackets** to bring the cables in from the back.
-- **Test pieces**: print these first and check them against your case. If the keystone jack, the sleeve or an insert comes out tight or loose, move its tolerance in the web configurator (`ks_fit`, `sleeve_clearance`, `rack_insert_d`) before printing the rest.
+- **Test pieces**: print these first and check them against your case. If the keystone jack, the sleeve or an insert comes out tight or loose, change it in the "Print fits" step of the web configurator before printing the rest.
 
 Anything else (other bay counts, other switches, your own device sizes, M4/M5/10-32/12-24 screws, nut traps
 instead of inserts...) is in the parametric model: use the web configurator, or open the .scad file in OpenSCAD.

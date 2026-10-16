@@ -273,7 +273,8 @@ function renderSteps() {
   ]));
   // 2. what goes in it: the rack units, the devices, the leftover strip and what fills it
   group('contents');
-  if (c.units > 0) add('contents', contentsEditor(placed));
+  if (c.units > 0) add('contents', contentsEditor(placed),
+    toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on })));
   const devs = deviceEntries(mods);
   if (devs.length) add('devices', devicesEditor(devs));
   if (c.hasSpare) add('fill', fillEditor());
@@ -291,6 +292,7 @@ function renderSteps() {
     h('small', { className: 'row-title', textContent: t('screwFix') }),
     h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))));
   add('tol', tolerancesEditor(mods, fills));
+  add('multi', multicolourEditor());
   group('view');
   add('colour', colourEditor());
   if (v.part === 'assembly') add('preview', previewEditor());
@@ -341,17 +343,22 @@ function colourEditor() {
       style: `--c:#${hex[0].toString(16).padStart(6, '0')}`,
       onclick: () => { setColour(name); renderSteps(); },
     })), label);
-  // multicolour: the letters print in a second filament, from their own STL files in the kit
+  return swatches;
+}
+
+// multicolour: the letters print in a second filament, from their own STL files in the kit
+function multicolourEditor() {
   const multi = S.values.labels_multicolour;
   const lc = h('input', { type: 'color', value: UI.labelColour, 'aria-label': t('labelColour'),
     oninput: () => { UI.labelColour = lc.value; saveUI(); viewer.setFilament(filamentHexes()); lcs.style.setProperty('--c', lc.value); } });
   const lcs = h('span', { className: 'swatch custom active', style: `--c:${UI.labelColour}` }, lc);
-  return [swatches,
-    toggle(t('multicolour'), multi, (on) => update({ labels_multicolour: on })),
+  return [toggle(t('multicolour'), multi, (on) => update({ labels_multicolour: on })),
     multi ? h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('labelColour') }), lcs) : null,
-    multi ? h('small', { className: 'hint', textContent: t('multicolourHint') }) : null];
+    h('small', { className: 'hint', textContent: t(multi ? 'multicolourHint' : 'multicolourOff') })];
 }
 
+// heat-set insert holes of the hardware table (standards.scad), shown when the parameter is 0
+const INSERT_D = { M3: 4.2, M4: 5.6, M5: 6.4, M6: 8, '6-32': 4.4, '10-32': 6.4, '12-24': 7.1 };
 // the fits that depend on your printer: print the test pieces first, then move these
 function tolerancesEditor(mods, fills) {
   const v = S.values;
@@ -374,7 +381,9 @@ function tolerancesEditor(mods, fills) {
     h('small', { className: 'hint', textContent: t('tol_hint') }),
     rows.map(([name, label, stepv, test]) => {
       const p = S.params[name];
-      const box = h('input', { type: 'number', className: 'num', step: stepv, min: p?.min, max: p?.max, value: v[name],
+      // an insert hole at 0 means "the table value": show that value, so lowering it works
+      const shown = name.endsWith('_insert_d') && !v[name] ? INSERT_D[name === 'rack_insert_d' ? v.rack_screw : name === 'bay_insert_d' ? v.bay_screw : 'M3'] : v[name];
+      const box = h('input', { type: 'number', className: 'num', step: stepv, min: p?.min, max: p?.max, value: shown,
         onchange: (e) => update({ [name]: Number(e.target.value) }) });
       return h('label', { className: 'param', dataset: { tip: paramHelp(p) || undefined } },
         h('span', { className: 'name' }, t(label), h('small', { className: 'tol-test',
@@ -891,9 +900,12 @@ async function downloadKit() {
     const bom = [...new Set(echoText.map((l) => l.match(/^ECHO: "BOM \| (.*)"$/)?.[1]).filter(Boolean))].map(bomText);
     const lines = [
       `${t('readme_title')} - ${new Date().toISOString().slice(0, 10)}`, '',
-      t('readme_print'), ...files.map((f) => `  ${f.qty} x ${f.name}`), '',
+      t('readme_notes'), '',
+      t('readme_print'), ...files.filter((f) => f.name.startsWith('tests/')).map((f) => `  1. ${f.qty} x ${f.name}`),
+      ...files.filter((f) => !f.name.startsWith('tests/')).map((f) => `  2. ${f.qty} x ${f.name}`), '',
       t('readme_need'), ...bom.map((b) => `  - ${b}`), '',
-      t('readme_notes'), '', t('readme_settings'), `  ${location.href}`, '',
+      t('readme_guide'), '  https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md', '',
+      t('readme_settings'), `  ${location.href}`, '',
       'https://github.com/abarriuso/bay2rack · CC BY-NC-SA 4.0', '',
     ];
     zip['bay2rack/README.txt'] = strToU8(lines.join('\n'));

@@ -214,8 +214,8 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 > | `test_rack` | rack hole spacing and the rack inserts | holes don't line up: `rack_hole_slot` | insert spins: lower `rack_insert_d`; goes in crooked: raise it |
 >
 > The rest follow the same idea: `cover_clear` for the keystone covers, `mount_clear` for the devices in the rack
-> modules, `nkvm_insert_d` and `bay_insert_d` for the small heat-set inserts. In the web generator they are under
-> **Advanced**.
+> modules, `nkvm_insert_d` and `bay_insert_d` for the small heat-set inserts. In the web generator they are in the
+> **Print fits** step.
 
 - The STL files are already oriented **front face down**. Walls and posts rise vertically, and window
   roofs and screw bosses are 45° teardrops, so **no supports** are needed.
