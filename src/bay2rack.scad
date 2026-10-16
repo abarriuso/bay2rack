@@ -17,7 +17,7 @@
 
 /* [Part to render] */
 // What to render. "assembly" is a preview only, do not print it.
-part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
+part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), filler_labels:Multicolour letters of the filler, rack_module_labels:Multicolour letters of a rack module, rack_panel_labels:Multicolour letters of the rack panel, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
 // Lay printable parts front-face down on the bed
 print_orientation = true;
 
@@ -148,6 +148,9 @@ spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, 
 spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
 filler_t = 3; // [1.5:0.5:6]
 label_text = "HOMELAB";
+// Vent fill: the pattern, and the solid rim left round it at the sides
+vent_style = "slots"; // [slots:Vertical slots, louvres:Louvres - slanted slots, hex:Honeycomb, dots:Round holes]
+vent_margin = 8; // [2:1:40]
 // Label: letter height (0 = as big as the zone allows), alignment and shift
 label_size = 0; // [0:0.5:30]
 label_align = "center"; // [left, center, right]
@@ -157,6 +160,8 @@ label_dz = 0; // [-20:0.5:20]
 label_relief = "engraved"; // [engraved:Engraved - into the panel, raised:Raised - out of the panel]
 label_depth = 0.8; // [0.4:0.1:2]
 label_bold = true;
+// Multicolour: the letters of the labels and port names come as a separate piece (part = ..._labels) to print in another filament
+labels_multicolour = false;
 
 /* [Keystone patch] */
 // metal = holder cells for metal / shielded keystones (shape of the original design).  standard = plain cut-out for plastic keystones
@@ -165,6 +170,8 @@ ks_ports = 6; // [1:1:12]
 // Type of every port, comma separated (empty = ks_ports x ks_style): rj45m = metal RJ45 cell, rj45 hdmi usb rca jack toslink = standard keystones, cover = plain cover, pass = cable pass-through cover, none = no hole
 ks_ports_list = "rj45m,rj45m,rj45m,cover,cover,pass";
 ks_labels = true;
+// Names over the ports, comma separated in port order (e.g. WAN,LAN 1,NAS,,PC). An empty one shows the type for HDMI / USB / RCA / audio / optical jacks, else the next number
+ks_names = "";
 ks_label_start = 1; // [0:1:99]
 // Fit of every keystone opening (holder cells, cut-outs, covers follow): print test_keystone first; raise it if the jack does not go in or clip, lower it (negative) if it rattles
 ks_fit = 0; // [-0.5:0.05:0.8]
@@ -375,6 +382,16 @@ else if (part == "rack_module") {
     // the flat NanoKVM bay prints floor-down with the plate standing; the other modules print face-down
     if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front") rack_module(module_type);
     else printable(panel_t) rack_module(module_type);
+}
+// multicolour label pieces: the letters of a panel, placed exactly like the panel itself
+else if (part == "filler_labels" || part == "filler_2_labels") {
+    zn = zones[part == "filler_labels" ? 0 : 1];
+    if (zn != undef) printable(filler_t) fill_labels(zn[2], hole_s - R[0] - 6, zn[1] - 0.8, filler_t);
+}
+else if (part == "rack_panel_labels") printable(panel_t) fill_labels(panel_fill, hole_s - R[0] - 6, panel_u * U - 0.79, panel_t);
+else if (part == "rack_module_labels") {
+    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front") module_labels(module_type);
+    else printable(panel_t) module_labels(module_type);
 }
 else if (part == "rack_module_lid") {
     if (mod_kind(module_type) != "nkvm") echo("WARNING: only the NanoKVM bay (module_type = nkvm:side / nkvm:front) has a lid");

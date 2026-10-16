@@ -228,6 +228,23 @@ module nk_opening2d() {
 function nk_side_zones() = let(p = nk_pocket(), x0 = nk_x0())
     [[p[0] + nk_wall, x0 + nk_u0("side") - 0.4, "LAN"], [x0 + nk_u1() + 0.4, p[1] - nk_wall, "HDMI · USB"]];
 
+module nk_zone_labels2d() for (zn = nk_side_zones()) translate([(zn[0] + zn[1]) / 2, nk_h - 6.4])
+    text(zn[2], size = 3.2, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+
+// the multicolour label piece of a rack module (where its plate has letters)
+module module_labels(type) {
+    h = U - 0.79;
+    lay = mod_kind(type) == "nkvm" ? nk_layout(mod_items(type)) : "";
+    n = nk_n_ks();
+    if (type == "patch") fill_labels("keystone", hole_s - R[0] - 6, h, panel_t);
+    else if (type == "label") fill_labels("label", hole_s - R[0] - 6, h, panel_t);
+    else if (lay != "") {
+        if (n > 0 && ks_labels) translate([nk_ks_x0() + nk_ks_w(n) / 2, 0, 0]) xz_extrude(-panel_t, ks_label_d)
+            ks_labels2d(nk_ks_w(n) + 0.1, h, [for (i = [0 : n - 1]) ks_style == "metal" ? "rj45m" : "rj45"]);
+        if (lay == "side" && nkvm_cover && ks_labels) translate([0, -panel_t, 0]) multmatrix(XZ_Y) linear_extrude(ks_label_d) nk_zone_labels2d();
+    }
+}
+
 // the front plate: rack holes, keystones, the pocket opening
 module nk_side_plate(n, types, xk) {
     h = nk_h;
@@ -248,9 +265,8 @@ module nk_side_plate(n, types, xk) {
             if (nkvm_vents && k > 0) for (i = [0 : k - 1])
                 translate([(zn[0] + zn[1]) / 2 + (i - (k - 1) / 2) * 6, -panel_t - 1, 0]) multmatrix(XZ_Y)
                     linear_extrude(panel_t + 2) hull() for (z = [nk_split() ? 13 : 7.5, h - 13.5]) translate([0, z]) circle(d = 3, $fn = 16);
-            if (ks_labels) translate([(zn[0] + zn[1]) / 2, -panel_t - eps, h - 6.4]) multmatrix(XZ_Y) linear_extrude(0.6 + eps)
-                text(zn[2], size = 3.2, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
         }
+        if (nkvm_cover && ks_labels) translate([0, -panel_t - eps, 0]) multmatrix(XZ_Y) linear_extrude(ks_label_d + eps) nk_zone_labels2d();
     }
 }
 

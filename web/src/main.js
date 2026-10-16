@@ -61,15 +61,16 @@ const FILAMENTS = {
   black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
   blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
 };
-const UI_DEFAULT = { filament: 'black', custom: '#e07a2f', cables: true, side: true, sleeper: false };
+const UI_DEFAULT = { filament: 'black', custom: '#e07a2f', labelColour: '#f2f3ef', cables: true, side: true, sleeper: false };
 const UI = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 const saveUI = () => { try { localStorage.setItem('ui', JSON.stringify(UI)); } catch { /* private mode */ } };
 // the colour of the printed parts: a preset, or your own (three close shades so the parts still read apart)
 function filamentHexes() {
-  if (UI.filament !== 'custom') return FILAMENTS[UI.filament] ?? FILAMENTS.black;
+  const lab = parseInt(String(UI.labelColour).replace('#', ''), 16) || 0xf2f3ef;    // slot 3: multicolour letters
+  if (UI.filament !== 'custom') return [...(FILAMENTS[UI.filament] ?? FILAMENTS.black), lab];
   const c = parseInt(String(UI.custom).replace('#', ''), 16) || 0x808080;
   const shade = (k) => [16, 8, 0].reduce((acc, sh) => acc | (Math.min(255, Math.round(((c >> sh) & 255) + (255 - ((c >> sh) & 255)) * k)) << sh), 0);
-  return [shade(0), shade(0.06), shade(0.12)];
+  return [shade(0), shade(0.06), shade(0.12), lab];
 }
 function setColour(name, hex) {
   UI.filament = name;
@@ -282,6 +283,8 @@ function renderSteps() {
   if (fills.includes('keystone') || mods.includes('patch')) add('ports', portsEditor(6));
   if (fills.includes('buttons') || mods.includes('buttons')) add('buttons', buttonsEditor());
   if (fills.includes('label') || mods.includes('label')) add('label', labelEditor());
+  if (fills.includes('vent') || mods.includes('vent'))
+    add('vent', segmented('vent_style', ['slots', 'louvres', 'hex', 'dots'], (x) => t('vent_' + x)), sliderRow('vent_margin', t('vent_margin')));
   // 3. making it: screws, and the fits to tune after printing the test pieces
   group('make');
   add('screw', chips('rack_screw', SCREWS, String),
@@ -331,12 +334,21 @@ function colourEditor() {
     onchange: () => renderSteps() });
   const label = h('label', { className: `swatch custom${UI.filament === 'custom' ? ' active' : ''}`, title: t('fil_custom'),
     style: `--c:${UI.custom}` }, picker);
-  return h('div', { className: 'swatches', dataset: { tip: t('filamentTip') } },
+  const swatches = h('div', { className: 'swatches', dataset: { tip: t('filamentTip') } },
     Object.entries(FILAMENTS).map(([name, hex]) => h('button', {
       type: 'button', className: `swatch${UI.filament === name ? ' active' : ''}`, title: t('fil_' + name),
       style: `--c:#${hex[0].toString(16).padStart(6, '0')}`,
       onclick: () => { setColour(name); renderSteps(); },
     })), label);
+  // multicolour: the letters print in a second filament, from their own STL files in the kit
+  const multi = S.values.labels_multicolour;
+  const lc = h('input', { type: 'color', value: UI.labelColour, 'aria-label': t('labelColour'),
+    oninput: () => { UI.labelColour = lc.value; saveUI(); viewer.setFilament(filamentHexes()); lcs.style.setProperty('--c', lc.value); } });
+  const lcs = h('span', { className: 'swatch custom active', style: `--c:${UI.labelColour}` }, lc);
+  return [swatches,
+    toggle(t('multicolour'), multi, (on) => update({ labels_multicolour: on })),
+    multi ? h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('labelColour') }), lcs) : null,
+    multi ? h('small', { className: 'hint', textContent: t('multicolourHint') }) : null];
 }
 
 // the fits that depend on your printer: print the test pieces first, then move these
@@ -542,7 +554,27 @@ function portsEditor(max) {
           dataset: { tip: t('portRemove') }, onclick: () => setTypes(types.slice(0, -1)) }))),
     h('small', { className: 'hint', textContent: t('portHint') }),
     segmented('ks_style', ['metal', 'standard'], (x) => t('ks_' + x)),
+    portNames(types),
   ];
+}
+
+// what is written over each port: your name, else HDMI / USB... for those jacks, else the next number
+const TYPE_NAMES = { hdmi: 'HDMI', usb: 'USB', rca: 'RCA', jack: 'AUDIO', toslink: 'OPTICAL' };
+function portNames(types) {
+  const v = S.values;
+  const names = String(v.ks_names ?? '').split(',').map((x) => x.trim());
+  let num = Number(v.ks_label_start ?? 1);
+  const auto = types.map((tp, i) => (names[i] ? null : TYPE_NAMES[tp] ?? (tp === 'none' ? '' : String(num++))));
+  const set = (i, val) => {
+    const list = types.map((_, j) => (j === i ? val.replace(/,/g, ' ').trim() : names[j] ?? ''));
+    while (list.length && !list[list.length - 1]) list.pop();
+    update({ ks_names: list.join(',') });
+  };
+  return h('div', { className: 'port-names' },
+    h('small', { className: 'hint', textContent: t('portNamesHint') }),
+    h('div', { className: 'port-name-grid' }, types.map((tp, i) => h('input', {
+      type: 'text', className: 'text port-name', maxLength: 12, value: names[i] ?? '', placeholder: auto[i] ?? '',
+      'aria-label': `${t('portName')} ${i + 1}`, onchange: (e) => set(i, e.target.value) }))));
 }
 
 function buttonsEditor() {
@@ -584,6 +616,7 @@ function pieceLabel(f, v) {
     return `${t(p.part === 'filler' ? 'piece_filler' : 'piece_filler2')} · ${t('fill_' + z)}`;
   }
   if (p.part === 'rack_module') return modLabel(p.module_type) + qty;
+  if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part.startsWith('filler') ? t('piece_filler') : modLabel(p.module_type)}`;
   if (p.part === 'rack_module_lid') return `${t('mod_nkvm')} · ${t('piece_lid')}${qty}`;
   if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t('piece_pocket')}${qty}`;
   if (p.part === 'pci_bracket') return t('piece_pci_' + p.pci_kind);
@@ -775,14 +808,22 @@ function showEchoes(echoes, errors) {
 function kitList(v, withTests = $('#withTests').checked) {
   const c = calc(v);
   const files = [{ name: 'adapter.stl', qty: 1, part: { part: 'adapter' } }];
+  const lettered = (fill) => fill === 'label' || (fill === 'keystone' && v.ks_labels);
   if (v.filler_mode === 'separate' && c.zones.length) {
     files.push({ name: 'filler.stl', qty: 1, part: { part: 'filler' } });
-    if (c.zones.length > 1) files.push({ name: 'filler-2.stl', qty: 1, part: { part: 'filler_2' } });
+    if (v.labels_multicolour && lettered(c.zones[0])) files.push({ name: 'filler-labels.stl', qty: 1, part: { part: 'filler_labels' } });
+    if (c.zones.length > 1) {
+      files.push({ name: 'filler-2.stl', qty: 1, part: { part: 'filler_2' } });
+      if (v.labels_multicolour && lettered(c.zones[1])) files.push({ name: 'filler-2-labels.stl', qty: 1, part: { part: 'filler_2_labels' } });
+    }
   }
   const mods = usedMods(v, c.units);
   for (const m of new Set(mods)) {
     const qty = mods.filter((x) => x === m).length;
     files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
+    if (v.labels_multicolour && (m === 'label' || (v.ks_labels && (m === 'patch'
+        || (modKind(m) === 'nkvm' && (v.nkvm_keystones > 0 || (modItems(m)[0] !== 'front' && v.nkvm_cover)))))))
+      files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
       if (v.nkvm_split && modItems(m)[0] !== 'front')

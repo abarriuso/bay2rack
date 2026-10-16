@@ -278,6 +278,10 @@ button:disabled { opacity: .45; cursor: default; }
 .step-group:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .step-group + .step { border-top: 0; padding-top: var(--s-2); }
 .tol { display: grid; gap: var(--s-2); }
+.port-names { display: grid; gap: 6px; margin-top: var(--s-2); }
+.port-name-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.port-name { min-width: 0; padding: 5px 4px; font-size: 12px; text-align: center; }
+@media (max-width: 600px) { .port-name-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .piece-select { max-width: min(340px, 60vw); }
 .step:first-child { border-top: 0; padding-top: 4px; }
 .step header { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-3); cursor: help; }

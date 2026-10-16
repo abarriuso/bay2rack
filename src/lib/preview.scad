@@ -191,6 +191,7 @@ module tower_case() {
 PRINT_A = [48, 50, 54] / 255;                         // adapter
 PRINT_B = [63, 65, 70] / 255;                         // filler panels
 PRINT_C = [77, 79, 84] / 255;                         // rack modules and covers
+LABEL_C = [92, 64, 160] / 255;                        // multicolour letters (the web paints them in your label colour)
 
 module rj45_port(x, z, yf) {     // dark socket with the latch notch, front at yf
     color([0.04, 0.04, 0.05]) translate([x - 6, yf - 0.05, z - 4.5]) cube([12, 0.3, 9]);
@@ -403,6 +404,8 @@ module rack_contents() for (k = [0 : 1 : len(placed_mods) - 1]) if (preview_item
     m = placed_mods[k][0];
     z = units_z0 + placed_mods[k][1] * U + 0.395;
     yb = -ft - explode;                                // back face of the module plate
+    // (outside the module's colour: OpenSCAD's outer color() wins)
+    if (labels_multicolour) color(LABEL_C) translate([0, yb, z]) module_labels(m);
     color(PRINT_C + [k, 0, 0] / 255) translate([0, yb, z]) {
         rack_module(m);
         if (mod_kind(m) == "nkvm") translate(nk_layout(mod_items(m)) == "side" ? [0, -explode, 0] : [0, 0, explode]) nkvm_lid(mod_items(m));
@@ -691,7 +694,11 @@ module assembly() {
     if (pi == "all" || pi == "adapter") section_cut() color(PRINT_A) adapter();
     if (pi == "all" || pi == "filler") {
         if (filler_mode == "separate") for (zn = zones)
-            section_cut() color(PRINT_B) translate([0, -ft - 2 * explode, zn[0] + 0.4]) filler_panel(zn);
+            section_cut() {
+                color(PRINT_B) translate([0, -ft - 2 * explode, zn[0] + 0.4]) filler_panel(zn);
+                if (labels_multicolour) color(LABEL_C) translate([0, -ft - 2 * explode, zn[0] + 0.4])
+                    fill_labels(zn[2], hole_s - R[0] - 6, zn[1] - 0.8, filler_t);
+            }
         if (show_devices) zone_devices();
     }
     if ((pi == "all" || pi == "module") && show_devices) section_cut() rack_contents();

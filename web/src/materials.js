@@ -139,7 +139,7 @@ const near = (hex, ref, tol = 6) =>
   Math.abs(((hex >> 8) & 255) - ((ref >> 8) & 255)) <= tol &&
   Math.abs((hex & 255) - (ref & 255)) <= tol;
 
-export const PRINT_HEX = [0x303236, 0x3f4146, 0x4d4f54];   // adapter, fillers, modules (PRINT_A/B/C)
+export const PRINT_HEX = [0x303236, 0x3f4146, 0x4d4f54, 0x5c40a0];   // adapter, fillers, modules (PRINT_A/B/C), multicolour letters (LABEL_C)
 
 // which printed part a colour stands for (0 adapter, 1 fillers, 2 modules) or -1.
 // Every rack module adds its index to the red channel so it stays a separate object: PRINT_C + [k, 0, 0].

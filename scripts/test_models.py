@@ -82,7 +82,15 @@ CASES = (
        ("module/nkvm:side-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_cover": False}, None),
        ("module/nkvm:side-split-plate", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True}, None),
        ("module/nkvm:side-split-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True, "nkvm_cover": False}, None),
-       ("pocket/nkvm:side-split", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_split": True}, None)]
+       ("pocket/nkvm:side-split", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_split": True}, None),
+       ("labels/patch-names", {"part": "rack_module_labels", "module_type": "patch", "labels_multicolour": True,
+                               "ks_ports_list": "rj45m,hdmi,usb,rj45m,cover,pass", "ks_names": "WAN,,,NAS"}, None),
+       ("labels/filler-keystone", {"part": "filler_labels", "labels_multicolour": True}, None),
+       ("labels/label-raised", {"part": "rack_module_labels", "module_type": "label", "labels_multicolour": True,
+                                "label_relief": "raised", "label_text": "PROXMOX", "label_align": "left"}, None),
+       ("labels/nkvm-side", {"part": "rack_module_labels", "module_type": "nkvm:side", "labels_multicolour": True}, None),
+       ("module/label-raised", {"part": "rack_module", "module_type": "label", "label_relief": "raised"}, None)]
+    + [(f"panel/vent-{st}", {"part": "rack_panel", "panel_fill": "vent", "vent_style": st}, None) for st in ("slots", "louvres", "hex", "dots")]
     # the rest of the parts
     + [("panel/1U-patch6", {"part": "rack_panel", "panel_u": 1, "panel_fill": "keystone"}, None),
        ("panel/2U-patch12", {"part": "rack_panel", "panel_u": 2, "panel_fill": "keystone", "ks_ports": 12}, None),

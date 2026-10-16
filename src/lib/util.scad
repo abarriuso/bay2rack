@@ -35,4 +35,12 @@ function str_split(s, sep = ",", i = 0, cur = "") =
   : s[i] == " " ? str_split(s, sep, i + 1, cur)
   : str_split(s, sep, i + 1, str(cur, s[i]));
 
+// "a,,b" -> ["a", "", "b"]: like str_split but every item keeps its place (leading spaces dropped)
+function split_keep(s, sep = ",", i = 0, cur = "") =
+    !is_string(s) || len(s) == 0 ? []
+  : i >= len(s) ? [cur]
+  : s[i] == sep ? concat([cur], split_keep(s, sep, i + 1, ""))
+  : s[i] == " " && cur == "" ? split_keep(s, sep, i + 1, cur)
+  : split_keep(s, sep, i + 1, str(cur, s[i]));
+
 function sum_list(v, i = 0) = i >= len(v) ? 0 : v[i] + sum_list(v, i + 1);

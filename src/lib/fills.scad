@@ -76,6 +76,25 @@ module ksm_void(t) {
         linear_extrude(ksm_w + 2 * ks_fit) offset(delta = ks_fit) polygon([for (p = v) [p[1] - t, p[0] - ksm_vc]]);
 }
 
+// what is written over each port: its name from ks_names, else HDMI / USB / RCA / AUDIO / OPTICAL for those
+// jacks, else its number in order (only the ports that show a number are counted)
+function ks_type_name(tp) = tp == "hdmi" ? "HDMI" : tp == "usb" ? "USB" : tp == "rca" ? "RCA"
+                          : tp == "jack" ? "AUDIO" : tp == "toslink" ? "OPTICAL" : "";
+KS_NAMES = split_keep(ks_names);
+function ks_name(i) = i < len(KS_NAMES) ? KS_NAMES[i] : "";
+function ks_numbered(types, i) = ks_name(i) == "" && ks_type_name(types[i]) == "" && types[i] != "none";
+function ks_label(types, i) =
+    ks_name(i) != "" ? ks_name(i)
+  : ks_type_name(types[i]) != "" ? ks_type_name(types[i])
+  : str(ks_label_start + len([for (j = [0 : 1 : i - 1]) if (ks_numbered(types, j)) 1]));
+// letters shrink so a long name still fits over its port
+function ks_label_size(s) = min(3.2, (ks_px - 3) / (0.7 * max(1, len(s))));
+ks_label_d = 0.6;
+module ks_labels2d(w, h, types = ks_types)
+    for (p = ks_layout(w, h, len(types))) if (types[p[3]] != "none") let(s = ks_label(types, p[3]))
+        translate([p[0], p[1] + ks_label_dz])
+            text(s, size = ks_label_size(s), font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+
 module keystone_cut(w, h, t, types = ks_types) {
     ks_check(w, h, types);
     for (p = ks_layout(w, h, len(types))) if (types[p[3]] != "none") translate([p[0], 0, p[1]]) {
@@ -85,20 +104,44 @@ module keystone_cut(w, h, t, types = ks_types) {
             if (t > ks_plate_t + 0.2)
                 xz_extrude(-t + ks_plate_t, t - ks_plate_t + 2 * eps) square([ks_w + 2 * ks_fit + 3, ks_h + 2 * ks_fit + 7], center = true);
         }
-        if (ks_labels)
-            xz_extrude(-t - eps, 0.6 + eps) translate([0, ks_label_dz])
-                text(str(p[2]), size = 3.2, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
     }
+    if (ks_labels) xz_extrude(-t - eps, ks_label_d + eps) ks_labels2d(w, h, types);
 }
 
 // ---------------------------------------------------------------------
 //  Other fills
 // ---------------------------------------------------------------------
+// Vents, every style printable face-down without supports, inside a rounded field with a solid rim:
+//   slots   = vertical rounded slots (the look of the NanoKVM bay)
+//   louvres = horizontal slots cut at 45 deg through the plate: air passes, you don't see inside
+//   hex     = honeycomb
+//   dots    = staggered round holes
 module vent_cut(w, h, t) {
-    n = floor((h - 6) / 5);
-    if (n > 0) for (i = [0 : n - 1])
-        xz_extrude(-t - eps, t + 2 * eps)
-            translate([0, h / 2 + (i - (n - 1) / 2) * 5]) rslot2d(w - 12, 2.4);
+    fw = w - 2 * vent_margin;                      // the vented field
+    fh = h - 2 * max(3, vent_margin * 0.6);
+    if (fw > 8 && fh > 6) {
+        if (vent_style == "louvres") {
+            n = floor((fh - 2) / 5);
+            for (i = [0 : 1 : n - 1]) let(z = h / 2 + (i - (n - 1) / 2) * 5)
+                hull() for (k = [0, 1]) translate([0, -t - eps + k * (t + 2 * eps), z - t / 2 + k * t])
+                    rotate([90, 0, 0]) mirror([0, 0, 1]) linear_extrude(0.01) rslot2d(fw, 2.4);
+        } else xz_extrude(-t - eps, t + 2 * eps) translate([0, h / 2]) intersection() {
+            offset(r = 3) offset(delta = -3) square([fw, fh], center = true);
+            if (vent_style == "hex") {
+                p = 7.2;                                // 6 mm across flats, 1.2 mm webs
+                for (r = [-ceil(fh / p) : ceil(fh / p)], c = [-ceil(fw / p) : ceil(fw / p)])
+                    translate([c * p + (r % 2 == 0 ? 0 : p / 2), r * p * 0.866]) rotate(30) circle(d = 6 / cos(30), $fn = 6);
+            } else if (vent_style == "dots") {
+                p = 6;
+                for (r = [-ceil(fh / p) : ceil(fh / p)], c = [-ceil(fw / p) : ceil(fw / p)])
+                    translate([c * p + (r % 2 == 0 ? 0 : p / 2), r * p * 0.866]) circle(d = 4, $fn = 20);
+            } else {
+                n = floor((fw - 3) / 6) + 1;
+                for (i = [0 : 1 : n - 1]) translate([(i - (n - 1) / 2) * 6, 0])
+                    hull() for (z = [-fh / 2 + 1.5, fh / 2 - 1.5]) translate([0, z]) circle(d = 3, $fn = 16);
+            }
+        }
+    }
 }
 
 module cable_cut(w, h, t)
@@ -119,13 +162,29 @@ module label_text2d(w, h) {
         text(label_text, size = sz, font = str("Liberation Sans", label_bold ? ":style=Bold" : ""),
              halign = label_align, valign = "center");
 }
+label_d = min(label_depth, max(filler_t, panel_t) - 0.8);
 module label_cut(w, h, t) {
-    d = min(label_depth, t - 0.8);
     sz = label_size > 0 ? label_size : min(h * 0.4, 9);
-    xz_extrude(-t - eps, d + eps) intersection() {
+    xz_extrude(-t - eps, label_d + eps) intersection() {
         translate([-w / 2 + 1, 1]) square([w - 2, h - 2]);         // never past the zone
-        if (label_relief == "raised") difference() { offset(r = sz * 0.35) hull() label_text2d(w, h); label_text2d(w, h); }
+        // raised: the band round the text is cut; in multicolour the letters go too (the label piece fills them)
+        if (label_relief == "raised") difference() {
+            offset(r = sz * 0.35) hull() label_text2d(w, h);
+            if (!labels_multicolour) label_text2d(w, h);
+        }
         else label_text2d(w, h);
+    }
+}
+
+// ---------------------------------------------------------------------
+//  Multicolour labels: the letters as a separate body, exactly where they are cut out of the panel, so a
+//  multi-material printer prints them in another filament (load both STLs as one object)
+// ---------------------------------------------------------------------
+module fill_labels(type, w, h, t) {
+    if (type == "keystone" && ks_labels) xz_extrude(-t, ks_label_d) ks_labels2d(w, h);
+    else if (type == "label") xz_extrude(-t, label_d) intersection() {
+        translate([-w / 2 + 1, 1]) square([w - 2, h - 2]);
+        label_text2d(w, h);
     }
 }
 

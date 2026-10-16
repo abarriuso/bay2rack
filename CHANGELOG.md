@@ -5,6 +5,11 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Port names over the patch panel (`ks_names`): your own, HDMI / USB / RCA / AUDIO / OPTICAL for those jacks, numbers in order for the rest.
+- Multicolour letters (`labels_multicolour`): every panel with letters gets a `..-labels` piece to print in a second filament; the letter colour shows in the preview.
+- Label: text, size, alignment, position, engraved or raised.
+- Vent fill redesigned: vertical slots, louvres, honeycomb or holes (`vent_style`), with a solid rim (`vent_margin`).
+- Editor: the viewer shows Mounted or one piece of the kit at a time; steps grouped (your case, what goes in, making it) with a print fits step and your own colour.
 - README images rendered again from the v2 adapter, with the new trays and the NanoKVM bay.
 - Fixed: a 1-bay build (no rack units) hung the 3D preview.
 - Tolerances: `ks_fit` for every keystone opening (cells, cut-outs and covers follow), `nkvm_insert_d`, `mount_clear` round the NanoKVM; README and web tell you to print the test pieces first and tune them.
