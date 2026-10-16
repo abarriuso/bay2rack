@@ -145,14 +145,14 @@ module kvm_mount(items) {
 //  Up to two keystone openings on the left of the plate (nkvm_keystones).
 //  Board coordinates: u along the port axis (0 = Ethernet end), v across, w = height.
 // ---------------------------------------------------------------------
-nk_c  = 0.4;                                          // clearance around the board
+nk_c  = mount_clear;                                  // clearance around the board
 nk_fl = 2.4;                                          // floor (front layout)
 nk_pw = 8;                                            // post length along the board edge
 nk_pd = 7;                                            // post thickness
 nk_fs = 1.6;                                          // corner fingers that stop the board lengthwise
 nk_lid_t = 2.4;
 nk_wall = 2;                                          // pocket walls (side layout)
-NK_M3 = hw("M3");
+NK_M3 = with_insert(hw("M3"), nkvm_insert_d, 0);   // M3 heat-set inserts of the lid (and the split plate)
 function nk_layout(items) = len(items) > 0 && items[0] == "front" ? "front" : "side";
 function nk_n_ks() = max(0, min(2, nkvm_keystones));
 function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
@@ -559,8 +559,8 @@ module pi_blade_mount(items) {
 // ---------------------------------------------------------------------
 module keystone_cover(kind = cover_type) {
     metal = ks_style == "metal";
-    ow = (metal ? ksm_w : ks_w) - 2 * cover_clear;    // body that goes into the opening
-    oh = (metal ? ksm_face_h : ks_h) - 2 * cover_clear;
+    ow = (metal ? ksm_w : ks_w) + 2 * ks_fit - 2 * cover_clear;    // body that goes into the opening
+    oh = (metal ? ksm_face_h : ks_h) + 2 * ks_fit - 2 * cover_clear;
     fl = 1.2;                                         // flange thickness
     bl = metal ? 6.5 : 4.5;                           // body length
     bz = metal ? 3.6 : ks_plate_t + 0.6;              // detent depth behind the front face

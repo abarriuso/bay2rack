@@ -14,7 +14,7 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 > los 90) y descarga un **kit (.zip)** con todos los STL y la lista de materiales. Todo se ejecuta en tu navegador.
 >
 > **¿Solo quieres imprimir?** Las variantes ya generadas están en [`stl/`](stl/README.md), con los tornillos e insertos
-> que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests).
+> que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests) y [ajusta las tolerancias](#impresión).
 
 > **Trabajo en proceso.** ¿Has encontrado un defecto, una pieza que no encaja en tu caja o un problema al imprimir?
 > [Abre un issue](https://github.com/abarriuso/bay2rack/issues) con fotos y el modelo de tu caja. Se agradecen pull requests con medidas de otras cajas
@@ -202,6 +202,21 @@ El agujero trasero a 126,65 mm y la segunda fila a 21,84 mm son opcionales. **Ca
 estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` / `bay_hole_slot` o usar `bay_std = custom`.
 
 ## Impresión
+
+> [!IMPORTANT]
+> **Imprime primero las piezas de prueba** (vienen en todos los kits y en [`stl/tests`](stl/README.md#tests)).
+> Cada impresora y cada filamento imprimen un poco justo o un poco holgado, así que comprueba cada ajuste y mueve
+> su tolerancia antes de imprimir las piezas grandes:
+>
+> | Pieza de prueba | Qué comprueba | Si queda justa | Si queda holgada / desplazada |
+> |---|---|---|---|
+> | `test_keystone` | que el keystone entre y se enganche | sube `ks_fit` (+0,1 a +0,2) | baja `ks_fit` (negativo) |
+> | `test_bay` | que la funda entre en la bahía y cuadren los agujeros laterales | sube `sleeve_clearance` | agujeros desplazados: `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` |
+> | `test_rack` | la separación de los agujeros del rack y sus insertos | no cuadran los agujeros: `rack_hole_slot` | el inserto gira: baja `rack_insert_d`; entra torcido: súbelo |
+>
+> El resto funciona igual: `cover_clear` para las tapas de keystone, `mount_clear` para los dispositivos de los
+> módulos del rack, `nkvm_insert_d` y `bay_insert_d` para los insertos pequeños. En el generador web están en
+> **Avanzado**.
 
 - Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los
   techos de las ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.

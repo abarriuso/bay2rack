@@ -14,7 +14,7 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 > download a **kit (.zip)** with every STL and the bill of materials. It all runs in your browser.
 >
 > **Just want to print?** Pre-built variants are in [`stl/`](stl/README.md), with the screws and inserts they need.
-> Print the [test pieces](stl/README.md#tests) first.
+> Print the [test pieces](stl/README.md#tests) first and [tune the tolerances](#printing).
 
 > **Work in progress.** Found a defect, a part that doesn't fit your case or a print problem? [Open an issue](https://github.com/abarriuso/bay2rack/issues)
 > with photos and your case model. Measurements of other cases and rack gear, new modules and fixes are welcome as
@@ -201,6 +201,21 @@ A rear hole at 126.65 mm and a second row at 21.84 mm are optional. **Cases vary
 numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to adjust, or set `bay_std = custom`.
 
 ## Printing
+
+> [!IMPORTANT]
+> **Print the test pieces first** (they come in every kit and in [`stl/tests`](stl/README.md#tests)). Every printer
+> and filament prints a little tight or a little loose, so check each fit and move its tolerance before printing
+> the big parts:
+>
+> | Test piece | What it checks | If it is tight | If it is loose / off |
+> |---|---|---|---|
+> | `test_keystone` | the keystone jack clips in | raise `ks_fit` (+0.1 to +0.2) | lower `ks_fit` (negative) |
+> | `test_bay` | the sleeve slides into the bay, the side holes line up | raise `sleeve_clearance` | holes off: `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` |
+> | `test_rack` | rack hole spacing and the rack inserts | holes don't line up: `rack_hole_slot` | insert spins: lower `rack_insert_d`; goes in crooked: raise it |
+>
+> The rest follow the same idea: `cover_clear` for the keystone covers, `mount_clear` for the devices in the rack
+> modules, `nkvm_insert_d` and `bay_insert_d` for the small heat-set inserts. In the web generator they are under
+> **Advanced**.
 
 - The STL files are already oriented **front face down**. Walls and posts rise vertically, and window
   roofs and screw bosses are 45° teardrops, so **no supports** are needed.

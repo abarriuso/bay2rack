@@ -35,9 +35,9 @@ module fill_cut(type, w, h, t) {
 function ks_metal_port(tp) = tp == "rj45m" || ((tp == "cover" || tp == "pass") && ks_style == "metal");
 ks_metal = len([for (tp = ks_types) if (ks_metal_port(tp)) 1]) > 0;   // layout uses the bigger metal cells
 ksm_vc   = ksm_chamfer + ksm_face_h / 2;            // opening centre above the cavity floor
-ks_cw    = ks_metal ? ksm_w + 2 * ksm_wall : ks_w + 3;          // cell width
-ks_lo    = ks_metal ? -ksm_vc - ksm_wall : -(ks_h + 7) / 2;      // cell bottom from opening centre
-ks_hi    = ks_metal ? ksm_cav_h + ksm_wall - ksm_vc : (ks_h + 7) / 2;
+ks_cw    = ks_metal ? ksm_w + 2 * ks_fit + 2 * ksm_wall : ks_w + 2 * ks_fit + 3;   // cell width
+ks_lo    = ks_metal ? -ksm_vc - ks_fit - ksm_wall : -(ks_h + 2 * ks_fit + 7) / 2;   // cell bottom from opening centre
+ks_hi    = ks_metal ? ksm_cav_h + ks_fit + ksm_wall - ksm_vc : (ks_h + 2 * ks_fit + 7) / 2;
 ks_px    = ks_metal ? ksm_pitch : ks_pitch;
 ks_label_dz = (ks_metal ? ksm_face_h : ks_h) / 2 + 3.0;
 
@@ -71,8 +71,9 @@ module ksm_void(t) {
          [ksm_lip_bot, ksm_depth + 1], [ksm_lip_bot, ksm_lip_d],
          [0, ksm_lip_d], [0, ksm_chamfer], [ksm_chamfer, 0]];
     // 2D (y, z) -> 3D, extruded along X
-    translate([-ksm_w / 2, 0, 0]) multmatrix([[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
-        linear_extrude(ksm_w) polygon([for (p = v) [p[1] - t, p[0] - ksm_vc]]);
+    // ks_fit grows the whole cavity (opening, latch room, lips) by the same amount on every side
+    translate([-ksm_w / 2 - ks_fit, 0, 0]) multmatrix([[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+        linear_extrude(ksm_w + 2 * ks_fit) offset(delta = ks_fit) polygon([for (p = v) [p[1] - t, p[0] - ksm_vc]]);
 }
 
 module keystone_cut(w, h, t, types = ks_types) {
@@ -80,9 +81,9 @@ module keystone_cut(w, h, t, types = ks_types) {
     for (p = ks_layout(w, h, len(types))) if (types[p[3]] != "none") translate([p[0], 0, p[1]]) {
         if (ks_metal_port(types[p[3]])) ksm_void(t);
         else {
-            xz_extrude(-t - eps, t + 2 * eps) square([ks_w, ks_h], center = true);
+            xz_extrude(-t - eps, t + 2 * eps) square([ks_w + 2 * ks_fit, ks_h + 2 * ks_fit], center = true);
             if (t > ks_plate_t + 0.2)
-                xz_extrude(-t + ks_plate_t, t - ks_plate_t + 2 * eps) square([ks_w + 3, ks_h + 7], center = true);
+                xz_extrude(-t + ks_plate_t, t - ks_plate_t + 2 * eps) square([ks_w + 2 * ks_fit + 3, ks_h + 2 * ks_fit + 7], center = true);
         }
         if (ks_labels)
             xz_extrude(-t - eps, 0.6 + eps) translate([0, ks_label_dz])

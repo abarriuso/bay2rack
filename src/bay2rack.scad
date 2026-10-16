@@ -157,6 +157,8 @@ ks_ports = 6; // [1:1:12]
 ks_ports_list = "rj45m,rj45m,rj45m,cover,cover,pass";
 ks_labels = true;
 ks_label_start = 1; // [0:1:99]
+// Fit of every keystone opening (holder cells, cut-outs, covers follow): print test_keystone first; raise it if the jack does not go in or clip, lower it (negative) if it rattles
+ks_fit = 0; // [-0.5:0.05:0.8]
 
 /* [Keystone - metal holder cell] */
 // Cavity width
@@ -218,7 +220,7 @@ module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm:KVM over IP
 ms_w = 105; // [50:0.1:125]
 ms_h = 24.9; // [10:0.1:40]
 ms_d = 70; // [20:1:200]
-// Clearance around the device
+// Clearance around the device (also round the NanoKVM in its bay): raise it if the device does not slide in
 mount_clear = 0.6; // [0:0.1:2]
 // Lip around the front window that stops the device
 mount_lip = 1.5; // [0.5:0.5:5]
@@ -245,6 +247,8 @@ nkvm_plugs = [32, 42]; // [0:1:60]
 nkvm_lid = "frame"; // [frame:Frame round the NanoKVM, full:Long lid over the whole pocket]
 // nkvm:side - three pieces: the plate and the pocket printed apart and screwed together (M3 heat-set inserts)
 nkvm_split = false;
+// Hole for the M3 heat-set inserts of the NanoKVM bay (0 = 4.2 mm table value): raise it if the insert melts in crooked, lower it if it spins
+nkvm_insert_d = 0; // [0:0.05:5]
 // Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
 pi_boards = "pi5";
 // Blade tray: distance between boards (26 fits a Pi 5 with the active cooler, use ~32 with PoE HATs)
