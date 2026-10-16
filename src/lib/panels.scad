@@ -49,6 +49,7 @@ module rack_module(type) {
     else if (mod_kind(type) == "kvm") kvm_mount(mod_items(type));
     else if (mod_kind(type) == "pi") pi_mount(mod_items(type));
     else if (mod_kind(type) == "piblade") pi_blade_mount(mod_items(type));
+    else if (mod_kind(type) == "nkvm") nkvm_mount(mod_items(type));
     else if (type == "uswflex") dev_mount(usw_dims);
     else if (type == "ux") dev_mount(ux_dims);
     else if (type == "dev1") dev_mount(dev1_dims);
@@ -129,6 +130,125 @@ module kvm_mount(items) {
         for (i = [0 : len(cs) - 1]) tunnel_cut(xs[i], cs[i][0], cs[i][1], cs[i][2], kvm_dims(L[i])[2]);
     }
 }
+
+// ---------------------------------------------------------------------
+//  NanoKVM bay: the board lies flat on an open frame, its heatsink in the
+//  open, held by four corner posts; the lid screws onto the posts with
+//  M3 heat-set inserts. Two pieces: the bay (front plate + frame) and the lid.
+//    side  = Ethernet out to the left, HDMI and USB to the right
+//    front = only the Ethernet port at the front, HDMI and USB face into the case
+//  Up to two keystone openings on the left of the plate (nkvm_keystones).
+//  Board coordinates: u along the port axis (0 = Ethernet end), v across, z up.
+//  Prints floor-down, the plate standing; the lid prints flat.
+// ---------------------------------------------------------------------
+nk_c  = 0.4;                                          // clearance around the board
+nk_fl = 2.4;                                          // floor
+nk_pw = 8;                                            // post length along the board edge
+nk_pd = 7;                                            // post thickness
+nk_fs = 1.6;                                          // corner fingers that stop the board lengthwise
+nk_lid_t = 2.4;
+NK_M3 = hw("M3");
+function nk_layout(items) = len(items) > 0 && items[0] == "front" ? "front" : "side";
+function nk_n_ks() = max(0, min(2, nkvm_keystones));
+function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
+nk_top = nk_fl + nkvm_dims[1] + nk_c;                 // post tops = underside of the lid
+// where the board sits: [x, y] of its Ethernet-end corner, and the rotation (side 0, front 90)
+function nk_place(lay) = let(L = nkvm_dims[0], W = nkvm_dims[2], k = nk_n_ks() > 0)
+    lay == "side" ? [[(k ? 8 : 0) - L / 2, k ? 34 : nk_c + nk_pd], 0]
+                  : [[(k ? 14 : 0) + W / 2, nk_c], 90];
+// the end stop at u = 0 is the plate itself in the front layout
+function nk_u0(lay) = lay == "front" ? -nk_c : -nk_c - nk_fs;
+function nk_u1() = nkvm_dims[0] + nk_c + nk_fs;
+// post centres (where the inserts go), board coordinates
+function nk_posts(lay) = let(L = nkvm_dims[0], W = nkvm_dims[2], a = (nk_u0(lay) + nk_pw - nk_c) / 2, b = (L - nk_pw + nk_c + nk_u1()) / 2)
+    [for (u = [a, b], v = [-nk_c - nk_pd / 2, W + nk_c + nk_pd / 2]) [u, v]];
+
+module nk_frame(lay) multmatrix(let(P = nk_place(lay)) [[cos(P[1]), -sin(P[1]), 0, P[0][0]], [sin(P[1]), cos(P[1]), 0, P[0][1]], [0, 0, 1, 0], [0, 0, 0, 1]])
+    children();
+
+module nk_rrect(x0, y0, x1, y1, r) translate([x0, y0]) offset(r) offset(-r) square([x1 - x0, y1 - y0]);
+
+module nk_tray_local(lay) {
+    L = nkvm_dims[0]; W = nkvm_dims[2];
+    u0 = nk_u0(lay); u1 = nk_u1();
+    v0 = -nk_c - nk_pd; v1 = W + nk_c + nk_pd;
+    difference() {
+        union() {
+            // floor: one open frame, the board rests on its rim
+            linear_extrude(nk_fl) difference() {
+                nk_rrect(u0, v0, u1, v1, 3);
+                nk_rrect(4, 3, L - 4, W - 3, 3);
+            }
+            for (e = [0, 1], f = [0, 1]) {
+                pu = e == 0 ? [u0, nk_pw - nk_c] : [L - nk_pw + nk_c, u1];
+                pv = f == 0 ? [v0, -nk_c] : [W + nk_c, v1];
+                // rounded post, a fillet into the floor, and a finger round the corner (none against the plate)
+                linear_extrude(nk_top) union() {
+                    nk_rrect(pu[0], pv[0], pu[1], pv[1], 1.5);
+                    if (!(lay == "front" && e == 0))
+                        nk_rrect(e == 0 ? u0 : L + nk_c, f == 0 ? v0 : W - 2.5, e == 0 ? u0 + nk_fs : L + nk_c + nk_fs, f == 0 ? 2.5 : v1, 0.7);
+                }
+                translate([0, 0, nk_fl - eps]) linear_extrude(2, scale = 1) offset(delta = -0.01)
+                    nk_rrect(pu[0] - (e == 0 ? 0 : 1.5), pv[0] - (f == 0 ? 0 : 1.5), pu[1] + (e == 0 ? 1.5 : 0), pv[1] + (f == 0 ? 1.5 : 0), 1.5);
+            }
+        }
+        // heat-set inserts from the top
+        for (p = nk_posts(lay)) translate([p[0], p[1], nk_top - NK_M3[3] - 0.8]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+    }
+}
+
+module nkvm_mount(items) {
+    lay = nk_layout(items);
+    n = nk_n_ks();
+    h = U - 0.79;
+    P = nk_place(lay);
+    L = nkvm_dims[0]; W = nkvm_dims[2]; H = nkvm_dims[1];
+    xk = -x_in + 3 + nk_ks_w(n) / 2;
+    types = [for (i = [0 : max(n, 1) - 1]) ks_style == "metal" ? "rj45m" : "rj45"];
+    if (nk_top + nk_lid_t > h) echo("WARNING: the NanoKVM is too tall for the 1U bay - lower nkvm_dims[1]");
+    if (len(items) > 1) echo("NOTE: the NanoKVM bay holds one board; extra items ignored");
+    // x span and front edge of the frame, to tie it to the plate
+    xs = lay == "side" ? [P[0][0] + nk_u0(lay), P[0][0] + nk_u1()] : [P[0][0] - W - nk_c - nk_pd, P[0][0] + nk_c + nk_pd];
+    yf = lay == "side" ? P[0][1] - nk_c - nk_pd : 0;
+    difference() {
+        union() {
+            plate(panel_w, h, panel_t, 0.6);
+            nk_frame(lay) nk_tray_local(lay);
+            // two arms from the plate to the frame, with gussets
+            if (yf > eps) for (x = [xs[0], xs[1] - nk_pw]) {
+                translate([x, -eps, 0]) cube([nk_pw, yf + 2 * eps, nk_fl]);
+                translate([x + nk_pw / 2 - 1, 0, 0]) multmatrix(YZ) linear_extrude(2)
+                    polygon([[-eps, nk_fl - eps], [min(16, yf), nk_fl - eps], [-eps, nk_fl + 12]]);
+            }
+            if (n > 0) translate([xk, 0, 0]) keystone_add(nk_ks_w(n) + 0.1, h, panel_t, types);
+        }
+        panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        if (n > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(n) + 0.1, h, panel_t, types);
+        if (lay == "front")   // the Ethernet port, through the plate
+            translate([P[0][0] - W / 2 - (nkvm_rj45[0] + 1) / 2, -panel_t - 1, nk_fl + nkvm_rj45[2] - 0.5])
+                cube([nkvm_rj45[0] + 1, panel_t + 2, nkvm_rj45[1] + 1]);
+        else                  // a window onto the board between the front posts
+            translate([0, -panel_t - 1, 0]) multmatrix([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+                linear_extrude(panel_t + 2) nk_rrect(P[0][0] + nk_pw, nk_fl + 2, P[0][0] + L - nk_pw, nk_fl + H - 1, 2);
+    }
+}
+
+// the lid: a frame on the four posts, open over the board and its heatsink
+module nkvm_lid_local(lay) {
+    L = nkvm_dims[0]; W = nkvm_dims[2];
+    difference() {
+        hull() {
+            linear_extrude(nk_lid_t - 0.6) nk_rrect(nk_u0(lay), -nk_c - nk_pd, nk_u1(), W + nk_c + nk_pd, 3);
+            linear_extrude(nk_lid_t) offset(-0.6) nk_rrect(nk_u0(lay), -nk_c - nk_pd, nk_u1(), W + nk_c + nk_pd, 3);
+        }
+        translate([0, 0, -1]) linear_extrude(nk_lid_t + 2) nk_rrect(3, 3, L - 3, W - 3, 3);
+        for (p = nk_posts(lay)) translate([p[0], p[1], 0]) {
+            translate([0, 0, -1]) cylinder(d = NK_M3[0], h = nk_lid_t + 2, $fn = 20);
+            translate([0, 0, nk_lid_t - 1.7]) cylinder(d1 = NK_M3[0], d2 = 6.4, h = 1.7 + eps, $fn = 24);
+        }
+    }
+}
+module nkvm_lid(items) nk_frame(nk_layout(items)) translate([0, 0, nk_top]) nkvm_lid_local(nk_layout(items));
 
 // ---------------------------------------------------------------------
 //  Raspberry Pi tray: boards flat on four standoffs, the port edge facing

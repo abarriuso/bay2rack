@@ -103,6 +103,7 @@ los agujeros del rack:
 | `kvm:jet+nano` | **Bandeja de KVM por IP**: de 1 a 3 cajas a elegir una al lado de otra (`jet` JetKVM, `nano` NanoKVM, `custom`), p. ej. `kvm:nano+nano`; avisa si no caben |
 | `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2.5, USB y Ethernet por delante; dos placas una al lado de otra con PoE HAT |
 | `piblade:pi5+pi5+pi5+pi5` | **Blades de Raspberry Pi de 2U**: hasta cuatro placas de canto, cada una en su aleta, con separadores que se imprimen sin soportes |
+| `nkvm:side` / `nkvm:front` | **Bahía NanoKVM**: el NanoKVM Lite va tumbado sobre un marco abierto con el disipador al aire, y una tapa que se atornilla con insertos roscados M3 (dos piezas impresas; la tapa es `part = rack_module_lid`). `side`: la red sale a la izquierda y el HDMI y el USB a la derecha. `front`: solo el puerto de red delante, el HDMI y el USB hacia dentro de la caja. `nkvm_keystones` añade uno o dos keystones en el frontal |
 | `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
 | `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas |
 | `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños |

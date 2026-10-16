@@ -73,7 +73,12 @@ CASES = (
                            "vent", "blank", "cable", "led", "label")]
     + [module("kvm:jet"), module("kvm:jet+nano"), module("kvm:nano+nano"), module("kvm:jet+jet"),
        module("pi:pi5"), module("pi:pi5+pi5"), module("pi:zero"), module("pi:pi4+pi3"),
-       module("piblade:pi5+pi5"), module("piblade:pi5+pi5+pi5+pi5")]
+       module("piblade:pi5+pi5"), module("piblade:pi5+pi5+pi5+pi5"),
+       module("nkvm:side"), module("nkvm:front"),
+       ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None),
+       ("module/nkvm:front-1ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 1}, None),
+       ("lid/nkvm:side", {"part": "rack_module_lid", "module_type": "nkvm:side"}, None),
+       ("lid/nkvm:front", {"part": "rack_module_lid", "module_type": "nkvm:front"}, None)]
     # the rest of the parts
     + [("panel/1U-patch6", {"part": "rack_panel", "panel_u": 1, "panel_fill": "keystone"}, None),
        ("panel/2U-patch12", {"part": "rack_panel", "panel_u": 2, "panel_fill": "keystone", "ks_ports": 12}, None),

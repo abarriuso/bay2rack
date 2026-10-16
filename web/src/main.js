@@ -14,19 +14,20 @@ const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
 const FILLS = ['keystone', 'buttons', 'fan80', 'fan40', 'vent', 'cable', 'led', 'label', 'blank'];
-const MODULES = ['ms105g', 'uswflex', 'ux', 'kvm', 'pi', 'piblade', 'dev1', 'dev2', 'shelf', 'patch', 'fan40', 'buttons',
+const MODULES = ['ms105g', 'uswflex', 'ux', 'kvm', 'nkvm', 'pi', 'piblade', 'dev1', 'dev2', 'shelf', 'patch', 'fan40', 'buttons',
   'vent', 'blank', 'cable', 'led', 'label'];
 // trays that hold a list of boxes, written "kvm:jet+nano": choices, how many, default
 const TRAYS = {
   kvm: { items: ['jet', 'nano', 'custom'], max: 3, def: 'jet+nano' },
   pi: { items: ['pi5', 'pi4', 'pi3', 'zero'], max: 2, def: 'pi5' },
   piblade: { items: ['pi5', 'pi4', 'pi3'], max: 4, def: 'pi5+pi5+pi5' },
+  nkvm: { items: ['side', 'front'], max: 1, def: 'side' },        // NanoKVM bay: which way the ports go
 };
 const KVM_DIMS = { jet: 'jetkvm_dims', nano: 'nanokvm_dims', custom: 'kvm_custom' };
 // device modules -> the parameters holding their size (W, H, D)
 const DEVICE_DIMS = {
   ms105g: ['ms_w', 'ms_h', 'ms_d'], uswflex: ['usw_dims'], ux: ['ux_dims'],
-  dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'], piblade: ['pi_blade_pitch'],
+  dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'], piblade: ['pi_blade_pitch'], nkvm: ['nkvm_dims'],
 };
 // ready-made builds: the examples step and the gallery (applied on top of the defaults)
 const EXAMPLES = {
@@ -303,6 +304,9 @@ function trayEditor(kind, items, onChange) {
       onChange(next.filter(Boolean));
     }));
   }
+  // the NanoKVM bay can also take one or two keystones on its plate
+  if (kind === 'nkvm') slots.push(select(null, [0, 1, 2].map((n) => [n, t('nkvm_ks' + n)]), String(S.values.nkvm_keystones),
+    (val) => update({ nkvm_keystones: Number(val) })));
   const fits = trayFits(kind, items, S.values);
   return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, slots),
     h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: t(fits ? 'tray_' + kind : 'trayNoFit') }));
@@ -667,8 +671,11 @@ function kitList(v) {
     if (c.zones.length > 1) files.push({ name: 'filler-2.stl', qty: 1, part: { part: 'filler_2' } });
   }
   const mods = usedMods(v, c.units);
-  for (const m of new Set(mods))
-    files.push({ name: `module-${modFile(m)}.stl`, qty: mods.filter((x) => x === m).length, part: { part: 'rack_module', module_type: m } });
+  for (const m of new Set(mods)) {
+    const qty = mods.filter((x) => x === m).length;
+    files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
+    if (modKind(m) === 'nkvm') files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
+  }
   if (v.rear_slots) for (const k of ['lan', 'power'])
     files.push({ name: `pci-bracket-${k}.stl`, qty: 1, part: { part: 'pci_bracket', pci_kind: k } });
   const sets = c.zones.filter((z) => z === 'keystone').length + mods.filter((m) => m === 'patch').length;

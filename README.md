@@ -103,6 +103,7 @@ the rack holes:
 | `kvm:jet+nano` | **KVM over IP tray**: 1 to 3 boxes of your choice side by side (`jet` JetKVM, `nano` NanoKVM, `custom`), e.g. `kvm:nano+nano`; it warns when they don't fit |
 | `pi:pi5` | **Raspberry Pi tray**: Pi 5 / 4 / 3 or Zero flat on M2.5 standoffs, USB and Ethernet through the front; two boards side by side with PoE HATs |
 | `piblade:pi5+pi5+pi5+pi5` | **2U Raspberry Pi blades**: up to four boards on edge, each on its own fin, standoffs that print without supports |
+| `nkvm:side` / `nkvm:front` | **NanoKVM bay**: the NanoKVM Lite lies flat on an open frame with its heatsink in the open, and a lid that screws onto M3 heat-set inserts (two printed parts, the lid is `part = rack_module_lid`). `side`: Ethernet out to the left, HDMI and USB to the right. `front`: only the network port at the front, HDMI and USB into the case. `nkvm_keystones` adds one or two keystones on the plate |
 | `dev1`, `dev2` | A made-to-measure tray for any device: set its width, height and depth |
 | `fan40` | 1U panel with up to three **40 mm fans** behind round openings |
 | `shelf` | Shelf with zip-tie slots for small devices |

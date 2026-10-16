@@ -249,6 +249,19 @@ module kvm_box_model(b, x, yf, zc) {
     else kvm_custom_model(x, yf, zc);
 }
 
+// NanoKVM Lite lying in its bay: black board stack, heatsink on top, Ethernet at u = 0, HDMI + USB-C at u = L
+module nkvm_model(lay) nk_frame(lay) translate([0, 0, nk_fl]) {
+    L = nkvm_dims[0]; W = nkvm_dims[2]; H = nkvm_dims[1];
+    color([0.08, 0.09, 0.1]) cube([L, W, 1.6]);
+    color([0.12, 0.13, 0.15]) translate([2, 2, 1.6]) cube([L - 4, W - 4, H - 7]);
+    color([0.08, 0.09, 0.1]) translate([0, 0, H - 5.6]) cube([L, W, 1.6]);
+    color([0.62, 0.66, 0.7]) for (i = [0 : 4]) translate([L / 2 - 8 + i * 3.6, W / 2 - 7, H - 4]) cube([1.4, 14, 4]);   // heatsink fins
+    color([0.62, 0.66, 0.7]) translate([L / 2 - 8.4, W / 2 - 7, H - 4]) cube([16.8, 14, 1]);
+    color([0.78, 0.8, 0.82]) translate([-0.6, (W - nkvm_rj45[0]) / 2, nkvm_rj45[2]]) cube([12, nkvm_rj45[0], nkvm_rj45[1]]);   // RJ45
+    color([0.75, 0.77, 0.8]) translate([L - 8, W / 2 - 7.5, H - 6.5]) cube([8.6, 15, 5.6]);                                     // HDMI
+    color([0.75, 0.77, 0.8]) translate([L - 6, W / 2 - 4.5, 2.4]) cube([6.6, 9, 3.2]);                                           // USB-C
+}
+
 // Raspberry Pi boards, port edge at y = y0, underside at z = zb
 PI_PCB = [18, 77, 41] / 255;                           // the web viewer gives this green a PCB texture
 PI_METAL = [189, 194, 201] / 255;                      // shielded jacks: steel
@@ -386,7 +399,10 @@ module rack_contents() for (k = [0 : len(placed_mods) - 1]) if (preview_item == 
     m = placed_mods[k][0];
     z = units_z0 + placed_mods[k][1] * U + 0.395;
     yb = -ft - explode;                                // back face of the module plate
-    color(PRINT_C + [k, 0, 0] / 255) translate([0, yb, z]) rack_module(m);
+    color(PRINT_C + [k, 0, 0] / 255) translate([0, yb, z]) {
+        rack_module(m);
+        if (mod_kind(m) == "nkvm") translate([0, 0, explode]) nkvm_lid(mod_items(m));
+    }
     if (demo_devices == "homelab") {
         if (m == "ms105g") ms105g_model(yb + 0.2, z + ms_z0 + ms_ch / 2);
         else if (m == "uswflex") uswflex_model(yb + 0.2, z + tunnel_z0(dev_c(usw_dims)[1]) + dev_c(usw_dims)[1] / 2);
@@ -403,6 +419,7 @@ module rack_contents() for (k = [0 : len(placed_mods) - 1]) if (preview_item == 
         else if (mod_kind(m) == "piblade") pi_blade_models(mod_items(m), yb, z);
         else if (m == "fan40") fill_devices("fan40", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t, panel_t);
         else if (m == "shelf") nanokvm_model(yb + 6, z + shelf_z + 2);
+        else if (mod_kind(m) == "nkvm") translate([0, yb, z]) nkvm_model(nk_layout(mod_items(m)));
         else if (m == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
         else if (m == "buttons") fill_devices("buttons", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
     }
