@@ -148,6 +148,15 @@ spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, 
 spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
 filler_t = 3; // [1.5:0.5:6]
 label_text = "HOMELAB";
+// Label: letter height (0 = as big as the zone allows), alignment and shift
+label_size = 0; // [0:0.5:30]
+label_align = "center"; // [left, center, right]
+label_dx = 0; // [-70:0.5:70]
+label_dz = 0; // [-20:0.5:20]
+// engraved = letters cut into the panel; raised = the letters stand out of a recessed band (prints flat, no supports)
+label_relief = "engraved"; // [engraved:Engraved - into the panel, raised:Raised - out of the panel]
+label_depth = 0.8; // [0.4:0.1:2]
+label_bold = true;
 
 /* [Keystone patch] */
 // metal = holder cells for metal / shielded keystones (shape of the original design).  standard = plain cut-out for plastic keystones

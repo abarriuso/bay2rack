@@ -110,10 +110,24 @@ module led_cut(w, h, t) {
         xz_extrude(-t + 1.2, t + eps) translate([0, h / 2]) square([w - 12, min(11, h - 4)], center = true);
 }
 
-module label_cut(w, h, t)
-    xz_extrude(-t - eps, 0.8 + eps) translate([0, h / 2])
-        text(label_text, size = min(h * 0.4, 9), font = "Liberation Sans:style=Bold",
-             halign = "center", valign = "center");
+// engraved = the letters cut into the panel; raised = a band round the text is cut away and the letters
+// stay at the panel face (raised relief that still prints face-down, flat, without supports)
+module label_text2d(w, h) {
+    sz = label_size > 0 ? label_size : min(h * 0.4, 9);
+    x = (label_align == "left" ? -w / 2 + 4 : label_align == "right" ? w / 2 - 4 : 0) + label_dx;
+    translate([x, h / 2 + label_dz])
+        text(label_text, size = sz, font = str("Liberation Sans", label_bold ? ":style=Bold" : ""),
+             halign = label_align, valign = "center");
+}
+module label_cut(w, h, t) {
+    d = min(label_depth, t - 0.8);
+    sz = label_size > 0 ? label_size : min(h * 0.4, 9);
+    xz_extrude(-t - eps, d + eps) intersection() {
+        translate([-w / 2 + 1, 1]) square([w - 2, h - 2]);         // never past the zone
+        if (label_relief == "raised") difference() { offset(r = sz * 0.35) hull() label_text2d(w, h); label_text2d(w, h); }
+        else label_text2d(w, h);
+    }
+}
 
 // ---------------------------------------------------------------------
 //  Button panel: keyboard switches for power / reset + power and HDD LEDs

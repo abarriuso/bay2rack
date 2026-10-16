@@ -61,9 +61,22 @@ const FILAMENTS = {
   black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
   blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
 };
-const UI_DEFAULT = { filament: 'black', cables: true, side: true, sleeper: false };
+const UI_DEFAULT = { filament: 'black', custom: '#e07a2f', cables: true, side: true, sleeper: false };
 const UI = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
 const saveUI = () => { try { localStorage.setItem('ui', JSON.stringify(UI)); } catch { /* private mode */ } };
+// the colour of the printed parts: a preset, or your own (three close shades so the parts still read apart)
+function filamentHexes() {
+  if (UI.filament !== 'custom') return FILAMENTS[UI.filament] ?? FILAMENTS.black;
+  const c = parseInt(String(UI.custom).replace('#', ''), 16) || 0x808080;
+  const shade = (k) => [16, 8, 0].reduce((acc, sh) => acc | (Math.min(255, Math.round(((c >> sh) & 255) + (255 - ((c >> sh) & 255)) * k)) << sh), 0);
+  return [shade(0), shade(0.06), shade(0.12)];
+}
+function setColour(name, hex) {
+  UI.filament = name;
+  if (hex) UI.custom = hex;
+  saveUI();
+  viewer.setFilament(filamentHexes());
+}
 
 const $ = (s) => document.querySelector(s);
 const h = (tag, { dataset, ...props } = {}, ...kids) => {
@@ -241,41 +254,117 @@ function renderSteps() {
   const list = [];
   let n = 0;
   const add = (key, ...body) => list.push(step(++n, key, ...body));
+  const group = (key) => list.push(h('h4', { className: 'step-group', textContent: t('grp_' + key) }));
   const placed = placeMods(v, c.units);
   const mods = placed.map((p) => p.m);
-  const panel = v.part === 'rack_panel';
 
-  if (v.part.startsWith('test_')) add('test', segmented('part', TESTS, (x) => t(x)));
-  if (panel) {
-    add('panel', segmented('panel_u', [1, 2, 3, 4], (x) => `${x}U`), chips('panel_fill', FILLS, (x) => t('fill_' + x)));
-  } else {
-    add('bays', segmented('bays', [1, 2, 3, 4, 5, 6], String));
-    add('front', cards('front_style', [
-      { value: 'plate', icon: ICONS.plate, label: t('opt_plate'), sub: t('opt_plate_sub') },
-      { value: 'bezel', icon: ICONS.bezel, label: t('opt_bezel'), sub: t('opt_bezel_sub') },
-    ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })));
-    add('fit', cards('fit', [
-      { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: `${c.flushUnits}U + ${num(c.flushSpare)} mm ${t('free')}` },
-      { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
-      { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
-    ]));
-    if (c.units > 0) add('contents', contentsEditor(placed));
-    const devs = deviceEntries(mods);
-    if (devs.length) add('devices', devicesEditor(devs));
-    if (c.hasSpare) add('fill', fillEditor());
-  }
-  const fills = panel ? [v.panel_fill] : c.zones;
-  const usesPatch = fills.includes('keystone') || (!panel && mods.includes('patch'));
-  const usesButtons = fills.includes('buttons') || (!panel && mods.includes('buttons'));
-  const usesFans = fills.includes('fan40') || (!panel && mods.includes('fan40'));
-  if (usesFans) add('fans', segmented('fan40_count', [1, 2, 3], (x) => `${x} × 40 mm`), segmented('fan40_t', [10, 20], (x) => `${x} mm`));
-  if (usesPatch) add('ports', portsEditor(panel && v.panel_u > 1 ? 12 : 6));
-  if (usesButtons) add('buttons', buttonsEditor());
+  // 1. the case: how many bays, which front, how the rack units sit
+  group('case');
+  add('bays', segmented('bays', [1, 2, 3, 4, 5, 6], String));
+  add('front', cards('front_style', [
+    { value: 'plate', icon: ICONS.plate, label: t('opt_plate'), sub: t('opt_plate_sub') },
+    { value: 'bezel', icon: ICONS.bezel, label: t('opt_bezel'), sub: t('opt_bezel_sub') },
+  ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })));
+  add('fit', cards('fit', [
+    { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: `${c.flushUnits}U + ${num(c.flushSpare)} mm ${t('free')}` },
+    { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
+    { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
+  ]));
+  // 2. what goes in it: the rack units, the devices, the leftover strip and what fills it
+  group('contents');
+  if (c.units > 0) add('contents', contentsEditor(placed));
+  const devs = deviceEntries(mods);
+  if (devs.length) add('devices', devicesEditor(devs));
+  if (c.hasSpare) add('fill', fillEditor());
+  const fills = c.zones;
+  if (fills.includes('fan40') || mods.includes('fan40'))
+    add('fans', segmented('fan40_count', [1, 2, 3], (x) => `${x} × 40 mm`), segmented('fan40_t', [10, 20], (x) => `${x} mm`));
+  if (fills.includes('keystone') || mods.includes('patch')) add('ports', portsEditor(6));
+  if (fills.includes('buttons') || mods.includes('buttons')) add('buttons', buttonsEditor());
+  if (fills.includes('label') || mods.includes('label')) add('label', labelEditor());
+  // 3. making it: screws, and the fits to tune after printing the test pieces
+  group('make');
   add('screw', chips('rack_screw', SCREWS, String),
     h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))));
+  add('tol', tolerancesEditor(mods, fills));
+  group('view');
+  add('colour', colourEditor());
   if (v.part === 'assembly') add('preview', previewEditor());
   $('#steps').replaceChildren(...list);
   $('#examplesList').replaceChildren(examplesEditor());
+}
+
+// a slider + number box for one parameter, with its range from the .scad
+function sliderRow(name, label) {
+  const p = S.params[name];
+  const v = S.values[name];
+  const box = h('input', { type: 'number', className: 'num', min: p.min, max: p.max, step: p.step ?? 1, value: v,
+    onchange: () => update({ [name]: Number(box.value) }) });
+  const range = h('input', { type: 'range', min: p.min, max: p.max, step: p.step ?? 1, value: v,
+    oninput: () => { box.value = range.value; },
+    onchange: () => update({ [name]: Number(range.value) }) });
+  return h('label', { className: 'param', dataset: { tip: paramHelp(p) || undefined } },
+    h('span', { className: 'name', textContent: label }), h('span', { className: 'slider' }, range, box));
+}
+
+// the engraved label: what it says, how big, where, and whether it goes into or out of the panel
+function labelEditor() {
+  const v = S.values;
+  const text = h('input', { type: 'text', className: 'text label-text', value: v.label_text, maxLength: 40,
+    placeholder: 'HOMELAB', onchange: () => update({ label_text: text.value }) });
+  return [
+    h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text),
+    segmented('label_relief', ['engraved', 'raised'], (x) => t('relief_' + x)),
+    segmented('label_align', ['left', 'center', 'right'], (x) => t('align_' + x)),
+    sliderRow('label_size', t('lab_size')),
+    sliderRow('label_dx', t('lab_dx')),
+    sliderRow('label_dz', t('lab_dz')),
+    sliderRow('label_depth', t('lab_depth')),
+    toggle(t('lab_bold'), v.label_bold, (on) => update({ label_bold: on })),
+  ];
+}
+
+// the colour of your filament: the presets and a picker for any other one
+function colourEditor() {
+  const picker = h('input', { type: 'color', value: UI.custom, 'aria-label': t('fil_custom'),
+    oninput: () => { setColour('custom', picker.value); label.classList.add('active'); },
+    onchange: () => renderSteps() });
+  const label = h('label', { className: `swatch custom${UI.filament === 'custom' ? ' active' : ''}`, title: t('fil_custom'),
+    style: `--c:${UI.custom}` }, picker);
+  return h('div', { className: 'swatches', dataset: { tip: t('filamentTip') } },
+    Object.entries(FILAMENTS).map(([name, hex]) => h('button', {
+      type: 'button', className: `swatch${UI.filament === name ? ' active' : ''}`, title: t('fil_' + name),
+      style: `--c:#${hex[0].toString(16).padStart(6, '0')}`,
+      onclick: () => { setColour(name); renderSteps(); },
+    })), label);
+}
+
+// the fits that depend on your printer: print the test pieces first, then move these
+function tolerancesEditor(mods, fills) {
+  const v = S.values;
+  const keystones = fills.includes('keystone') || mods.includes('patch') || mods.some((m) => modKind(m) === 'nkvm');
+  const devices = mods.some((m) => m !== 'blank' && !FILLS.includes(m) && m !== 'patch');
+  const covers = ksTypes(v).some((x) => x === 'cover' || x === 'pass') && (fills.includes('keystone') || mods.includes('patch'));
+  const rows = [
+    ['sleeve_clearance', 'tol_sleeve', 0.05],
+    ['height_clearance', 'tol_height', 0.05],
+    ...(v.front_style === 'bezel' ? [['bezel_clearance', 'tol_bezel', 0.05]] : []),
+    ...(keystones ? [['ks_fit', 'tol_ks', 0.05]] : []),
+    ...(covers ? [['cover_clear', 'tol_cover', 0.05]] : []),
+    ...(devices ? [['mount_clear', 'tol_mount', 0.1]] : []),
+    ...(v.rack_fixing === 'heatset' ? [['rack_insert_d', 'tol_insert', 0.05]] : []),
+    ...(v.bay_fixing === 'heatset' ? [['bay_insert_d', 'tol_bay_insert', 0.05]] : []),
+    ...(mods.some((m) => modKind(m) === 'nkvm') ? [['nkvm_insert_d', 'tol_nkvm_insert', 0.05]] : []),
+  ];
+  return h('div', { className: 'tol' },
+    h('small', { className: 'hint', textContent: t('tol_hint') }),
+    rows.map(([name, label, stepv]) => {
+      const p = S.params[name];
+      const box = h('input', { type: 'number', className: 'num', step: stepv, min: p?.min, max: p?.max, value: v[name],
+        onchange: (e) => update({ [name]: Number(e.target.value) }) });
+      return h('label', { className: 'param', dataset: { tip: paramHelp(p) || undefined } },
+        h('span', { className: 'name', textContent: t(label) }), box);
+    }));
 }
 
 function contentsEditor(placed) {
@@ -471,13 +560,6 @@ function previewEditor() {
     segmented('scene', ['homelab', 'single'], (x) => t('scene_' + x), stepHelp('scene')),
     select(null, caseOpts, v.case_view === 'none' ? 'none' : v.case_model,
       (val) => update(val === 'none' ? { case_view: 'none' } : { case_view: 'tower', case_model: val })),
-    h('div', { className: 'swatches', dataset: { tip: t('filamentTip') } },
-      h('span', { className: 'label', textContent: t('filament') }),
-      Object.entries(FILAMENTS).map(([name, hex]) => h('button', {
-        type: 'button', className: `swatch${UI.filament === name ? ' active' : ''}`, title: t('fil_' + name),
-        style: `--c:#${hex[0].toString(16).padStart(6, '0')}`,
-        onclick: () => { UI.filament = name; saveUI(); viewer.setFilament(FILAMENTS[name]); renderSteps(); },
-      }))),
     h('div', { className: 'toggles' },
       toggle(t('cables'), UI.cables, (on) => {
         UI.cables = on; saveUI(); viewer.setVisible('cables', on);
@@ -492,41 +574,47 @@ function previewEditor() {
 }
 
 // ---------------------------------------------------------------- tabs (what to view / download)
+// one row per piece of the kit, with a name that says what it is
+function pieceLabel(f, v) {
+  const p = f.part;
+  const qty = f.qty > 1 ? ` × ${f.qty}` : '';
+  if (p.part === 'adapter') return t('piece_adapter');
+  if (p.part === 'filler' || p.part === 'filler_2') {
+    const z = calc(v).zones[p.part === 'filler' ? 0 : 1];
+    return `${t(p.part === 'filler' ? 'piece_filler' : 'piece_filler2')} · ${t('fill_' + z)}`;
+  }
+  if (p.part === 'rack_module') return modLabel(p.module_type) + qty;
+  if (p.part === 'rack_module_lid') return `${t('mod_nkvm')} · ${t('piece_lid')}${qty}`;
+  if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t('piece_pocket')}${qty}`;
+  if (p.part === 'pci_bracket') return t('piece_pci_' + p.pci_kind);
+  if (p.part === 'keystone_cover') return `${t('piece_cover')} · ${t('cover_' + p.cover_type)}${qty}`;
+  if (p.part.startsWith('test_')) return `${t('piece_test')} · ${t(p.part)}`;
+  return f.name;
+}
+
 function renderTabs() {
   const v = S.values;
-  const c = calc(v);
-  const mods = [...new Set(usedMods(v, c.units))];
-  const covers = ksTypes(v).filter((x) => x === 'cover' || x === 'pass');
-  const tab = (id, label, enabled, onclick, active) => h('button', {
-    type: 'button', className: `tab${active ? ' active' : ''}`, disabled: !enabled, onclick,
-    dataset: { tip: tipOf('part:' + id) },
+  const pieces = kitList(v, true);
+  const isPiece = (f) => Object.entries(f.part).every(([k, x]) => v[k] === x);
+  const current = pieces.findIndex(isPiece);
+  const tab = (label, active, onclick, tip) => h('button', {
+    type: 'button', className: `tab${active ? ' active' : ''}`, onclick, dataset: { tip },
   }, t(label));
+  const mounted = v.part === 'assembly';
   const tabs = [
-    tab('assembly', 'tabAssembly', true, () => update({ part: 'assembly' }), v.part === 'assembly'),
-    tab('adapter', 'tabAdapter', true, () => update({ part: 'adapter' }), v.part === 'adapter'),
-    tab('filler', 'tabFiller', v.filler_mode === 'separate' && c.hasSpare, () => update({ part: 'filler' }), v.part === 'filler'),
-    tab('rack_module', 'tabModules', mods.length > 0,
-      () => update({ part: 'rack_module', module_type: mods.includes(v.module_type) ? v.module_type : mods[0] }), v.part.startsWith('rack_module')),
-    tab('keystone_cover', 'tabCovers', covers.length > 0,
-      () => update({ part: 'keystone_cover', cover_type: covers.includes('cover') ? 'blank' : 'pass' }), v.part === 'keystone_cover'),
-    tab('rack_panel', 'tabPanel', true, () => update({ part: 'rack_panel' }), v.part === 'rack_panel'),
-    tab('tests', 'tabTests', true, () => update({ part: S.tests }), v.part.startsWith('test_')),
+    tab('view_assembly', mounted, () => update({ part: 'assembly' }), tipOf('part:assembly')),
+    tab('view_pieces', !mounted, () => update({ ...pieces[Math.max(0, current)].part }), tipOf('part:pieces')),
   ];
   let sub = null;
-  if (v.part.startsWith('rack_module')) {
-    // a module, and for the NanoKVM bay which of its pieces (the bay or the plate, the pocket, the lid)
-    sub = [select('module_type', mods.map((m) => [m, modLabel(m)]), v.module_type,
-      (val) => update({ module_type: val, part: modKind(val) === 'nkvm' ? v.part : 'rack_module' }))];
-    if (modKind(v.module_type) === 'nkvm') {
-      const split = v.nkvm_split && modItems(v.module_type)[0] !== 'front';
-      sub.push(select('part', [['rack_module', t(split ? 'piece_plate' : 'piece_bay')],
-        ...(split ? [['rack_module_bay', t('piece_pocket')]] : []), ['rack_module_lid', t('piece_lid')]]));
-    }
+  if (!mounted) {
+    const sel = h('select', { className: 'select piece-select', 'aria-label': t('view_pieces'),
+      onchange: () => update({ ...pieces[Number(sel.value)].part }) },
+      pieces.map((f, i) => h('option', { value: i, textContent: pieceLabel(f, v) })));
+    sel.value = String(Math.max(0, current));
+    sub = sel;
   }
-  if (v.part === 'keystone_cover') sub = select('cover_type', ['blank', 'pass'].map((x) => [x, t('cover_' + x)]));
-  if (v.part.startsWith('test_')) { S.tests = v.part; sub = select('part', TESTS.map((x) => [x, t(x)])); }
-  $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, ...[sub].flat())] : []));
-  $('#download').textContent = `${t('downloadPart')} (.${v.part === 'assembly' ? '3mf' : 'stl'})`;
+  $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, sub)] : []));
+  $('#download').textContent = `${t('downloadPart')} (.${mounted ? '3mf' : 'stl'})`;
 }
 
 // ---------------------------------------------------------------- advanced mode (every parameter)
@@ -684,7 +772,7 @@ function showEchoes(echoes, errors) {
 }
 
 // ---------------------------------------------------------------- kit download
-function kitList(v) {
+function kitList(v, withTests = $('#withTests').checked) {
   const c = calc(v);
   const files = [{ name: 'adapter.stl', qty: 1, part: { part: 'adapter' } }];
   if (v.filler_mode === 'separate' && c.zones.length) {
@@ -709,7 +797,7 @@ function kitList(v) {
     const q = sets * types.filter((x) => x === kind).length;
     if (q) files.push({ name: `keystone-${file}.stl`, qty: q, part: { part: 'keystone_cover', cover_type: file } });
   }
-  if ($('#withTests').checked) for (const x of TESTS) files.push({ name: `tests/${x}.stl`, qty: 1, part: { part: x } });
+  if (withTests) for (const x of TESTS) files.push({ name: `tests/${x}.stl`, qty: 1, part: { part: x } });
   return files;
 }
 
@@ -772,7 +860,7 @@ if (import.meta.env.DEV) {
     const { exportBuild } = await import('./export-glb.js');
     const values = { ...S.defaults, ...patch };
     return exportBuild({ name, values, mods: usedMods(values, calc(values).units), runJob, definesFor,
-      filament: FILAMENTS[UI.filament] ?? FILAMENTS.black, ...opts });
+      filament: filamentHexes(), ...opts });
   };
 }
 
@@ -931,7 +1019,7 @@ async function boot() {
   S.catalog = catalog;
   S.values = { ...S.defaults };
   readHash();
-  viewer.setFilament(FILAMENTS[UI.filament] ?? FILAMENTS.black);
+  viewer.setFilament(filamentHexes());
   viewer.show.cables = UI.cables;
   viewer.show.side = UI.side;
   wire();

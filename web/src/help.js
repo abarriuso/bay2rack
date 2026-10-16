@@ -76,6 +76,7 @@ const OPTION_HELP = {
   'fixing:nut_trap': { en: 'A hex nut sits in a pocket at the back of each post.', es: 'Una tuerca hexagonal va en un alojamiento detrás de cada poste.' },
   'fixing:square_nut': { en: 'A square nut slides in from the side of the post.', es: 'Una tuerca cuadrada entra por el lateral del poste.' },
   'fixing:channel': { en: 'A continuous slot where square nuts slide: screws fit at any height, whatever the hole pattern.', es: 'Un canal continuo donde deslizan tuercas cuadradas: atornillas a cualquier altura, sea cual sea el patrón de agujeros.' },
+  'part:pieces': { en: 'Every piece of your kit, one at a time, laid out the way it prints.', es: 'Cada pieza de tu kit, una a una, colocada como se imprime.' },
   'part:assembly': { en: 'The whole thing mounted in a PC case, with hardware. Preview only: it downloads as a coloured 3MF.', es: 'El conjunto montado en una caja, con tornillería. Solo para ver: se descarga como 3MF con colores.' },
   'part:adapter': { en: 'The main part: front frame + rails that screw into the bays. Already oriented to print without supports.', es: 'La pieza principal: marco frontal + guías que se atornillan a las bahías. Ya viene orientada para imprimir sin soportes.' },
   'part:filler': { en: 'The swappable screw-on panel for the leftover strip.', es: 'El panel atornillable e intercambiable de la franja libre.' },
