@@ -239,6 +239,10 @@ nkvm_dims = [37, 15, 23];
 nkvm_rj45 = [16, 13.5, 1];
 // Keystone openings on the left of the NanoKVM bay
 nkvm_keystones = 0; // [0:1:2]
+// nkvm:side - how far the NanoKVM sits behind the plate (it is seen sunk through a window)
+nkvm_recess = 20;
+// nkvm:side - room for the plugs: Ethernet on the left, HDMI / USB on the right (the board is centred between them)
+nkvm_plugs = [32, 42];
 // Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
 pi_boards = "pi5";
 // Blade tray: distance between boards (26 fits a Pi 5 with the active cooler, use ~32 with PoE HATs)

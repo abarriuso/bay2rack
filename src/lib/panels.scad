@@ -151,11 +151,18 @@ NK_M3 = hw("M3");
 function nk_layout(items) = len(items) > 0 && items[0] == "front" ? "front" : "side";
 function nk_n_ks() = max(0, min(2, nkvm_keystones));
 function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
+function nk_ks_x0() = -x_in + 2;                      // its left edge, next to the rack post
 nk_top = nk_fl + nkvm_dims[1] + nk_c;                 // post tops = underside of the lid
 // where the board sits: [x, y] of its Ethernet-end corner, and the rotation (side 0, front 90)
-function nk_place(lay) = let(L = nkvm_dims[0], W = nkvm_dims[2], k = nk_n_ks() > 0)
-    lay == "side" ? [[(k ? 8 : 0) - L / 2, k ? 34 : nk_c + nk_pd], 0]
+// side: sunk nkvm_recess behind the plate (past the keystone jacks if any), and shifted across so the
+// plugs on both ends (nkvm_plugs) stay inside the bay opening
+// (with keystones, its window keeps clear of them: the Ethernet plug then runs behind the jacks)
+function nk_place(lay) = let(L = nkvm_dims[0], W = nkvm_dims[2], n = nk_n_ks(), k = n > 0)
+    lay == "side" ? [[max((nkvm_plugs[0] - nkvm_plugs[1]) / 2 - L / 2, k ? nk_ks_x0() + nk_ks_w(n) + 1 : -1e9),
+                      max(nkvm_recess, k ? 34 : 0, nk_c + nk_pd)], 0]
                   : [[(k ? 14 : 0) + W / 2, nk_c], 90];
+function nk_plugs_fit() = let(x0 = nk_place("side")[0][0])
+    x0 - nkvm_plugs[0] >= -x_in + 1 && x0 + nkvm_dims[0] + nkvm_plugs[1] <= x_in - 1;
 // the end stop at u = 0 is the plate itself in the front layout
 function nk_u0(lay) = lay == "front" ? -nk_c : -nk_c - nk_fs;
 function nk_u1() = nkvm_dims[0] + nk_c + nk_fs;
@@ -166,6 +173,9 @@ function nk_posts(lay) = let(L = nkvm_dims[0], W = nkvm_dims[2], a = (nk_u0(lay)
 module nk_frame(lay) multmatrix(let(P = nk_place(lay)) [[cos(P[1]), -sin(P[1]), 0, P[0][0]], [sin(P[1]), cos(P[1]), 0, P[0][1]], [0, 0, 1, 0], [0, 0, 0, 1]])
     children();
 
+XZ_Y = [[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]];   // 2D (x, z) -> 3D, extruded along +Y
+// the plate window in front of the sunk board (x0 = its Ethernet end)
+module nk_window(x0, L, H, h) nk_rrect(x0 + 2, nk_fl + 2, x0 + L - 2, min(nk_fl + H + 1, h - 4), 2.5);
 module nk_rrect(x0, y0, x1, y1, r) translate([x0, y0]) offset(r) offset(-r) square([x1 - x0, y1 - y0]);
 
 module nk_tray_local(lay) {
@@ -203,10 +213,12 @@ module nkvm_mount(items) {
     h = U - 0.79;
     P = nk_place(lay);
     L = nkvm_dims[0]; W = nkvm_dims[2]; H = nkvm_dims[1];
-    xk = -x_in + 3 + nk_ks_w(n) / 2;
+    xk = nk_ks_x0() + nk_ks_w(n) / 2;
     types = [for (i = [0 : max(n, 1) - 1]) ks_style == "metal" ? "rj45m" : "rj45"];
     if (nk_top + nk_lid_t > h) echo("WARNING: the NanoKVM is too tall for the 1U bay - lower nkvm_dims[1]");
     if (len(items) > 1) echo("NOTE: the NanoKVM bay holds one board; extra items ignored");
+    if (lay == "side" && !nk_plugs_fit())
+        echo("WARNING: the NanoKVM with its plugs (nkvm_plugs) is wider than the bay opening - use nkvm:front or shorter plugs");
     // x span and front edge of the frame, to tie it to the plate
     xs = lay == "side" ? [P[0][0] + nk_u0(lay), P[0][0] + nk_u1()] : [P[0][0] - W - nk_c - nk_pd, P[0][0] + nk_c + nk_pd];
     yf = lay == "side" ? P[0][1] - nk_c - nk_pd : 0;
@@ -221,14 +233,21 @@ module nkvm_mount(items) {
                     polygon([[-eps, nk_fl - eps], [min(16, yf), nk_fl - eps], [-eps, nk_fl + 12]]);
             }
             if (n > 0) translate([xk, 0, 0]) keystone_add(nk_ks_w(n) + 0.1, h, panel_t, types);
+            // sunk: a short tunnel from the plate window back to the board
+            if (lay == "side" && yf > 1) multmatrix(XZ_Y) linear_extrude(yf + eps) difference() {
+                offset(1.6) nk_window(P[0][0], L, H, h);
+                nk_window(P[0][0], L, H, h);
+            }
         }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
         if (n > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(n) + 0.1, h, panel_t, types);
         if (lay == "front")   // the Ethernet port, through the plate
             translate([P[0][0] - W / 2 - (nkvm_rj45[0] + 1) / 2, -panel_t - 1, nk_fl + nkvm_rj45[2] - 0.5])
                 cube([nkvm_rj45[0] + 1, panel_t + 2, nkvm_rj45[1] + 1]);
+        else if (yf > 1)      // a window onto the sunk board
+            translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_window(P[0][0], L, H, h);
         else                  // a window onto the board between the front posts
-            translate([0, -panel_t - 1, 0]) multmatrix([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])
+            translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y)
                 linear_extrude(panel_t + 2) nk_rrect(P[0][0] + nk_pw, nk_fl + 2, P[0][0] + L - nk_pw, nk_fl + H - 1, 2);
     }
 }

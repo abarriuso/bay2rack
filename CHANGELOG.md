@@ -5,7 +5,7 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
-- NanoKVM bay (`nkvm:side`, `nkvm:front`): the board flat on an open frame with its heatsink in the open, a lid on M3 heat-set inserts, Ethernet and HDMI / USB to the sides or only Ethernet at the front, up to two keystones.
+- NanoKVM bay (`nkvm:side`, `nkvm:front`): the board flat on an open frame with its heatsink in the open, a lid on M3 heat-set inserts, sunk behind the plate with Ethernet and HDMI / USB to the sides (the plugs inside the bay opening) or only Ethernet at the front, up to two keystones.
 - The web generator moves to Cloudflare Pages: https://bay2rack.pages.dev/ (the old GitHub Pages address redirects there).
 - Ready-made builds in a collapsible box before the steps; the 3D view keeps its full width on phones.
 
