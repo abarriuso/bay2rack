@@ -14,11 +14,11 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 > los 90) y descarga un **kit (.zip)** con todos los STL y la lista de materiales. Todo se ejecuta en tu navegador.
 >
 > **¿Solo quieres imprimir?** Las variantes ya generadas están en [`stl/`](stl/README.md), con los tornillos e insertos
-> que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests) y [ajusta las tolerancias](#impresión).
+> que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests) y [ajusta las holguras](#impresión).
 
 > **Trabajo en proceso.** ¿Has encontrado un defecto, una pieza que no encaja en tu caja o un problema al imprimir?
 > [Abre un issue](https://github.com/abarriuso/bay2rack/issues) con fotos y el modelo de tu caja. Se agradecen pull requests con medidas de otras cajas
-> y accesorios de rack, módulos nuevos y correcciones. Cajas probadas: [lista de compatibilidad](docs/CASES.md) · cambios: [CHANGELOG](CHANGELOG.md).
+> y accesorios de rack, módulos nuevos y correcciones. Cajas reportadas: [lista de compatibilidad](docs/CASES.md) · cambios: [CHANGELOG](CHANGELOG.md).
 
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
@@ -30,7 +30,7 @@ Evolución del post original
 | | |
 |---|---|
 | ![Router + VLANs](docs/gallery/router.webp) **Router + VLANs**: el PC corre OPNsense / pfSense con una tarjeta de red de 4 puertos; un switch UniFi gestionable lleva las VLANs, un segundo switch los servidores, JetKVM + NanoKVM, patch panel | ![Rack de red](docs/gallery/network.webp) **Rack de red**: 5 bahías, dos switches, un UniFi Express y un patch panel completo |
-| ![Clúster de Raspberry Pi](docs/gallery/pi.webp) **Clúster de Raspberry Pi**: un switch UniFi y cuatro Raspberry Pi 5 de pie en blades de 2U | ![Puesto de KVM](docs/gallery/kvm.webp) **Puesto de KVM**: dos bandejas, dos JetKVM y dos NanoKVM, keystones HDMI y USB |
+| ![Clúster de Raspberry Pi](docs/gallery/pi.webp) **Clúster de Raspberry Pi**: un switch UniFi y cuatro Raspberry Pi 5 de pie en blades de 2U | ![Estación KVM](docs/gallery/kvm.webp) **Estación KVM**: dos bandejas, dos JetKVM y dos NanoKVM, keystones HDMI y USB |
 | ![Audio](docs/gallery/audio.webp) **Audio**: un streamer con Raspberry Pi 4, tres ventiladores de 40 mm, keystones RCA, jack de 3,5 mm y Toslink | ![Botonera + ventilador de 80 mm](docs/gallery/client.webp) **Caja Proxmox / TrueNAS**: sin rack, solo un bisel con un ventilador de 80 mm y una botonera de encendido / reset |
 | ![UniFi](docs/gallery/unifi.webp) **UniFi**: switch Flex Mini y UniFi Express | ![Bisel enrasado](docs/gallery/bezel.webp) **Bisel enrasado**: un bisel de 5,25" exacto, enrasado con el frontal de la caja |
 
@@ -60,7 +60,7 @@ WAN, de la tarjeta de red del router a la caja de fibra.
 Una bahía de 5,25" mide 41,53 mm de alto y las bahías apiladas se repiten cada ~43,18 mm. Una U de rack mide 44,45 mm.
 Por eso **N bahías nunca alojan N U dentro del hueco**, y el déficit crece 1,27 mm por cada bahía:
 
-| Bahías | Alto del hueco | Flush (dentro) | Zona libre | Overhang (N U) | Los paneles sobresalen |
+| Bahías | Alto del hueco | Dentro (`flush`) | Franja libre | Sobresale (`overhang`, N U) | Los paneles sobresalen |
 |------:|------:|------:|------:|------:|------:|
 | 1 | 41,1 mm | 0U | 41,1 mm | 1U | +3,3 mm |
 | 2 | 84,3 mm | 1U | 39,9 mm | 2U | +4,6 mm |
@@ -75,9 +75,9 @@ El diseño lo resuelve con **un único modelo paramétrico** en vez de un modelo
 
 Dos elecciones independientes dan cuatro familias. Los archivos ya generados cubren 1–3 bahías (1–4 en `plate-flush`); el modelo llega hasta 6:
 
-| | **Flush**: N−1 U + zona libre, no sobresale nada | **Overhang**: N bahías = N U |
+| | **Dentro** (`flush`): N−1 U + franja libre, no sobresale nada | **Sobresale** (`overhang`): N bahías = N U |
 |---|---|---|
-| **Frontal plano**: marco plano detrás de los paneles | `plate-flush`: la zona libre lleva un **relleno intercambiable** (patch de 6 puertos, rejilla o tapa ciega) | `plate-overhang`: el marco es unos mm más alto que el hueco |
+| **Frontal plano**: marco plano detrás de los paneles | `plate-flush`: la franja libre lleva un **relleno intercambiable** (patch de 6 puertos, rejilla o tapa ciega) | `plate-overhang`: el marco es unos mm más alto que el hueco |
 | **Frontal bisel**: el contorno exacto de biseles de unidades de 5,25" apiladas | `bezel-flush`: enrasado con el frontal de la caja como una unidad original, con el patch panel cortado en el bisel | `bezel-overhang`: el bisel sigue enrasado y solo los paneles sobresalen sobre el frontal |
 
 ![Las cuatro familias](docs/img/variants.png)
@@ -88,7 +88,7 @@ Usa el frontal plano cuando el frontal de tu caja sea plano a la altura de las b
 frontal de plástico que sobresale de la chapa, usa el bisel y ajusta `bezel_depth` a lo que sobresale ese frontal.
 
 Otros ajustes: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split)
-y el relleno de la zona libre (`keystone`, `buttons`, `vent`, `cable`, `led`, `label` o `blank`).
+y el relleno de la franja libre (`keystone`, `buttons`, `vent`, `cable`, `label` o `blank`).
 El relleno puede ser `separate` (panel atornillado en el mismo plano que los accesorios) o `integral` (cortado en el marco).
 
 ## Módulos de rack
@@ -103,7 +103,7 @@ los agujeros del rack:
 | `kvm:jet+nano` | **Bandeja de KVM por IP**: de 1 a 3 cajas a elegir una al lado de otra (`jet` JetKVM, `nano` NanoKVM, `custom`), p. ej. `kvm:nano+nano`; avisa si no caben |
 | `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2.5, USB y Ethernet por delante; dos placas una al lado de otra con PoE HAT |
 | `piblade:pi5+pi5+pi5+pi5` | **Blades de Raspberry Pi de 2U**: hasta cuatro placas de canto, cada una en su aleta, con separadores que se imprimen sin soportes |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM** en tres piezas, con tapa sobre insertos roscados M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
+| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM** en tres piezas, con tapa sobre insertos térmicos M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
 | `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
 | `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas |
 | `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños |
@@ -205,13 +205,13 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 
 > [!IMPORTANT]
 > **Imprime primero las piezas de prueba** (vienen en todos los kits y en [`stl/tests`](stl/README.md#tests)).
-> Cada impresora y cada filamento imprimen un poco justo o un poco holgado, así que comprueba cada ajuste y mueve
-> su tolerancia antes de imprimir las piezas grandes:
+> Cada impresora y cada filamento imprimen un poco justo o un poco holgado, así que comprueba cada ajuste y cambia
+> su holgura antes de imprimir las piezas grandes:
 >
 > | Pieza de prueba | Qué comprueba | Si queda justa | Si queda holgada / desplazada |
 > |---|---|---|---|
 > | `test_keystone` | que el keystone entre y se enganche | sube `ks_fit` (+0,1 a +0,2) | baja `ks_fit` (negativo) |
-> | `test_bay` | que la funda entre en la bahía y cuadren los agujeros laterales | sube `sleeve_clearance` | agujeros desplazados: `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` |
+> | `test_bay` | que las guías entren en la bahía y cuadren los agujeros laterales | sube `sleeve_clearance` | agujeros desplazados: `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` |
 > | `test_rack` | la separación de los agujeros del rack y sus insertos | no cuadran los agujeros: `rack_hole_slot` | el inserto gira: baja `rack_insert_d`; entra torcido: súbelo |
 >
 > El resto funciona igual: `cover_clear` para las tapas de keystone, `mount_clear` para los dispositivos de los
