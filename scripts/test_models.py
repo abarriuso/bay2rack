@@ -75,7 +75,7 @@ CASES = (
        module("pi:pi5"), module("pi:pi5+pi5"), module("pi:zero"), module("pi:pi4+pi3"),
        module("piblade:pi5+pi5"), module("piblade:pi5+pi5+pi5+pi5"),
        module("nkvm:side"), module("nkvm:front"),
-       ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None),
+       ("module/nkvm:front-2ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 2}, None),
        ("module/nkvm:front-1ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 1}, None),
        ("lid/nkvm:side", {"part": "rack_module_lid", "module_type": "nkvm:side"}, None),
        ("lid/nkvm:front", {"part": "rack_module_lid", "module_type": "nkvm:front"}, None)]
@@ -94,7 +94,8 @@ CASES = (
     # the model must still warn when something does not fit
     + [module("kvm:jet+jet+jet", warn="do not fit"),
        adapter("fan80-in-a-1U-strip", warn="80 mm fan", spare_fill="fan80", filler_mode="integral"),
-       adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap")]
+       adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap"),
+       ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, "does not fit in the pocket")]
 )
 
 

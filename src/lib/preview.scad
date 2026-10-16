@@ -249,8 +249,8 @@ module kvm_box_model(b, x, yf, zc) {
     else kvm_custom_model(x, yf, zc);
 }
 
-// NanoKVM Lite lying in its bay: black board stack, heatsink on top, Ethernet at u = 0, HDMI + USB-C at u = L
-module nkvm_model(lay) nk_frame(lay) translate([0, 0, nk_fl]) {
+// NanoKVM Lite in its bay: black board stack, heatsink on top, Ethernet at u = 0, HDMI + USB-C at u = L
+module nkvm_board() {
     L = nkvm_dims[0]; W = nkvm_dims[2]; H = nkvm_dims[1];
     color([0.08, 0.09, 0.1]) cube([L, W, 1.6]);
     color([0.12, 0.13, 0.15]) translate([2, 2, 1.6]) cube([L - 4, W - 4, H - 7]);
@@ -261,6 +261,10 @@ module nkvm_model(lay) nk_frame(lay) translate([0, 0, nk_fl]) {
     color([0.75, 0.77, 0.8]) translate([L - 8, W / 2 - 7.5, H - 6.5]) cube([8.6, 15, 5.6]);                                     // HDMI
     color([0.75, 0.77, 0.8]) translate([L - 6, W / 2 - 4.5, 2.4]) cube([6.6, 9, 3.2]);                                           // USB-C
 }
+// side: standing, the heatsink to the front; front: lying flat
+module nkvm_model(lay)
+    if (lay == "side") multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yd0 + nkvm_dims[1]], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
+    else nk_front_frame() translate([0, 0, nk_fl]) nkvm_board();
 
 // Raspberry Pi boards, port edge at y = y0, underside at z = zb
 PI_PCB = [18, 77, 41] / 255;                           // the web viewer gives this green a PCB texture
@@ -401,7 +405,7 @@ module rack_contents() for (k = [0 : len(placed_mods) - 1]) if (preview_item == 
     yb = -ft - explode;                                // back face of the module plate
     color(PRINT_C + [k, 0, 0] / 255) translate([0, yb, z]) {
         rack_module(m);
-        if (mod_kind(m) == "nkvm") translate([0, 0, explode]) nkvm_lid(mod_items(m));
+        if (mod_kind(m) == "nkvm") translate(nk_layout(mod_items(m)) == "side" ? [0, -explode, 0] : [0, 0, explode]) nkvm_lid(mod_items(m));
     }
     if (demo_devices == "homelab") {
         if (m == "ms105g") ms105g_model(yb + 0.2, z + ms_z0 + ms_ch / 2);
