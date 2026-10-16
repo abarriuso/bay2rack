@@ -17,7 +17,7 @@
 
 /* [Part to render] */
 // What to render. "assembly" is a preview only, do not print it.
-part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), button_cap:Retro button cap (btn_cap), button_carrier:Retro button switch carrier, filler_labels:Multicolour letters of the filler, rack_module_labels:Multicolour letters of a rack module, rack_panel_labels:Multicolour letters of the rack panel, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
+part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), button_cap:Retro button cap (btn_cap), button_carrier:Retro button switch carrier, filler_labels:Multicolour letters of the filler, rack_module_labels:Multicolour letters of a rack module, rack_panel_labels:Multicolour letters of the rack panel, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon, test_button:Test - one button of the button panel]
 // Lay printable parts front-face down on the bed
 print_orientation = true;
 
@@ -417,7 +417,7 @@ else if (part == "rack_module_labels") {
     if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) != "side") module_labels(module_type);
     else printable(panel_t) module_labels(module_type);
 }
-else if (part == "button_cap") button_cap(btn_cap);
+else if (part == "button_cap") button_cap(btn_cap, btn_panel_t);     // as thick as the first button panel
 else if (part == "button_carrier") {
     if (btn_type != "retro") echo("WARNING: the switch carrier is for btn_type = retro");
     // the carrier of the first button panel (a spare zone, else a 1U module)
@@ -436,3 +436,4 @@ else if (part == "pci_bracket") pci_bracket(pci_kind);
 else if (part == "test_rack") printable(ft) test_rack();
 else if (part == "test_bay") printable(ft) test_bay();
 else if (part == "test_keystone") printable(filler_t) test_keystone();
+else if (part == "test_button") printable(btn_panel_t) test_button();

@@ -325,7 +325,7 @@ const OPT_ES = {
   'part:rack_panel': 'Panel de rack suelto', 'part:rack_module': 'Módulo de rack', 'part:rack_module_lid': 'Tapa de la bahía NanoKVM',
   'part:rack_module_bay': 'Bahía NanoKVM aparte (hueco, montañita o cajón)', 'part:button_cap': 'Botón retro impreso', 'part:button_carrier': 'Soporte de los micropulsadores',
   'part:keystone_cover': 'Tapón de keystone', 'part:pci_bracket': 'Chapa PCI', 'part:test_rack': 'Prueba: agujeros del rack', 'part:test_bay': 'Prueba: esquina de bahía',
-  'part:test_keystone': 'Prueba: puerto keystone', 'part:filler_labels': 'Letras multicolor del panel de la franja',
+  'part:test_keystone': 'Prueba: puerto keystone', 'part:test_button': 'Prueba: un botón de la botonera', 'part:filler_labels': 'Letras multicolor del panel de la franja',
   'part:rack_module_labels': 'Letras multicolor de un módulo', 'part:rack_panel_labels': 'Letras multicolor del panel de rack',
   'bay_std:sff': '5,25" - SFF-8551 / EIA-741', 'bay_std:custom': 'Medidas propias',
   'front_style:plate': 'Marco plano', 'front_style:bezel': 'Bisel exacto de 5,25"',
@@ -384,7 +384,14 @@ const BOM_ES = [
   [/M3 x (\d+) screw \+ (\d+) x M3 heat-set insert \(switch carrier\)/, 'tornillo M3 x $1 + $2 x inserto térmico M3 (soporte de los micropulsadores)'],
   [/dome LED \(disk activity\) \+ front-panel header wires/, 'LED (actividad de disco) + cables al panel frontal de la placa'],
   [/dome LED \(power green, HDD amber(, turbo yellow)?\) \+ front-panel header wires/, (m, tb) => `LED (encendido verde, HDD ámbar${tb ? ', turbo amarillo' : ''}) + cables al panel frontal de la placa`],
-  [/^NanoKVM bay lid:/, 'Tapa de la bahía NanoKVM:'], [/^NanoKVM bay plate to pocket:/, 'Frontal de la bahía NanoKVM:'],
+  [/^NanoKVM bay lid:/, 'Tapa de la bahía NanoKVM:'], [/^NanoKVM bay to plate:/, 'Bahía NanoKVM al frontal:'],
+  [/^NanoKVM mountain to plate:/, 'Montañita NanoKVM al frontal:'], [/^NanoKVM drawer:/, 'Cajón NanoKVM:'], [/^NanoKVM bay:/, 'Bahía NanoKVM:'],
+  [/\(in the mountain posts\)/, '(en los postes de la montañita)'], [/\(behind the plate\)/, '(detrás del frontal)'],
+  [/RJ45 keystone coupler \(female-female\)/, 'keystone RJ45 empalme (hembra-hembra)'],
+  [/10 cm patch cable \(keystone to NanoKVM\)/, 'latiguillo de 10 cm (del keystone al NanoKVM)'],
+  [/^devices \(not included\):/, 'Aparatos (no incluidos):'], [/5-port switch \(MS105G size\)/g, 'switch de 5 puertos (medida MS105G)'],
+  [/your device (\d)/g, 'tu dispositivo $1'], [/KVM \(your size\)/g, 'KVM (tu medida)'],
+  [/^cables and power \(not included\): .*/, "Cables y corriente (no incluidos): un latiguillo de red por puerto, los cables HDMI + USB de cada KVM a su equipo, y la alimentación de los aparatos (su fuente, USB-C o PoE)"],
   [/\(into the adapter's fixings - nothing else to buy\)/, '(a las fijaciones del adaptador, no hace falta nada más)'],
   [/from the back/, 'por detrás'], [/\(in the plate\)/, '(en el frontal)'], [/countersunk/, 'avellanado'],
   [/tactile switch/, 'micropulsador'], [/the printed caps \(part = button_cap\)/, 'los botones impresos'],
@@ -417,6 +424,11 @@ const BOM_ES = [
 ];
 
 const WARN_ES = [
+  [/^the rack inserts leave only (.+) mm of plastic to the bay side - .*$/, 'Los insertos del rack dejan solo $1 mm de plástico hacia el lateral de la bahía: usa tornillos más pequeños u otra fijación'],
+  [/^the rack inserts leave (.+) mm of plastic to the bay side - press them in slowly and slide test_rack into a bay to check it still fits( \(M5 or M4 inserts leave 2 mm or more\))?$/,
+    (m, w, m6) => `Los insertos del rack dejan ${w} mm de plástico hacia el lateral de la bahía: mételos despacio y prueba que la pieza «Agujeros del rack» sigue entrando en una bahía${m6 ? ' (con M5 o M4 quedan 2 mm o más)' : ''}`],
+  [/^ks_ports_list sets (\d+) ports - ks_ports \((\d+)\) only counts when the list is empty$/, 'La lista de puertos tiene $1 puertos: ks_ports ($2) solo cuenta si la lista está vacía'],
+  [/^the raised NanoKVM bay sticks out (.+) mm from the rack front - .*$/, 'La bahía NanoKVM en montañita sobresale $1 mm del frontal del rack: comprueba que la puerta de tu caja sigue cerrando (si no, desactiva «Montañita»)'],
   [/^(.+) screw length (.+)mm is outside the usable range (.+)-(.+)mm(.*)$/, (m, a, l, r0, r1, rest) => `Tornillo ${a}: ${l} mm está fuera del rango útil (${r0}-${r1} mm)${rest ? ': ningún largo estándar cabe, ajusta post_d o la fijación' : ''}`],
   [/^rack holes are too close to the frame edge - wider frame or smaller screws$/, 'Los agujeros del rack quedan muy cerca del borde del marco: usa un marco más ancho o tornillos más pequeños'],
   [/^posts too shallow for these heat-set inserts - raise post_d$/, 'Los postes son muy cortos para estos insertos: sube post_d'],
@@ -469,7 +481,7 @@ const WARN_ES = [
 ];
 
 export function warnText(line) {
-  return lang === 'es' ? WARN_ES.reduce((acc, [re, to]) => acc.replace(re, to), line) : line;
+  return lang === 'es' ? WARN_ES.reduce((acc, [re, to]) => acc.replace(re, to), line).replace(/(\d)\.(\d)/g, '$1,$2') : line;
 }
 
 export function bomText(line) {

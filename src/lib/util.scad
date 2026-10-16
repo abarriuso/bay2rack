@@ -44,3 +44,7 @@ function split_keep(s, sep = ",", i = 0, cur = "") =
   : split_keep(s, sep, i + 1, str(cur, s[i]));
 
 function sum_list(v, i = 0) = i >= len(v) ? 0 : v[i] + sum_list(v, i + 1);
+function str_join(v, sep = ", ", i = 0) = i >= len(v) ? "" : str(v[i], i < len(v) - 1 ? sep : "", str_join(v, sep, i + 1));
+// "2 x a, 1 x b" from ["a", "b", "a"], in the order they first appear
+function count_list(v) = str_join([for (i = [0 : 1 : len(v) - 1]) if (len([for (j = [0 : 1 : i - 1]) if (v[j] == v[i]) 1]) == 0)
+    str(len([for (x = v) if (x == v[i]) 1]), " x ", v[i])]);
