@@ -264,7 +264,7 @@ module nkvm_board() {
 // side: standing, the heatsink to the front; front: lying flat
 module nkvm_model(lay)
     if (lay == "side") multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yd0 + nkvm_dims[1]], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
-    else nk_front_frame() translate([0, 0, nk_fl]) nkvm_board();
+    else nk_front_frame() translate([0, 0, nk_zf + nk_fl]) nkvm_board();
 
 // Raspberry Pi boards, port edge at y = y0, underside at z = zb
 PI_PCB = [18, 77, 41] / 255;                           // the web viewer gives this green a PCB texture

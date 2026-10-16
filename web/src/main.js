@@ -312,7 +312,8 @@ function trayEditor(kind, items, onChange) {
       (val) => update({ nkvm_keystones: Number(val) })));
     // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
     if (items[0] !== 'front') {
-      slots.push(select(null, ['frame', 'full'].map((x) => [x, t('nkvm_lid_' + x)]), S.values.nkvm_lid, (val) => update({ nkvm_lid: val })));
+      slots.push(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
+        (val) => update({ nkvm_cover: val === '1' })));
       slots.push(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
         (val) => update({ nkvm_split: val === '1' })));
     }

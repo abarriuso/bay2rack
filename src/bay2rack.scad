@@ -243,8 +243,8 @@ nkvm_rj45 = [16, 13.5, 1]; // [0:0.1:20]
 nkvm_keystones = 0; // [0:1:2]
 // nkvm:side - room in the pocket for the plugs: Ethernet on the left, HDMI / USB on the right
 nkvm_plugs = [32, 42]; // [0:1:60]
-// nkvm:side - the lid: a frame round the NanoKVM, or a long one over the whole pocket (the plugs hidden behind it)
-nkvm_lid = "frame"; // [frame:Frame round the NanoKVM, full:Long lid over the whole pocket]
+// nkvm:side - the plate covers the pocket beside the NanoKVM, so the plugs and the inside of the case are hidden (off = the whole pocket is open)
+nkvm_cover = true;
 // nkvm:side - three pieces: the plate and the pocket printed apart and screwed together (M3 heat-set inserts)
 nkvm_split = false;
 // Hole for the M3 heat-set inserts of the NanoKVM bay (0 = 4.2 mm table value): raise it if the insert melts in crooked, lower it if it spins

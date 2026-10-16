@@ -207,10 +207,15 @@ nk_boss = 8;                                           // corner boss (split) / 
 function nk_split() = nkvm_split;
 function nk_bosses() = let(p = nk_pocket(), o = nk_wall + nk_boss / 2)
     [for (x = [p[0] + o, p[1] - o], z = [o, nk_h - o]) [x, z]];
-// the pocket opening in the plate (with the corners kept in the split version)
+// the pocket opening in the plate: with nkvm_cover just the lid's outline (the plugs and the inside of
+// the case stay hidden behind the plate), otherwise the whole pocket (corners kept in the split version)
 module nk_opening2d() {
     p = nk_pocket();
-    difference() {
+    x0 = nk_x0();
+    W = nkvm_dims[2];
+    if (nkvm_cover) nk_rrect(x0 + nk_u0("side") - 0.4, nk_zv0 - nk_c - nk_pd - 0.4,
+                             x0 + nk_u1() + 0.4, nk_zv0 + W + nk_c + nk_pd + 0.4, 3.4);
+    else difference() {
         translate([p[0] + nk_wall, nk_wall]) square([p[1] - p[0] - 2 * nk_wall, nk_h - 2 * nk_wall]);
         if (nk_split()) for (b = nk_bosses()) translate([b[0] - nk_boss / 2 - 0.4, b[1] - nk_boss / 2 - 0.4])
             offset(r = 0.4) square(nk_boss);
@@ -250,9 +255,6 @@ module nk_side_bay() {
             if (nk_split()) for (b = nk_bosses())
                 translate([b[0] - nk_boss / 2 - (b[0] < 0 ? nk_wall : 0), 0, b[1] - nk_boss / 2 - (b[1] < h / 2 ? nk_wall : 0)])
                     cube([nk_boss + nk_wall, NK_M3[3] + 2.3, nk_boss + nk_wall]);
-            // a long lid rests on two ledges at the ends of the pocket
-            if (nkvm_lid == "full") for (x = [p[0] + nk_wall - eps, p[1] - nk_wall - 1.5 + eps])
-                translate([x, 0, h / 2 - 8]) cube([1.5, 2, 16]);
         }
         // an open back behind the board
         translate([0, nk_yb0 - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_yb1 - nk_yb0 + 2)
@@ -273,7 +275,10 @@ module nk_side_mount(n, types, xk) {
 }
 
 // ---- front layout: lying flat behind the plate ----
-function nk_place_front() = [(nk_n_ks() > 0 ? 14 : 0) + nkvm_dims[2] / 2, nk_c];   // [x, y] of the board's Ethernet-end corner
+// [x, y] of the board's Ethernet-end corner: centred, or right after the keystones so its port reads as one more in the row
+function nk_place_front() = [nk_n_ks() > 0 ? nk_ks_x0() + nk_ks_w(nk_n_ks()) + 2 + nk_c + nk_pd + nkvm_dims[2] : nkvm_dims[2] / 2, nk_c];
+// the board sits on a pedestal so its Ethernet port is centred in the plate, in line with the keystones
+nk_zf = max(0, min(nk_h - nk_top - nk_lid_t - 0.5, nk_h / 2 - (nk_fl + nkvm_rj45[2] + nkvm_rj45[1] / 2)));
 module nk_front_frame() translate([nk_place_front()[0], nk_place_front()[1], 0]) rotate(90) children();
 
 module nk_tray_local() {
@@ -306,17 +311,25 @@ module nkvm_mount(items) {
         if (W + 2 * (nk_c + nk_pd) > h - 2 * nk_wall - 1) echo("WARNING: the NanoKVM is too wide to stand in the 1U pocket - lower nkvm_dims[2]");
         nk_side_mount(n, types, xk);
     } else {
-        if (nk_top + nk_lid_t > h) echo("WARNING: the NanoKVM is too tall for the 1U bay - lower nkvm_dims[1]");
+        if (nk_zf + nk_top + nk_lid_t > h) echo("WARNING: the NanoKVM is too tall for the 1U bay - lower nkvm_dims[1]");
         difference() {
             union() {
                 plate(panel_w, h, panel_t, 0.6);
-                nk_front_frame() nk_tray_local();
+                nk_front_frame() {
+                    translate([0, 0, nk_zf]) nk_tray_local();
+                    // the pedestal: two walls along the board and one across its back end
+                    if (nk_zf > eps) {
+                        for (v = [-nk_c - nk_pd, nkvm_dims[2] + nk_c + nk_pd - 2])
+                            translate([nk_u0("front"), v, 0]) cube([nk_u1() - nk_u0("front"), 2, nk_zf + eps]);
+                        translate([nk_u1() - 2, -nk_c - nk_pd, 0]) cube([2, nkvm_dims[2] + 2 * (nk_c + nk_pd), nk_zf + eps]);
+                    }
+                }
                 if (n > 0) translate([xk, 0, 0]) keystone_add(nk_ks_w(n) + 0.1, h, panel_t, types);
             }
             panel_holes(panel_zs(1), panel_t, panel_hole_slot);
             if (n > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(n) + 0.1, h, panel_t, types);
             // the Ethernet port, through the plate
-            translate([nk_place_front()[0] - W / 2 - (nkvm_rj45[0] + 1) / 2, -panel_t - 1, nk_fl + nkvm_rj45[2] - 0.5])
+            translate([nk_place_front()[0] - W / 2 - (nkvm_rj45[0] + 1) / 2, -panel_t - 1, nk_zf + nk_fl + nkvm_rj45[2] - 0.5])
                 cube([nkvm_rj45[0] + 1, panel_t + 2, nkvm_rj45[1] + 1]);
         }
     }
@@ -337,34 +350,13 @@ module nkvm_lid_local(lay) {
         }
     }
 }
-// the long lid (nkvm_lid = full), in plate coordinates (x, z), its front face at local z = 0
-module nk_full_lid_local() {
-    p = nk_pocket();
-    x0 = nk_x0();
-    L = nkvm_dims[0]; W = nkvm_dims[2];
-    g = 0.4;
-    difference() {
-        linear_extrude(nk_lid_t) difference() {
-            offset(-g) nk_opening2d();
-            nk_rrect(x0 + 3, nk_zv0 + 3, x0 + L - 3, nk_zv0 + W - 3, 3);
-        }
-        for (q = nk_posts("side")) translate([x0 + q[0], nk_zv0 + q[1], 0]) {
-            translate([0, 0, -1]) cylinder(d = NK_M3[0], h = nk_lid_t + 2, $fn = 20);
-            translate([0, 0, -eps]) cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
-        }
-    }
-}
-// the lid for printing: flat, the face that shows on the bed for the long one
-module nkvm_lid_print(items)
-    if (nk_layout(items) == "side" && nkvm_lid == "full") nk_full_lid_local();
-    else nkvm_lid_local(nk_layout(items));
+// the lid for printing: flat
+module nkvm_lid_print(items) nkvm_lid_local(nk_layout(items));
 // in place: side = standing in the pocket, its countersunk face to the front; front = on top of the posts
 module nkvm_lid(items)
-    if (nk_layout(items) == "side" && nkvm_lid == "full")
-        multmatrix([[1, 0, 0, 0], [0, 0, 1, -panel_t + 0.6], [0, 1, 0, 0], [0, 0, 0, 1]]) nk_full_lid_local();
-    else if (nk_layout(items) == "side")
+    if (nk_layout(items) == "side")
         multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yp0], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_lid_local("side");
-    else nk_front_frame() translate([0, 0, nk_top]) nkvm_lid_local("front");
+    else nk_front_frame() translate([0, 0, nk_zf + nk_top]) nkvm_lid_local("front");
 
 // ---------------------------------------------------------------------
 //  Raspberry Pi tray: boards flat on four standoffs, the port edge facing
