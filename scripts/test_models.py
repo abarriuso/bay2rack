@@ -82,6 +82,8 @@ CASES = (
        module("nkvm:ks"),
        ("module/nkvm:ks-2ks", {"part": "rack_module", "module_type": "nkvm:ks", "nkvm_keystones": 2}, None),
        ("lid/nkvm:ks", {"part": "rack_module_lid", "module_type": "nkvm:ks"}, None),
+       ("drawer/nkvm:front", {"part": "rack_module_bay", "module_type": "nkvm:front"}, None),
+       ("module/nkvm:front-1piece", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_split": False, "nkvm_keystones": 1}, None),
        ("module/nkvm:side-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_cover": False, "nkvm_raised": False}, None),
        ("module/nkvm:side-pocket-1piece", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_raised": False, "nkvm_split": False}, None),
        ("module/nkvm:side-raised-1piece", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": False}, None),

@@ -382,8 +382,12 @@ else if (part == "filler" || part == "filler_2") {
 }
 else if (part == "rack_panel") printable(panel_t) rack_panel();
 else if (part == "rack_module_bay") {
-    if (!(mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split))
-        echo("WARNING: only the split NanoKVM bay (module_type = nkvm:side, nkvm_split = true) has a separate pocket piece");
+    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front" && nkvm_split) {
+        // the drawer prints on its floor
+        if (print_orientation) translate([0, 0, -nk_zf]) nk_f_drawer(); else nk_f_drawer();
+    }
+    else if (!(mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split))
+        echo("WARNING: only the three-piece NanoKVM bays (nkvm:side or nkvm:front with nkvm_split) have this piece");
     // raised: the mountain prints on its base; pocket: on its front
     else if (nkvm_raised) { if (print_orientation) translate([0, 0, -panel_t]) rotate([-90, 0, 0]) nk_r_mountain(); else nk_r_mountain(); }
     else if (print_orientation) rotate([90, 0, 0]) nk_side_bay();
@@ -396,7 +400,9 @@ else if (part == "rack_module" && mod_kind(module_type) == "nkvm" && nk_layout(m
                                      nk_ks_x0() + nk_ks_w(nk_n_ks()) / 2);
 else if (part == "rack_module") {
     // the flat NanoKVM bay prints floor-down with the plate standing; the other modules print face-down
-    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) != "side") rack_module(module_type);
+    // the drawer's plate prints face-down like the other modules; the flat bays in one piece print on their floor
+    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front" && nkvm_split) printable(panel_t) rack_module(module_type);
+    else if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) != "side") rack_module(module_type);
     // the raised NanoKVM bay prints back face down, its mountain up
     else if (mod_kind(module_type) == "nkvm" && nkvm_raised && print_orientation) rotate([-90, 0, 0]) rack_module(module_type);
     else printable(panel_t) rack_module(module_type);

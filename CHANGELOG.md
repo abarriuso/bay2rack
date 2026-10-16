@@ -5,6 +5,7 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- NanoKVM bay flat (`nkvm:front`): a drawer in three pieces - the plate with two guides, the drawer with the Ethernet port in its face (two screws), the lid; the drawer slides out of the front with the NanoKVM. The keystones keep clear of the rack post and the drawer sits centred in the rest.
 - NanoKVM bay standing (`nkvm:side`): out of the case in a little mountain (`nkvm_raised`, new default) with its ports open at both sides, cables from outside or through slots into the case; three pieces (plate, mountain, lid) by default.
 - LED strip fill removed.
 - NanoKVM bay `nkvm:ks`: the network port comes to the front through a keystone; the NanoKVM lies flat right behind it, connected with a straight 10 cm patch cable, HDMI and USB into the case.

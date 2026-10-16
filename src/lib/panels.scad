@@ -161,7 +161,8 @@ function nk_nks(lay) = lay == "ks" ? max(1, nk_n_ks()) : lay == "side" ? 0 : nk_
 nk_ks_rear = 28.6;                                     // back of a metal keystone jack, behind the plate
 function nk_n_ks() = max(0, min(2, nkvm_keystones));
 function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
-function nk_ks_x0(lay = "side") = lay == "ks" ? -nk_ks_w(nk_nks("ks")) / 2 : -x_in + 2;   // its left edge: next to the rack post, or centred (ks)
+// the keystones' left edge: centred (ks), or 6 mm from the rack post with the drawer centred in what is left (front)
+function nk_ks_x0(lay = "side") = lay == "ks" ? -nk_ks_w(nk_nks("ks")) / 2 : lay == "front" ? -x_in + 6 : -x_in + 2;
 nk_top = nk_fl + nkvm_dims[1] + nk_c;                 // front layout: post tops = underside of the lid
 // the end stop at u = 0 is the plate itself in the front layout
 function nk_u0(lay) = lay == "front" ? -nk_c : -nk_c - nk_fs;    // (ks: away from the plate, with fingers)
@@ -388,7 +389,72 @@ module nk_side_mount(n, types, xk) {
 // [x, y] of the board's Ethernet-end corner: centred, or right after the keystones so its port reads as one more in the row
 function nk_place_front(lay = "front") = lay == "ks"
     ? [nk_ks_x0("ks") + ks_cw / 2 + nkvm_dims[2] / 2, nk_ks_rear + nkvm_patch]       // in line behind keystone 1
-    : [nk_n_ks() > 0 ? nk_ks_x0() + nk_ks_w(nk_n_ks()) + 2 + nk_c + nk_pd + nkvm_dims[2] : nkvm_dims[2] / 2, nk_c];
+    : [nk_f_xd() + nkvm_dims[2] / 2, nk_c];
+// ---- front layout: the NanoKVM in a drawer --------------------------------------------------------
+// Three pieces: the plate (two guides behind it that hold the drawer at the height that puts the Ethernet port in
+// line with the keystones), the drawer (its face with the port fills an opening of the plate, a small bezel round
+// it takes two countersunk screws into inserts behind the plate), and the lid. Two screws out and the drawer slides
+// out of the front with the NanoKVM, the plate stays in the rack.
+function nk_f_xd() = nk_n_ks() > 0 ? (nk_ks_x0("front") + nk_ks_w(nk_n_ks()) + x_in) / 2 : 0;   // drawer centre
+function nk_f_dw() = nkvm_dims[2] + 2 * (nk_c + nk_pd);                        // drawer width
+function nk_f_len() = nk_c + nk_u1();                                          // drawer length behind the face
+function nk_f_zt() = nk_zf + nk_top + nk_lid_t;                                // top of the face (lid top)
+nk_f_bz = 6;                                                                   // bezel round the face (sides, top)
+function nk_f_screws() = let(x0 = nk_f_xd() - nk_f_dw() / 2, x1 = nk_f_xd() + nk_f_dw() / 2, z = (nk_zf + nk_f_zt()) / 2)
+    [[x0 - nk_f_bz / 2 - 0.3, z], [x1 + nk_f_bz / 2 + 0.3, z]];
+module nk_f_face2d(g = 0) let(xd = nk_f_xd(), dw = nk_f_dw())
+    translate([xd - dw / 2 - g, nk_zf - min(g, 0.3)]) square([dw + 2 * g, nk_f_zt() - nk_zf + g + min(g, 0.3)]);
+
+module nk_f_drawer() {
+    xd = nk_f_xd(); dw = nk_f_dw();
+    W = nkvm_dims[2];
+    difference() {
+        union() {
+            nk_front_frame("front") translate([0, 0, nk_zf]) nk_tray_local("front");
+            // the face, in the plate opening, and the bezel on the plate (flush with the bottom of the drawer)
+            translate([0, -panel_t, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + eps) nk_f_face2d(-0.3);
+            translate([0, -panel_t - 2, 0]) multmatrix(XZ_Y) hull() {
+                linear_extrude(2 - 0.6) nk_rrect(xd - dw / 2 - nk_f_bz, nk_zf, xd + dw / 2 + nk_f_bz, nk_f_zt() + nk_f_bz * 0.6, 2.5);
+                linear_extrude(2) offset(-0.6) nk_rrect(xd - dw / 2 - nk_f_bz, nk_zf, xd + dw / 2 + nk_f_bz, nk_f_zt() + nk_f_bz * 0.6, 2.5);
+            }
+        }
+        // the Ethernet port
+        translate([xd - (nkvm_rj45[0] + 1) / 2, -panel_t - 3, nk_zf + nk_fl + nkvm_rj45[2] - 0.5])
+            cube([nkvm_rj45[0] + 1, panel_t + 4, nkvm_rj45[1] + 1]);
+        // the two screws, countersunk in the bezel
+        for (p = nk_f_screws()) translate([p[0], -panel_t - 2 - eps, p[1]]) rotate([-90, 0, 0]) {
+            cylinder(d = NK_M3[0], h = 3, $fn = 20);
+            cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
+        }
+    }
+}
+
+// the plate of the drawer version: rack holes, keystones, the opening, the two guides and the screw inserts
+module nk_f_plate(nks, kt, xk) {
+    h = nk_h;
+    xd = nk_f_xd(); dw = nk_f_dw(); len = nk_f_len();
+    difference() {
+        union() {
+            plate(panel_w, h, panel_t, 0.6);
+            for (s = [-1, 1]) let(xe = xd + s * dw / 2) {
+                // an L guide under each edge of the drawer: the floor slides on it, the lip keeps it straight
+                translate([s < 0 ? xe - 2.1 : xe - 3, -eps, 0]) cube([5.1, len + eps, nk_zf - 0.1]);
+                translate([s < 0 ? xe - 2.1 : xe + 0.3, -eps, 0]) cube([1.8, len + eps, nk_zf + 2.5]);
+                translate([s < 0 ? xe - 2.1 : xe + 0.3, 0, 0]) multmatrix(YZ) linear_extrude(1.8)
+                    polygon([[-eps, nk_zf + 2.5 - eps], [12, nk_zf + 2.5 - eps], [-eps, nk_zf + 12]]);
+            }
+            for (p = nk_f_screws()) translate([p[0], -eps, p[1]]) rotate([-90, 0, 0]) cylinder(d = 7.5, h = 7, $fn = 28);
+            if (nks > 0) translate([xk, 0, 0]) keystone_add(nk_ks_w(nks) + 0.1, h, panel_t, kt);
+        }
+        panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        if (nks > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(nks) + 0.1, h, panel_t, kt);
+        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_f_face2d(0);
+        for (p = nk_f_screws()) translate([p[0], 0, p[1]]) {
+            translate([0, -panel_t - 1, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3[0], h = panel_t + 2, $fn = 20);
+            translate([0, 7 + eps, 0]) rotate([90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.3, $fn = 24);   // insert from behind
+        }
+    }
+}
 // the board sits on a pedestal so its Ethernet port is centred in the plate, in line with the keystones
 nk_zf = max(0, min(nk_h - nk_top - nk_lid_t - 0.5, nk_h / 2 - (nk_fl + nkvm_rj45[2] + nkvm_rj45[1] / 2)));
 module nk_front_frame(lay = "front") translate([nk_place_front(lay)[0], nk_place_front(lay)[1], 0]) rotate(90) children();
@@ -433,7 +499,8 @@ module nkvm_mount(items) {
         rail = [Pf[0] - W - nk_c - nk_pd, Pf[0] + nk_c + nk_pd - 2.4];     // x of the two rails / pedestal walls
         if (lay == "ks") echo(str("NOTE: the NanoKVM bay is ", round(Pf[1] + nk_u1() + 2), " mm deep - patch cable about ",
                                   round(nkvm_patch + 55), " mm (10 cm) from keystone 1 to the NanoKVM"));
-        difference() {
+        if (lay == "front") { nk_f_plate(nks, kt, xk); if (!nkvm_split || part == "assembly") nk_f_drawer(); }
+        else difference() {
             union() {
                 plate(panel_w, h, panel_t, 0.6);
                 nk_front_frame(lay) {
@@ -455,10 +522,6 @@ module nkvm_mount(items) {
             }
             panel_holes(panel_zs(1), panel_t, panel_hole_slot);
             if (nks > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(nks) + 0.1, h, panel_t, kt);
-            // front: the Ethernet port, through the plate
-            if (lay == "front")
-                translate([Pf[0] - W / 2 - (nkvm_rj45[0] + 1) / 2, -panel_t - 1, nk_zf + nk_fl + nkvm_rj45[2] - 0.5])
-                    cube([nkvm_rj45[0] + 1, panel_t + 2, nkvm_rj45[1] + 1]);
         }
     }
 }
