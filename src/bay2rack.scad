@@ -17,7 +17,7 @@
 
 /* [Part to render] */
 // What to render. "assembly" is a preview only, do not print it.
-part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
+part = "assembly"; // [assembly:Assembly preview, adapter:Adapter - frame + sleeve, filler:Spare-zone filler panel, filler_2:Second filler - split mode, rack_panel:Standalone rack panel, rack_module:Rack module - one U of the rack contents, rack_module_lid:Lid of a NanoKVM bay module, rack_module_bay:Pocket of a split NanoKVM bay (nkvm_split), keystone_cover:Keystone cover - plain or cable pass-through, pci_bracket:Rear PCI-slot bracket - cable or power pass-through, test_rack:Test - rack hole spacing bar, test_bay:Test - bay screw corner, test_keystone:Test - keystone coupon]
 // Lay printable parts front-face down on the bed
 print_orientation = true;
 
@@ -241,6 +241,10 @@ nkvm_rj45 = [16, 13.5, 1];
 nkvm_keystones = 0; // [0:1:2]
 // nkvm:side - room in the pocket for the plugs: Ethernet on the left, HDMI / USB on the right
 nkvm_plugs = [32, 42];
+// nkvm:side - the lid: a frame round the NanoKVM, or a long one over the whole pocket (the plugs hidden behind it)
+nkvm_lid = "frame"; // [frame:Frame round the NanoKVM, full:Long lid over the whole pocket]
+// nkvm:side - three pieces: the plate and the pocket printed apart and screwed together (M3 heat-set inserts)
+nkvm_split = false;
 // Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
 pi_boards = "pi5";
 // Blade tray: distance between boards (26 fits a Pi 5 with the active cooler, use ~32 with PoE HATs)
@@ -343,6 +347,15 @@ else if (part == "filler" || part == "filler_2") {
     else echo("WARNING: no spare zone in this configuration");
 }
 else if (part == "rack_panel") printable(panel_t) rack_panel();
+else if (part == "rack_module_bay") {
+    if (!(mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split))
+        echo("WARNING: only the split NanoKVM bay (module_type = nkvm:side, nkvm_split = true) has a separate pocket piece");
+    else if (print_orientation) rotate([90, 0, 0]) nk_side_bay();
+    else nk_side_bay();
+}
+else if (part == "rack_module" && mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split)
+    printable(panel_t) nk_side_plate(nk_n_ks(), [for (i = [0 : max(nk_n_ks(), 1) - 1]) ks_style == "metal" ? "rj45m" : "rj45"],
+                                     nk_ks_x0() + nk_ks_w(nk_n_ks()) / 2);
 else if (part == "rack_module") {
     // the flat NanoKVM bay prints floor-down with the plate standing; the other modules print face-down
     if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front") rack_module(module_type);
@@ -350,7 +363,7 @@ else if (part == "rack_module") {
 }
 else if (part == "rack_module_lid") {
     if (mod_kind(module_type) != "nkvm") echo("WARNING: only the NanoKVM bay (module_type = nkvm:side / nkvm:front) has a lid");
-    else if (print_orientation) nkvm_lid_local(nk_layout(mod_items(module_type)));
+    else if (print_orientation) nkvm_lid_print(mod_items(module_type));
     else nkvm_lid(mod_items(module_type));
 }
 else if (part == "keystone_cover") keystone_cover(cover_type);

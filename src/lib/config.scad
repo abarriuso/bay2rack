@@ -174,8 +174,12 @@ if (n_pi > 0) echo(str("BOM | Raspberry Pi: ", 4 * n_pi, " x M2.5 x 6 screw",
     pi_fixing == "heatset" ? str(" + ", 4 * n_pi, " x M2.5 heat-set insert (hole 3.6 mm)") : " (self-tapping into the standoffs)"));
 // NanoKVM bay: the lid screws onto four heat-set inserts
 n_nkvm = part == "rack_module_lid" ? (mod_kind(module_type) == "nkvm" ? 1 : 0) : len([for (m = bom_mods) if (mod_kind(m) == "nkvm") 1]);
+n_nkvm_split = nkvm_split && (part == "rack_module_bay" || part == "rack_module" || part == "assembly")
+    ? len([for (m = part == "assembly" ? used_mods : [module_type]) if (mod_kind(m) == "nkvm" && mod_items(m)[0] != "front") 1]) : 0;
 if (n_nkvm > 0) echo(str("BOM | NanoKVM bay lid: ", 4 * n_nkvm, " x M3 x 8 countersunk  +  ", 4 * n_nkvm,
     " x M3 heat-set insert (hole ", hw("M3")[2], " x ", hw("M3")[3], " mm)"));
+if (n_nkvm_split > 0) echo(str("BOM | NanoKVM bay plate to pocket: ", 4 * n_nkvm_split, " x M3 x 8 countersunk  +  ", 4 * n_nkvm_split,
+    " x M3 heat-set insert"));
 n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
       : part == "rack_module" ? (module_type == "buttons" ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")

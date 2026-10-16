@@ -194,40 +194,82 @@ function nk_pocket() = let(n = nk_n_ks(), need = nk_u1() - nk_u0("side") + nkvm_
                            bw = min(need, 2 * x_in - 2))
     n > 0 ? [nk_ks_x0() + nk_ks_w(n) + 1.5, x_in - 1] : [-bw / 2, bw / 2];
 function nk_x0() = let(p = nk_pocket())
-    min(p[0] + nk_wall + nkvm_plugs[0] - nk_u0("side"), p[1] - nk_wall - nkvm_plugs[1] - nk_u1());
+    max(p[0] + nk_wall - nk_u0("side"),
+        min(p[0] + nk_wall + nkvm_plugs[0] - nk_u0("side"), p[1] - nk_wall - nkvm_plugs[1] - nk_u1()));
 function nk_plugs_fit() = let(p = nk_pocket(), x0 = nk_x0())
     x0 + nk_u0("side") - nkvm_plugs[0] >= p[0] + nk_wall - 0.01 && x0 + nk_u1() + nkvm_plugs[1] <= p[1] - nk_wall + 0.01;
 // board coordinates (u, v, depth from the front) -> the module
 module nk_side_frame(y) multmatrix([[1, 0, 0, nk_x0()], [0, 0, 1, y], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) children();
 
-module nk_side_mount(n, types, xk) {
-    h = nk_h;
-    L = nkvm_dims[0]; W = nkvm_dims[2];
+// three-piece version (nkvm_split): the plate and the pocket are printed apart and screwed together
+// with four M3 countersunk screws into heat-set inserts in the pocket corners
+nk_boss = 8;                                           // corner boss (split) / plate corner left over the pocket
+function nk_split() = nkvm_split;
+function nk_bosses() = let(p = nk_pocket(), o = nk_wall + nk_boss / 2)
+    [for (x = [p[0] + o, p[1] - o], z = [o, nk_h - o]) [x, z]];
+// the pocket opening in the plate (with the corners kept in the split version)
+module nk_opening2d() {
     p = nk_pocket();
-    x0 = nk_x0();
-    if (!nk_plugs_fit())
-        echo("WARNING: the NanoKVM with its plugs (nkvm_plugs) does not fit in the pocket - fewer keystones, shorter plugs or nkvm:front");
+    difference() {
+        translate([p[0] + nk_wall, nk_wall]) square([p[1] - p[0] - 2 * nk_wall, nk_h - 2 * nk_wall]);
+        if (nk_split()) for (b = nk_bosses()) translate([b[0] - nk_boss / 2 - 0.4, b[1] - nk_boss / 2 - 0.4])
+            offset(r = 0.4) square(nk_boss);
+    }
+}
+
+// the front plate: rack holes, keystones, the pocket opening
+module nk_side_plate(n, types, xk) {
+    h = nk_h;
     difference() {
         union() {
             plate(panel_w, h, panel_t, 0.6);
-            // the pocket: floor, roof and side walls behind the plate
-            for (z = [0, h - nk_wall]) translate([p[0], -eps, z]) cube([p[1] - p[0], nk_yb1 + eps, nk_wall]);
-            for (x = [p[0], p[1] - nk_wall]) translate([x, -eps, 0]) cube([nk_wall, nk_yb1 + eps, h]);
-            // the wall the board leans on, and the posts (the outer ones run into the floor and the roof)
-            translate([x0 + nk_u0("side"), nk_yb0, 0]) cube([nk_u1() - nk_u0("side"), nk_yb1 - nk_yb0, h]);
-            nk_side_frame(nk_yp0) linear_extrude(nk_yb0 - nk_yp0 + eps) nk_posts2d("side", -nk_zv0 + eps, h - nk_zv0 - eps);
             if (n > 0) translate([xk, 0, 0]) keystone_add(nk_ks_w(n) + 0.1, h, panel_t, types);
         }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
         if (n > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(n) + 0.1, h, panel_t, types);
-        // the pocket opening, and an open back behind the board
-        translate([p[0] + nk_wall, -panel_t - 1, nk_wall]) cube([p[1] - p[0] - 2 * nk_wall, panel_t + 1 + eps, h - 2 * nk_wall]);
+        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 1 + 2 * eps) nk_opening2d();
+        if (nk_split()) for (b = nk_bosses()) translate([b[0], -panel_t - eps, b[1]]) rotate([-90, 0, 0]) {
+            cylinder(d = NK_M3[0], h = panel_t + 2 * eps, $fn = 20);
+            cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
+        }
+    }
+}
+
+// the pocket behind it: floor, roof, side walls, the wall the board leans on, the posts
+module nk_side_bay() {
+    h = nk_h;
+    L = nkvm_dims[0]; W = nkvm_dims[2];
+    p = nk_pocket();
+    x0 = nk_x0();
+    difference() {
+        union() {
+            for (z = [0, h - nk_wall]) translate([p[0], 0, z]) cube([p[1] - p[0], nk_yb1, nk_wall]);
+            for (x = [p[0], p[1] - nk_wall]) translate([x, 0, 0]) cube([nk_wall, nk_yb1, h]);
+            translate([x0 + nk_u0("side"), nk_yb0, 0]) cube([nk_u1() - nk_u0("side"), nk_yb1 - nk_yb0, h]);
+            nk_side_frame(nk_yp0) linear_extrude(nk_yb0 - nk_yp0 + eps) nk_posts2d("side", -nk_zv0 + eps, h - nk_zv0 - eps);
+            if (nk_split()) for (b = nk_bosses())
+                translate([b[0] - nk_boss / 2 - (b[0] < 0 ? nk_wall : 0), 0, b[1] - nk_boss / 2 - (b[1] < h / 2 ? nk_wall : 0)])
+                    cube([nk_boss + nk_wall, NK_M3[3] + 2.3, nk_boss + nk_wall]);
+            // a long lid rests on two ledges at the ends of the pocket
+            if (nkvm_lid == "full") for (x = [p[0] + nk_wall - eps, p[1] - nk_wall - 1.5 + eps])
+                translate([x, 0, h / 2 - 8]) cube([1.5, 2, 16]);
+        }
+        // an open back behind the board
         translate([0, nk_yb0 - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_yb1 - nk_yb0 + 2)
             nk_rrect(x0 + 5, nk_zv0 + 4, x0 + L - 5, nk_zv0 + W - 4, 2.5);
-        // heat-set inserts, from the front
+        // heat-set inserts: the lid on the posts, and (split) the plate on the corner bosses
         for (q = nk_posts("side")) translate([x0 + q[0], nk_yp0 - eps, nk_zv0 + q[1]]) rotate([-90, 0, 0])
             cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+        if (nk_split()) for (b = nk_bosses()) translate([b[0], -eps, b[1]]) rotate([-90, 0, 0])
+            cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
     }
+}
+
+module nk_side_mount(n, types, xk) {
+    if (!nk_plugs_fit())
+        echo("WARNING: the NanoKVM with its plugs (nkvm_plugs) does not fit in the pocket - fewer keystones, shorter plugs or nkvm:front");
+    nk_side_plate(n, types, xk);
+    nk_side_bay();
 }
 
 // ---- front layout: lying flat behind the plate ----
@@ -295,9 +337,32 @@ module nkvm_lid_local(lay) {
         }
     }
 }
+// the long lid (nkvm_lid = full), in plate coordinates (x, z), its front face at local z = 0
+module nk_full_lid_local() {
+    p = nk_pocket();
+    x0 = nk_x0();
+    L = nkvm_dims[0]; W = nkvm_dims[2];
+    g = 0.4;
+    difference() {
+        linear_extrude(nk_lid_t) difference() {
+            offset(-g) nk_opening2d();
+            nk_rrect(x0 + 3, nk_zv0 + 3, x0 + L - 3, nk_zv0 + W - 3, 3);
+        }
+        for (q = nk_posts("side")) translate([x0 + q[0], nk_zv0 + q[1], 0]) {
+            translate([0, 0, -1]) cylinder(d = NK_M3[0], h = nk_lid_t + 2, $fn = 20);
+            translate([0, 0, -eps]) cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
+        }
+    }
+}
+// the lid for printing: flat, the face that shows on the bed for the long one
+module nkvm_lid_print(items)
+    if (nk_layout(items) == "side" && nkvm_lid == "full") nk_full_lid_local();
+    else nkvm_lid_local(nk_layout(items));
 // in place: side = standing in the pocket, its countersunk face to the front; front = on top of the posts
 module nkvm_lid(items)
-    if (nk_layout(items) == "side")
+    if (nk_layout(items) == "side" && nkvm_lid == "full")
+        multmatrix([[1, 0, 0, 0], [0, 0, 1, -panel_t + 0.6], [0, 1, 0, 0], [0, 0, 0, 1]]) nk_full_lid_local();
+    else if (nk_layout(items) == "side")
         multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yp0], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_lid_local("side");
     else nk_front_frame() translate([0, 0, nk_top]) nkvm_lid_local("front");
 

@@ -78,7 +78,10 @@ CASES = (
        ("module/nkvm:front-2ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 2}, None),
        ("module/nkvm:front-1ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 1}, None),
        ("lid/nkvm:side", {"part": "rack_module_lid", "module_type": "nkvm:side"}, None),
-       ("lid/nkvm:front", {"part": "rack_module_lid", "module_type": "nkvm:front"}, None)]
+       ("lid/nkvm:front", {"part": "rack_module_lid", "module_type": "nkvm:front"}, None),
+       ("lid/nkvm:side-full", {"part": "rack_module_lid", "module_type": "nkvm:side", "nkvm_lid": "full"}, None),
+       ("module/nkvm:side-split-plate", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True, "nkvm_lid": "full"}, None),
+       ("pocket/nkvm:side-split", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_split": True}, None)]
     # the rest of the parts
     + [("panel/1U-patch6", {"part": "rack_panel", "panel_u": 1, "panel_fill": "keystone"}, None),
        ("panel/2U-patch12", {"part": "rack_panel", "panel_u": 2, "panel_fill": "keystone", "ks_ports": 12}, None),

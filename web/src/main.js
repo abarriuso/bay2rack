@@ -305,8 +305,16 @@ function trayEditor(kind, items, onChange) {
     }));
   }
   // the NanoKVM bay can also take one or two keystones on its plate
-  if (kind === 'nkvm') slots.push(select(null, [0, 1, 2].map((n) => [n, t('nkvm_ks' + n)]), String(S.values.nkvm_keystones),
-    (val) => update({ nkvm_keystones: Number(val) })));
+  if (kind === 'nkvm') {
+    slots.push(select(null, [0, 1, 2].map((n) => [n, t('nkvm_ks' + n)]), String(S.values.nkvm_keystones),
+      (val) => update({ nkvm_keystones: Number(val) })));
+    // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
+    if (items[0] !== 'front') {
+      slots.push(select(null, ['frame', 'full'].map((x) => [x, t('nkvm_lid_' + x)]), S.values.nkvm_lid, (val) => update({ nkvm_lid: val })));
+      slots.push(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
+        (val) => update({ nkvm_split: val === '1' })));
+    }
+  }
   const fits = trayFits(kind, items, S.values);
   return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, slots),
     h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: t(fits ? 'tray_' + kind : 'trayNoFit') }));
@@ -674,7 +682,11 @@ function kitList(v) {
   for (const m of new Set(mods)) {
     const qty = mods.filter((x) => x === m).length;
     files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
-    if (modKind(m) === 'nkvm') files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
+    if (modKind(m) === 'nkvm') {
+      files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
+      if (v.nkvm_split && modItems(m)[0] !== 'front')
+        files.push({ name: `module-${modFile(m)}-pocket.stl`, qty, part: { part: 'rack_module_bay', module_type: m } });
+    }
   }
   if (v.rear_slots) for (const k of ['lan', 'power'])
     files.push({ name: `pci-bracket-${k}.stl`, qty: 1, part: { part: 'pci_bracket', pci_kind: k } });
