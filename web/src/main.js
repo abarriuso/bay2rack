@@ -21,7 +21,7 @@ const TRAYS = {
   kvm: { items: ['jet', 'nano', 'custom'], max: 3, def: 'jet+nano' },
   pi: { items: ['pi5', 'pi4', 'pi3', 'zero'], max: 2, def: 'pi5' },
   piblade: { items: ['pi5', 'pi4', 'pi3'], max: 4, def: 'pi5+pi5+pi5' },
-  nkvm: { items: ['side', 'front'], max: 1, def: 'side' },        // NanoKVM bay: which way the ports go
+  nkvm: { items: ['side', 'front', 'ks'], max: 1, def: 'side' },        // NanoKVM bay: which way the ports go
 };
 const KVM_DIMS = { jet: 'jetkvm_dims', nano: 'nanokvm_dims', custom: 'kvm_custom' };
 // device modules -> the parameters holding their size (W, H, D)
@@ -412,7 +412,7 @@ function trayEditor(kind, items, onChange) {
     slots.push(select(null, [0, 1, 2].map((n) => [n, t('nkvm_ks' + n)]), String(S.values.nkvm_keystones),
       (val) => update({ nkvm_keystones: Number(val) })));
     // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
-    if (items[0] !== 'front') {
+    if (items[0] === 'side') {
       slots.push(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
         (val) => update({ nkvm_cover: val === '1' })));
       slots.push(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
@@ -830,7 +830,7 @@ function kitList(v, withTests = $('#withTests').checked) {
     const qty = mods.filter((x) => x === m).length;
     files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
     if (v.labels_multicolour && (m === 'label' || (v.ks_labels && (m === 'patch'
-        || (modKind(m) === 'nkvm' && (v.nkvm_keystones > 0 || (modItems(m)[0] !== 'front' && v.nkvm_cover)))))))
+        || (modKind(m) === 'nkvm' && (v.nkvm_keystones > 0 || modItems(m)[0] === 'ks' || (modItems(m)[0] === 'side' && v.nkvm_cover)))))))
       files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });

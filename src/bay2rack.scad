@@ -234,7 +234,7 @@ led_style = "ring"; // [ring:Countersunk ring - the LED dome sticks out, halo:Ha
 led_protrude = 1.5; // [0:0.1:4]
 
 /* [Rack contents] */
-// What goes in the rack, top first (assembly preview and kit): ms105g, kvm, pi, piblade (2U), nkvm, uswflex, ux, dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, led, label. kvm and pi trays name their boxes after a colon, joined with +: kvm:jet+nano, kvm:nano+nano, pi:pi5, pi:pi4+pi4, piblade:pi5+pi5+pi5, nkvm:side, nkvm:front
+// What goes in the rack, top first (assembly preview and kit): ms105g, kvm, pi, piblade (2U), nkvm, uswflex, ux, dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, led, label. kvm and pi trays name their boxes after a colon, joined with +: kvm:jet+nano, kvm:nano+nano, pi:pi5, pi:pi4+pi4, piblade:pi5+pi5+pi5, nkvm:side, nkvm:front, nkvm:ks
 rack_modules = "ms105g,kvm:jet+nano";
 // Module made by part = rack_module
 module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm:KVM over IP tray - 1 to 3 boxes (kvm_boxes), pi:Raspberry Pi tray - 1 or 2 boards flat (pi_boards), piblade:2U Raspberry Pi blades - up to 4 boards on edge (pi_boards), uswflex:UniFi USW-Flex-Mini switch mount, ux:UniFi Express mount, nkvm:NanoKVM bay with lid (nkvm:side standing in a front pocket - heatsink to the front - Ethernet left - HDMI and USB right / nkvm:front lying flat - only Ethernet at the front), dev1:Your device 1 - dev1_dims, dev2:Your device 2 - dev2_dims, shelf:1U shelf for small devices, patch:1U keystone patch panel, fan40:1U panel with 40 mm fans, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
@@ -263,8 +263,10 @@ kvm_custom = [50, 25, 60]; // [5:0.1:200]
 nkvm_dims = [37, 15, 23]; // [10:0.1:80]
 // Its Ethernet port: width, height, height above the bottom of the board (nkvm:front cuts it through the plate)
 nkvm_rj45 = [16, 13.5, 1]; // [0:0.1:20]
-// Keystone openings on the left of the NanoKVM bay
+// Keystone openings on the left of the NanoKVM bay (nkvm:ks always has one: its network port)
 nkvm_keystones = 0; // [0:1:2]
+// nkvm:ks - room between the back of keystone 1 and the NanoKVM for the patch cable plugs
+nkvm_patch = 45; // [40:1:120]
 // nkvm:side - room in the pocket for the plugs: Ethernet on the left, HDMI / USB on the right
 nkvm_plugs = [32, 42]; // [0:1:60]
 // nkvm:side - the plate covers the pocket beside the NanoKVM, so the plugs and the inside of the case are hidden (off = the whole pocket is open)
@@ -388,7 +390,7 @@ else if (part == "rack_module" && mod_kind(module_type) == "nkvm" && nk_layout(m
                                      nk_ks_x0() + nk_ks_w(nk_n_ks()) / 2);
 else if (part == "rack_module") {
     // the flat NanoKVM bay prints floor-down with the plate standing; the other modules print face-down
-    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front") rack_module(module_type);
+    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) != "side") rack_module(module_type);
     else printable(panel_t) rack_module(module_type);
 }
 // multicolour label pieces: the letters of a panel, placed exactly like the panel itself
@@ -398,7 +400,7 @@ else if (part == "filler_labels" || part == "filler_2_labels") {
 }
 else if (part == "rack_panel_labels") printable(panel_t) fill_labels(panel_fill, hole_s - R[0] - 6, panel_u * U - 0.79, panel_t);
 else if (part == "rack_module_labels") {
-    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "front") module_labels(module_type);
+    if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) != "side") module_labels(module_type);
     else printable(panel_t) module_labels(module_type);
 }
 else if (part == "button_cap") button_cap(btn_cap);

@@ -5,6 +5,7 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- NanoKVM bay `nkvm:ks`: the network port comes to the front through a keystone; the NanoKVM lies flat right behind it, connected with a straight 10 cm patch cable, HDMI and USB into the case.
 - `hole_pattern = auto` (new default): EIA-310 inside the bays, one centred hole per U when the units stick out, so overhang builds no longer have rack holes breaking out of the frame. A new CI check renders every example and bays x fit x front assembly.
 - Port names over the patch panel (`ks_names`): your own, HDMI / USB / RCA / AUDIO / OPTICAL for those jacks, numbers in order for the rest.
 - Multicolour letters (`labels_multicolour`): every panel with letters gets a `..-labels` piece to print in a second filament; the letter colour shows in the preview.

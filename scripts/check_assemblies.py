@@ -29,6 +29,7 @@ for b in range(1, 7):
 cases += [
     ("nkvm/side-in-3", {"bays": 3, "rack_modules": "nkvm:side,ms105g"}),
     ("nkvm/front-2ks", {"bays": 3, "rack_modules": "nkvm:front", "nkvm_keystones": 2}),
+    ("nkvm/ks-2ks", {"bays": 3, "rack_modules": "nkvm:ks,ms105g", "nkvm_keystones": 2, "labels_multicolour": True}),
     ("nkvm/split-multicolour", {"bays": 3, "rack_modules": "nkvm:side,patch", "nkvm_split": True, "labels_multicolour": True}),
     ("labels/multicolour-names", {"bays": 4, "rack_modules": "patch,label,vent", "labels_multicolour": True, "ks_names": "WAN,LAN,,NAS"}),
     ("buttons/retro-integral", {"bays": 3, "front_style": "bezel", "filler_mode": "integral", "spare_fill": "buttons", "btn_type": "retro", "btn_turbo": True}),

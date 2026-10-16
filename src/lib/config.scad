@@ -264,7 +264,7 @@ for (m = concat(rack_mods, [module_type])) if (!known(mod_kind(m), MOD_KINDS))
     echo(str("WARNING: unknown rack module '", m, "' - it is made as a blank panel"));
 for (m = rack_mods) {
     k = mod_kind(m);
-    for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "front"]
+    for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "front", "ks"]
                                         : (k == "pi" || k == "piblade") ? ["pi5", "pi4", "pi3", "zero"] : [b]))
         echo(str("WARNING: '", b, "' is not a box of the ", k, " module (", m, ")"));
 }
