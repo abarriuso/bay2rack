@@ -278,6 +278,10 @@ button:disabled { opacity: .45; cursor: default; }
 .step-group:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 .step-group + .step { border-top: 0; padding-top: var(--s-2); }
 .tol { display: grid; gap: var(--s-2); }
+.tol-test { display: block; color: var(--ink-3); font-size: 11px; }
+.row-title { display: block; color: var(--ink-3); font-size: 12px; margin: var(--s-2) 0 4px; }
+.slot-titled { display: grid; gap: 2px; min-width: 0; }
+.slot-titled small { color: var(--ink-3); font-size: 11px; }
 .port-names { display: grid; gap: 6px; margin-top: var(--s-2); }
 .port-name-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
 .port-name { min-width: 0; padding: 5px 4px; font-size: 12px; text-align: center; }

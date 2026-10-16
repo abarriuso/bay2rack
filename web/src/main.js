@@ -287,7 +287,8 @@ function renderSteps() {
     add('vent', segmented('vent_style', ['slots', 'louvres', 'hex', 'dots'], (x) => t('vent_' + x)), sliderRow('vent_margin', t('vent_margin')));
   // 3. making it: screws, and the fits to tune after printing the test pieces
   group('make');
-  add('screw', chips('rack_screw', SCREWS, String),
+  add('screw', h('small', { className: 'row-title', textContent: t('screwSize') }), chips('rack_screw', SCREWS, String),
+    h('small', { className: 'row-title', textContent: t('screwFix') }),
     h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))));
   add('tol', tolerancesEditor(mods, fills));
   group('view');
@@ -357,25 +358,27 @@ function tolerancesEditor(mods, fills) {
   const keystones = fills.includes('keystone') || mods.includes('patch') || mods.some((m) => modKind(m) === 'nkvm');
   const devices = mods.some((m) => m !== 'blank' && !FILLS.includes(m) && m !== 'patch');
   const covers = ksTypes(v).some((x) => x === 'cover' || x === 'pass') && (fills.includes('keystone') || mods.includes('patch'));
+  // [parameter, label, step, the test piece that checks it]
   const rows = [
-    ['sleeve_clearance', 'tol_sleeve', 0.05],
-    ['height_clearance', 'tol_height', 0.05],
-    ...(v.front_style === 'bezel' ? [['bezel_clearance', 'tol_bezel', 0.05]] : []),
-    ...(keystones ? [['ks_fit', 'tol_ks', 0.05]] : []),
-    ...(covers ? [['cover_clear', 'tol_cover', 0.05]] : []),
-    ...(devices ? [['mount_clear', 'tol_mount', 0.1]] : []),
-    ...(v.rack_fixing === 'heatset' ? [['rack_insert_d', 'tol_insert', 0.05]] : []),
-    ...(v.bay_fixing === 'heatset' ? [['bay_insert_d', 'tol_bay_insert', 0.05]] : []),
-    ...(mods.some((m) => modKind(m) === 'nkvm') ? [['nkvm_insert_d', 'tol_nkvm_insert', 0.05]] : []),
+    ['sleeve_clearance', 'tol_sleeve', 0.05, 'test_bay'],
+    ['height_clearance', 'tol_height', 0.05, 'test_bay'],
+    ...(v.front_style === 'bezel' ? [['bezel_clearance', 'tol_bezel', 0.05, 'test_bay']] : []),
+    ...(keystones ? [['ks_fit', 'tol_ks', 0.05, 'test_keystone']] : []),
+    ...(covers ? [['cover_clear', 'tol_cover', 0.05, 'test_keystone']] : []),
+    ...(devices ? [['mount_clear', 'tol_mount', 0.1, null]] : []),
+    ...(v.rack_fixing === 'heatset' ? [['rack_insert_d', 'tol_insert', 0.05, 'test_rack']] : []),
+    ...(v.bay_fixing === 'heatset' ? [['bay_insert_d', 'tol_bay_insert', 0.05, 'test_bay']] : []),
+    ...(mods.some((m) => modKind(m) === 'nkvm') ? [['nkvm_insert_d', 'tol_nkvm_insert', 0.05, 'first']] : []),
   ];
   return h('div', { className: 'tol' },
     h('small', { className: 'hint', textContent: t('tol_hint') }),
-    rows.map(([name, label, stepv]) => {
+    rows.map(([name, label, stepv, test]) => {
       const p = S.params[name];
       const box = h('input', { type: 'number', className: 'num', step: stepv, min: p?.min, max: p?.max, value: v[name],
         onchange: (e) => update({ [name]: Number(e.target.value) }) });
       return h('label', { className: 'param', dataset: { tip: paramHelp(p) || undefined } },
-        h('span', { className: 'name', textContent: t(label) }), box);
+        h('span', { className: 'name' }, t(label), h('small', { className: 'tol-test',
+          textContent: test === 'first' ? t('tol_first') : test ? t('tol_test', { x: t(test) }) : t('tol_device') })), box);
     }));
 }
 
@@ -394,6 +397,7 @@ function contentsEditor(placed) {
   }));
 }
 
+const withTitle = (sel, key) => { sel.dataset.title = key; return sel; };
 // the boxes of a KVM / Raspberry Pi tray, left to right, plus one empty slot to add another
 function trayEditor(kind, items, onChange) {
   const T = TRAYS[kind];
@@ -411,24 +415,27 @@ function trayEditor(kind, items, onChange) {
   if (kind === 'nkvm') {
     // keystones beside it (none standing in front: its plugs take the width; ks always has its own)
     if (items[0] !== 'side')
-      slots.push(select(null, (items[0] === 'ks' ? [1, 2] : [0, 1, 2]).map((n) => [n, t('nkvm_ks' + n)]),
-        String(Math.max(items[0] === 'ks' ? 1 : 0, S.values.nkvm_keystones)), (val) => update({ nkvm_keystones: Number(val) })));
+      slots.push(withTitle(select(null, (items[0] === 'ks' ? [1, 2] : [0, 1, 2]).map((n) => [n, t('nkvm_ks' + n)]),
+        String(Math.max(items[0] === 'ks' ? 1 : 0, S.values.nkvm_keystones)), (val) => update({ nkvm_keystones: Number(val) })), 'nkvmKeystones'));
     // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
     // three pieces (plate apart) for the standing one and the drawer
-    if (items[0] === 'front') slots.push(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
-      (val) => update({ nkvm_split: val === '1' })));
+    if (items[0] === 'front') slots.push(withTitle(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
+      (val) => update({ nkvm_split: val === '1' })), 'nkvmPieces'));
     if (items[0] === 'side') {
       // out of the case in a little mountain (plug in from outside), or in a pocket of the plate
-      slots.push(select(null, [['1', t('nkvm_raised1')], ['0', t('nkvm_raised0')]], S.values.nkvm_raised ? '1' : '0',
-        (val) => update({ nkvm_raised: val === '1' })));
-      if (!S.values.nkvm_raised) slots.push(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
-        (val) => update({ nkvm_cover: val === '1' })));
-      slots.push(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
-        (val) => update({ nkvm_split: val === '1' })));
+      slots.push(withTitle(select(null, [['1', t('nkvm_raised1')], ['0', t('nkvm_raised0')]], S.values.nkvm_raised ? '1' : '0',
+        (val) => update({ nkvm_raised: val === '1' })), 'nkvmShape'));
+      if (!S.values.nkvm_raised) slots.push(withTitle(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
+        (val) => update({ nkvm_cover: val === '1' })), 'nkvmSides'));
+      slots.push(withTitle(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
+        (val) => update({ nkvm_split: val === '1' })), 'nkvmPieces'));
     }
   }
   const fits = trayFits(kind, items, S.values);
-  return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, slots),
+  // (the NanoKVM bay's choices each get a small title over them)
+  const titled = kind === 'nkvm' ? slots.map((sel, i) => h('label', { className: 'slot-titled' },
+    h('small', { textContent: t(sel.dataset.title || 'nkvmMode') }), sel)) : slots;
+  return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, titled),
     h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: t(fits ? 'tray_' + kind : 'trayNoFit') }));
 }
 
@@ -664,7 +671,7 @@ function renderTabs() {
     sub = sel;
   }
   $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, sub)] : []));
-  $('#download').textContent = `${t('downloadPart')} (.${mounted ? '3mf' : 'stl'})`;
+  $('#download').textContent = mounted ? `${t('downloadPreview')} (.3mf)` : `${t('downloadPart')} (.stl)`;
 }
 
 // ---------------------------------------------------------------- advanced mode (every parameter)
