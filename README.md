@@ -53,7 +53,7 @@ slots** at the back and end in the keystones behind the patch panel; short patch
 the switches. Cable colours are VLANs: clients, servers, the trunk to the access point and the WAN from the
 router's network card to the fibre box.
 
-![Cables from the back of the case to the patch panel](docs/img/homelab.png)
+![The rack with the NanoKVM bay, the switch and the patch panel](docs/img/homelab.png)
 
 ## The height problem
 

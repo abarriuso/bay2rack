@@ -399,7 +399,7 @@ module fill_devices(type, w, h, z0, yf, t = 3) {
 }
 
 // the printed rack modules, with their devices
-module rack_contents() for (k = [0 : len(placed_mods) - 1]) if (preview_item == "all" || preview_index == k) {
+module rack_contents() for (k = [0 : 1 : len(placed_mods) - 1]) if (preview_item == "all" || preview_index == k) {
     m = placed_mods[k][0];
     z = units_z0 + placed_mods[k][1] * U + 0.395;
     yb = -ft - explode;                                // back face of the module plate

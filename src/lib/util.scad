@@ -29,7 +29,8 @@ module plate(w, h, t, c = 0.8) {
 
 // "a, b,c" -> ["a", "b", "c"] (spaces ignored, empty items dropped)
 function str_split(s, sep = ",", i = 0, cur = "") =
-    i >= len(s) ? (cur == "" ? [] : [cur])
+    !is_string(s) ? []
+  : i >= len(s) ? (cur == "" ? [] : [cur])
   : s[i] == sep ? concat(cur == "" ? [] : [cur], str_split(s, sep, i + 1, ""))
   : s[i] == " " ? str_split(s, sep, i + 1, cur)
   : str_split(s, sep, i + 1, str(cur, s[i]));

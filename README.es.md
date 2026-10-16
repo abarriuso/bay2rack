@@ -53,7 +53,7 @@ de la parte trasera y terminan en los keystones de detrás del patch panel; unos
 conectan a los switches. Los colores de los cables son VLANs: clientes, servidores, el troncal al punto de acceso y la
 WAN, de la tarjeta de red del router a la caja de fibra.
 
-![Cables desde la parte trasera de la caja hasta el patch panel](docs/img/homelab.png)
+![El rack con la bahía NanoKVM, el switch y el patch panel](docs/img/homelab.png)
 
 ## El problema de la altura
 

@@ -27,7 +27,7 @@ BEZEL = {"front_style": "bezel", "filler_mode": "integral"}
 
 # name: (camera, raw size, viewall, params)  - raw size is 2x the card size
 VIEWS = {
-    "homelab-back":    ("1150,1650,800,240,260,-60", "1200,900", False, {}),
+    "rack-nkvm":       ("-170,-330,150,0,0,60", "1200,900", False, {"scene": "single", "case_view": "none", "rack_modules": "nkvm:side,ms105g"}),
     "rack-close":      ("-170,-330,150,0,0,60", "1200,900", False, {"scene": "single", "case_view": "none"}),
     "mounted-bezel":   (CLOSE, "1200,900", False, {**BEZEL, "scene": "single"}),
     "mounted-1bay":    ("-260,-400,200,0,40,15", "1200,900", False, {"bays": 1, "case_model": "obsidian750d", **BEZEL, "scene": "single"}),
@@ -56,8 +56,8 @@ VIEWS = {
 }
 
 SHEETS = {
-    "homelab.png":  (2, [("homelab-back", "cables: back of the case -> patch panel"),
-                         ("rack-close", "MS105G switch · NanoKVM shelf · patch panel")]),
+    "homelab.png":  (2, [("rack-nkvm", "NanoKVM bay · MS105G switch · patch panel"),
+                         ("rack-close", "MS105G switch · JetKVM + NanoKVM tray · patch panel")]),
     "variants.png": (3, [("pf-1", "plate-flush · 1 bay · 6-port patch"),
                          ("pf-3", "plate-flush · 3 bays · 2U + patch"),
                          ("pf-4", "plate-flush · 4 bays · 3U + patch"),

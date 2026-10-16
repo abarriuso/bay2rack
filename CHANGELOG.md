@@ -5,6 +5,8 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- README images rendered again from the v2 adapter, with the new trays and the NanoKVM bay.
+- Fixed: a 1-bay build (no rack units) hung the 3D preview.
 - Tolerances: `ks_fit` for every keystone opening (cells, cut-outs and covers follow), `nkvm_insert_d`, `mount_clear` round the NanoKVM; README and web tell you to print the test pieces first and tune them.
 - Every number and size has a range (customizer and web), and the model warns about values that do not go together.
 - NanoKVM bay (`nkvm:side`, `nkvm:front`) with a lid on M3 heat-set inserts: standing in a front pocket with its heatsink facing out and the plugs inside the pocket, or lying flat behind the plate with only Ethernet at the front; up to two keystones.
