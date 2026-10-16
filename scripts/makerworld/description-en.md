@@ -36,7 +36,8 @@ instead of inserts...) is in the parametric model: use the web configurator, or 
 
 ## Hardware (3-bay adapter, defaults)
 
-- Rack: M6 x 12 button head screws + M6 heat-set inserts (8 mm hole). The modules use the same.
+- Rack: M6 x 12 button head screws + M6 heat-set inserts (8 mm hole) in the adapter; the modules screw into those
+  inserts, they need no inserts of their own. No soldering iron? Choose a hex nut instead in the configurator.
 - Bay: 6 x M3 x 5 screws + M3 heat-set inserts.
 - Keystones: standard 14.9 x 16.4 mm or metal / shielded RJ45 (the cell holds them from the back).
 
@@ -47,5 +48,7 @@ before the adapter. Grooves along the sleeve clear the metal tabs between the ba
 
 The 6" rack has no official standard: the hole spacing is 134.925 mm, with the same rules as 10" mini racks
 (EIA-310 vertical pattern). Print the **rack test piece** to check your gear.
+
+Build guide (what to buy, inserts, assembly, cables and power): https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md
 
 License: CC BY-NC-SA 4.0, not for commercial use without permission.

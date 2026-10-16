@@ -37,7 +37,8 @@ tuercas en vez de insertos...) está en el modelo paramétrico: usa el configura
 
 ## Tornillería (adaptador de 3 bahías, valores por defecto)
 
-- Rack: tornillos M6 x 12 de cabeza de botón + insertos térmicos M6 (agujero de 8 mm). Los módulos usan lo mismo.
+- Rack: tornillos M6 x 12 de cabeza de botón + insertos térmicos M6 (agujero de 8 mm) en el adaptador; los módulos
+  se atornillan a esos insertos, no necesitan los suyos. ¿Sin soldador? Elige tuerca hexagonal en el configurador.
 - Bahía: 6 tornillos M3 x 5 + insertos térmicos M3.
 - Keystones: estándar de 14,9 x 16,4 mm o RJ45 metálicos / apantallados (la celda los sujeta por detrás).
 
@@ -49,5 +50,7 @@ metálicas entre bahías, así que no hace falta doblarlas.
 
 El rack de 6" no tiene estándar oficial: los agujeros están a 134,925 mm, con las mismas reglas que los mini racks de
 10" (patrón vertical EIA-310). Imprime la **pieza de prueba de rack** para comprobar tus accesorios.
+
+Guía de montaje (qué comprar, insertos, montaje, cables y alimentación): https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md
 
 Licencia: CC BY-NC-SA 4.0, no para uso comercial sin permiso.

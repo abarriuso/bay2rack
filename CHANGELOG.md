@@ -5,6 +5,26 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Build guide (`docs/BUILD.md`, in Spanish too): what to buy, the print order, the heat-set inserts, the assembly, the
+  cables and power. The compatibility list has a five-minute case checklist and a Spanish version.
+- Bill of materials: the keystones are back (a renamed list had hidden them); the hardware of every NanoKVM bay as it
+  is built (drawer screws, raised-bay countersunk screws, `nkvm:ks` coupler and patch cable, the bay's keystones);
+  M3 x 8 for the retro button carrier; stock screw lengths for 40 mm fans; the devices and their cables listed apart.
+  Modules and panels screw into the adapter's fixings, so they no longer count a second set of inserts. CI checks BOM
+  lines.
+- Fit: a note when the rack inserts leave less than 2 mm of plastic to the bay's steel side (M6: 1.4 mm), and
+  `test_rack` now has the real posts so it can be slid into a bay with its inserts in; the NanoKVM drawer slides out
+  through its plate (clearance round the opening); keyhole cable ways and kept corner fingers on the raised NanoKVM
+  bay; thicker retro carrier posts; printed buttons as thick as their panel; the frame opening lets an 80 / 40 mm fan
+  through a separate filler; bolder engraved letters for a 0.4 mm nozzle.
+- New test piece `test_button` (one MX key, metal push-button hole or retro cap opening); the MX cut-out is a print fit.
+- Button panel: metal PC push buttons (12–22 mm) and a retro panel with printed caps on tactile switches, TURBO and
+  named LEDs, besides the MX keys. Their icons and names print in the second filament with multicolour letters.
+- Fan openings: round hole or hex grille (`fan_guard`).
+- Web: every text in Spanish and English (Advanced form choices, warnings, bill of materials), one term for each
+  thing; the steps hold up when the page is zoomed in or out; Print fits shows each test piece and real insert
+  sizes; multicolour has its own step in Making it; PCI-slot brackets can be switched off.
+- The 2U 12-port panel really has 12 ports, and the overhang STLs use the auto hole pattern; all STLs rebuilt.
 - NanoKVM bay flat (`nkvm:front`): a drawer in three pieces - the plate with two guides, the drawer with the Ethernet port in its face (two screws), the lid; the drawer slides out of the front with the NanoKVM. The keystones keep clear of the rack post and the drawer sits centred in the rest.
 - NanoKVM bay standing (`nkvm:side`): out of the case in a little mountain (`nkvm_raised`, new default) with its ports open at both sides, cables from outside or through slots into the case; three pieces (plate, mountain, lid) by default.
 - LED strip fill removed.
@@ -14,12 +34,11 @@ on the photos and in the MakerWorld notes.
 - Multicolour letters (`labels_multicolour`): every panel with letters gets a `..-labels` piece to print in a second filament; the letter colour shows in the preview.
 - Label: text, size, alignment, position, engraved or raised.
 - Vent fill redesigned: vertical slots, louvres, honeycomb or holes (`vent_style`), with a solid rim (`vent_margin`).
-- Editor: the viewer shows Mounted or one piece of the kit at a time; steps grouped (your case, what goes in, making it) with a print fits step and your own colour.
+- Editor: the viewer shows Mounted or one piece of the kit at a time; steps grouped (your case, what goes in, making it, the 3D view) with a print fits step and your own colour.
 - README images rendered again from the v2 adapter, with the new trays and the NanoKVM bay.
 - Fixed: a 1-bay build (no rack units) hung the 3D preview.
 - Tolerances: `ks_fit` for every keystone opening (cells, cut-outs and covers follow), `nkvm_insert_d`, `mount_clear` round the NanoKVM; README and web tell you to print the test pieces first and tune them.
 - Every number and size has a range (customizer and web), and the model warns about values that do not go together.
-- NanoKVM bay (`nkvm:side`, `nkvm:front`) with a lid on M3 heat-set inserts: standing in a front pocket with its heatsink facing out and the plugs inside the pocket, or lying flat behind the plate with only Ethernet at the front; up to two keystones.
 - The web generator moves to Cloudflare Pages: https://bay2rack.pages.dev/ (the old GitHub Pages address redirects there).
 - Ready-made builds in a collapsible box before the steps; the 3D view keeps its full width on phones.
 
