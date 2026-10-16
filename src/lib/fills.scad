@@ -1,4 +1,4 @@
-// bay2rack - Spare-zone fills: keystone, vent, cable, LED, label
+// bay2rack - Spare-zone fills: keystone, vent, cable, label, buttons, fans
 // Part of bay2rack.scad (included after the parameters). License: CC BY-NC-SA 4.0
 
 // ---------------------------------------------------------------------
@@ -15,7 +15,6 @@ module fill_cut(type, w, h, t) {
     if (type == "keystone") keystone_cut(w, h, t);
     else if (type == "vent")  vent_cut(w, h, t);
     else if (type == "cable") cable_cut(w, h, t);
-    else if (type == "led")   led_cut(w, h, t);
     else if (type == "label") label_cut(w, h, t);
     else if (type == "buttons") buttons_cut(w, h, t);
     else if (type == "fan80") fan80_cut(w, h, t);
@@ -149,11 +148,6 @@ module vent_cut(w, h, t) {
 module cable_cut(w, h, t)
     xz_extrude(-t - eps, t + 2 * eps) translate([0, h / 2]) rslot2d(min(w - 12, 110), min(h - 8, 14));
 
-module led_cut(w, h, t) {
-    xz_extrude(-t - eps, t + 2 * eps) translate([0, h / 2]) rslot2d(w - 16, 3.2);
-    if (t > 1.6)
-        xz_extrude(-t + 1.2, t + eps) translate([0, h / 2]) square([w - 12, min(11, h - 4)], center = true);
-}
 
 // engraved = the letters cut into the panel; raised = a band round the text is cut away and the letters
 // stay at the panel face (raised relief that still prints face-down, flat, without supports)

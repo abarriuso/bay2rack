@@ -307,6 +307,76 @@ module nk_side_bay() {
     }
 }
 
+// ---- side layout, raised: out of the case in a little mountain on the plate ----
+// The board stands in front of the plate, its back on it, the lid at the top of the mountain. The ends of the
+// mountain are open caves where the plugs go in from the sides (Ethernet left, HDMI / USB right); the cables
+// run along the plate, or into the case through the slots at its ends. Prints back face down, the mountain up.
+nk_r_lb = -panel_t - 2 * nk_c - nkvm_dims[1];          // back of the lid (front of the posts)
+nk_r_lf = nk_r_lb - nk_lid_t;                          // front of the lid
+nk_r_wall = 2;
+nk_r_foot = 12;                                        // how far the slopes reach past the posts at the plate
+function nk_r_x0() = (nkvm_plugs[0] - nkvm_plugs[1]) / 2 - nkvm_dims[0] / 2;   // board's Ethernet end, centred between its plugs
+function nk_r_zv0() = nk_zv0;
+module nk_r_frame(y) multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, 1, y], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) children();
+// the mountain, 2D outline at the plate (big) and at the top (the lid with a rim)
+module nk_r_base2d(g = 0) let(x0 = nk_r_x0()) nk_rrect(x0 + nk_u0("side") - nk_r_foot + g, 0.8 + g,
+    x0 + nk_u1() + nk_r_foot - g, nk_h - 0.8 - g, 6);
+module nk_r_top2d(g = 0) let(x0 = nk_r_x0(), W = nkvm_dims[2]) nk_rrect(x0 + nk_u0("side") - 1.4 + g, nk_zv0 - nk_c - nk_pd - 1.4 + g,
+    x0 + nk_u1() + 1.4 - g, nk_zv0 + W + nk_c + nk_pd + 1.4 - g, 4);
+module nk_r_slab(y, g, top) translate([0, y, 0]) multmatrix(XZ_Y) linear_extrude(0.01) if (top) nk_r_top2d(g); else nk_r_base2d(g);
+
+// the plate of the raised bay: rack holes, air behind the board, cable ways from inside the case at both ends;
+// (three pieces) countersunk from the back for the screws into the posts
+module nk_r_plate() {
+    h = nk_h;
+    L = nkvm_dims[0]; W = nkvm_dims[2];
+    x0 = nk_r_x0();
+    difference() {
+        plate(panel_w, h, panel_t, 0.6);
+        panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_rrect(x0 + 5, nk_zv0 + 4, x0 + L - 5, nk_zv0 + W - 4, 2.5);
+        for (x = [x0 - nkvm_plugs[0] + 2, x0 + L + nkvm_plugs[1] - 2])
+            translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_rrect(x - 3.5, h / 2 - 9, x + 3.5, h / 2 + 9, 3.4);
+        if (nkvm_split) for (q = nk_posts("side")) translate([x0 + q[0], eps, nk_zv0 + q[1]]) rotate([90, 0, 0]) {
+            cylinder(d = NK_M3[0], h = panel_t + 2 * eps, $fn = 20);
+            cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
+        }
+    }
+}
+// the mountain: a shell from the plate up to the lid, with the four posts; its ends are open caves for the plugs
+module nk_r_mountain() {
+    L = nkvm_dims[0]; W = nkvm_dims[2];
+    x0 = nk_r_x0();
+    difference() {
+        union() {
+            difference() {
+                hull() { nk_r_slab(-panel_t, 0, false); nk_r_slab(nk_r_lf, 0, true); }
+                hull() { nk_r_slab(-panel_t + eps, nk_r_wall, false); nk_r_slab(nk_r_lf - 1, nk_r_wall, true); }
+            }
+            nk_r_frame(nk_r_lb) linear_extrude(-panel_t - nk_r_lb) nk_posts2d("side", -nk_c - nk_pd, W + nk_c + nk_pd);
+        }
+        // the lid sits in the top of the mountain
+        translate([0, nk_r_lf - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_lid_t + 1 + eps)
+            nk_rrect(x0 + nk_u0("side") - 0.4, nk_zv0 - nk_c - nk_pd - 0.4, x0 + nk_u1() + 0.4, nk_zv0 + W + nk_c + nk_pd + 0.4, 3.4);
+        // the caves at both ends, where the plugs go in
+        for (e = [0, 1]) translate([e == 0 ? x0 + nk_u0("side") - nk_r_foot - 5 : x0 + L, nk_r_lb, nk_zv0 + 0.5])
+            cube([nk_r_foot + 5 + nk_fs + nk_c, -panel_t - nk_r_lb + 1, W - 1]);
+        // heat-set inserts: the lid at the top of the posts, (three pieces) the plate screws at their foot
+        for (q = nk_posts("side")) translate([x0 + q[0], 0, nk_zv0 + q[1]]) {
+            translate([0, nk_r_lb - eps, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+            if (nkvm_split) translate([0, -panel_t + eps, 0]) rotate([90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+        }
+    }
+}
+module nk_raised_mount() {
+    L = nkvm_dims[0];
+    x0 = nk_r_x0();
+    if (x0 - nkvm_plugs[0] < -x_in + 1 || x0 + L + nkvm_plugs[1] > x_in - 1)
+        echo("WARNING: the NanoKVM with its plugs (nkvm_plugs) is wider than the rack opening - shorter plugs");
+    nk_r_plate();
+    nk_r_mountain();
+}
+
 module nk_side_mount(n, types, xk) {
     if (!nk_plugs_fit())
         echo("WARNING: the NanoKVM with its plugs (nkvm_plugs) does not fit in the pocket - fewer keystones, shorter plugs or nkvm:front");
@@ -353,7 +423,7 @@ module nkvm_mount(items) {
     if (len(items) > 1) echo("NOTE: the NanoKVM bay holds one board; extra items ignored");
     if (lay == "side") {
         if (W + 2 * (nk_c + nk_pd) > h - 2 * nk_wall - 1) echo("WARNING: the NanoKVM is too wide to stand in the 1U pocket - lower nkvm_dims[2]");
-        nk_side_mount(n, types, xk);
+        if (nkvm_raised) nk_raised_mount(); else nk_side_mount(n, types, xk);
     } else {
         if (nk_zf + nk_top + nk_lid_t > h) echo("WARNING: the NanoKVM is too tall for the 1U bay - lower nkvm_dims[1]");
         nks = nk_nks(lay);
@@ -412,7 +482,9 @@ module nkvm_lid_local(lay) {
 module nkvm_lid_print(items) nkvm_lid_local(nk_layout(items));
 // in place: side = standing in the pocket, its countersunk face to the front; front = on top of the posts
 module nkvm_lid(items)
-    if (nk_layout(items) == "side")
+    if (nk_layout(items) == "side" && nkvm_raised)
+        multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, -1, nk_r_lb], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_lid_local("side");
+    else if (nk_layout(items) == "side")
         multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yp0], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_lid_local("side");
     else nk_front_frame(nk_layout(items)) translate([0, 0, nk_zf + nk_top]) nkvm_lid_local(nk_layout(items));
 

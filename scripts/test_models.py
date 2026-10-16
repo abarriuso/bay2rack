@@ -59,7 +59,7 @@ CASES = (
                spare_fill="buttons", btn_count=1)]
     # spare zone: position, split, every fill
     + [adapter(f"fill-{f}", spare_fill=f, filler_mode="integral") for f in
-       ("blank", "keystone", "vent", "cable", "led", "label", "buttons")]
+       ("blank", "keystone", "vent", "cable", "label", "buttons")]
     + [adapter("spare-bottom", spare_pos="bottom"),
        adapter("spare-split", spare_pos="split", spare_split=0.78)]
     # rack screws and fixings
@@ -70,7 +70,7 @@ CASES = (
     + [adapter("bay-6-32", bay_screw="6-32"), adapter("head-countersunk", rack_screw_head="countersunk")]
     # rack modules, including the 2U blades and the trays with several boxes
     + [module(k) for k in ("ms105g", "uswflex", "ux", "shelf", "patch", "fan40", "buttons", "dev1",
-                           "vent", "blank", "cable", "led", "label")]
+                           "vent", "blank", "cable", "label")]
     + [module("kvm:jet"), module("kvm:jet+nano"), module("kvm:nano+nano"), module("kvm:jet+jet"),
        module("pi:pi5"), module("pi:pi5+pi5"), module("pi:zero"), module("pi:pi4+pi3"),
        module("piblade:pi5+pi5"), module("piblade:pi5+pi5+pi5+pi5"),
@@ -82,7 +82,10 @@ CASES = (
        module("nkvm:ks"),
        ("module/nkvm:ks-2ks", {"part": "rack_module", "module_type": "nkvm:ks", "nkvm_keystones": 2}, None),
        ("lid/nkvm:ks", {"part": "rack_module_lid", "module_type": "nkvm:ks"}, None),
-       ("module/nkvm:side-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_cover": False}, None),
+       ("module/nkvm:side-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_cover": False, "nkvm_raised": False}, None),
+       ("module/nkvm:side-pocket-1piece", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_raised": False, "nkvm_split": False}, None),
+       ("module/nkvm:side-raised-1piece", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": False}, None),
+       ("pocket/nkvm:side-pocket", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_raised": False}, None),
        ("module/nkvm:side-split-plate", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True}, None),
        ("module/nkvm:side-split-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True, "nkvm_cover": False}, None),
        ("pocket/nkvm:side-split", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_split": True}, None),

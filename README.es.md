@@ -109,7 +109,7 @@ los agujeros del rack:
 | `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños |
 | `patch` | Patch panel de 1U con los puertos que elijas |
 | `buttons` | Botonera de 1U (ver abajo) |
-| `vent`, `blank`, `cable`, `led`, `label` | Paneles con rejilla, ciegos, pasacables, tira LED y etiqueta grabada |
+| `vent`, `blank`, `cable`, `label` | Paneles de ventilación (ranuras, lamas, panal o agujeros), ciegos, pasacables y de etiqueta |
 
 Un módulo puede ocupar más de una U (los blades ocupan 2U): el rack se llena desde arriba y un módulo que ya no cabe
 se convierte en una tapa ciega.

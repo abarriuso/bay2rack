@@ -264,7 +264,9 @@ module nkvm_board() {
 }
 // side: standing, the heatsink to the front; front: lying flat
 module nkvm_model(lay)
-    if (lay == "side") multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yd0 + nkvm_dims[1]], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
+    if (lay == "side" && nkvm_raised)       // standing on the plate, the heatsink up at the lid
+        multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, -1, -panel_t - nk_c], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
+    else if (lay == "side") multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yd0 + nkvm_dims[1]], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
     else nk_front_frame(lay) translate([0, 0, nk_zf + nk_fl]) nkvm_board();
 
 // Raspberry Pi boards, port edge at y = y0, underside at z = zb

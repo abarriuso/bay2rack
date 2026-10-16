@@ -109,7 +109,7 @@ the rack holes:
 | `shelf` | Shelf with zip-tie slots for small devices |
 | `patch` | 1U patch panel with the ports you choose |
 | `buttons` | 1U button panel (see below) |
-| `vent`, `blank`, `cable`, `led`, `label` | Vented, blank, cable pass-through, LED strip and engraved panels |
+| `vent`, `blank`, `cable`, `label` | Vented (slots, louvres, honeycomb or holes), blank, cable pass-through and label panels |
 
 A module can take more than one unit (the blades take 2U): the rack is filled from the top and a module that no
 longer fits becomes a blank.

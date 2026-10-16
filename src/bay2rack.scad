@@ -143,9 +143,9 @@ wall_lip = 6; // [2:0.5:15]
 /* [Spare-zone filler] */
 // separate = screw-on panel you can swap (modular).  integral = features cut into the frame
 filler_mode = "separate"; // [separate:Separate screw-on panel, integral:Cut into the frame]
-spare_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
+spare_fill = "keystone"; // [blank, keystone, vent, cable, label, buttons, fan40, fan80]
 // Fill of the top zone when spare_pos = split
-spare_fill_2 = "vent"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
+spare_fill_2 = "vent"; // [blank, keystone, vent, cable, label, buttons, fan40, fan80]
 filler_t = 3; // [1.5:0.5:6]
 label_text = "HOMELAB";
 // Vent fill: the pattern, and the solid rim left round it at the sides
@@ -234,10 +234,10 @@ led_style = "ring"; // [ring:Countersunk ring - the LED dome sticks out, halo:Ha
 led_protrude = 1.5; // [0:0.1:4]
 
 /* [Rack contents] */
-// What goes in the rack, top first (assembly preview and kit): ms105g, kvm, pi, piblade (2U), nkvm, uswflex, ux, dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, led, label. kvm and pi trays name their boxes after a colon, joined with +: kvm:jet+nano, kvm:nano+nano, pi:pi5, pi:pi4+pi4, piblade:pi5+pi5+pi5, nkvm:side, nkvm:front, nkvm:ks
+// What goes in the rack, top first (assembly preview and kit): ms105g, kvm, pi, piblade (2U), nkvm, uswflex, ux, dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, label. kvm and pi trays name their boxes after a colon, joined with +: kvm:jet+nano, kvm:nano+nano, pi:pi5, pi:pi4+pi4, piblade:pi5+pi5+pi5, nkvm:side, nkvm:front, nkvm:ks
 rack_modules = "ms105g,kvm:jet+nano";
 // Module made by part = rack_module
-module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm:KVM over IP tray - 1 to 3 boxes (kvm_boxes), pi:Raspberry Pi tray - 1 or 2 boards flat (pi_boards), piblade:2U Raspberry Pi blades - up to 4 boards on edge (pi_boards), uswflex:UniFi USW-Flex-Mini switch mount, ux:UniFi Express mount, nkvm:NanoKVM bay with lid (nkvm:side standing in a front pocket - heatsink to the front - Ethernet left - HDMI and USB right / nkvm:front lying flat - only Ethernet at the front), dev1:Your device 1 - dev1_dims, dev2:Your device 2 - dev2_dims, shelf:1U shelf for small devices, patch:1U keystone patch panel, fan40:1U panel with 40 mm fans, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, led:1U LED strip, label:1U engraved label, buttons:1U button panel - power and reset]
+module_type = "ms105g"; // [ms105g:Mercusys MS105G switch mount, kvm:KVM over IP tray - 1 to 3 boxes (kvm_boxes), pi:Raspberry Pi tray - 1 or 2 boards flat (pi_boards), piblade:2U Raspberry Pi blades - up to 4 boards on edge (pi_boards), uswflex:UniFi USW-Flex-Mini switch mount, ux:UniFi Express mount, nkvm:NanoKVM bay with lid (nkvm:side standing in a little mountain out of the case - heatsink to the front - plugs at both sides / nkvm:front lying flat - Ethernet at the front / nkvm:ks Ethernet through a keystone), dev1:Your device 1 - dev1_dims, dev2:Your device 2 - dev2_dims, shelf:1U shelf for small devices, patch:1U keystone patch panel, fan40:1U panel with 40 mm fans, vent:1U vented panel, blank:1U blank panel, cable:1U cable pass-through, label:1U engraved label, buttons:1U button panel - power and reset]
 
 /* [Device mounts] */
 // Mercusys MS105G 5-port switch, W x H x D from retailer spec sheets (VERIFY)
@@ -271,10 +271,12 @@ nkvm_patch = 45; // [40:1:120]
 nkvm_plugs = [32, 42]; // [0:1:60]
 // nkvm:side - the plate covers the pocket beside the NanoKVM, so the plugs and the inside of the case are hidden (off = the whole pocket is open)
 nkvm_cover = true;
+// nkvm:side - raised: the NanoKVM comes out of the case in a little mountain on the plate, its ports open at the sides to plug in from outside (off = in a pocket behind the plate)
+nkvm_raised = true;
 // nkvm:side - vent slots in the covered sides of the plate
 nkvm_vents = true;
 // nkvm:side - three pieces: the plate and the pocket printed apart and screwed together (M3 heat-set inserts)
-nkvm_split = false;
+nkvm_split = true;
 // Hole for the M3 heat-set inserts of the NanoKVM bay (0 = 4.2 mm table value): raise it if the insert melts in crooked, lower it if it spins
 nkvm_insert_d = 0; // [0:0.05:5]
 // Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
@@ -316,7 +318,7 @@ pci_t = 2.0; // [0.8:0.1:3]
 
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
-panel_fill = "keystone"; // [blank, keystone, vent, cable, led, label, buttons, fan40, fan80]
+panel_fill = "keystone"; // [blank, keystone, vent, cable, label, buttons, fan40, fan80]
 panel_t = 3; // [2:0.5:6]
 // Horizontal slotting of panel holes
 panel_hole_slot = 2; // [0:0.5:6]
@@ -382,15 +384,21 @@ else if (part == "rack_panel") printable(panel_t) rack_panel();
 else if (part == "rack_module_bay") {
     if (!(mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split))
         echo("WARNING: only the split NanoKVM bay (module_type = nkvm:side, nkvm_split = true) has a separate pocket piece");
+    // raised: the mountain prints on its base; pocket: on its front
+    else if (nkvm_raised) { if (print_orientation) translate([0, 0, -panel_t]) rotate([-90, 0, 0]) nk_r_mountain(); else nk_r_mountain(); }
     else if (print_orientation) rotate([90, 0, 0]) nk_side_bay();
     else nk_side_bay();
 }
+else if (part == "rack_module" && mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split && nkvm_raised)
+    printable(panel_t) nk_r_plate();
 else if (part == "rack_module" && mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) == "side" && nkvm_split)
     printable(panel_t) nk_side_plate(nk_n_ks(), [for (i = [0 : max(nk_n_ks(), 1) - 1]) ks_style == "metal" ? "rj45m" : "rj45"],
                                      nk_ks_x0() + nk_ks_w(nk_n_ks()) / 2);
 else if (part == "rack_module") {
     // the flat NanoKVM bay prints floor-down with the plate standing; the other modules print face-down
     if (mod_kind(module_type) == "nkvm" && nk_layout(mod_items(module_type)) != "side") rack_module(module_type);
+    // the raised NanoKVM bay prints back face down, its mountain up
+    else if (mod_kind(module_type) == "nkvm" && nkvm_raised && print_orientation) rotate([-90, 0, 0]) rack_module(module_type);
     else printable(panel_t) rack_module(module_type);
 }
 // multicolour label pieces: the letters of a panel, placed exactly like the panel itself

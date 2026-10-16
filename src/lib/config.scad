@@ -257,7 +257,7 @@ for (z = rack_zs) {
 // ---------------------------------------------------------------------
 KS_TYPES = ["rj45m", "rj45", "hdmi", "usb", "rca", "jack", "toslink", "cover", "pass", "none"];
 MOD_KINDS = ["ms105g", "kvm", "kvm2", "pi", "piblade", "nkvm", "uswflex", "ux", "dev1", "dev2", "shelf", "patch",
-             "fan40", "buttons", "vent", "blank", "cable", "led", "label"];
+             "fan40", "buttons", "vent", "blank", "cable", "label"];
 function known(x, list) = len([for (y = list) if (y == x) 1]) > 0;
 for (tp = ks_types) if (!known(tp, KS_TYPES)) echo(str("WARNING: unknown keystone type '", tp, "' in ks_ports_list - use ", KS_TYPES));
 for (m = concat(rack_mods, [module_type])) if (!known(mod_kind(m), MOD_KINDS))

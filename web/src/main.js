@@ -13,9 +13,9 @@ import { renderLegend } from './legend.js';
 const BASE = new URL('./', document.baseURI).href;
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
-const FILLS = ['keystone', 'buttons', 'fan80', 'fan40', 'vent', 'cable', 'led', 'label', 'blank'];
+const FILLS = ['keystone', 'buttons', 'fan80', 'fan40', 'vent', 'cable', 'label', 'blank'];
 const MODULES = ['ms105g', 'uswflex', 'ux', 'kvm', 'nkvm', 'pi', 'piblade', 'dev1', 'dev2', 'shelf', 'patch', 'fan40', 'buttons',
-  'vent', 'blank', 'cable', 'led', 'label'];
+  'vent', 'blank', 'cable', 'label'];
 // trays that hold a list of boxes, written "kvm:jet+nano": choices, how many, default
 const TRAYS = {
   kvm: { items: ['jet', 'nano', 'custom'], max: 3, def: 'jet+nano' },
@@ -415,7 +415,10 @@ function trayEditor(kind, items, onChange) {
         String(Math.max(items[0] === 'ks' ? 1 : 0, S.values.nkvm_keystones)), (val) => update({ nkvm_keystones: Number(val) })));
     // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
     if (items[0] === 'side') {
-      slots.push(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
+      // out of the case in a little mountain (plug in from outside), or in a pocket of the plate
+      slots.push(select(null, [['1', t('nkvm_raised1')], ['0', t('nkvm_raised0')]], S.values.nkvm_raised ? '1' : '0',
+        (val) => update({ nkvm_raised: val === '1' })));
+      if (!S.values.nkvm_raised) slots.push(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
         (val) => update({ nkvm_cover: val === '1' })));
       slots.push(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
         (val) => update({ nkvm_split: val === '1' })));
@@ -626,7 +629,7 @@ function pieceLabel(f, v) {
   if (p.part === 'rack_module') return modLabel(p.module_type) + qty;
   if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part.startsWith('filler') ? t('piece_filler') : modLabel(p.module_type)}`;
   if (p.part === 'rack_module_lid') return `${t('mod_nkvm')} · ${t('piece_lid')}${qty}`;
-  if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t('piece_pocket')}${qty}`;
+  if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t(v.nkvm_raised ? 'piece_mountain' : 'piece_pocket')}${qty}`;
   if (p.part === 'pci_bracket') return t('piece_pci_' + p.pci_kind);
   if (p.part === 'button_cap') return `${t('piece_button')} · ${p.btn_cap.toUpperCase()}${qty}`;
   if (p.part === 'button_carrier') return `${t('piece_carrier')}${qty}`;
@@ -836,7 +839,7 @@ function kitList(v, withTests = $('#withTests').checked) {
       files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
-      if (v.nkvm_split && modItems(m)[0] !== 'front')
+      if (v.nkvm_split && modItems(m)[0] === 'side')
         files.push({ name: `module-${modFile(m)}-pocket.stl`, qty, part: { part: 'rack_module_bay', module_type: m } });
     }
   }
