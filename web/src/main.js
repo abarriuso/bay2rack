@@ -506,17 +506,26 @@ function renderTabs() {
     tab('adapter', 'tabAdapter', true, () => update({ part: 'adapter' }), v.part === 'adapter'),
     tab('filler', 'tabFiller', v.filler_mode === 'separate' && c.hasSpare, () => update({ part: 'filler' }), v.part === 'filler'),
     tab('rack_module', 'tabModules', mods.length > 0,
-      () => update({ part: 'rack_module', module_type: mods.includes(v.module_type) ? v.module_type : mods[0] }), v.part === 'rack_module'),
+      () => update({ part: 'rack_module', module_type: mods.includes(v.module_type) ? v.module_type : mods[0] }), v.part.startsWith('rack_module')),
     tab('keystone_cover', 'tabCovers', covers.length > 0,
       () => update({ part: 'keystone_cover', cover_type: covers.includes('cover') ? 'blank' : 'pass' }), v.part === 'keystone_cover'),
     tab('rack_panel', 'tabPanel', true, () => update({ part: 'rack_panel' }), v.part === 'rack_panel'),
     tab('tests', 'tabTests', true, () => update({ part: S.tests }), v.part.startsWith('test_')),
   ];
   let sub = null;
-  if (v.part === 'rack_module') sub = select('module_type', mods.map((m) => [m, modLabel(m)]));
+  if (v.part.startsWith('rack_module')) {
+    // a module, and for the NanoKVM bay which of its pieces (the bay or the plate, the pocket, the lid)
+    sub = [select('module_type', mods.map((m) => [m, modLabel(m)]), v.module_type,
+      (val) => update({ module_type: val, part: modKind(val) === 'nkvm' ? v.part : 'rack_module' }))];
+    if (modKind(v.module_type) === 'nkvm') {
+      const split = v.nkvm_split && modItems(v.module_type)[0] !== 'front';
+      sub.push(select('part', [['rack_module', t(split ? 'piece_plate' : 'piece_bay')],
+        ...(split ? [['rack_module_bay', t('piece_pocket')]] : []), ['rack_module_lid', t('piece_lid')]]));
+    }
+  }
   if (v.part === 'keystone_cover') sub = select('cover_type', ['blank', 'pass'].map((x) => [x, t('cover_' + x)]));
   if (v.part.startsWith('test_')) { S.tests = v.part; sub = select('part', TESTS.map((x) => [x, t(x)])); }
-  $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, sub)] : []));
+  $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, ...[sub].flat())] : []));
   $('#download').textContent = `${t('downloadPart')} (.${v.part === 'assembly' ? '3mf' : 'stl'})`;
 }
 

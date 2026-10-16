@@ -201,9 +201,11 @@ function nk_plugs_fit() = let(p = nk_pocket(), x0 = nk_x0())
 // board coordinates (u, v, depth from the front) -> the module
 module nk_side_frame(y) multmatrix([[1, 0, 0, nk_x0()], [0, 0, 1, y], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) children();
 
-// three-piece version (nkvm_split): the plate and the pocket are printed apart and screwed together
-// with four M3 countersunk screws into heat-set inserts in the pocket corners
+// three-piece version (nkvm_split): the plate and the pocket are printed apart and screwed together from
+// behind - four M3 screws through the pocket corners into heat-set inserts in bosses on the back of the plate,
+// so nothing shows on the front
 nk_boss = 8;                                           // corner boss (split) / plate corner left over the pocket
+nk_pboss = 7;                                          // depth of the bosses on the back of the plate (the inserts)
 function nk_split() = nkvm_split;
 function nk_bosses() = let(p = nk_pocket(), o = nk_wall + nk_boss / 2)
     [for (x = [p[0] + o, p[1] - o], z = [o, nk_h - o]) [x, z]];
@@ -233,8 +235,11 @@ module nk_side_plate(n, types, xk) {
         union() {
             plate(panel_w, h, panel_t, 0.6);
             if (n > 0) translate([xk, 0, 0]) keystone_add(nk_ks_w(n) + 0.1, h, panel_t, types);
+            if (nk_split()) for (b = nk_bosses()) translate([b[0] - nk_boss / 2, -eps, b[1] - nk_boss / 2]) cube([nk_boss, nk_pboss + eps, nk_boss]);
         }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
+        if (nk_split()) for (b = nk_bosses()) translate([b[0], nk_pboss + eps, b[1]]) rotate([90, 0, 0])
+            cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8, $fn = 24);
         if (n > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(n) + 0.1, h, panel_t, types);
         translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 1 + 2 * eps) nk_opening2d();
         // the covered sides: vertical vent slots over the plugs, and what plugs in behind engraved above them
@@ -242,13 +247,9 @@ module nk_side_plate(n, types, xk) {
             k = min(5, floor((zn[1] - zn[0] - 6) / 6));
             if (nkvm_vents && k > 0) for (i = [0 : k - 1])
                 translate([(zn[0] + zn[1]) / 2 + (i - (k - 1) / 2) * 6, -panel_t - 1, 0]) multmatrix(XZ_Y)
-                    linear_extrude(panel_t + 2) hull() for (z = [7.5, h - 13.5]) translate([0, z]) circle(d = 3, $fn = 16);
+                    linear_extrude(panel_t + 2) hull() for (z = [nk_split() ? 13 : 7.5, h - 13.5]) translate([0, z]) circle(d = 3, $fn = 16);
             if (ks_labels) translate([(zn[0] + zn[1]) / 2, -panel_t - eps, h - 6.4]) multmatrix(XZ_Y) linear_extrude(0.6 + eps)
                 text(zn[2], size = 3.2, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
-        }
-        if (nk_split()) for (b = nk_bosses()) translate([b[0], -panel_t - eps, b[1]]) rotate([-90, 0, 0]) {
-            cylinder(d = NK_M3[0], h = panel_t + 2 * eps, $fn = 20);
-            cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
         }
     }
 }
@@ -265,9 +266,10 @@ module nk_side_bay() {
             for (x = [p[0], p[1] - nk_wall]) translate([x, 0, 0]) cube([nk_wall, nk_yb1, h]);
             translate([x0 + nk_u0("side"), nk_yb0, 0]) cube([nk_u1() - nk_u0("side"), nk_yb1 - nk_yb0, h]);
             nk_side_frame(nk_yp0) linear_extrude(nk_yb0 - nk_yp0 + eps) nk_posts2d("side", -nk_zv0 + eps, h - nk_zv0 - eps);
+            // (split) a corner block behind each plate boss, the screw goes in from the back
             if (nk_split()) for (b = nk_bosses())
-                translate([b[0] - nk_boss / 2 - (b[0] < 0 ? nk_wall : 0), 0, b[1] - nk_boss / 2 - (b[1] < h / 2 ? nk_wall : 0)])
-                    cube([nk_boss + nk_wall, NK_M3[3] + 2.3, nk_boss + nk_wall]);
+                translate([b[0] - nk_boss / 2 - (b[0] < 0 ? nk_wall : 0), nk_pboss + 0.2, b[1] - nk_boss / 2 - (b[1] < h / 2 ? nk_wall : 0)])
+                    cube([nk_boss + nk_wall, 6.8, nk_boss + nk_wall]);
             // cable anchors: a bar from floor to roof near each end wall, at the back; a zip tie goes round it and the cable
             for (x = [p[0] + nk_wall + 4, p[1] - nk_wall - 4 - 3]) translate([x, nk_yb1 - 3, 0]) cube([3, 3, h]);
         }
@@ -277,8 +279,10 @@ module nk_side_bay() {
         // heat-set inserts: the lid on the posts, and (split) the plate on the corner bosses
         for (q = nk_posts("side")) translate([x0 + q[0], nk_yp0 - eps, nk_zv0 + q[1]]) rotate([-90, 0, 0])
             cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
-        if (nk_split()) for (b = nk_bosses()) translate([b[0], -eps, b[1]]) rotate([-90, 0, 0])
-            cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+        if (nk_split()) for (b = nk_bosses()) translate([b[0], nk_pboss, b[1]]) rotate([-90, 0, 0]) {
+            cylinder(d = NK_M3[0], h = 8, $fn = 20);
+            translate([0, 0, 3.8]) cylinder(d = 6.4, h = 4, $fn = 28);             // room for the screw head
+        }
     }
 }
 
