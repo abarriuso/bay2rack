@@ -222,6 +222,10 @@ module nk_opening2d() {
     }
 }
 
+// the covered parts of the pocket beside the lid: [x from, x to, label]
+function nk_side_zones() = let(p = nk_pocket(), x0 = nk_x0())
+    [[p[0] + nk_wall, x0 + nk_u0("side") - 0.4, "LAN"], [x0 + nk_u1() + 0.4, p[1] - nk_wall, "HDMI · USB"]];
+
 // the front plate: rack holes, keystones, the pocket opening
 module nk_side_plate(n, types, xk) {
     h = nk_h;
@@ -233,6 +237,15 @@ module nk_side_plate(n, types, xk) {
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
         if (n > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(n) + 0.1, h, panel_t, types);
         translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 1 + 2 * eps) nk_opening2d();
+        // the covered sides: vertical vent slots over the plugs, and what plugs in behind engraved above them
+        if (nkvm_cover) for (zn = nk_side_zones()) {
+            k = min(5, floor((zn[1] - zn[0] - 6) / 6));
+            if (nkvm_vents && k > 0) for (i = [0 : k - 1])
+                translate([(zn[0] + zn[1]) / 2 + (i - (k - 1) / 2) * 6, -panel_t - 1, 0]) multmatrix(XZ_Y)
+                    linear_extrude(panel_t + 2) hull() for (z = [7.5, h - 13.5]) translate([0, z]) circle(d = 3, $fn = 16);
+            if (ks_labels) translate([(zn[0] + zn[1]) / 2, -panel_t - eps, h - 6.4]) multmatrix(XZ_Y) linear_extrude(0.6 + eps)
+                text(zn[2], size = 3.2, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+        }
         if (nk_split()) for (b = nk_bosses()) translate([b[0], -panel_t - eps, b[1]]) rotate([-90, 0, 0]) {
             cylinder(d = NK_M3[0], h = panel_t + 2 * eps, $fn = 20);
             cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
@@ -255,6 +268,8 @@ module nk_side_bay() {
             if (nk_split()) for (b = nk_bosses())
                 translate([b[0] - nk_boss / 2 - (b[0] < 0 ? nk_wall : 0), 0, b[1] - nk_boss / 2 - (b[1] < h / 2 ? nk_wall : 0)])
                     cube([nk_boss + nk_wall, NK_M3[3] + 2.3, nk_boss + nk_wall]);
+            // cable anchors: a bar from floor to roof near each end wall, at the back; a zip tie goes round it and the cable
+            for (x = [p[0] + nk_wall + 4, p[1] - nk_wall - 4 - 3]) translate([x, nk_yb1 - 3, 0]) cube([3, 3, h]);
         }
         // an open back behind the board
         translate([0, nk_yb0 - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_yb1 - nk_yb0 + 2)
