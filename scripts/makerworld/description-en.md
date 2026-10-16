@@ -37,7 +37,7 @@ instead of inserts...) is in the parametric model: use the web configurator, or 
 ## Hardware (3-bay adapter, defaults)
 
 - Rack: M6 x 12 button head screws + M6 heat-set inserts (8 mm hole) in the adapter; the modules screw into those
-  inserts, they need no inserts of their own. No soldering iron? Choose a hex nut instead in the configurator.
+  inserts, they need no inserts of their own. No soldering iron? Choose a nut instead in the configurator (square nut with M6).
 - Bay: 6 x M3 x 5 screws + M3 heat-set inserts.
 - Keystones: standard 14.9 x 16.4 mm or metal / shielded RJ45 (the cell holds them from the back).
 

@@ -9,8 +9,8 @@ From the kit (.zip) of the [web generator](https://bay2rack.pages.dev/) to a rac
 
 **Tools**
 - A soldering iron with a heat-set insert tip (one for M3, one for the rack inserts, M6 by default).
-  No iron? In the **Screws** step choose a hex nut instead of heat-set inserts (rack and bay screws): it needs only a
-  screwdriver.
+  No iron? In the **Screws** step choose a nut instead of heat-set inserts: a square nut for the M6 rack screws (a
+  hex nut only fits M3–M5) and a hex nut for the bay screws. It needs only a screwdriver.
 - Hex keys or screwdrivers for your screws (M6 button head: 4 mm hex; M3: 2 mm hex or a Phillips for pan heads).
 - Flush cutters and a deburring tool or a small file.
 
