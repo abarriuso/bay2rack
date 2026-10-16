@@ -409,8 +409,10 @@ function trayEditor(kind, items, onChange) {
   }
   // the NanoKVM bay can also take one or two keystones on its plate
   if (kind === 'nkvm') {
-    slots.push(select(null, [0, 1, 2].map((n) => [n, t('nkvm_ks' + n)]), String(S.values.nkvm_keystones),
-      (val) => update({ nkvm_keystones: Number(val) })));
+    // keystones beside it (none standing in front: its plugs take the width; ks always has its own)
+    if (items[0] !== 'side')
+      slots.push(select(null, (items[0] === 'ks' ? [1, 2] : [0, 1, 2]).map((n) => [n, t('nkvm_ks' + n)]),
+        String(Math.max(items[0] === 'ks' ? 1 : 0, S.values.nkvm_keystones)), (val) => update({ nkvm_keystones: Number(val) })));
     // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
     if (items[0] === 'side') {
       slots.push(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
@@ -830,7 +832,7 @@ function kitList(v, withTests = $('#withTests').checked) {
     const qty = mods.filter((x) => x === m).length;
     files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
     if (v.labels_multicolour && (m === 'label' || (v.ks_labels && (m === 'patch'
-        || (modKind(m) === 'nkvm' && (v.nkvm_keystones > 0 || modItems(m)[0] === 'ks' || (modItems(m)[0] === 'side' && v.nkvm_cover)))))))
+        || (modKind(m) === 'nkvm' && (modItems(m)[0] === 'side' ? v.nkvm_cover : modItems(m)[0] === 'ks' || v.nkvm_keystones > 0))))))
       files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });

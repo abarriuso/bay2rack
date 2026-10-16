@@ -117,7 +117,7 @@ CASES = (
     + [module("kvm:jet+jet+jet", warn="do not fit"),
        adapter("fan80-in-a-1U-strip", warn="80 mm fan", spare_fill="fan80", filler_mode="integral"),
        adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap"),
-       ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, "does not fit in the pocket")]
+       ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None)]
 )
 
 

@@ -156,7 +156,8 @@ NK_M3 = with_insert(hw("M3"), nkvm_insert_d, 0);   // M3 heat-set inserts of the
 function nk_layout(items) = len(items) > 0 && (items[0] == "front" || items[0] == "ks") ? items[0] : "side";
 // ks = the network port reaches the front through keystone 1: the board lies flat right behind it, its Ethernet
 // port facing the back of the keystone (a short straight patch cable), HDMI and USB facing into the case
-function nk_nks(lay) = lay == "ks" ? max(1, nk_n_ks()) : nk_n_ks();
+// keystones: none in the standing version (its plugs take the whole width), at least one in ks
+function nk_nks(lay) = lay == "ks" ? max(1, nk_n_ks()) : lay == "side" ? 0 : nk_n_ks();
 nk_ks_rear = 28.6;                                     // back of a metal keystone jack, behind the plate
 function nk_n_ks() = max(0, min(2, nkvm_keystones));
 function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
@@ -194,7 +195,7 @@ nk_yd0 = nk_yp0 + nk_c;                                // front of the board (he
 nk_yb0 = nk_yd0 + nkvm_dims[1] + nk_c;                 // back wall
 nk_yb1 = nk_yb0 + 2.4;
 // pocket [x left, x right] and the board's Ethernet end x
-function nk_pocket() = let(n = nk_n_ks(), need = nk_u1() - nk_u0("side") + nkvm_plugs[0] + nkvm_plugs[1] + 2 * nk_wall,
+function nk_pocket() = let(n = 0, need = nk_u1() - nk_u0("side") + nkvm_plugs[0] + nkvm_plugs[1] + 2 * nk_wall,
                            bw = min(need, 2 * x_in - 2))
     n > 0 ? [nk_ks_x0() + nk_ks_w(n) + 1.5, x_in - 1] : [-bw / 2, bw / 2];
 function nk_x0() = let(p = nk_pocket())
@@ -342,7 +343,9 @@ module nk_tray_local(lay = "front") {
 
 module nkvm_mount(items) {
     lay = nk_layout(items);
-    n = nk_n_ks();
+    n = nk_nks(lay);
+    if (lay == "side" && nkvm_keystones > 0)
+        echo("NOTE: the standing NanoKVM bay has no room for keystones - use nkvm:ks to bring its network port to a keystone");
     h = nk_h;
     W = nkvm_dims[2];
     xk = nk_ks_x0(lay) + nk_ks_w(nk_nks(lay)) / 2;
