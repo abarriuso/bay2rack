@@ -32,9 +32,9 @@ const DEVICE_DIMS = {
 // ready-made builds: the examples step and the gallery (applied on top of the defaults)
 const EXAMPLES = {
   router: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,kvm:jet+nano',
-            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass', scene: 'homelab' },
+            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass' },
   homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm:jet+nano',
-             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
+             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
   network: { bays: 5, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,ux,patch',
              spare_pos: 'top', spare_fill: 'vent', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass' },
   pi: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,piblade:pi5+pi5+pi5+pi5',
@@ -50,7 +50,13 @@ const EXAMPLES = {
   bezel: { bays: 3, fit: 'flush', front_style: 'bezel', filler_mode: 'integral', rack_modules: 'ms105g,kvm:jet+nano',
            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
 };
-const EXAMPLE_KEYS = [...new Set(Object.values(EXAMPLES).flatMap(Object.keys))];
+// an example also clears what you set inside the build (port names, buttons, label, NanoKVM bay…); your case,
+// screws, fits, device sizes and the view stay
+const CONTENT_KEYS = ['ks_ports', 'ks_names', 'ks_style', 'ks_labels', 'ks_label_start', 'label_text', 'label_size', 'label_align',
+  'label_dx', 'label_dz', 'label_relief', 'label_depth', 'label_bold', 'vent_style', 'vent_margin', 'btn_type', 'btn_count',
+  'btn_metal_d', 'btn_turbo', 'led_style', 'led_d', 'fan40_count', 'fan40_t', 'fan_guard', 'nkvm_keystones', 'nkvm_raised',
+  'nkvm_cover', 'nkvm_split', 'kvm_boxes', 'pi_boards', 'units_override', 'bezel_depth', 'labels_multicolour'];
+const EXAMPLE_KEYS = [...new Set([...Object.values(EXAMPLES).flatMap(Object.keys), ...CONTENT_KEYS])];
 const GALLERY = ['router', 'network', 'pi', 'kvm', 'audio', 'client', 'unifi', 'bezel'];
 const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'rca', 'jack', 'toslink', 'cover', 'pass', 'none'];
 const SCREWS = ['M3', 'M4', 'M5', 'M6', '10-32', '12-24'];
@@ -81,8 +87,14 @@ function setColour(name, hex) {
 }
 
 const $ = (s) => document.querySelector(s);
+const NARROW = '(max-width: 900px)';
 const h = (tag, { dataset, ...props } = {}, ...kids) => {
+  // aria-* are attributes, not properties
+  const aria = Object.entries(props).filter(([k]) => k.startsWith('aria-'));
+  for (const [k] of aria) delete props[k];
   const e = Object.assign(document.createElement(tag), props);
+  for (const [k, x] of aria) e.setAttribute(k, x);
+  if (props.type === 'number') e.inputMode = 'decimal';          // the number keyboard on a phone
   if (dataset) for (const [k, x] of Object.entries(dataset)) if (x != null) e.dataset[k] = x;
   e.append(...kids.flat(Infinity).filter((k) => k != null && k !== false));
   return e;
@@ -94,6 +106,8 @@ const S = {
   sections: [], params: {}, defaults: {}, values: {}, presets: {}, catalog: null,
   engine: 'loading', busy: false, dirty: false, wantRender: false, kitBusy: false,
   result: null, lastKey: '', tests: 'test_bay',
+  opening: 122.1,           // the rack opening (mm), as the last render reported it
+  notes: { insert: '' },    // notes shown in their step instead of the list
 };
 
 // ---------------------------------------------------------------- derived (mirrors config.scad)
@@ -123,10 +137,11 @@ function modItems(m, v = S.values) {
   if (k === 'pi' || k === 'piblade') return String(v.pi_boards).split('+').filter(Boolean);
   return [];
 }
+const DEVICE_MODS = ['ms105g', 'uswflex', 'ux', 'dev1', 'dev2'];
 const modU = (m) => (modKind(m) === 'piblade' ? 2 : 1);
 const modLabel = (m) => {
   const items = TRAYS[modKind(m)] ? modItems(m) : [];
-  return t('mod_' + modKind(m)) + (items.length ? ` · ${items.map((x) => t('box_' + x)).join(' + ')}` : '');
+  return t('mod_' + modKind(m)) + (items.length ? ` · ${items.map((x) => (TRAYS[modKind(m)].items.includes(x) ? t('box_' + x) : x)).join(' + ')}` : '');
 };
 const modFile = (m) => String(m).replace(/[:+]/g, '-');
 // modules from the top like config.scad: one that no longer fits becomes a blank
@@ -146,11 +161,53 @@ const usedMods = (v, units) => placeMods(v, units).map((p) => p.m);
 const OPENING = 122.1;
 function trayFits(kind, items, v) {
   const sum = (a) => a.reduce((x, y) => x + y, 0);
+  if (items.some((b) => !TRAYS[kind]?.items.includes(b))) return true;     // a box it does not know: the model says so
   if (kind === 'kvm') return sum(items.map((b) => v[KVM_DIMS[b]][0] + v.mount_clear)) + (items.length + 1) * v.mount_wall <= OPENING - 1
     && Math.max(...items.map((b) => v[KVM_DIMS[b]][1] + v.mount_clear)) + 2 * v.mount_wall <= v.rack_u_h - 0.79;
   if (kind === 'pi') return sum(items.map((b) => (b === 'zero' ? 65 : 56))) + (items.length - 1) * 3 <= OPENING - 6;
   if (kind === 'piblade') return (items.length - 1) * v.pi_blade_pitch + 2 + v.pi_standoff + 18.4 <= OPENING - 6;
   return true;
+}
+
+// the zones of the strip: [fill, height], bottom first (as config.scad)
+function zoneList(v, c = calc(v)) {
+  if (!c.hasSpare) return [];
+  return v.spare_pos === 'split' ? [[v.spare_fill, c.spare * v.spare_split], [v.spare_fill_2, c.spare * (1 - v.spare_split)]]
+    : [[v.spare_fill, c.spare]];
+}
+// the room a fill gets: a separate filler panel (or a 1U module) between the rack holes, a fill cut into the
+// frame between the posts (the opening the model reports, which depends on the screws and their fixing)
+const HW_CLEAR = { M3: 3.4, M4: 4.5, M5: 5.5, M6: 6.6, '6-32': 3.7, '10-32': 5.1, '12-24': 5.8 };
+const panelW = (v) => 134.925 - (HW_CLEAR[v.rack_screw] ?? 6.6) - 6;
+const zoneBox = (v, height) => (v.filler_mode === 'separate' ? [panelW(v), height - 0.8] : [S.opening - 2, height]);
+const moduleBox = (v) => [panelW(v), v.rack_u_h - 0.79];
+// how many keystones fit in w x h (ks_layout in fills.scad)
+const isMetalPort = (x, v) => x === 'rj45m' || ((x === 'cover' || x === 'pass') && v.ks_style === 'metal');
+function ksCapacity([w, h], v = S.values) {
+  const metal = ksTypes(v).some((x) => isMetalPort(x, v));
+  const cw = metal ? v.ksm_w + 2 * v.ks_fit + 2 * v.ksm_wall : v.ks_w + 2 * v.ks_fit + 3;
+  const px = metal ? v.ksm_pitch : v.ks_pitch;
+  const cell = (metal ? v.ksm_cav_h + 2 * v.ks_fit + 2 * v.ksm_wall : v.ks_h + 2 * v.ks_fit + 7) + 1;
+  return cw > w ? 0 : (Math.floor((w - cw) / px) + 1) * Math.max(0, Math.floor((h - 1) / cell));
+}
+// every place with the patch panel's ports, as [w, h]
+function ksPlaces(v, c = calc(v)) {
+  return [...zoneList(v, c).filter(([f]) => f === 'keystone').map(([, hh]) => zoneBox(v, hh)),
+    ...usedMods(v, c.units).filter((m) => m === 'patch').map(() => moduleBox(v))];
+}
+// how many 40 mm fans fit side by side in w x h (fan40_pitch in fills.scad)
+function fanMax([w, h]) {
+  if (h < 41) return 0;
+  const room = Math.min(w, S.opening - 1) - 40;
+  return [3, 2, 1].find((n) => n === 1 || room / (n - 1) >= 40.3);
+}
+// what is written over each port (ks_label in fills.scad): its name, else HDMI / USB…, else the number of its place
+const TYPE_NAMES = { hdmi: 'HDMI', usb: 'USB', rca: 'RCA', jack: 'AUDIO', toslink: 'OPTICAL' };
+const isJack = (tp) => tp !== 'cover' && tp !== 'pass' && tp !== 'none';
+function portLabels(v, types = ksTypes(v)) {
+  const names = String(v.ks_names ?? '').split(',').map((x) => x.trim());
+  const start = Number(v.ks_label_start ?? 1);
+  return types.map((tp, i) => names[i] || TYPE_NAMES[tp] || (isJack(tp) ? String(start + types.slice(0, i).filter(isJack).length) : ''));
 }
 
 // ---------------------------------------------------------------- engine
@@ -197,23 +254,25 @@ function update(patch) {
   schedule();
 }
 function refresh() {
-  renderSteps();
-  renderTabs();
-  syncAdvanced();
-  showPrebuilt();
-  writeHash();
+  // one part failing (a hand-written link with something odd in it) must not leave the rest out of date
+  for (const f of [renderSteps, renderTabs, syncAdvanced, showPrebuilt, writeHash]) {
+    try { f(); } catch (e) { console.error(e); }
+  }
 }
 
 // ---------------------------------------------------------------- small widgets
 const tipOf = (key) => optionHelp(key) || undefined;
 
+// a choice that is off stays tappable: the tap shows why (tooltip.js), it changes nothing
 function choice(param, value, content, { cls = 'chip', tip, extra, disabled = false, flag = '' } = {}) {
   const active = S.values[param] === value;
-  return h('button', {
-    type: 'button', className: `${cls}${active ? ' active' : ''}${flag ? ' ' + flag : ''}`, disabled,
-    onclick: () => update({ [param]: value, ...(extra ? extra(value) : {}) }),
+  const b = h('button', {
+    type: 'button', className: `${cls}${active ? ' active' : ''}${flag ? ' ' + flag : ''}${disabled ? ' off' : ''}`,
+    onclick: () => { if (!disabled) update({ [param]: value, ...(extra ? extra(value) : {}) }); },
     dataset: { tip },
   }, content);
+  if (disabled) b.setAttribute('aria-disabled', 'true');
+  return b;
 }
 const chips = (param, values, label, tipPrefix) =>
   h('div', { className: 'chips' }, values.map((v) => choice(param, v, label(v), { tip: tipPrefix ? tipOf(tipPrefix + v) : undefined })));
@@ -269,21 +328,27 @@ function renderSteps() {
   ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })),
     v.front_style === 'bezel' ? sliderRow('bezel_depth', t('bezel_depth_l')) : h('small', { className: 'hint', textContent: t('front_hint') }));
   add('fit', cards('fit', [
-    { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: t('inside_v', { u: c.flushUnits, s: num(c.flushSpare) }) },
-    { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
+    { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: t(c.flushUnits ? 'inside_v' : 'inside_v0', { u: c.flushUnits, s: num(c.flushSpare) }) },
+    { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)}\u00a0mm` },
     { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
   ]));
   // 2. what goes in it: the rack units, the devices, the leftover strip and what fills it
   group('contents');
-  if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }),
-    toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on })));
+  // the PCI brackets go in the kit whatever is in front: the switch sits in the first step of this group
+  const rear = toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on }));
+  if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }), rear);
   const devs = deviceEntries(mods);
   if (devs.length) add('devices', devicesEditor(devs));
-  if (c.hasSpare) add('fill', fillEditor());
+  if (c.hasSpare) add('fill', fillEditor(), c.units > 0 ? null : rear);
   const fills = c.zones;
-  if (fills.includes('fan40') || mods.includes('fan40'))
-    add('fans', rowTitle('fans_count'), segmented('fan40_count', [1, 2, 3], (x) => `${x} × 40 mm`),
-      rowTitle('fans_thick'), segmented('fan40_t', [10, 20], (x) => `${x} mm`));
+  if (fills.includes('fan40') || mods.includes('fan40')) {
+    // as many fans as the narrowest place with fans takes
+    const max = Math.max(1, Math.min(...[...zoneList(v, c).filter(([f]) => f === 'fan40').map(([, hh]) => fanMax(zoneBox(v, hh))),
+      ...(mods.includes('fan40') ? [fanMax(moduleBox(v))] : [])]));
+    add('fans', rowTitle('fans_count'), h('div', { className: 'seg' }, [1, 2, 3].map((x) => choice('fan40_count', x, `${x} × 40\u00a0mm`,
+      { cls: 'seg-btn', disabled: x > max, tip: x > max ? t('fansMax', { n: max }) : undefined }))),
+      rowTitle('fans_thick'), segmented('fan40_t', [10, 20], (x) => `${x}\u00a0mm`));
+  }
   if (fills.includes('keystone') || mods.includes('patch')) add('ports', portsEditor(6));
   if (fills.includes('buttons') || mods.includes('buttons')) add('buttons', buttonsEditor());
   if (fills.includes('label') || mods.includes('label')) add('label', labelEditor());
@@ -291,12 +356,19 @@ function renderSteps() {
     add('vent', segmented('vent_style', ['slots', 'louvres', 'hex', 'dots'], (x) => t('vent_' + x)), sliderRow('vent_margin', t('vent_margin')));
   // 3. making it: screws, and the fits to tune after printing the test pieces
   group('make');
+  // a hex nut for M6 does not fit in the post: that size takes the square nut
+  const noHex = (sz) => sz === 'M6';
   add('screw', h('b', { className: 'row-head', textContent: t('screwRack') }),
-    rowTitle('screwSize'), chips('rack_screw', SCREWS, String),
+    rowTitle('screwSize'), h('div', { className: 'chips' }, SCREWS.map((sz) => choice('rack_screw', sz, sz,
+      { extra: () => (noHex(sz) && v.rack_fixing === 'nut_trap' ? { rack_fixing: 'square_nut' } : {}) }))),
     rowTitle('screwFix'),
-    h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))),
+    h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), {
+      disabled: f === 'nut_trap' && noHex(v.rack_screw), tip: f === 'nut_trap' && noHex(v.rack_screw) ? t('noHexM6') : tipOf('fixing:' + f) }))),
+    S.notes.insert && v.rack_fixing === 'heatset' ? h('small', { className: 'hint note', textContent: S.notes.insert }) : null,
     h('b', { className: 'row-head', textContent: t('screwBay') }),
-    h('div', { className: 'chips small' }, BAY_FIXINGS.map((f) => choice('bay_fixing', f, t('fixb_' + f)))),
+    rowTitle('screwSize'), chips('bay_screw', ['M3', '6-32'], String),
+    rowTitle('screwFix'),
+    h('div', { className: 'chips small' }, BAY_FIXINGS.map((f) => choice('bay_fixing', f, t('fixb_' + f), { tip: tipOf('fixb:' + f) }))),
     h('small', { className: 'hint', textContent: t('screwEasy') }));
   add('tol', tolerancesEditor(mods, fills));
   add('multi', multicolourEditor());
@@ -397,7 +469,7 @@ function tolerancesEditor(mods, fills) {
         onchange: (e) => update({ [name]: Number(e.target.value) }) });
       return h('label', { className: 'param', dataset: { tip: paramHelp(p) || undefined } },
         h('span', { className: 'name' }, t(label), h('small', { className: 'tol-test',
-          textContent: test === 'first' ? t('tol_first') : test ? t('tol_test', { x: t(test) }) : t('tol_device') })), box);
+          textContent: test === 'first' ? t('tol_first') : test ? t('tol_test', { x: t(test).toLowerCase() }) : t('tol_device') })), box);
     }));
 }
 
@@ -405,20 +477,28 @@ function contentsEditor(placed) {
   const mods = placed.map((p) => p.m);
   const units = placed.reduce((n, p) => n + p.u, 0);
   const set = (k, val) => { const m = [...mods]; m[k] = val; update({ rack_modules: m.join(',') }); };
-  return h('div', { className: 'rows' }, placed.map((p, k) => {
+  // modules of the list that are not in the rack any more (fewer bays, a 2U one at the bottom)
+  const list = splitList(S.values.rack_modules);
+  const left = list.filter((m, i) => m !== 'blank' && placed[i]?.m !== m);
+  const firstNkvm = placed.findIndex((p) => modKind(p.m) === 'nkvm');
+  const rows = placed.map((p, k) => {
     const kind = modKind(p.m);
     const u = p.u > 1 ? `U${p.top + 1}–${p.top + p.u}` : `U${p.top + 1}`;
     const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind) } },
-      h('span', { className: 'u', textContent: p.top === 0 ? `${u} · ${t('top')}` : u }),
+      h('span', { className: 'u', textContent: p.top === 0 ? `${u}\u00a0·\u00a0${t('top')}` : u }),
       // a 2U module is only offered where two units are left
-      select(null, MODULES.map((x) => [x, t('mod_' + x), modU(x) > units - p.top]), kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}` : val)));
-    return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`))] : row;
-  }));
+      select(null, MODULES.map((x) => [x, modU(x) > units - p.top ? `${t('mod_' + x)} ${t('needs2U')}` : t('mod_' + x), modU(x) > units - p.top]),
+        kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}` : val)));
+    // the NanoKVM bays share their settings: the first one shows them, the others say so
+    return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`), kind === 'nkvm' && k !== firstNkvm)] : row;
+  });
+  return [h('div', { className: 'rows' }, rows),
+    left.length ? h('small', { className: 'hint warn', textContent: t('modsLeftOut', { s: left.map(modLabel).join(', ') }) }) : null];
 }
 
 const withTitle = (sel, key) => { sel.dataset.title = key; return sel; };
 // the boxes of a KVM / Raspberry Pi tray, left to right, plus one empty slot to add another
-function trayEditor(kind, items, onChange) {
+function trayEditor(kind, items, onChange, shared = false) {
   const T = TRAYS[kind];
   const slots = [];
   for (let i = 0; i < T.max && i <= items.length; i++) {
@@ -431,7 +511,7 @@ function trayEditor(kind, items, onChange) {
     }));
   }
   // the NanoKVM bay can also take one or two keystones on its plate
-  if (kind === 'nkvm') {
+  if (kind === 'nkvm' && !shared) {
     // keystones beside it (none standing in front: its plugs take the width; ks always has its own)
     if (items[0] !== 'side')
       slots.push(withTitle(select(null, (items[0] === 'ks' ? [1, 2] : [0, 1, 2]).map((n) => [n, t('nkvm_ks' + n)]),
@@ -454,8 +534,11 @@ function trayEditor(kind, items, onChange) {
   // (the NanoKVM bay's choices each get a small title over them)
   const titled = kind === 'nkvm' ? slots.map((sel, i) => h('label', { className: 'slot-titled' },
     h('small', { textContent: t(sel.dataset.title || 'nkvmMode') }), sel)) : slots;
+  // the NanoKVM bay: what this version is, and in how many pieces
+  const hint = !fits ? t('trayNoFit') : kind !== 'nkvm' ? t('tray_' + kind)
+    : `${t('nkvm_how_' + items[0])} ${t(items[0] === 'ks' ? 'nkvm_parts_ks' : S.values.nkvm_split ? 'nkvm_parts3' : 'nkvm_parts2')}${shared ? ' ' + t('nkvmShared') : ''}`;
   return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, titled),
-    h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: t(fits ? 'tray_' + kind : 'trayNoFit') }));
+    h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: hint }));
 }
 
 // smallest zone height (mm) each fill needs; the model warns too, the editor just won't offer what can't fit
@@ -483,11 +566,19 @@ function fillEditor() {
     h('div', { className: 'chips' }, FILLS.map((f) => {
       const need = fillMin(f);
       const share = split ? setShare(need, fillMin(v[other])) : null;
-      const fits = height >= need - 0.01 || share != null;
-      return choice(param, f, t('fill_' + f), {
-        disabled: !fits, flag: v[param] === f && height < need - 0.01 ? 'misfit' : '',
-        tip: height >= need - 0.01 ? undefined : fits ? t('fillMoves', { n: need }) : t('fillTooSmall', { n: need, h: num(height) }),
-        extra: () => (height < need - 0.01 && share != null ? { spare_split: share } : {}),
+      // the width too: not one keystone across, or not one 40 mm fan
+      const box = zoneBox(v, height);
+      const wide = f === 'keystone' ? ksCapacity([box[0], 1e3], v) > 0 : f === 'fan40' ? fanMax([box[0], 1e3]) > 0 : true;
+      const fits = wide && (height >= need - 0.01 || share != null);
+      const misfit = v[param] === f && (height < need - 0.01 || !wide);
+      // picking the fans: as many as fit side by side
+      const fans = f === 'fan40' ? fanMax([box[0], 1e3]) : 3;
+      return choice(param, f, [misfit ? '⚠ ' : '', t('fill_' + f)], {
+        disabled: !fits, flag: misfit ? 'misfit' : '',
+        tip: height >= need - 0.01 && wide ? undefined : !wide ? t('fillTooNarrow', { w: num(box[0]) })
+          : fits ? t('fillMoves', { n: num(need) }) : t('fillTooSmall', { n: num(need), h: num(height) }),
+        extra: () => ({ ...(height < need - 0.01 && share != null ? { spare_split: share } : {}),
+          ...(f === 'fan40' && v.fan40_count > fans ? { fan40_count: Math.max(1, fans) } : {}) }),
       });
     })));
   // splitting the strip: the fill you had keeps the height it needs (bottom zone), the new top zone gets the rest
@@ -530,6 +621,8 @@ function fillEditor() {
 function applyExample(k) {
   const reset = Object.fromEntries(EXAMPLE_KEYS.filter((x) => x in S.defaults).map((x) => [x, S.defaults[x]]));
   update({ ...reset, ...EXAMPLES[k], part: 'assembly' });
+  // on a phone the examples sit above the configurator: bring it into view
+  if (matchMedia(NARROW).matches) { $('#examples').open = false; $('.layout').scrollIntoView({ behavior: 'smooth' }); }
 }
 const exampleActive = (k, v = S.values) => Object.entries(EXAMPLES[k]).every(([key, x]) => same(v[key], x));
 
@@ -577,9 +670,13 @@ function devicesEditor(entries) {
   return [h('div', { className: 'devs' }, rows), h('small', { className: 'hint', textContent: t('devHint', { n: num(S.values.mount_clear) }) })];
 }
 
-function portsEditor(max) {
+function portsEditor(most) {
   const v = S.values;
   const types = ksTypes(v);
+  // as many as the smallest patch panel takes (all of them are left out when they do not fit)
+  // (none at all: the strip is too small for a patch panel, the Leftover strip step says so)
+  const cap = Math.min(...ksPlaces(v).map((box) => ksCapacity(box, v)));
+  const max = cap < 1 ? most : Math.min(most, cap);
   const setTypes = (list) => update({ ks_ports_list: list.join(','), ks_ports: list.length });
   const cycle = (i, dir) => {
     const list = [...types];
@@ -596,24 +693,29 @@ function portsEditor(max) {
           onchange: (e) => { const list = [...types]; list[i] = e.target.value; setTypes(list); } },
           PORTS.map((x) => h('option', { value: x, textContent: t('port_' + x), selected: x === tp }))))),
       h('span', { className: 'port-ctl' },
-        h('button', { type: 'button', className: 'mini', textContent: '+', disabled: types.length >= max,
-          dataset: { tip: t('portAdd') }, onclick: () => setTypes([...types, v.ks_style === 'metal' ? 'rj45m' : 'rj45']) }),
+        h('button', { type: 'button', className: `mini${types.length >= max ? ' off' : ''}`, textContent: '+', 'aria-disabled': String(types.length >= max),
+          dataset: { tip: types.length >= max ? t('portMax', { n: max }) : t('portAdd') },
+          onclick: () => { if (types.length < max) setTypes([...types, v.ks_style === 'metal' ? 'rj45m' : 'rj45']); } }),
         h('button', { type: 'button', className: 'mini', textContent: '−', disabled: types.length <= 1,
           dataset: { tip: t('portRemove') }, onclick: () => setTypes(types.slice(0, -1)) }))),
-    h('small', { className: 'hint', textContent: t('portHint') }),
-    rowTitle('ks_style_t'), segmented('ks_style', ['metal', 'standard'], (x) => t('ks_' + x)),
+    cap >= 1 && types.length > cap ? h('small', { className: 'hint warn', textContent: t('portsTooMany', { n: types.length, m: cap }) })
+      : h('small', { className: 'hint', textContent: t('portHint') }),
+    // the RJ45 ports follow the type (metal cells or plastic cut-outs), so do the covers
+    rowTitle('ks_style_t'), h('div', { className: 'seg' }, ['metal', 'standard'].map((x) => choice('ks_style', x, t('ks_' + x), {
+      cls: 'seg-btn',
+      extra: () => (String(v.ks_ports_list).trim()
+        ? { ks_ports_list: types.map((tp) => (tp === 'rj45m' || tp === 'rj45' ? (x === 'metal' ? 'rj45m' : 'rj45') : tp)).join(',') } : {}),
+    }))),
     h('small', { className: 'hint', textContent: t('ks_hint') }),
     portNames(types),
   ];
 }
 
-// what is written over each port: your name, else HDMI / USB... for those jacks, else the next number
-const TYPE_NAMES = { hdmi: 'HDMI', usb: 'USB', rca: 'RCA', jack: 'AUDIO', toslink: 'OPTICAL' };
+// what is written over each port: your name, else HDMI / USB... for those jacks, else the number of its place
 function portNames(types) {
   const v = S.values;
   const names = String(v.ks_names ?? '').split(',').map((x) => x.trim());
-  let num = Number(v.ks_label_start ?? 1);
-  const auto = types.map((tp, i) => (names[i] ? null : TYPE_NAMES[tp] ?? (tp === 'none' ? '' : String(num++))));
+  const auto = portLabels({ ...v, ks_names: '' }, types);
   const set = (i, val) => {
     const list = types.map((_, j) => (j === i ? val.replace(/,/g, ' ').trim() : names[j] ?? ''));
     while (list.length && !list[list.length - 1]) list.pop();
@@ -622,7 +724,7 @@ function portNames(types) {
   return h('div', { className: 'port-names' },
     h('small', { className: 'hint', textContent: t('portNamesHint') }),
     h('div', { className: 'port-name-grid' }, types.map((tp, i) => h('input', {
-      type: 'text', className: 'text port-name', maxLength: 12, value: names[i] ?? '', placeholder: auto[i] ?? '',
+      type: 'text', className: 'text port-name', maxLength: 12, value: names[i] ?? '', placeholder: auto[i],
       'aria-label': `${t('portName')} ${i + 1}`, onchange: (e) => set(i, e.target.value) }))));
 }
 
@@ -662,6 +764,8 @@ function previewEditor() {
 }
 
 // ---------------------------------------------------------------- tabs (what to view / download)
+// what only says which piece the piece view shows
+const PIECE_KEYS = ['module_type', 'cover_type', 'btn_cap', 'pci_kind'];
 // one row per piece of the kit, with a name that says what it is
 function pieceLabel(f, v) {
   const p = f.part;
@@ -671,14 +775,17 @@ function pieceLabel(f, v) {
     const z = calc(v).zones[p.part === 'filler' ? 0 : 1];
     return `${t(p.part === 'filler' ? 'piece_filler' : 'piece_filler2')} · ${t('fill_' + z)}`;
   }
-  if (p.part === 'rack_module') return modLabel(p.module_type) + qty;
+  // a device's tray reads "Mount for…", so it is clear the device itself is not printed
+  if (p.part === 'rack_module') return (DEVICE_MODS.includes(modKind(p.module_type)) ? t('piece_mount', { x: modLabel(p.module_type) })
+    : modKind(p.module_type) === 'nkvm' && v.nkvm_split && ['side', 'front'].includes(modItems(p.module_type)[0])
+      ? `${modLabel(p.module_type)} · ${t('piece_plate')}` : modLabel(p.module_type)) + qty;
   if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part === 'filler_labels' ? t('piece_filler')
     : p.part === 'filler_2_labels' ? t('piece_filler2') : modLabel(p.module_type)}`;
-  if (p.part === 'rack_module_lid') return `${t('mod_nkvm')} · ${t('piece_lid')}${qty}`;
-  if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t(modItems(p.module_type)[0] === 'front' ? 'piece_drawer'
+  if (p.part === 'rack_module_lid') return `${modLabel(p.module_type)} · ${t('piece_lid')}${qty}`;
+  if (p.part === 'rack_module_bay') return `${modLabel(p.module_type)} · ${t(modItems(p.module_type)[0] === 'front' ? 'piece_drawer'
     : v.nkvm_raised ? 'piece_mountain' : 'piece_pocket')}${qty}`;
   if (p.part === 'pci_bracket') return t('piece_pci_' + p.pci_kind);
-  if (p.part === 'button_cap') return `${t('piece_button')} · ${p.btn_cap.toUpperCase()}${qty}`;
+  if (p.part === 'button_cap') return `${t('piece_button')} · ${t('cap_' + p.btn_cap)}${qty}`;
   if (p.part === 'button_carrier') return `${t('piece_carrier')}${qty}`;
   if (p.part === 'keystone_cover') return `${t('piece_cover')} · ${t('cover_' + p.cover_type)}${qty}`;
   if (p.part.startsWith('test_')) return `${t('piece_test')} · ${t(p.part)}`;
@@ -695,7 +802,7 @@ function renderTabs() {
   }, t(label));
   const mounted = v.part === 'assembly';
   const tabs = [
-    tab('view_assembly', mounted, () => update({ part: 'assembly' }), tipOf('part:assembly')),
+    tab('view_assembly', mounted, () => update({ part: 'assembly', ...Object.fromEntries(PIECE_KEYS.map((k) => [k, S.defaults[k]])) }), tipOf('part:assembly')),
     tab('view_pieces', !mounted, () => update({ ...pieces[Math.max(0, current)].part }), tipOf('part:pieces')),
   ];
   let sub = null;
@@ -707,7 +814,7 @@ function renderTabs() {
     sub = sel;
   }
   $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, sub)] : []));
-  $('#download').textContent = mounted ? `${t('downloadPreview')} (.3mf)` : `${t('downloadPart')} (.stl)`;
+  $('#download').textContent = mounted ? t('downloadPreview') : `${t('downloadPart')} (.stl)`;
 }
 
 // ---------------------------------------------------------------- advanced mode (every parameter)
@@ -780,13 +887,19 @@ function showPrebuilt() {
 }
 
 // ---------------------------------------------------------------- URL hash (shareable settings)
-function writeHash() {
+// the settings that differ from the defaults; "," and "+" stay readable (kvm:jet+nano)
+function hashString(values = S.values) {
   const q = new URLSearchParams();
-  for (const [k, x] of Object.entries(S.values)) if (!same(x, S.defaults[k])) q.set(k, Array.isArray(x) ? x.join(',') : String(x));
-  history.replaceState(null, '', '#' + q.toString().replace(/%2C/g, ','));
+  for (const [k, x] of Object.entries(values)) if (!same(x, S.defaults[k])) q.set(k, Array.isArray(x) ? x.join(',') : String(x));
+  return '#' + q.toString().replace(/%2C/g, ',').replace(/%2B/g, '+').replace(/%3A/g, ':');
+}
+function writeHash() {
+  history.replaceState(null, '', hashString());
 }
 function readHash() {
-  for (const [k, s] of new URLSearchParams(location.hash.slice(1))) if (S.params[k]) S.values[k] = clampValue(S.params[k], fromPreset(S.params[k], s));
+  // a "+" in a link is a plus here (kvm:jet+nano), not a space
+  for (const [k, s] of new URLSearchParams(location.hash.slice(1).replace(/\+/g, '%2B')))
+    if (S.params[k]) S.values[k] = clampValue(S.params[k], fromPreset(S.params[k], s));
 }
 
 // ---------------------------------------------------------------- render
@@ -838,7 +951,7 @@ function showResult(res, ext, values) {
   if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
   viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
   renderLegend($('#legend'), ext === '3mf' && UI.cables ? scene : null);
-  $('#caseName').textContent = ext === '3mf' && scene.case ? scene.case.name : '';
+  $('#caseName').textContent = ext === '3mf' && scene.case ? (UI.sleeper ? t('sleeperName') : scene.case.name) : '';
   S.lastKey = key;
   if (S.result) URL.revokeObjectURL(S.result.url);
   S.result = { url: URL.createObjectURL(new Blob([res.data])), name: `bay2rack-${values.part}.${ext}` };
@@ -848,7 +961,17 @@ function showResult(res, ext, values) {
 
 function showEchoes(echoes, errors) {
   const bom = echoes.filter((e) => e.startsWith('BOM | ')).map((e) => e.slice(6));
-  const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e) && !/^NOTE: preview case/.test(e)), ...errors];
+  // the rack opening (it moves with the screws and their fixing) sizes what the steps offer
+  const opening = Number(echoes.find((e) => e.startsWith('bay2rack |'))?.match(/opening=([\d.]+)mm/)?.[1]);
+  // the note on the thin wall of the rack inserts belongs to the Screws step, not to every build's list
+  const insert = echoes.find((e) => /^NOTE: the rack inserts leave/.test(e));
+  const notes = { insert: insert ? warnText(insert.slice(6)) : '' };
+  if ((opening && Math.abs(opening - S.opening) > 0.01) || notes.insert !== S.notes.insert) {
+    if (opening) S.opening = opening;
+    S.notes = notes;
+    renderSteps();
+  }
+  const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e) && !/^NOTE: preview case/.test(e) && e !== insert), ...errors];
   $('#bom').replaceChildren(...bomGroups(bom));
   $('#warnings').replaceChildren(...(warn.length ? warn : [t('allGood')]).map((w) =>
     h('li', { className: /^(WARNING|ERROR)/.test(w) ? 'warn' : /^NOTE/.test(w) ? 'note' : 'good',
@@ -857,14 +980,21 @@ function showEchoes(echoes, errors) {
   const bad = warn.filter((w) => /^(WARNING|ERROR)/.test(w));
   const badge = $('#warnBadge');
   badge.hidden = !bad.length;
-  badge.textContent = `⚠ ${t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length })}`;
+  // (on a phone only the count, so the viewer's bar stays one row)
+  badge.replaceChildren(`⚠ `, h('span', { className: 'badge-n', textContent: bad.length }),
+    h('span', { className: 'badge-words', textContent: t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length }) }));
+  badge.setAttribute('aria-label', t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length }));
   badge.dataset.tip = bad.map((w) => warnText(w.replace(/^(WARNING|ERROR): ?/, ''))).join('\n');
 }
 
 // the model's bill of materials sorted for a shopping trip: buy / print / tools / the devices you bring
-const HEX_KEY = { button: { M3: 2, M4: 2.5, M5: 3, M6: 4 }, countersunk: { M3: 2, M4: 2.5, M5: 3, M6: 4 }, socket: { M3: 2.5, M4: 3, M5: 4, M6: 5 } };
+const HEX_KEY = {
+  button: { M3: 2, M4: 2.5, M5: 3, M6: 4, '6-32': '5/64"', '10-32': '1/8"', '12-24': '5/32"' },
+  countersunk: { M3: 2, M4: 2.5, M5: 3, M6: 4, '6-32': '5/64"', '10-32': '1/8"', '12-24': '5/32"' },
+  socket: { M3: 2.5, M4: 3, M5: 4, M6: 5, '6-32': '7/64"', '10-32': '5/32"', '12-24': '5/32"' },
+};
 function bomGroups(bom) {
-  if (!bom.length) return [h('li', { textContent: t('nothing') })];
+  if (!bom.length) return [h('li', { textContent: t(S.values.part === 'assembly' ? 'nothing' : 'nothingPiece') })];
   const line = (b) => {
     const [what, ...rest] = bomText(b).split(': ');
     return h('li', {}, rest.length ? [h('b', { textContent: what }), ' ' + rest.join(': ')] : what);
@@ -876,9 +1006,9 @@ function bomGroups(bom) {
   const all = buy.join('\n');
   const inserts = [...new Set([...all.matchAll(/x (M[\d.]+|#?\d+-\d+) heat-set insert/g)].map((m) => m[1]))];
   const keys = new Set();
-  for (const m of all.matchAll(/x (M\d) x \d+ (button head|socket head|countersunk)/g)) {
+  for (const m of all.matchAll(/x (M\d|\d+-\d+) x \S+ (button head|socket head|countersunk)/g)) {
     const k = HEX_KEY[m[2].split(' ')[0]]?.[m[1]];
-    if (k) keys.add(`${num(k)} mm`);
+    if (k) keys.add(typeof k === 'number' ? `${num(k)} mm` : k);
   }
   const tools = [
     inserts.length ? t('tool_iron', { s: inserts.join(', ') }) : null,
@@ -902,21 +1032,26 @@ function bomGroups(bom) {
 function kitList(v, withTests = $('#withTests').checked) {
   const c = calc(v);
   const files = [{ name: 'adapter.stl', qty: 1, part: { part: 'adapter' } }];
-  const lettered = (fill) => fill === 'label' || fill === 'buttons' || (fill === 'keystone' && v.ks_labels);
-  if (v.filler_mode === 'separate' && c.zones.length) {
+  // a letters piece only where there are letters: some text, port names that fit, a button panel
+  const types = ksTypes(v);
+  const portsLettered = (box) => v.ks_labels && portLabels(v, types).some(Boolean) && ksCapacity(box, v) >= types.length;
+  const lettered = (fill, box) => (fill === 'label' && String(v.label_text).trim() !== '') || fill === 'buttons'
+    || (fill === 'keystone' && portsLettered(box));
+  const zl = zoneList(v, c);
+  if (v.filler_mode === 'separate' && zl.length) {
     files.push({ name: 'filler.stl', qty: 1, part: { part: 'filler' } });
-    if (v.labels_multicolour && lettered(c.zones[0])) files.push({ name: 'filler-labels.stl', qty: 1, part: { part: 'filler_labels' } });
-    if (c.zones.length > 1) {
+    if (v.labels_multicolour && lettered(zl[0][0], zoneBox(v, zl[0][1]))) files.push({ name: 'filler-labels.stl', qty: 1, part: { part: 'filler_labels' } });
+    if (zl.length > 1) {
       files.push({ name: 'filler-2.stl', qty: 1, part: { part: 'filler_2' } });
-      if (v.labels_multicolour && lettered(c.zones[1])) files.push({ name: 'filler-2-labels.stl', qty: 1, part: { part: 'filler_2_labels' } });
+      if (v.labels_multicolour && lettered(zl[1][0], zoneBox(v, zl[1][1]))) files.push({ name: 'filler-2-labels.stl', qty: 1, part: { part: 'filler_2_labels' } });
     }
   }
   const mods = usedMods(v, c.units);
   for (const m of new Set(mods)) {
     const qty = mods.filter((x) => x === m).length;
     files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
-    if (v.labels_multicolour && (m === 'label' || m === 'buttons' || (v.ks_labels && (m === 'patch'
-        || (modKind(m) === 'nkvm' && (modItems(m)[0] === 'side' ? v.nkvm_cover : modItems(m)[0] === 'ks' || v.nkvm_keystones > 0))))))
+    if (v.labels_multicolour && (lettered(m, moduleBox(v)) || (m === 'patch' && portsLettered(moduleBox(v)))
+        || (v.ks_labels && modKind(m) === 'nkvm' && (modItems(m)[0] === 'side' ? v.nkvm_cover : modItems(m)[0] === 'ks' || v.nkvm_keystones > 0))))
       files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
@@ -932,13 +1067,14 @@ function kitList(v, withTests = $('#withTests').checked) {
   }
   if (v.rear_slots) for (const k of ['lan', 'power'])
     files.push({ name: `pci-bracket-${k}.stl`, qty: 1, part: { part: 'pci_bracket', pci_kind: k } });
-  const sets = c.zones.filter((z) => z === 'keystone').length + mods.filter((m) => m === 'patch').length;
-  const types = ksTypes(v);
+  // covers only for the patch panels whose ports fit (the model leaves the others out)
+  const sets = ksPlaces(v, c).filter((box) => ksCapacity(box, v) >= types.length).length;
   for (const [kind, file] of [['cover', 'blank'], ['pass', 'pass']]) {
     const q = sets * types.filter((x) => x === kind).length;
     if (q) files.push({ name: `keystone-${file}.stl`, qty: q, part: { part: 'keystone_cover', cover_type: file } });
   }
-  if (withTests) for (const x of [...TESTS, ...(btnSets ? ['test_button'] : [])])
+  const keystones = c.zones.includes('keystone') || mods.includes('patch') || mods.some((m) => modKind(m) === 'nkvm' && (modItems(m)[0] === 'ks' || v.nkvm_keystones > 0));
+  if (withTests) for (const x of [...TESTS.filter((x) => x !== 'test_keystone' || keystones), ...(btnSets ? ['test_button'] : [])])
     files.push({ name: `tests/${x}.stl`, qty: 1, part: { part: x } });
   return files;
 }
@@ -949,12 +1085,16 @@ async function downloadKit(testsOnly = false) {
   $('#kit').disabled = true;
   $('#kitTests').disabled = true;
   const v = { ...S.values };
-  const files = testsOnly ? kitList(v, true).filter((f) => f.name.startsWith('tests/')) : kitList(v);
+  const listed = testsOnly ? kitList(v, true).filter((f) => f.name.startsWith('tests/')) : kitList(v);
+  const files = [];
   const zip = {};
   try {
-    for (const [i, f] of files.entries()) {
-      setStatus(t('kitStep', { i: i + 1, n: files.length, name: f.name }), 'busy');
+    for (const [i, f] of listed.entries()) {
+      setStatus(t('kitStep', { i: i + 1, n: listed.length, name: f.name }), 'busy');
       const res = await runJob(definesFor({ ...v, ...f.part }), 'out.stl');
+      // a letters piece with nothing in it (e.g. every port name blank) is left out, not a failure
+      if (!res.ok && f.name.endsWith('-labels.stl') && res.logs.some((l) => /top level object is empty/i.test(l))) continue;
+      files.push(f);
       if (!res.ok) { $('#log').textContent = res.logs.join('\n'); setStatus(t('kitFailed', { name: f.name }), 'error'); return; }
       zip['bay2rack/' + f.name] = res.data;
     }
@@ -1114,7 +1254,7 @@ function wire() {
   $('#fit').onclick = () => viewer.fit();
   $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
-  const narrow = matchMedia('(max-width: 900px)');
+  const narrow = matchMedia(NARROW);
   const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.viewer').after($('.results')));
   narrow.addEventListener('change', placeResults);
   placeResults();
@@ -1141,8 +1281,7 @@ function wire() {
   document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') render(); });
   // a shared link opened in the same tab only changes the hash: load its settings
   addEventListener('hashchange', () => {
-    if (location.hash === '#' + new URLSearchParams(Object.entries(S.values)
-      .filter(([k, x]) => !same(x, S.defaults[k])).map(([k, x]) => [k, Array.isArray(x) ? x.join(',') : String(x)])).toString().replace(/%2C/g, ',')) return;
+    if (location.hash === hashString()) return;
     if (!/=/.test(location.hash)) return;                       // plain section anchors (#build, #gallery…)
     S.values = { ...S.defaults };
     readHash();

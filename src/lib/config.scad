@@ -156,15 +156,17 @@ bom("filler panels", part == "assembly" ? n_fill : (part == "filler" || part == 
 bom("drive bay", bom_adapter ? n_bay : 0, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
 bom("rack module", part == "rack_module" ? 2 * len(panel_zs(mod_u(module_type))) : 0, rack_screw, rack_L_dev, rack_screw_head, "adapter", R);
 bom("rack panel", part == "rack_panel" ? 2 * len(panel_zs(panel_u)) : 0, rack_screw, rack_L_dev, rack_screw_head, "adapter", R);
-// keystone jacks and covers: one set per patch panel
-n_patch = part == "rack_panel" ? (panel_fill == "keystone" ? 1 : 0)
-        : part == "rack_module" ? (module_type == "patch" ? 1 : 0)
+// keystone jacks and covers: one set per patch panel whose ports fit (a patch that does not fit is left out)
+function ks_fit_in(w, h) = len(ks_layout(w, h, len(ks_types))) > 0;
+function zone_ks_ok(zn) = filler_mode == "separate" ? ks_fit_in(hole_s - R[0] - 6, zn[1] - 0.8) : ks_fit_in(2 * x_in - 2, zn[1]);
+function n_patch() = part == "rack_panel" ? (panel_fill == "keystone" && ks_fit_in(hole_s - R[0] - 6, panel_u * U - 0.79) ? 1 : 0)
+        : part == "rack_module" ? (module_type == "patch" && ks_fit_in(hole_s - R[0] - 6, U - 0.79) ? 1 : 0)
         : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
            || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-          ? len([for (zn = zones) if (zn[2] == "keystone") 1])
-            + len([for (m = bom_mods) if (m == "patch") 1])
+          ? len([for (zn = zones) if (zn[2] == "keystone" && zone_ks_ok(zn)) 1])
+            + (ks_fit_in(hole_s - R[0] - 6, U - 0.79) ? len([for (m = bom_mods) if (m == "patch") 1]) : 0)
         : 0;
-function ks_count(tp) = n_patch * len([for (x = ks_types) if (x == tp) 1]) + (tp == (ks_style == "metal" ? "rj45m" : "rj45") ? n_nk_jacks : 0);
+function ks_count(tp) = n_patch() * len([for (x = ks_types) if (x == tp) 1]) + (tp == (ks_style == "metal" ? "rj45m" : "rj45") ? n_nk_jacks : 0);
 KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],
             ["usb", "USB keystone"], ["rca", "RCA keystone"], ["jack", "3.5 mm audio keystone"], ["toslink", "Toslink optical keystone"],
             ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
@@ -242,11 +244,13 @@ function dev_of(m) = let(k = mod_kind(m), it = mod_items(m))
   : k == "kvm" ? [for (b = it) b == "jet" ? "JetKVM" : b == "nano" ? "NanoKVM Full" : "KVM (your size)"]
   : k == "pi" || k == "piblade" ? [for (b = k == "pi" ? pi_list(it) : blade_list(it))
                                    b == "zero" ? "Raspberry Pi Zero" : str("Raspberry Pi ", str_split(b, "i")[1])]
-  : k == "nkvm" ? ["NanoKVM"] : k == "dev1" ? ["your device 1"] : k == "dev2" ? ["your device 2"] : [];
+  : k == "nkvm" ? ["NanoKVM Lite"] : k == "dev1" ? ["your device 1"] : k == "dev2" ? ["your device 2"] : [];
 bom_devs = [for (m = bom_mods) each dev_of(m)];
 if (len(bom_devs) > 0) {
     echo(str("BOM | devices (not included): ", count_list(bom_devs)));
-    echo("BOM | cables and power (not included): a network patch cable per port, HDMI + USB cables from each KVM to its computer, the devices' power supplies (or USB-C / PoE)");
+    has_kvm = len([for (m = bom_mods) if (mod_kind(m) == "kvm" || mod_kind(m) == "nkvm") 1]) > 0;
+    echo(str("BOM | cables and power (not included): a network patch cable per port",
+             has_kvm ? ", HDMI + USB cables from each KVM to its computer" : "", ", the devices' power supplies (or USB-C / PoE)"));
 }
 
 module check_len(label, s, L, r)
@@ -260,31 +264,32 @@ if (n_bay > 0)  check_len("bay", bay_screw, bay_L, bay_range);
 if (!bezel_mode && fit == "flush" && units * U > frame_h + 0.01)
     echo("WARNING: units do not fit in the frame - lower units_override or use overhang");
 if (bezel_mode && units * U > frame_h + 0.01)
-    echo(str("NOTE: rack panels overlap the case front by ", (units * U - frame_h) / 2, "mm above and below the bezel"));
+    echo(str("NOTE: rack panels overlap the case front by ", round((units * U - frame_h) / 2 * 10) / 10, " mm above and below the bezel"));
 if (hole_s / 2 + r_feat / 2 + 1.2 > fw / 2)
     echo("WARNING: rack holes are too close to the frame edge - wider frame or smaller screws");
 // the rack fixings sit in the posts, a few mm from the bay's steel side: a thin wall bulges when the insert goes in
 rack_side_wall = sw - (hole_s / 2 + R[2] / 2);
-if (rack_fixing == "heatset" && rack_side_wall < 1)
+has_rack_fix = n_dev + n_fill > 0;                   // (a panel-only front cut into the frame has no rack screws)
+if (has_rack_fix && rack_fixing == "heatset" && rack_side_wall < 1)
     echo(str("WARNING: the rack inserts leave only ", round(rack_side_wall * 10) / 10,
              " mm of plastic to the bay side - smaller screws or another rack_fixing"));
-else if (rack_fixing == "heatset" && rack_side_wall < 2)
+else if (has_rack_fix && rack_fixing == "heatset" && rack_side_wall < 2)
     echo(str("NOTE: the rack inserts leave ", round(rack_side_wall * 10) / 10,
-             " mm of plastic to the bay side - press them in slowly and slide test_rack into a bay to check it still fits",
+             " mm of plastic to the bay side - press them in slowly and slide the rack-holes test piece (test_rack) into a bay to check it still fits",
              rack_screw == "M6" ? " (M5 or M4 inserts leave 2 mm or more)" : ""));
 if (rack_fixing == "heatset" && T_post < R[3] + 1)
     echo("WARNING: posts too shallow for these heat-set inserts - raise post_d");
 if (rack_screw_head == "countersunk" && (head_dims("countersunk", R[8])[0] + 0.4 - R[0]) / 2 > min(filler_t, panel_t))
     echo("WARNING: countersunk heads are deeper than the filler/panel thickness");
 if (frame_h > 250)
-    echo("WARNING: part is taller than 250 mm - check your print bed");
+    echo(str("NOTE: the adapter lies ", round(fw), " x ", round(frame_h * 10) / 10, " mm on the bed - check your printer takes it"));
 if (max(bay_ys) + boss_d / 2 + 2 > sleeve_depth)
     echo("WARNING: bay screw holes are deeper than the sleeve - raise sleeve_depth");
 for (z = rack_zs) {
     if (z - r_feat / 2 < frame_z0 + 0.8 || z + r_feat / 2 > frame_z1 - 0.8)
-        echo(str("WARNING: rack hole at z=", z, " breaks out of the frame edge - smaller screws or another hole_pattern"));
+        echo(str("WARNING: a rack hole ", round((z - frame_z0) * 10) / 10, " mm from the bottom of the frame breaks out of its edge - smaller screws or another hole_pattern"));
     else if (z - r_feat / 2 < pz0 || z + r_feat / 2 > pz1)
-        echo(str("WARNING: rack hole at z=", z, " is outside the posts (only the frame holds it)"));
+        echo(str("WARNING: a rack hole ", round((z - frame_z0) * 10) / 10, " mm from the bottom of the frame is outside the posts (only the frame holds it)"));
 }
 
 // ---------------------------------------------------------------------
@@ -320,6 +325,6 @@ if (ks_ports_list != "" && ks_ports != len(ks_types))
 if (nkvm_raised && len([for (m = concat(used_mods, [module_type])) if (mod_kind(m) == "nkvm" && nk_layout(mod_items(m)) == "side") 1]) > 0
     && (part == "assembly" || mod_kind(module_type) == "nkvm"))
     echo(str("NOTE: the raised NanoKVM bay sticks out ", round((-nk_r_lf - panel_t) * 10) / 10,
-             " mm from the rack front - check that your case door still closes (else turn nkvm_raised off)"));
+             " mm from the rack front - check that your case door still closes (else set nkvm_raised = false: in the plate)"));
 if (mount_lip * 2 >= min(ms_w, ms_h))
     echo("WARNING: mount_lip closes the switch window - lower it");
