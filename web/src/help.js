@@ -20,25 +20,13 @@ const STEP_HELP = {
     en: 'What goes in the leftover strip. With the plate front it is a small screw-on panel you can swap later; with the bezel it is cut into the bezel.',
     es: 'Qué va en la franja que sobra. Con el frontal plano es un panelito atornillado que puedes cambiar después; con el bisel va cortado en el propio bisel.',
   },
-  keystone: {
-    en: 'Number of keystone ports (6 fit in one row).\nMetal: holder cells for metal / shielded keystones, the shape of the original design. Standard: a plain cut-out for plastic snap-in keystones.',
-    es: 'Número de puertos keystone (caben 6 en una fila).\nMetálico: celdas que sujetan keystones metálicos / apantallados, la forma del diseño original. Estándar: un hueco simple para keystones de plástico.',
-  },
   screw: {
-    en: 'The screws your rack accessories use. The 10" mini rack convention is M6, 10-32 or 12-24; many printed accessories use M3–M5.\nThe screw length is worked out for you and listed in "What you need".',
-    es: 'Los tornillos que usan tus accesorios de rack. La norma del mini rack de 10" usa M6, 10-32 o 12-24; muchos accesorios impresos usan M3–M5.\nLa longitud se calcula sola y aparece en "Lo que necesitas".',
+    en: 'The rack screws hold the panels and modules on the adapter\'s posts: the 10" mini rack convention is M6, 10-32 or 12-24, and the modules printed here take whatever you choose. The bay screws hold the adapter in the case.\nThe lengths are worked out for you and listed in "What you need".',
+    es: 'Los tornillos del rack sujetan los paneles y módulos a los postes del adaptador: la norma del mini rack de 10" usa M6, 10-32 o 12-24, y los módulos que se imprimen aquí usan los que elijas. Los de la bahía sujetan el adaptador a la caja.\nLas longitudes se calculan solas y aparecen en "Lo que necesitas".',
   },
   preview: {
     en: 'Only changes the 3D view: the real PC case it is shown in (approximate outer size from the makers), example devices, hardware and an exploded view.',
     es: 'Solo cambia la vista 3D: la caja de PC real en la que se muestra (medidas exteriores aproximadas de los fabricantes), los dispositivos de ejemplo, la tornillería y la vista explosionada.',
-  },
-  panel: {
-    en: 'A standalone 6" rack panel for any 6" rack: height in U and what it holds.',
-    es: 'Un panel de rack de 6" suelto, para cualquier rack de 6": altura en U y qué lleva.',
-  },
-  test: {
-    en: 'Small, quick prints to check the critical sizes before printing a whole adapter.',
-    es: 'Piezas pequeñas y rápidas para comprobar las medidas críticas antes de imprimir el adaptador entero.',
   },
   contents: {
     en: 'Choose a printed module for every rack unit, top first: switch mounts (Mercusys MS105G, UniFi), KVM trays with 1 to 3 boxes, Raspberry Pi trays and 2U blades, a patch panel, 40 mm fans, a button panel…\nEvery module goes into the kit download.',
@@ -49,24 +37,40 @@ const STEP_HELP = {
     es: 'Cada puerto del patch panel: keystone RJ45 metálico o de plástico, HDMI, USB, audio (RCA, jack de 3,5 mm, Toslink), una tapa lisa impresa para un puerto sin usar, una tapa pasacables partida para un cable que entra por delante (p. ej. el de alimentación del switch), o sin hueco.',
   },
   buttons: {
-    en: 'Power and reset with normal keyboard switches (Cherry MX compatible, any 1u keycap) plus power and disk-activity LEDs, wired to the motherboard front-panel header.\nRing: the LED dome sticks out of a countersunk ring. Halo: a ring of light around each key. Hidden glow: the light shines through a 0.6 mm skin and the engraved icon lights up (print it in a light colour).',
-    es: 'Encendido y reset con interruptores de teclado normales (compatibles Cherry MX, cualquier tecla 1u) y LEDs de encendido y de disco, conectados al cabezal del panel frontal de la placa.\nAnillo: el LED asoma por un avellanado con aro. Halo: un aro de luz alrededor de cada tecla. Brillo oculto: la luz atraviesa una piel de 0,6 mm y se ilumina el icono grabado (imprímelo en un color claro).',
+    en: 'Power and reset (and TURBO on the retro panel) plus power and disk-activity LEDs, wired to the motherboard front-panel header.\nKeyboard switch: Cherry MX compatible, any 1u keycap. Metal PC push button: the round ones sold for cases, with an LED ring. Retro: printed buttons on 12 mm tactile switches held by a printed carrier, like a 90s beige PC.\nLED styles (keyboard switches): ring, a halo round each key, or a hidden glow that lights the engraved icon.',
+    es: 'Encendido y reset (y TURBO en la retro) con LEDs de encendido y de disco, conectados al panel frontal de la placa base.\nTecla mecánica: compatible Cherry MX, cualquier tecla 1u. Pulsador metálico de PC: los redondos que se venden para cajas, con anillo LED. Retro: botones impresos sobre micropulsadores de 12 mm en un soporte impreso, como un PC beige de los 90.\nEstilos de LED (teclas mecánicas): anillo, halo alrededor de cada tecla o brillo oculto que ilumina el icono grabado.',
   },
   scene: {
     en: 'Homelab: this PC as the router (with a 4-port network card), a Proxmox node, a TrueNAS box and an access point next to it. Cable colours are VLANs: the cables leave the case through printed brackets in two PCI slots and run to the patch panel.',
     es: 'Homelab: este PC como router (con una tarjeta de red de 4 puertos), y al lado un nodo Proxmox, un NAS con TrueNAS y un punto de acceso. Los colores de los cables son VLANs: salen de la caja por chapas impresas en dos ranuras PCI y llegan al patch panel.',
   },
   fans: {
-    en: '40 mm fans (40 x 40 x 10 or x 20) behind round openings, screwed with M3. Three fit side by side between the rack posts. Wire them to a fan header (5 or 12 V).',
-    es: 'Ventiladores de 40 mm (40 x 40 x 10 o x 20) detrás de aberturas redondas, atornillados con M3. Caben tres lado a lado entre los postes del rack. Conéctalos a un cabezal de ventilador (5 o 12 V).',
+    en: '40 mm fans (40 x 40 x 10 or x 20) behind round openings or a hex grille, screwed with M3. Three fit side by side between the rack posts. Wire them to a fan header (5 or 12 V).',
+    es: 'Ventiladores de 40 mm (40 x 40 x 10 o x 20) detrás de aberturas redondas o una rejilla hexagonal, atornillados con M3. Caben tres lado a lado entre los postes del rack. Conéctalos a un cabezal de ventilador (5 o 12 V).',
   },
   devices: {
     en: 'Measure your devices: every tray is made to fit them with a little clearance. The KVM boxes, the switches and your own devices can all be resized.',
     es: 'Mide tus dispositivos: cada bandeja se hace a su medida con un poco de holgura. Se pueden cambiar las cajas KVM, los switches y tus propios dispositivos.',
   },
-  example: {
-    en: 'Ready-made builds. Pick one and change whatever you like.',
-    es: 'Montajes ya hechos. Elige uno y cambia lo que quieras.',
+  tol: {
+    en: 'The fits that depend on your printer and filament. Print the test pieces first; if one is tight or loose, change its row (each row says which test piece checks it), download again and print the rest.',
+    es: 'Los encajes que dependen de tu impresora y tu filamento. Imprime primero las piezas de prueba; si alguna queda justa u holgada, cambia su fila (cada fila dice qué pieza la comprueba), vuelve a descargar e imprime el resto.',
+  },
+  label: {
+    en: 'The text of the label panel: its size, where it sits, and whether the letters are engraved into the plate or stand out of it. With multicolour on, the letters print in a second filament.',
+    es: 'El texto del panel de etiqueta: su tamaño, dónde va y si las letras van grabadas en la placa o salen en relieve. Con el multicolor, las letras se imprimen en un segundo filamento.',
+  },
+  vent: {
+    en: 'The pattern of the vented panels and the solid rim round it. Only whole holes are cut, so none is left half open at the edges.',
+    es: 'El dibujo de los paneles de ventilación y el borde liso que queda alrededor. Solo se cortan agujeros enteros, así que ninguno queda a medias en los bordes.',
+  },
+  multi: {
+    en: 'For printers with several filaments (e.g. a Bambu AMS): the letters, port names and button legends come as their own STL next to each panel, to print in a second colour.',
+    es: 'Para impresoras con varios filamentos (p. ej. un AMS de Bambu): las letras, los nombres de los puertos y los rótulos de la botonera salen en su propio STL junto a cada panel, para imprimirlos en otro color.',
+  },
+  colour: {
+    en: 'The filament colour in the 3D view (and in the 3MF you download). It does not change the STL files.',
+    es: 'El color del filamento en la vista 3D (y en el 3MF que descargas). No cambia los STL.',
   },
 };
 

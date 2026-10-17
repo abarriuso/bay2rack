@@ -32,9 +32,9 @@ const DEVICE_DIMS = {
 // ready-made builds: the examples step and the gallery (applied on top of the defaults)
 const EXAMPLES = {
   router: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,kvm:jet+nano',
-            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass' },
+            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass', scene: 'homelab' },
   homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm:jet+nano',
-             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
+             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass', scene: 'homelab' },
   network: { bays: 5, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,ux,patch',
              spare_pos: 'top', spare_fill: 'vent', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass' },
   pi: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,piblade:pi5+pi5+pi5+pi5',
@@ -55,6 +55,7 @@ const GALLERY = ['router', 'network', 'pi', 'kvm', 'audio', 'client', 'unifi', '
 const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'rca', 'jack', 'toslink', 'cover', 'pass', 'none'];
 const SCREWS = ['M3', 'M4', 'M5', 'M6', '10-32', '12-24'];
 const FIXINGS = ['heatset', 'tap', 'nut_trap', 'square_nut', 'channel'];
+const BAY_FIXINGS = ['heatset', 'tap', 'nut', 'clearance'];
 const TESTS = ['test_bay', 'test_rack', 'test_keystone'];
 // filament colours: [adapter, fillers, modules] - slightly different so the parts read apart
 const FILAMENTS = {
@@ -244,7 +245,7 @@ function step(n, key, ...body) {
   return h('section', { className: 'step' },
     h('header', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
       h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
-      help ? h('button', { type: 'button', className: 'info', 'aria-label': 'info', textContent: 'i' }) : null),
+      help ? h('button', { type: 'button', className: 'info', 'aria-label': t('aria_info'), textContent: 'i' }) : null),
     h('div', { className: 'body' }, body));
 }
 
@@ -261,11 +262,12 @@ function renderSteps() {
 
   // 1. the case: how many bays, which front, how the rack units sit
   group('case');
-  add('bays', segmented('bays', [1, 2, 3, 4, 5, 6], String));
+  add('bays', segmented('bays', [1, 2, 3, 4, 5, 6], String), h('small', { className: 'hint', textContent: t('bays_hint') }));
   add('front', cards('front_style', [
     { value: 'plate', icon: ICONS.plate, label: t('opt_plate'), sub: t('opt_plate_sub') },
     { value: 'bezel', icon: ICONS.bezel, label: t('opt_bezel'), sub: t('opt_bezel_sub') },
-  ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })));
+  ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })),
+    v.front_style === 'bezel' ? sliderRow('bezel_depth', t('bezel_depth_l')) : h('small', { className: 'hint', textContent: t('front_hint') }));
   add('fit', cards('fit', [
     { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: t('inside_v', { u: c.flushUnits, s: num(c.flushSpare) }) },
     { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
@@ -273,14 +275,15 @@ function renderSteps() {
   ]));
   // 2. what goes in it: the rack units, the devices, the leftover strip and what fills it
   group('contents');
-  if (c.units > 0) add('contents', contentsEditor(placed),
+  if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }),
     toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on })));
   const devs = deviceEntries(mods);
   if (devs.length) add('devices', devicesEditor(devs));
   if (c.hasSpare) add('fill', fillEditor());
   const fills = c.zones;
   if (fills.includes('fan40') || mods.includes('fan40'))
-    add('fans', segmented('fan40_count', [1, 2, 3], (x) => `${x} × 40 mm`), segmented('fan40_t', [10, 20], (x) => `${x} mm`));
+    add('fans', rowTitle('fans_count'), segmented('fan40_count', [1, 2, 3], (x) => `${x} × 40 mm`),
+      rowTitle('fans_thick'), segmented('fan40_t', [10, 20], (x) => `${x} mm`));
   if (fills.includes('keystone') || mods.includes('patch')) add('ports', portsEditor(6));
   if (fills.includes('buttons') || mods.includes('buttons')) add('buttons', buttonsEditor());
   if (fills.includes('label') || mods.includes('label')) add('label', labelEditor());
@@ -288,9 +291,13 @@ function renderSteps() {
     add('vent', segmented('vent_style', ['slots', 'louvres', 'hex', 'dots'], (x) => t('vent_' + x)), sliderRow('vent_margin', t('vent_margin')));
   // 3. making it: screws, and the fits to tune after printing the test pieces
   group('make');
-  add('screw', h('small', { className: 'row-title', textContent: t('screwSize') }), chips('rack_screw', SCREWS, String),
-    h('small', { className: 'row-title', textContent: t('screwFix') }),
-    h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))));
+  add('screw', h('b', { className: 'row-head', textContent: t('screwRack') }),
+    rowTitle('screwSize'), chips('rack_screw', SCREWS, String),
+    rowTitle('screwFix'),
+    h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), { tip: tipOf('fixing:' + f) }))),
+    h('b', { className: 'row-head', textContent: t('screwBay') }),
+    h('div', { className: 'chips small' }, BAY_FIXINGS.map((f) => choice('bay_fixing', f, t('fixb_' + f)))),
+    h('small', { className: 'hint', textContent: t('screwEasy') }));
   add('tol', tolerancesEditor(mods, fills));
   add('multi', multicolourEditor());
   group('view');
@@ -299,6 +306,8 @@ function renderSteps() {
   $('#steps').replaceChildren(...list);
   $('#examplesList').replaceChildren(examplesEditor());
 }
+
+const rowTitle = (key) => h('small', { className: 'row-title', textContent: t(key) });
 
 // a slider + number box for one parameter, with its range from the .scad
 function sliderRow(name, label) {
@@ -579,18 +588,21 @@ function portsEditor(max) {
   };
   return [
     h('div', { className: 'ports' },
-      types.map((tp, i) => h('button', {
-        type: 'button', className: `port port-${tp}`, onclick: () => cycle(i, 1),
-        oncontextmenu: (e) => { e.preventDefault(); cycle(i, -1); },
-        dataset: { tip: tipOf('port:' + tp), tipTitle: `${i + 1} · ${t('port_' + tp)}` },
-      }, h('b', { textContent: i + 1 }), h('span', { textContent: t('port_' + tp) }))),
+      types.map((tp, i) => h('label', {
+        className: `port port-${tp}`, dataset: { tip: tipOf('port:' + tp), tipTitle: `${i + 1} · ${t('port_' + tp)}` },
+      }, h('b', { textContent: i + 1 }), h('span', { textContent: t('port_' + tp) }),
+        // an invisible list over the port: tap it and pick the type
+        h('select', { className: 'port-pick', 'aria-label': `${t('portName')} ${i + 1}`,
+          onchange: (e) => { const list = [...types]; list[i] = e.target.value; setTypes(list); } },
+          PORTS.map((x) => h('option', { value: x, textContent: t('port_' + x), selected: x === tp }))))),
       h('span', { className: 'port-ctl' },
         h('button', { type: 'button', className: 'mini', textContent: '+', disabled: types.length >= max,
           dataset: { tip: t('portAdd') }, onclick: () => setTypes([...types, v.ks_style === 'metal' ? 'rj45m' : 'rj45']) }),
         h('button', { type: 'button', className: 'mini', textContent: '−', disabled: types.length <= 1,
           dataset: { tip: t('portRemove') }, onclick: () => setTypes(types.slice(0, -1)) }))),
     h('small', { className: 'hint', textContent: t('portHint') }),
-    segmented('ks_style', ['metal', 'standard'], (x) => t('ks_' + x)),
+    rowTitle('ks_style_t'), segmented('ks_style', ['metal', 'standard'], (x) => t('ks_' + x)),
+    h('small', { className: 'hint', textContent: t('ks_hint') }),
     portNames(types),
   ];
 }
@@ -618,13 +630,13 @@ function buttonsEditor() {
   const v = S.values;
   return [
     cards('btn_type', ['mx', 'metal', 'retro'].map((x) => ({ value: x, label: t('btnType_' + x), sub: t('btnType_' + x + '_sub') }))),
-    segmented('btn_count', [1, 2], (x) => t('btn_' + x)),
-    v.btn_type === 'metal' ? segmented('btn_metal_d', [12, 16, 19, 22], (x) => `${x} mm`) : null,
+    rowTitle('btn_count_t'), segmented('btn_count', [1, 2], (x) => t('btn_' + x)),
+    v.btn_type === 'metal' ? [rowTitle('btn_metal_d_t'), segmented('btn_metal_d', [12, 16, 19, 22], (x) => `${x} mm`)] : null,
     v.btn_type === 'retro' ? toggle(t('btnTurbo'), v.btn_turbo, (on) => update({ btn_turbo: on })) : null,
     v.btn_type === 'mx'
-      ? cards('led_style', ['ring', 'halo', 'glow'].map((s) => ({ value: s, label: t('led_' + s), sub: t('led_' + s + '_sub'), tip: tipOf('led:' + s) })))
+      ? [rowTitle('led_style_t'), cards('led_style', ['ring', 'halo', 'glow'].map((s) => ({ value: s, label: t('led_' + s), sub: t('led_' + s + '_sub'), tip: tipOf('led:' + s) })))]
       : null,
-    segmented('led_d', [3, 5], (x) => t('led_' + x)),
+    rowTitle('led_d_t'), segmented('led_d', [3, 5], (x) => t('led_' + x)),
   ];
 }
 
@@ -837,10 +849,7 @@ function showResult(res, ext, values) {
 function showEchoes(echoes, errors) {
   const bom = echoes.filter((e) => e.startsWith('BOM | ')).map((e) => e.slice(6));
   const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e) && !/^NOTE: preview case/.test(e)), ...errors];
-  $('#bom').replaceChildren(...(bom.length ? bom : [t('nothing')]).map((b) => {
-    const [what, ...rest] = bomText(b).split(': ');
-    return h('li', {}, rest.length ? [h('b', { textContent: what }), ' ' + rest.join(': ')] : what);
-  }));
+  $('#bom').replaceChildren(...bomGroups(bom));
   $('#warnings').replaceChildren(...(warn.length ? warn : [t('allGood')]).map((w) =>
     h('li', { className: /^(WARNING|ERROR)/.test(w) ? 'warn' : /^NOTE/.test(w) ? 'note' : 'good',
               textContent: warnText(w.replace(/^(WARNING|NOTE): ?/, '')) })));
@@ -850,6 +859,43 @@ function showEchoes(echoes, errors) {
   badge.hidden = !bad.length;
   badge.textContent = `⚠ ${t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length })}`;
   badge.dataset.tip = bad.map((w) => warnText(w.replace(/^(WARNING|ERROR): ?/, ''))).join('\n');
+}
+
+// the model's bill of materials sorted for a shopping trip: buy / print / tools / the devices you bring
+const HEX_KEY = { button: { M3: 2, M4: 2.5, M5: 3, M6: 4 }, countersunk: { M3: 2, M4: 2.5, M5: 3, M6: 4 }, socket: { M3: 2.5, M4: 3, M5: 4, M6: 5 } };
+function bomGroups(bom) {
+  if (!bom.length) return [h('li', { textContent: t('nothing') })];
+  const line = (b) => {
+    const [what, ...rest] = bomText(b).split(': ');
+    return h('li', {}, rest.length ? [h('b', { textContent: what }), ' ' + rest.join(': ')] : what);
+  };
+  const devices = bom.filter((b) => /^(devices|cables and power) /.test(b));
+  const printed = bom.filter((b) => !devices.includes(b) && /^(rear slots:|keystones: \d+ x printed)/.test(b));
+  const buy = bom.filter((b) => !devices.includes(b) && !printed.includes(b));
+  // tools from what the screws and fixings are
+  const all = buy.join('\n');
+  const inserts = [...new Set([...all.matchAll(/x (M[\d.]+|#?\d+-\d+) heat-set insert/g)].map((m) => m[1]))];
+  const keys = new Set();
+  for (const m of all.matchAll(/x (M\d) x \d+ (button head|socket head|countersunk)/g)) {
+    const k = HEX_KEY[m[2].split(' ')[0]]?.[m[1]];
+    if (k) keys.add(`${num(k)} mm`);
+  }
+  const tools = [
+    inserts.length ? t('tool_iron', { s: inserts.join(', ') }) : null,
+    keys.size ? t('tool_hex', { s: [...keys].join(', ') }) : null,
+    /pan head/.test(all) ? t('tool_phillips') : null,
+    /(hex|square) nut/.test(all) ? t('tool_spanner') : null,
+    /cable tie/.test(all) ? t('tool_cutters') : null,
+  ].filter(Boolean);
+  // what the kit prints, when the whole build is on screen (it includes the printed covers and brackets of the list)
+  const pieces = S.values.part === 'assembly' ? kitList(S.values, false).map((f) => pieceLabel(f, S.values)) : [];
+  const group = (key, items) => (items.length ? [h('li', { className: 'bom-group', textContent: t(key) }), ...items] : []);
+  return [
+    ...group('bom_buy', buy.map(line)),
+    ...group('bom_print', pieces.length ? pieces.map((x) => h('li', { textContent: x })) : printed.map(line)),
+    ...group('bom_tools', tools.map((x) => h('li', { textContent: x }))),
+    ...group('bom_devices', devices.map(line)),
+  ];
 }
 
 // ---------------------------------------------------------------- kit download
@@ -897,12 +943,13 @@ function kitList(v, withTests = $('#withTests').checked) {
   return files;
 }
 
-async function downloadKit() {
+async function downloadKit(testsOnly = false) {
   if (S.engine !== 'ready' || S.kitBusy) return;
   S.kitBusy = true;
   $('#kit').disabled = true;
+  $('#kitTests').disabled = true;
   const v = { ...S.values };
-  const files = kitList(v);
+  const files = testsOnly ? kitList(v, true).filter((f) => f.name.startsWith('tests/')) : kitList(v);
   const zip = {};
   try {
     for (const [i, f] of files.entries()) {
@@ -916,7 +963,7 @@ async function downloadKit() {
     const bom = [...new Set(echoText.map((l) => l.match(/^ECHO: "BOM \| (.*)"$/)?.[1]).filter(Boolean))].map(bomText);
     const lines = [
       `${t('readme_title')} - ${new Date().toISOString().slice(0, 10)}`, '',
-      t('readme_notes'), '',
+      t(testsOnly ? 'readme_tests' : 'readme_notes'), '',
       t('readme_print'), ...files.filter((f) => f.name.startsWith('tests/')).map((f) => `  1. ${f.qty} x ${f.name}`),
       ...files.filter((f) => !f.name.startsWith('tests/')).map((f) => `  2. ${f.qty} x ${f.name}`), '',
       t('readme_need'), ...bom.map((b) => `  - ${b}`), '',
@@ -929,12 +976,13 @@ async function downloadKit() {
       Object.entries(v).filter(([k, x]) => !same(x, S.defaults[k]))), null, 2));
     const blob = new Blob([zipSync(zip, { level: 6 })], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
-    h('a', { href: url, download: `bay2rack-kit-${v.bays}bay.zip` }).click();
+    h('a', { href: url, download: testsOnly ? 'bay2rack-tests.zip' : `bay2rack-kit-${v.bays}bay.zip` }).click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     setStatus(t('kitDone', { n: files.length + 2 }), 'ok');
   } finally {
     S.kitBusy = false;
     $('#kit').disabled = false;
+    $('#kitTests').disabled = false;
     if (S.wantRender) render();
   }
 }
@@ -972,8 +1020,8 @@ function buildSpec(k) {
     t('spec_bays', { n: v.bays }),
     c.units > 0 ? t('spec_units', { n: c.units }) : t('opt_panel'),
     ...c.zones.map((z) => t('fill_' + z)),
-    t('spec_mods', { n: mods.length }),
-  ].join(' · ');
+    mods.length ? t('spec_mods', { n: mods.length }) : null,
+  ].filter(Boolean).join(' · ');
 }
 
 // the gallery is one row that scrolls sideways: the arrows move it by a card
@@ -1085,7 +1133,8 @@ function wire() {
   addEventListener('scroll', head, { passive: true });
   narrow.addEventListener('change', head);
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
-  $('#kit').onclick = downloadKit;
+  $('#kit').onclick = () => downloadKit();
+  $('#kitTests').onclick = () => downloadKit(true);
   $('#share').onclick = async () => {
     try { await navigator.clipboard.writeText(location.href); setStatus(t('copied'), 'ok'); } catch { prompt('URL', location.href); }
   };
