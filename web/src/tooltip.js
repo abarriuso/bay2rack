@@ -64,6 +64,12 @@ export function initTooltips(tip) {
     const el = btn.closest('[data-tip]');
     if (current === el && !tip.hidden) hide(); else show(el);
   }, true);
+  // keyboard: the help of what has the focus (not on a click, that would cover what you just pressed)
+  document.addEventListener('focusin', (e) => {
+    const el = e.target.closest?.('[data-tip]');
+    if (el && e.target.matches(':focus-visible')) show(el);
+  });
+  document.addEventListener('focusout', () => { if (!touch) hide(); });
   document.addEventListener('scroll', hide, true);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
 }

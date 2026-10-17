@@ -11,6 +11,7 @@ import { ICONS } from './icons.js';
 import { renderLegend } from './legend.js';
 
 const BASE = new URL('./', document.baseURI).href;
+const SITE = 'https://bay2rack.pages.dev/';                      // the links in the kit README
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
 const FILLS = ['keystone', 'buttons', 'fan80', 'fan40', 'vent', 'cable', 'label', 'blank'];
@@ -108,11 +109,14 @@ const S = {
   result: null, lastKey: '', tests: 'test_bay',
   opening: 122.1,           // the rack opening (mm), as the last render reported it
   notes: { insert: '' },    // notes shown in their step instead of the list
+  leftOut: '',              // modules that do not fit in the rack (a note in the list too)
+  lastEcho: null,           // the last render's messages, shown again in the other language
 };
 
 // ---------------------------------------------------------------- derived (mirrors config.scad)
 function calc(v) {
-  const U = v.rack_u_h, pitch = 43.18, bayH = 41.53;
+  const U = v.rack_u_h, custom = v.bay_std === 'custom';
+  const pitch = custom ? v.custom_bay_pitch : 43.18, bayH = custom ? v.custom_bay_h : 41.53;
   const bezel = v.front_style === 'bezel';
   const stack = (v.bays - 1) * pitch + bayH - v.height_clearance;
   const base = bezel ? (v.bays - 1) * pitch + v.bezel_h1 - v.bezel_clearance : stack;
@@ -122,7 +126,7 @@ function calc(v) {
   const spare = frameH - units * U;
   const hasSpare = spare >= v.min_spare;
   const zones = !hasSpare ? [] : v.spare_pos === 'split' ? [v.spare_fill, v.spare_fill_2] : [v.spare_fill];
-  return { units, spare, hasSpare, zones, flushUnits, flushSpare: base - flushUnits * U, over: v.bays * U - base };
+  return { units, spare, hasSpare, zones, frameH, flushUnits, flushSpare: base - flushUnits * U, over: v.bays * U - base };
 }
 const splitList = (s) => String(s).split(',').map((x) => x.trim()).filter(Boolean);
 const ksTypes = (v) => (String(v.ks_ports_list).trim() ? splitList(v.ks_ports_list)
@@ -141,6 +145,7 @@ const DEVICE_MODS = ['ms105g', 'uswflex', 'ux', 'dev1', 'dev2'];
 const modU = (m) => (modKind(m) === 'piblade' ? 2 : 1);
 const modLabel = (m) => {
   const items = TRAYS[modKind(m)] ? modItems(m) : [];
+  if (!MODULES.includes(modKind(m))) return String(m);
   return t('mod_' + modKind(m)) + (items.length ? ` · ${items.map((x) => (TRAYS[modKind(m)].items.includes(x) ? t('box_' + x) : x)).join(' + ')}` : '');
 };
 const modFile = (m) => String(m).replace(/[:+]/g, '-');
@@ -169,6 +174,18 @@ function trayFits(kind, items, v) {
   return true;
 }
 
+// plastic left between a rack fixing and the bay's steel side (rack_side_wall in config.scad): a nut as wide as an
+// M6 one breaks through it, so those choices are off
+const NUT_AF = { M3: 5.5, M4: 7, M5: 8, M6: 10, '6-32': 7.94, '10-32': 9.53, '12-24': 11.1 };
+const TAP_D = { M3: 2.6, M4: 3.5, M5: 4.4, M6: 5.2, '6-32': 2.9, '10-32': 4.2, '12-24': 4.7 };
+function sideWall(v, fixing = v.rack_fixing, screw = v.rack_screw) {
+  const af = NUT_AF[screw] ?? 10;
+  const feat = fixing === 'heatset' ? (v.rack_insert_d || INSERT_D[screw]) : fixing === 'tap' ? TAP_D[screw]
+    : fixing === 'nut_trap' ? af / Math.cos(Math.PI / 6) + 0.3 : fixing === 'square_nut' ? af + 0.5 : af + 0.6;
+  const slot = fixing === 'heatset' || fixing === 'tap' ? 0 : v.rack_hole_slot;
+  return (146.05 - v.sleeve_clearance) / 2 - (134.925 / 2 + feat / 2 + slot / 2);
+}
+const fixingFits = (v, f, screw) => sideWall(v, f, screw) >= 1;
 // the zones of the strip: [fill, height], bottom first (as config.scad)
 function zoneList(v, c = calc(v)) {
   if (!c.hasSpare) return [];
@@ -250,14 +267,40 @@ function setStatus(text, kind = '') {
 const clamped = (patch) => Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, S.params[k] ? clampValue(S.params[k], v) : v]));
 function update(patch) {
   Object.assign(S.values, clamped(patch));
+  normalize(S.values);
   refresh();
   schedule();
 }
+// a choice another one made impossible moves to one that works
+function normalize(v) {
+  if (!fixingFits(v, v.rack_fixing, v.rack_screw)) v.rack_fixing = ['square_nut', 'heatset'].find((f) => fixingFits(v, f, v.rack_screw)) ?? 'heatset';
+  const c = calc(v);
+  const fanPlaces = [...zoneList(v, c).filter(([f]) => f === 'fan40').map(([, hh]) => fanMax(zoneBox(v, hh))),
+    ...(usedMods(v, c.units).includes('fan40') ? [fanMax(moduleBox(v))] : [])];
+  if (fanPlaces.length) v.fan40_count = Math.max(1, Math.min(v.fan40_count, ...fanPlaces.map((n) => Math.max(1, n))));
+}
 function refresh() {
+  const focus = focusPath();
   // one part failing (a hand-written link with something odd in it) must not leave the rest out of date
   for (const f of [renderSteps, renderTabs, syncAdvanced, showPrebuilt, writeHash]) {
     try { f(); } catch (e) { console.error(e); }
   }
+  restoreFocus(focus);
+}
+// where the focus is inside the steps or the tabs, as child indexes, to put it back after they are drawn again
+function focusPath() {
+  const el = document.activeElement;
+  const box = el?.closest?.('#steps, #tabs');
+  if (!box || el === box) return null;
+  const path = [];
+  for (let n = el; n !== box; n = n.parentElement) path.unshift([...n.parentElement.children].indexOf(n));
+  return { box: '#' + box.id, path, tag: el.tagName, type: el.type };
+}
+function restoreFocus(f) {
+  if (!f) return;
+  let n = $(f.box);
+  for (const i of f.path) n = n?.children[i];
+  if (n && n.tagName === f.tag && n.type === f.type) n.focus({ preventScroll: true });
 }
 
 // ---------------------------------------------------------------- small widgets
@@ -269,8 +312,8 @@ function choice(param, value, content, { cls = 'chip', tip, extra, disabled = fa
   const b = h('button', {
     type: 'button', className: `${cls}${active ? ' active' : ''}${flag ? ' ' + flag : ''}${disabled ? ' off' : ''}`,
     onclick: () => { if (!disabled) update({ [param]: value, ...(extra ? extra(value) : {}) }); },
-    dataset: { tip },
-  }, content);
+    dataset: { tip }, 'aria-pressed': String(active),
+  }, content, disabled && tip ? h('span', { className: 'sr-only', textContent: `: ${tip}` }) : null);
   if (disabled) b.setAttribute('aria-disabled', 'true');
   return b;
 }
@@ -304,12 +347,13 @@ function step(n, key, ...body) {
   return h('section', { className: 'step' },
     h('header', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
       h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
-      help ? h('button', { type: 'button', className: 'info', 'aria-label': t('aria_info'), textContent: 'i' }) : null),
+      help ? h('button', { type: 'button', className: 'info', 'aria-label': `${t('aria_info')}: ${t('step_' + key)}`, textContent: 'i' }) : null),
     h('div', { className: 'body' }, body));
 }
 
 // ---------------------------------------------------------------- simple mode
 function renderSteps() {
+  S.leftOut = '';
   const v = S.values;
   const c = calc(v);
   const list = [];
@@ -319,6 +363,9 @@ function renderSteps() {
   const placed = placeMods(v, c.units);
   const mods = placed.map((p) => p.m);
 
+  // 0. what you want in the bays: a front with a fan or buttons, sockets, or a rack for devices
+  group('start');
+  add('intent', intentEditor(c));
   // 1. the case: how many bays, which front, how the rack units sit
   group('case');
   add('bays', segmented('bays', [1, 2, 3, 4, 5, 6], String), h('small', { className: 'hint', textContent: t('bays_hint') }));
@@ -331,7 +378,7 @@ function renderSteps() {
     { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: t(c.flushUnits ? 'inside_v' : 'inside_v0', { u: c.flushUnits, s: num(c.flushSpare) }) },
     { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)}\u00a0mm` },
     { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
-  ]));
+  ], (x) => (x === 'panel' ? { rear_slots: false, ...(v.spare_fill === 'keystone' ? { spare_fill: 'vent' } : {}) } : {})));
   // 2. what goes in it: the rack units, the devices, the leftover strip and what fills it
   group('contents');
   // the PCI brackets go in the kit whatever is in front: the switch sits in the first step of this group
@@ -339,7 +386,7 @@ function renderSteps() {
   if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }), rear);
   const devs = deviceEntries(mods);
   if (devs.length) add('devices', devicesEditor(devs));
-  if (c.hasSpare) add('fill', fillEditor(), c.units > 0 ? null : rear);
+  if (c.hasSpare) add(c.units > 0 ? 'fill' : 'fill_panel', fillEditor(), c.units > 0 ? null : rear);
   const fills = c.zones;
   if (fills.includes('fan40') || mods.includes('fan40')) {
     // as many fans as the narrowest place with fans takes
@@ -356,20 +403,29 @@ function renderSteps() {
     add('vent', segmented('vent_style', ['slots', 'louvres', 'hex', 'dots'], (x) => t('vent_' + x)), sliderRow('vent_margin', t('vent_margin')));
   // 3. making it: screws, and the fits to tune after printing the test pieces
   group('make');
-  // a hex nut for M6 does not fit in the post: that size takes the square nut
-  const noHex = (sz) => sz === 'M6';
-  add('screw', h('b', { className: 'row-head', textContent: t('screwRack') }),
-    rowTitle('screwSize'), h('div', { className: 'chips' }, SCREWS.map((sz) => choice('rack_screw', sz, sz,
-      { extra: () => (noHex(sz) && v.rack_fixing === 'nut_trap' ? { rack_fixing: 'square_nut' } : {}) }))),
-    rowTitle('screwFix'),
-    h('div', { className: 'chips small' }, FIXINGS.map((f) => choice('rack_fixing', f, t('fix_' + f), {
-      disabled: f === 'nut_trap' && noHex(v.rack_screw), tip: f === 'nut_trap' && noHex(v.rack_screw) ? t('noHexM6') : tipOf('fixing:' + f) }))),
-    S.notes.insert && v.rack_fixing === 'heatset' ? h('small', { className: 'hint note', textContent: S.notes.insert }) : null,
+  // (a panel-only front cut into the frame has no rack screws)
+  const rackScrews = c.units > 0 || (v.filler_mode === 'separate' && c.zones.length > 0);
+  const noIron = v.rack_fixing !== 'heatset' && v.bay_fixing !== 'heatset';
+  add('screw', toggle(t('noIron'), noIron, (on) => update(on
+      ? { rack_screw: fixingFits(v, 'square_nut', v.rack_screw) ? v.rack_screw : 'M5', rack_fixing: 'square_nut', bay_fixing: 'nut' }
+      : { rack_screw: S.defaults.rack_screw, rack_fixing: 'heatset', bay_fixing: 'heatset' })),
+    h('small', { className: 'hint', textContent: t(noIron ? 'noIronOn' : 'screwEasy') }),
+    rackScrews ? [h('b', { className: 'row-head', textContent: t('screwRack') }),
+      rowTitle('screwSize'), chips('rack_screw', SCREWS, String),
+      rowTitle('screwFix'),
+      h('div', { className: 'chips small' }, FIXINGS.map((f) => {
+        const fits = fixingFits(v, f, v.rack_screw);
+        return choice('rack_fixing', f, t('fix_' + f), { disabled: !fits,
+          tip: fits ? tipOf('fixing:' + f) : t('fixNoWall', { s: v.rack_screw, w: num(Math.max(0, sideWall(v, f))),
+            x: ['M5', 'M4', 'M3'].filter((sz) => fixingFits(v, f, sz)).slice(0, 2).join(lang === 'es' ? ' o ' : ' or ') }) });
+      })),
+      S.notes.insert && v.rack_fixing === 'heatset' ? h('small', { className: 'hint note' }, S.notes.insert + ' ',
+        v.rack_screw === 'M6' ? h('button', { type: 'button', className: 'link', textContent: t('useM5'), onclick: () => update({ rack_screw: 'M5' }) }) : null) : null] : null,
     h('b', { className: 'row-head', textContent: t('screwBay') }),
     rowTitle('screwSize'), chips('bay_screw', ['M3', '6-32'], String),
     rowTitle('screwFix'),
     h('div', { className: 'chips small' }, BAY_FIXINGS.map((f) => choice('bay_fixing', f, t('fixb_' + f), { tip: tipOf('fixb:' + f) }))),
-    h('small', { className: 'hint', textContent: t('screwEasy') }));
+    h('small', { className: 'hint', textContent: t('screwBuy') }));
   add('tol', tolerancesEditor(mods, fills));
   add('multi', multicolourEditor());
   group('view');
@@ -492,8 +548,8 @@ function contentsEditor(placed) {
     // the NanoKVM bays share their settings: the first one shows them, the others say so
     return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`), kind === 'nkvm' && k !== firstNkvm)] : row;
   });
-  return [h('div', { className: 'rows' }, rows),
-    left.length ? h('small', { className: 'hint warn', textContent: t('modsLeftOut', { s: left.map(modLabel).join(', ') }) }) : null];
+  S.leftOut = left.length ? t('modsLeftOut', { s: left.map(modLabel).join(', '), n: S.values.bays }) : '';
+  return [h('div', { className: 'rows' }, rows), S.leftOut ? h('small', { className: 'hint warn', textContent: S.leftOut }) : null];
 }
 
 const withTitle = (sel, key) => { sel.dataset.title = key; return sel; };
@@ -504,11 +560,13 @@ function trayEditor(kind, items, onChange, shared = false) {
   for (let i = 0; i < T.max && i <= items.length; i++) {
     // the empty slot reads "+ add"; in a filled one the same entry removes the box
     const opts = [...(i > 0 ? [['', t(items[i] ? 'box_remove' : 'box_none')]] : []), ...T.items.map((x) => [x, t('box_' + x)])];
-    slots.push(select(null, opts, items[i] ?? '', (val) => {
+    const sel = select(null, opts, items[i] ?? '', (val) => {
       const next = [...items];
       if (val) next[i] = val; else next.splice(i);
       onChange(next.filter(Boolean));
-    }));
+    });
+    sel.setAttribute('aria-label', `${t('mod_' + kind)} · ${i + 1}`);
+    slots.push(sel);
   }
   // the NanoKVM bay can also take one or two keystones on its plate
   if (kind === 'nkvm' && !shared) {
@@ -536,6 +594,7 @@ function trayEditor(kind, items, onChange, shared = false) {
     h('small', { textContent: t(sel.dataset.title || 'nkvmMode') }), sel)) : slots;
   // the NanoKVM bay: what this version is, and in how many pieces
   const hint = !fits ? t('trayNoFit') : kind !== 'nkvm' ? t('tray_' + kind)
+    : !TRAYS.nkvm.items.includes(items[0]) ? t('tray_nkvm_unknown')
     : `${t('nkvm_how_' + items[0])} ${t(items[0] === 'ks' ? 'nkvm_parts_ks' : S.values.nkvm_split ? 'nkvm_parts3' : 'nkvm_parts2')}${shared ? ' ' + t('nkvmShared') : ''}`;
   return h('div', { className: 'tray' }, h('div', { className: 'tray-slots' }, titled),
     h('small', { className: `hint${fits ? '' : ' warn'}`, textContent: hint }));
@@ -575,15 +634,16 @@ function fillEditor() {
       const fans = f === 'fan40' ? fanMax([box[0], 1e3]) : 3;
       return choice(param, f, [misfit ? '⚠ ' : '', t('fill_' + f)], {
         disabled: !fits, flag: misfit ? 'misfit' : '',
-        tip: height >= need - 0.01 && wide ? undefined : !wide ? t('fillTooNarrow', { w: num(box[0]) })
+        tip: height >= need - 0.01 && wide ? tipOf('fill:' + f) : !wide ? t('fillTooNarrow', { w: num(box[0]) })
           : fits ? t('fillMoves', { n: num(need) }) : t('fillTooSmall', { n: num(need), h: num(height) }),
         extra: () => ({ ...(height < need - 0.01 && share != null ? { spare_split: share } : {}),
           ...(f === 'fan40' && v.fan40_count > fans ? { fan40_count: Math.max(1, fans) } : {}) }),
       });
     })));
   // splitting the strip: the fill you had keeps the height it needs (bottom zone), the new top zone gets the rest
+  const canSplit = split || (fillMin(v.spare_fill) <= 0.8 * c.spare + 0.01 && c.spare * 0.2 >= fillMin('vent') - 0.01);
   const where = h('div', { className: 'seg' }, ['top', 'bottom', 'split'].map((x) => choice('spare_pos', x, t('pos_' + x), {
-    cls: 'seg-btn',
+    cls: 'seg-btn', disabled: x === 'split' && !canSplit, tip: x === 'split' && !canSplit ? t('splitNoRoom', { f: t('fill_' + v.spare_fill) }) : undefined,
     extra: (val) => {
       if (val !== 'split' || split) return {};
       const sh = Math.min(0.8, Math.max(0.5, fillMin(v.spare_fill) / c.spare + 0.004));
@@ -624,6 +684,29 @@ function applyExample(k) {
   // on a phone the examples sit above the configurator: bring it into view
   if (matchMedia(NARROW).matches) { $('#examples').open = false; $('.layout').scrollIntoView({ behavior: 'smooth' }); }
 }
+// the first question: a front with a fan or buttons (no rack), sockets on the front, or a rack for devices. It keeps
+// your bays and front, and sets the fit and what goes in for that
+function intentOf(v) {
+  if (v.fit !== 'panel') return 'rack';
+  return [v.spare_fill, ...(v.spare_pos === 'split' ? [v.spare_fill_2] : [])].includes('keystone') ? 'ports' : 'simple';
+}
+function intentPatch(k, v = S.values) {
+  const keep = { filler_mode: v.front_style === 'bezel' ? 'integral' : 'separate' };
+  if (k === 'simple') return v.bays >= 3
+    ? { fit: 'panel', filler_mode: 'integral', spare_pos: 'split', spare_split: 0.67, spare_fill: 'fan80', spare_fill_2: 'buttons', rear_slots: false }
+    : { fit: 'panel', filler_mode: 'integral', spare_pos: 'top', spare_fill: v.bays >= 2 ? 'fan80' : 'vent', rear_slots: false };
+  if (k === 'ports') return { fit: 'panel', filler_mode: 'integral', spare_pos: 'top', spare_fill: 'keystone', rear_slots: true };
+  return { ...keep, fit: 'flush', spare_pos: 'top', spare_fill: 'keystone', rack_modules: S.defaults.rack_modules, rear_slots: true };
+}
+function intentEditor() {
+  const cur = intentOf(S.values);
+  return [h('div', { className: 'cards' }, ['simple', 'ports', 'rack'].map((k) => h('button', {
+    type: 'button', className: `card-btn${cur === k ? ' active' : ''}`, 'aria-pressed': String(cur === k),
+    onclick: () => update(intentPatch(k)),
+  }, svgEl(ICONS[k === 'simple' ? 'panel' : k === 'ports' ? 'plate' : 'flush']), h('strong', { textContent: t('intent_' + k) }),
+  h('small', { textContent: t('intent_' + k + '_sub') })))),
+  h('small', { className: 'hint' }, t('intent_hint') + ' ', h('a', { href: '#glossary', textContent: t('gloss_link') }))];
+}
 const exampleActive = (k, v = S.values) => Object.entries(EXAMPLES[k]).every(([key, x]) => same(v[key], x));
 
 function examplesEditor() {
@@ -639,7 +722,7 @@ function deviceEntries(mods) {
   for (const m of mods) {
     const k = modKind(m);
     if (k === 'ms105g') out.set('ms', { name: null, title: t('mod_ms105g'), tip: 'mod:ms105g' });
-    else if (k === 'kvm') for (const b of modItems(m)) out.set(KVM_DIMS[b], { name: KVM_DIMS[b], title: t('box_' + b), tip: 'mod:kvm' });
+    else if (k === 'kvm') for (const b of modItems(m)) if (KVM_DIMS[b]) out.set(KVM_DIMS[b], { name: KVM_DIMS[b], title: t('box_' + b), tip: 'mod:kvm' });
     else if (DEVICE_DIMS[k]) out.set(k, { name: DEVICE_DIMS[k][0], title: t(k === 'piblade' ? 'dev_bladePitch' : 'mod_' + k), tip: 'mod:' + k });
   }
   return [...out.values()].filter((e) => !e.name || S.params[e.name]);
@@ -689,7 +772,7 @@ function portsEditor(most) {
         className: `port port-${tp}`, dataset: { tip: tipOf('port:' + tp), tipTitle: `${i + 1} · ${t('port_' + tp)}` },
       }, h('b', { textContent: i + 1 }), h('span', { textContent: t('port_' + tp) }),
         // an invisible list over the port: tap it and pick the type
-        h('select', { className: 'port-pick', 'aria-label': `${t('portName')} ${i + 1}`,
+        h('select', { className: 'port-pick', 'aria-label': `${t('portType')} ${i + 1}`,
           onchange: (e) => { const list = [...types]; list[i] = e.target.value; setTypes(list); } },
           PORTS.map((x) => h('option', { value: x, textContent: t('port_' + x), selected: x === tp }))))),
       h('span', { className: 'port-ctl' },
@@ -734,11 +817,13 @@ function buttonsEditor() {
     cards('btn_type', ['mx', 'metal', 'retro'].map((x) => ({ value: x, label: t('btnType_' + x), sub: t('btnType_' + x + '_sub') }))),
     rowTitle('btn_count_t'), segmented('btn_count', [1, 2], (x) => t('btn_' + x)),
     v.btn_type === 'metal' ? [rowTitle('btn_metal_d_t'), segmented('btn_metal_d', [12, 16, 19, 22], (x) => `${x} mm`)] : null,
-    v.btn_type === 'retro' ? toggle(t('btnTurbo'), v.btn_turbo, (on) => update({ btn_turbo: on })) : null,
+    v.btn_type === 'retro' ? [toggle(t('btnTurbo'), v.btn_turbo, (on) => update({ btn_turbo: on })),
+      v.btn_turbo ? h('small', { className: 'hint', textContent: t('turboHint') }) : null] : null,
     v.btn_type === 'mx'
       ? [rowTitle('led_style_t'), cards('led_style', ['ring', 'halo', 'glow'].map((s) => ({ value: s, label: t('led_' + s), sub: t('led_' + s + '_sub'), tip: tipOf('led:' + s) })))]
       : null,
     rowTitle('led_d_t'), segmented('led_d', [3, 5], (x) => t('led_' + x)),
+    h('small', { className: 'hint', textContent: t('btnWiring') }),
   ];
 }
 
@@ -770,7 +855,11 @@ const PIECE_KEYS = ['module_type', 'cover_type', 'btn_cap', 'pci_kind'];
 function pieceLabel(f, v) {
   const p = f.part;
   const qty = f.qty > 1 ? ` × ${f.qty}` : '';
-  if (p.part === 'adapter') return t('piece_adapter');
+  if (p.part === 'adapter') {
+    const c = calc(v);
+    const w = v.front_style === 'bezel' ? 148 - v.bezel_clearance : 148;
+    return `${t('piece_adapter')} · ${t('onBed', { w: num(w, 0), h: num(c.frameH, 0) })}`;
+  }
   if (p.part === 'filler' || p.part === 'filler_2') {
     const z = calc(v).zones[p.part === 'filler' ? 0 : 1];
     return `${t(p.part === 'filler' ? 'piece_filler' : 'piece_filler2')} · ${t('fill_' + z)}`;
@@ -798,9 +887,14 @@ function renderTabs() {
   const isPiece = (f) => Object.entries(f.part).every(([k, x]) => v[k] === x);
   const current = pieces.findIndex(isPiece);
   const tab = (label, active, onclick, tip) => h('button', {
-    type: 'button', className: `tab${active ? ' active' : ''}`, onclick, dataset: { tip },
+    type: 'button', className: `tab${active ? ' active' : ''}`, onclick, dataset: { tip }, role: 'tab', 'aria-selected': String(active),
   }, t(label));
   const mounted = v.part === 'assembly';
+  if (!mounted && current < 0 && pieces.length) {
+    Object.assign(v, Object.fromEntries(PIECE_KEYS.map((k) => [k, S.defaults[k]])), pieces[0].part);
+    schedule();
+    return renderTabs();
+  }
   const tabs = [
     tab('view_assembly', mounted, () => update({ part: 'assembly', ...Object.fromEntries(PIECE_KEYS.map((k) => [k, S.defaults[k]])) }), tipOf('part:assembly')),
     tab('view_pieces', !mounted, () => update({ ...pieces[Math.max(0, current)].part }), tipOf('part:pieces')),
@@ -891,7 +985,7 @@ function showPrebuilt() {
 function hashString(values = S.values) {
   const q = new URLSearchParams();
   for (const [k, x] of Object.entries(values)) if (!same(x, S.defaults[k])) q.set(k, Array.isArray(x) ? x.join(',') : String(x));
-  return '#' + q.toString().replace(/%2C/g, ',').replace(/%2B/g, '+').replace(/%3A/g, ':');
+  return '#' + q.toString().replace(/\+/g, '%20').replace(/%2C/g, ',').replace(/%2B/g, '+').replace(/%3A/g, ':');
 }
 function writeHash() {
   history.replaceState(null, '', hashString());
@@ -934,7 +1028,7 @@ function showResult(res, ext, values) {
   const errors = res.logs.filter((l) => /^(ERROR|WARNING):/.test(l));
   $('#log').textContent = res.logs.join('\n');
   showEchoes(echoes, errors);
-  if (!res.ok) { setStatus(t('failed'), 'error'); return; }
+  if (!res.ok) { setStatus(t('failed'), 'error'); $('#download').disabled = true; return; }
   const key = [values.part, values.bays, values.scene, values.case_view, values.module_type].join('|');
   const homelab = values.part === 'assembly' && values.case_view === 'tower' && values.scene === 'homelab';
   const top = values.bays * 43.18 + 25;
@@ -950,7 +1044,8 @@ function showResult(res, ext, values) {
   }
   if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
   viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
-  renderLegend($('#legend'), ext === '3mf' && UI.cables ? scene : null);
+  S.lastScene = ext === '3mf' && UI.cables ? scene : null;
+  renderLegend($('#legend'), S.lastScene);
   $('#caseName').textContent = ext === '3mf' && scene.case ? (UI.sleeper ? t('sleeperName') : scene.case.name) : '';
   S.lastKey = key;
   if (S.result) URL.revokeObjectURL(S.result.url);
@@ -960,6 +1055,7 @@ function showResult(res, ext, values) {
 }
 
 function showEchoes(echoes, errors) {
+  S.lastEcho = [echoes, errors];
   const bom = echoes.filter((e) => e.startsWith('BOM | ')).map((e) => e.slice(6));
   // the rack opening (it moves with the screws and their fixing) sizes what the steps offer
   const opening = Number(echoes.find((e) => e.startsWith('bay2rack |'))?.match(/opening=([\d.]+)mm/)?.[1]);
@@ -971,7 +1067,8 @@ function showEchoes(echoes, errors) {
     S.notes = notes;
     renderSteps();
   }
-  const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e) && !/^NOTE: preview case/.test(e) && e !== insert), ...errors];
+  const warn = [...echoes.filter((e) => /^(WARNING|NOTE)/.test(e) && !/^NOTE: preview case/.test(e) && e !== insert), ...errors,
+    ...(S.leftOut ? ['NOTE: ' + S.leftOut] : [])];
   $('#bom').replaceChildren(...bomGroups(bom));
   $('#warnings').replaceChildren(...(warn.length ? warn : [t('allGood')]).map((w) =>
     h('li', { className: /^(WARNING|ERROR)/.test(w) ? 'warn' : /^NOTE/.test(w) ? 'note' : 'good',
@@ -1014,7 +1111,7 @@ function bomGroups(bom) {
     inserts.length ? t('tool_iron', { s: inserts.join(', ') }) : null,
     keys.size ? t('tool_hex', { s: [...keys].join(', ') }) : null,
     /pan head/.test(all) ? t('tool_phillips') : null,
-    /(hex|square) nut/.test(all) ? t('tool_spanner') : null,
+    /(hex|square) nut|screw \+ nut/.test(all) ? t('tool_spanner') : null,
     /cable tie/.test(all) ? t('tool_cutters') : null,
   ].filter(Boolean);
   // what the kit prints, when the whole build is on screen (it includes the printed covers and brackets of the list)
@@ -1056,7 +1153,8 @@ function kitList(v, withTests = $('#withTests').checked) {
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
       if (v.nkvm_split && ['side', 'front'].includes(modItems(m)[0]))
-        files.push({ name: `module-${modFile(m)}-pocket.stl`, qty, part: { part: 'rack_module_bay', module_type: m } });
+        files.push({ name: `module-${modFile(m)}-${modItems(m)[0] === 'front' ? 'drawer' : v.nkvm_raised ? 'mountain' : 'pocket'}.stl`, qty,
+          part: { part: 'rack_module_bay', module_type: m } });
     }
   }
   const btnSets = c.zones.filter((z) => z === 'buttons').length + mods.filter((m) => m === 'buttons').length;
@@ -1104,11 +1202,12 @@ async function downloadKit(testsOnly = false) {
     const lines = [
       `${t('readme_title')} - ${new Date().toISOString().slice(0, 10)}`, '',
       t(testsOnly ? 'readme_tests' : 'readme_notes'), '',
-      t('readme_print'), ...files.filter((f) => f.name.startsWith('tests/')).map((f) => `  1. ${f.qty} x ${f.name}`),
+      t('readme_printer'), '',
+      t('readme_print'), ...files.filter((f) => f.name.startsWith('tests/')).map((f) => `  1. ${f.qty} x ${f.name}  (${t('readme_' + f.part.part)})`),
       ...files.filter((f) => !f.name.startsWith('tests/')).map((f) => `  2. ${f.qty} x ${f.name}`), '',
       t('readme_need'), ...bom.map((b) => `  - ${b}`), '',
       t('readme_guide'), `  https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD${lang === 'es' ? '.es' : ''}.md`, '',
-      t('readme_settings'), `  ${location.href}`, '',
+      t('readme_settings'), `  ${SITE}${hashString(v)}`, '',
       'https://github.com/abarriuso/bay2rack · CC BY-NC-SA 4.0', '',
     ];
     zip['bay2rack/README.txt'] = strToU8(lines.join('\n'));
@@ -1119,6 +1218,7 @@ async function downloadKit(testsOnly = false) {
     h('a', { href: url, download: testsOnly ? 'bay2rack-tests.zip' : `bay2rack-kit-${v.bays}bay.zip` }).click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     setStatus(t('kitDone', { n: files.length + 2 }), 'ok');
+    $('#nextStep').hidden = false;
   } finally {
     S.kitBusy = false;
     $('#kit').disabled = false;
@@ -1185,7 +1285,8 @@ function renderGallery() {
         h('span', { className: 'spec', textContent: buildSpec(k) }),
         h('h4', { textContent: t('ex_' + k) }),
         h('p', { textContent: t('ex_' + k + '_tip') }),
-        h('button', { type: 'button', className: 'load', onclick: () => { applyExample(k); $('#build').scrollIntoView(); } },
+        h('button', { type: 'button', className: 'load', 'aria-label': `${t('gallery_load')}: ${t('ex_' + k)}`,
+          onclick: () => { applyExample(k); $('#build').scrollIntoView(); } },
           t('gallery_load'), h('span', { 'aria-hidden': 'true', textContent: '→' }))));
   }));
 }
@@ -1229,8 +1330,8 @@ function applyTheme(th) {
 function wire() {
   initTooltips($('#tip'));
   for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
-  let th = 'light';
-  try { th = localStorage.getItem('theme') || 'light'; } catch { /* private mode */ }
+  let th = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  try { th = localStorage.getItem('theme') || th; } catch { /* private mode */ }
   applyTheme(th);
   $('#theme').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   $('#lang').onclick = () => {
@@ -1241,7 +1342,8 @@ function wire() {
     renderGallery();
     renderBayTable();
     heroRelabel?.();
-    if (S.result) render();
+    if (S.lastEcho) showEchoes(...S.lastEcho);
+    renderLegend($('#legend'), S.lastScene ?? null);
   };
   const adv = $('#advanced');
   try { adv.checked = localStorage.getItem('advanced') === '1'; } catch { /* private mode */ }
@@ -1251,6 +1353,15 @@ function wire() {
   };
   adv.onchange = showAdv;
   showAdv();
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href^="#"]');
+    const id = a?.getAttribute('href').slice(1);
+    if (!id || /=/.test(id) || !document.getElementById(id)) return;
+    e.preventDefault();
+    const el = document.getElementById(id);
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (el.tagName === 'DETAILS') el.open = true;
+  });
   $('#fit').onclick = () => viewer.fit();
   $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
