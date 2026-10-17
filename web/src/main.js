@@ -5,7 +5,7 @@ import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
 import { Viewer } from './viewer.js';
 import { parseCustomizer, scadLiteral, fromPreset, same, clampValue } from './customizer.js';
 import { t, lang, setLang, applyI18n } from './i18n.js';
-import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText } from './help.js';
+import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText, optionLabel } from './help.js';
 import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
 import { renderLegend } from './legend.js';
@@ -267,7 +267,7 @@ function renderSteps() {
     { value: 'bezel', icon: ICONS.bezel, label: t('opt_bezel'), sub: t('opt_bezel_sub') },
   ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })));
   add('fit', cards('fit', [
-    { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: `${c.flushUnits}U + ${num(c.flushSpare)} mm ${t('free')}` },
+    { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: t('inside_v', { u: c.flushUnits, s: num(c.flushSpare) }) },
     { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)} mm` },
     { value: 'panel', icon: ICONS.panel, label: t('opt_panel'), sub: t('opt_panel_sub') },
   ]));
@@ -543,7 +543,9 @@ function devicesEditor(entries) {
     let inputs;
     if (!name) inputs = MS.map((k, i) => field(v[k], (x) => update({ [k]: x }), t('dim_' + i)));
     else if (S.params[name].type === 'vector')
-      inputs = v[name].map((x, i) => field(x, (nx) => { const a = [...v[name]]; a[i] = nx; update({ [name]: a }); }, t('dim_' + i)));
+      // the NanoKVM is given as length, height, width (it lies on its side)
+      inputs = v[name].map((x, i) => field(x, (nx) => { const a = [...v[name]]; a[i] = nx; update({ [name]: a }); },
+        t(name === 'nkvm_dims' ? ['dim_len', 'dim_1', 'dim_0'][i] : 'dim_' + i)));
     else inputs = [field(v[name], (x) => update({ [name]: x }), t(name === 'pi_blade_pitch' ? 'dim_pitch' : 'dim_2'))];
     const changed = !name ? MS.some((k) => v[k] !== S.defaults[k]) : !same(v[name], S.defaults[name]);
     return h('div', { className: 'dev-row', dataset: { tip: tipOf(tip) } },
@@ -552,7 +554,7 @@ function devicesEditor(entries) {
           onclick: () => update(!name ? Object.fromEntries(MS.map((k) => [k, S.defaults[k]])) : { [name]: S.defaults[name] }) }) : null),
       h('div', { className: 'dims' }, inputs));
   });
-  return [h('div', { className: 'devs' }, rows), h('small', { className: 'hint', textContent: t('devHint') })];
+  return [h('div', { className: 'devs' }, rows), h('small', { className: 'hint', textContent: t('devHint', { n: num(S.values.mount_clear) }) })];
 }
 
 function portsEditor(max) {
@@ -617,7 +619,8 @@ function buttonsEditor() {
 
 function previewEditor() {
   const v = S.values;
-  const caseOpts = [...S.params.case_model.options.map((o) => [o.value, o.label.replace(/ - (\d+) bays$/, ' · $1 × 5,25"')]), ['none', t('case_none')]];
+  const caseOpts = [...S.params.case_model.options.map((o) => [o.value,
+    o.value === 'auto' ? t('case_auto') : o.label.replace(/ - (\d+) bays$/, ` · $1 × ${num(5.25, 2)}"`)]), ['none', t('case_none')]];
   return [
     segmented('scene', ['homelab', 'single'], (x) => t('scene_' + x), stepHelp('scene')),
     select(null, caseOpts, v.case_view === 'none' ? 'none' : v.case_model,
@@ -646,7 +649,8 @@ function pieceLabel(f, v) {
     return `${t(p.part === 'filler' ? 'piece_filler' : 'piece_filler2')} · ${t('fill_' + z)}`;
   }
   if (p.part === 'rack_module') return modLabel(p.module_type) + qty;
-  if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part.startsWith('filler') ? t('piece_filler') : modLabel(p.module_type)}`;
+  if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part === 'filler_labels' ? t('piece_filler')
+    : p.part === 'filler_2_labels' ? t('piece_filler2') : modLabel(p.module_type)}`;
   if (p.part === 'rack_module_lid') return `${t('mod_nkvm')} · ${t('piece_lid')}${qty}`;
   if (p.part === 'rack_module_bay') return `${t('mod_nkvm')} · ${t(modItems(p.module_type)[0] === 'front' ? 'piece_drawer'
     : v.nkvm_raised ? 'piece_mountain' : 'piece_pocket')}${qty}`;
@@ -688,7 +692,7 @@ function control(p) {
   const set = (val) => update({ [p.name]: val });
   let input;
   if (p.widget === 'select') {
-    input = h('select', { className: 'select' }, p.options.map((o) => h('option', { value: o.value, textContent: o.label })));
+    input = h('select', { className: 'select' }, p.options.map((o) => h('option', { value: o.value, textContent: optionLabel(p, o) })));
     input.onchange = () => set(p.type === 'number' ? Number(input.value) : input.value);
   } else if (p.widget === 'check') {
     input = h('input', { type: 'checkbox', onchange: () => set(input.checked) });
@@ -915,7 +919,7 @@ async function downloadKit() {
     const url = URL.createObjectURL(blob);
     h('a', { href: url, download: `bay2rack-kit-${v.bays}bay.zip` }).click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
-    setStatus(t('kitDone', { n: files.length }), 'ok');
+    setStatus(t('kitDone', { n: files.length + 2 }), 'ok');
   } finally {
     S.kitBusy = false;
     $('#kit').disabled = false;

@@ -70,7 +70,7 @@ units_override = 0; // [0:1:6]
 // Where the extra height goes when there is no spare zone
 overhang_align = "center"; // [center, top, bottom]
 // Where the spare zone goes
-spare_pos = "top"; // [top, bottom, split]
+spare_pos = "top"; // [top:Top, bottom:Bottom, split:Both]
 // split: share of the spare height that goes to the bottom zone
 spare_split = 0.5; // [0.2:0.01:0.8]
 // Spare zones smaller than this become plain frame rim
@@ -143,9 +143,9 @@ wall_lip = 6; // [2:0.5:15]
 /* [Spare-zone filler] */
 // separate = screw-on panel you can swap (modular).  integral = features cut into the frame
 filler_mode = "separate"; // [separate:Separate screw-on panel, integral:Cut into the frame]
-spare_fill = "keystone"; // [blank, keystone, vent, cable, label, buttons, fan40, fan80]
+spare_fill = "keystone"; // [blank:Blank panel, keystone:Keystone patch, vent:Vents, cable:Cable pass-through, label:Label, buttons:Buttons, fan40:40 mm fans, fan80:80 mm fan]
 // Fill of the top zone when spare_pos = split
-spare_fill_2 = "vent"; // [blank, keystone, vent, cable, label, buttons, fan40, fan80]
+spare_fill_2 = "vent"; // [blank:Blank panel, keystone:Keystone patch, vent:Vents, cable:Cable pass-through, label:Label, buttons:Buttons, fan40:40 mm fans, fan80:80 mm fan]
 filler_t = 3; // [1.5:0.5:6]
 label_text = "HOMELAB";
 // Vent fill: the pattern, and the solid rim left round it at the sides
@@ -223,7 +223,7 @@ btn_metal_d = 16; // [12, 16, 19, 22]
 // Retro: a third button and LED, TURBO
 btn_turbo = false;
 // Printed button made by part = button_cap
-btn_cap = "power"; // [power, reset, turbo]
+btn_cap = "power"; // [power:Power, reset:Reset, turbo:Turbo]
 mx_cut = 14.0; // [13.5:0.05:14.5]
 mx_plate_t = 1.5; // [1.2:0.1:2]
 // Power and disk-activity LEDs
@@ -318,7 +318,7 @@ pci_t = 2.0; // [0.8:0.1:3]
 
 /* [Standalone rack panel] */
 panel_u = 1; // [1:1:4]
-panel_fill = "keystone"; // [blank, keystone, vent, cable, label, buttons, fan40, fan80]
+panel_fill = "keystone"; // [blank:Blank panel, keystone:Keystone patch, vent:Vents, cable:Cable pass-through, label:Label, buttons:Buttons, fan40:40 mm fans, fan80:80 mm fan]
 panel_t = 3; // [2:0.5:6]
 // Horizontal slotting of panel holes
 panel_hole_slot = 2; // [0:0.5:6]
