@@ -920,7 +920,7 @@ async function downloadKit() {
       t('readme_print'), ...files.filter((f) => f.name.startsWith('tests/')).map((f) => `  1. ${f.qty} x ${f.name}`),
       ...files.filter((f) => !f.name.startsWith('tests/')).map((f) => `  2. ${f.qty} x ${f.name}`), '',
       t('readme_need'), ...bom.map((b) => `  - ${b}`), '',
-      t('readme_guide'), '  https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md', '',
+      t('readme_guide'), `  https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD${lang === 'es' ? '.es' : ''}.md`, '',
       t('readme_settings'), `  ${location.href}`, '',
       'https://github.com/abarriuso/bay2rack · CC BY-NC-SA 4.0', '',
     ];

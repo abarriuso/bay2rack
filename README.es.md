@@ -15,10 +15,13 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 >
 > **¿Solo quieres imprimir?** Las variantes ya generadas están en [`stl/`](stl/README.md), con los tornillos e insertos
 > que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests) y [ajusta las holguras](#impresión).
+>
+> **¿Vas a montarlo?** La [guía de montaje](docs/BUILD.es.md) explica qué comprar, el orden de impresión, los
+> insertos, el montaje y los cables y la alimentación.
 
-> **Trabajo en proceso.** ¿Has encontrado un defecto, una pieza que no encaja en tu caja o un problema al imprimir?
+> **En desarrollo.** ¿Has encontrado un defecto, una pieza que no encaja en tu caja o un problema al imprimir?
 > [Abre un issue](https://github.com/abarriuso/bay2rack/issues) con fotos y el modelo de tu caja. Se agradecen pull requests con medidas de otras cajas
-> y accesorios de rack, módulos nuevos y correcciones. Cajas reportadas: [lista de compatibilidad](docs/CASES.md) · cambios: [CHANGELOG](CHANGELOG.md).
+> y accesorios de rack, módulos nuevos y correcciones. Cajas reportadas: [lista de compatibilidad](docs/CASES.es.md) · cambios: [CHANGELOG](CHANGELOG.md).
 
 Evolución del post original
 [6" mini rack switch + patch panel in a 5.25" bay](https://www.reddit.com/r/minilab/comments/1vr8vc1/6_mini_rack_switch_patch_panel_in_525_bay/).
@@ -31,19 +34,8 @@ Evolución del post original
 |---|---|
 | ![Router + VLANs](docs/gallery/router.webp) **Router + VLANs**: el PC corre OPNsense / pfSense con una tarjeta de red de 4 puertos; un switch UniFi gestionable lleva las VLANs, un segundo switch los servidores, JetKVM + NanoKVM, patch panel | ![Rack de red](docs/gallery/network.webp) **Rack de red**: 5 bahías, dos switches, un UniFi Express y un patch panel completo |
 | ![Clúster de Raspberry Pi](docs/gallery/pi.webp) **Clúster de Raspberry Pi**: un switch UniFi y cuatro Raspberry Pi 5 de pie en blades de 2U | ![Estación KVM](docs/gallery/kvm.webp) **Estación KVM**: dos bandejas, dos JetKVM y dos NanoKVM, keystones HDMI y USB |
-| ![Audio](docs/gallery/audio.webp) **Audio**: un streamer con Raspberry Pi 4, tres ventiladores de 40 mm, keystones RCA, jack de 3,5 mm y Toslink | ![Botonera + ventilador de 80 mm](docs/gallery/client.webp) **Caja Proxmox / TrueNAS**: sin rack, solo un bisel con un ventilador de 80 mm y una botonera de encendido / reset |
+| ![Audio](docs/gallery/audio.webp) **Audio**: un streamer con Raspberry Pi 4, tres ventiladores de 40 mm, keystones RCA, jack de 3,5 mm y Toslink | ![Caja Proxmox / TrueNAS](docs/gallery/client.webp) **Caja Proxmox / TrueNAS**: sin rack, solo un panel frontal con un ventilador de 80 mm y una botonera de encendido / reset |
 | ![UniFi](docs/gallery/unifi.webp) **UniFi**: switch Flex Mini y UniFi Express | ![Bisel enrasado](docs/gallery/bezel.webp) **Bisel enrasado**: un bisel de 5,25" exacto, enrasado con el frontal de la caja |
-
-### El vídeo
-
-Blender 5.2, Cycles (HIP), 1600×900, 60 fps (30 fps más los fotogramas intermedios, `--between`), 17 s.
-`scripts/blender/hero.py` monta la escena a partir de exportaciones GLB del visor web; `scripts/blender/encode.py` hace
-el etalonaje y genera MP4 (H.264), WebM (VP9) y el GIF.
-
-| | | |
-|---|---|---|
-| ![El sleeper se despliega](docs/img/film/unfold.webp) | ![Un servidor moderno dentro](docs/img/film/server.webp) | ![El frontal del rack](docs/img/film/front.webp) |
-| ![Cables por las ranuras PCI](docs/img/film/cables.webp) | ![Blades de Raspberry Pi en el nodo Proxmox](docs/img/film/pi-cluster.webp) | ![El homelab](docs/img/film/hero.webp) |
 
 ## Un homelab con PCs antiguos
 
@@ -88,40 +80,41 @@ Usa el frontal plano cuando el frontal de tu caja sea plano a la altura de las b
 frontal de plástico que sobresale de la chapa, usa el bisel y ajusta `bezel_depth` a lo que sobresale ese frontal.
 
 Otros ajustes: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split)
-y el relleno de la franja libre (`keystone`, `buttons`, `vent`, `cable`, `label` o `blank`).
+y el relleno de la franja libre (`keystone`, `buttons`, `vent`, `cable`, `label`, `fan40`, `fan80` o `blank`).
 El relleno puede ser `separate` (panel atornillado en el mismo plano que los accesorios) o `integral` (cortado en el marco).
 
 ## Módulos de rack
 
-`rack_modules` indica qué va en cada U del rack, de arriba abajo. Cada módulo es una pieza de 1U que se atornilla a
-los agujeros del rack:
+`rack_modules` indica qué va en cada U del rack, de arriba abajo. Cada módulo es una pieza aparte (de 1U; los blades
+de 2U) que se atornilla a los agujeros del rack:
 
 | Módulo | |
 |---|---|
-| `ms105g` | Switch **Mercusys MS105G** de 5 puertos (105 × 70 × 24,9 mm): entra por detrás en un túnel, la ventana frontal deja libres los 5 puertos y la clavija, una brida por detrás lo sujeta |
+| `ms105g` | Switch de 5 puertos con la medida del **Mercusys MS105G** (105 × 24,9 × 70 mm, ancho × alto × fondo; pon la de tu switch): entra por detrás en un túnel, la ventana frontal deja libres los 5 puertos y la clavija, una brida por detrás lo sujeta |
 | `uswflex`, `ux` | **UniFi USW-Flex-Mini** (gestionable, VLANs) y **UniFi Express** en el mismo tipo de túnel |
 | `kvm:jet+nano` | **Bandeja de KVM por IP**: de 1 a 3 cajas a elegir una al lado de otra (`jet` JetKVM, `nano` NanoKVM, `custom`), p. ej. `kvm:nano+nano`; avisa si no caben |
-| `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2.5, USB y Ethernet por delante; dos placas una al lado de otra con PoE HAT |
+| `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2,5, USB y Ethernet por delante; dos placas una al lado de otra con HAT PoE |
 | `piblade:pi5+pi5+pi5+pi5` | **Blades de Raspberry Pi de 2U**: hasta cuatro placas de canto, cada una en su aleta, con separadores que se imprimen sin soportes |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM** en tres piezas, con tapa sobre insertos térmicos M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
+| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM** en tres piezas (`ks`: dos), con tapa sobre insertos térmicos M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
 | `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
-| `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas |
-| `shelf` | Bandeja con ranuras para bridas para dispositivos pequeños |
+| `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas o una rejilla hexagonal (`fan_guard`) |
+| `shelf` | Estante con ranuras para bridas para dispositivos pequeños |
 | `patch` | Patch panel de 1U con los puertos que elijas |
 | `buttons` | Botonera de 1U (ver abajo) |
-| `vent`, `blank`, `cable`, `label` | Paneles de ventilación (ranuras, lamas, panal o agujeros), ciegos, pasacables y de etiqueta |
+| `vent`, `blank`, `cable`, `label` | Paneles de ventilación (ranuras, lamas, panal o agujeros), paneles ciegos, pasacables y de etiqueta |
 
 Un módulo puede ocupar más de una U (los blades ocupan 2U): el rack se llena desde arriba y un módulo que ya no cabe
-se convierte en una tapa ciega.
+se convierte en un panel ciego.
 
 ![Soporte del switch, bandeja y tapa pasacables](docs/img/modules.png)
 
 ## Keystones
 
-El patch panel admite de 1 a 12 puertos (añade filas automáticamente) con números grabados opcionales.
+El patch panel admite hasta 6 puertos en una fila de 1U y más filas si es más alto (12 en un panel de 2U), con números
+grabados o nombres propios (`ks_names`).
 `ks_ports_list` define **cada puerto**: `rj45m` (RJ45 metálico / apantallado), `rj45`, `hdmi`, `usb`, `rca`, `jack`
-(3,5 mm), `toslink` (keystones estándar), `cover` (tapa lisa impresa para un puerto sin usar), `pass` (tapa pasacables
-partida que abraza un cable, p. ej. el de alimentación del switch) o `none`. Las dos tapas se meten desde delante y
+(3,5 mm), `toslink` (keystones estándar), `cover` (tapón liso impreso para un puerto sin usar), `pass` (tapón pasacables
+partido que abraza un cable, p. ej. el de alimentación del switch) o `none`. Los dos tapones se meten desde delante y
 hacen clic tras la boca.
 
 - **Celda metálica** (por defecto, `ks_style = metal`), replicada del adaptador original: boca frontal de 15 × 16,5 mm,
@@ -133,10 +126,15 @@ hacen clic tras la boca.
 
 ## Botonera
 
-Un relleno o un módulo de 1U con **teclas de encendido y reset hechas con interruptores de teclado normales**
-(compatibles Cherry MX: hueco de 14 mm en placa de 1,5 mm, cualquier tecla 1u) y **LEDs de encendido y de actividad
-de disco** (3 o 5 mm), conectados al cabezal del panel frontal de la placa base. Tres diseños de LED, todos
-imprimibles con la cara frontal sobre la cama:
+Un relleno o un módulo de 1U con **botones de encendido y reset** y **LEDs de encendido y de actividad de disco**
+(3 o 5 mm), conectados al panel frontal de la placa base. Tres tipos de botón (`btn_type`):
+
+- `mx`: interruptores de teclado normales (compatibles Cherry MX: hueco de 14 mm en placa de 1,5 mm, cualquier tecla 1u).
+- `metal`: los pulsadores metálicos que se venden para cajas de PC, de 12 a 22 mm (`btn_metal_d`), con su anillo LED.
+- `retro`: botones impresos sobre micropulsadores de 12 × 12 mm en un soporte impreso, un POWER grande, RESET y un
+  TURBO opcional (`btn_turbo`) como los PCs beige de los 90, con los LEDs rotulados y líneas decorativas.
+
+Tres diseños de LED, todos imprimibles con la cara frontal sobre la cama:
 
 - `ring`: agujero avellanado con un aro grabado; la cúpula del LED asoma `led_protrude` mm.
 - `halo`: un aro fino de luz alrededor de cada tecla.
@@ -153,10 +151,10 @@ imprimibles con la cara frontal sobre la cama:
 - **Ranuras para las pestañas metálicas entre bahías.** Muchas cajas tienen unos salientes troquelados en el hueco
   entre dos bahías sobre los que se apoyan las unidades. El adaptador tiene una ranura para ellos a lo largo de toda la
   guía (con un nervio por dentro para que la pared no pierda rigidez), así que no hace falta doblarlos.
-- **Paredes laterales rígidas**: un labio interior en sus bordes superior e inferior y un chaflán hacia cada poste del
-  rack, todo fuera de la abertura del rack.
-- Tornillos de bahía con inserto térmico o tuerca; las aberturas de ventilador de 80 y 40 mm son agujeros redondos sin
-  nada delante del ventilador.
+- **Paredes laterales rígidas**: un labio interior en sus bordes superior e inferior y un redondeo hacia cada poste
+  del rack, todo fuera de la abertura del rack.
+- Tornillos de bahía con inserto térmico o tuerca; las aberturas de ventilador de 80 y 40 mm son agujeros redondos o
+  una rejilla hexagonal (`fan_guard`).
 
 ## Estándar de rack
 
@@ -174,7 +172,7 @@ Si tus accesorios son distintos, usa `rack_std = custom`.
 | | Opciones |
 |---|---|
 | Tornillo de rack | M3, M4, M5, M6, 10-32, 12-24 |
-| Cabeza | botón (ISO 7380), allen cilíndrica (ISO 4762), avellanada (ISO 10642, añade avellanado a los paneles), alomada (ISO 7045) |
+| Cabeza | botón (ISO 7380), allen (ISO 4762), avellanada (ISO 10642, añade avellanado a los paneles), alomada (ISO 7045) |
 | Fijación de rack | inserto térmico, autorroscante, tuerca hexagonal, tuerca cuadrada lateral, canal continuo de tuercas cuadradas (tornillos a cualquier altura) |
 | Tornillo de bahía | M3 o 6-32, con inserto térmico, autorroscante, tuerca hexagonal o agujero pasante + tuerca suelta |
 | Ajustes finos | `rack_insert_d/l`, `bay_insert_d/l` para tus insertos; `rack_screw_len`, `bay_screw_len` (0 = automático) |
@@ -212,17 +210,21 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 > |---|---|---|---|
 > | `test_keystone` | que el keystone entre y se enganche | sube `ks_fit` (+0,1 a +0,2) | baja `ks_fit` (negativo) |
 > | `test_bay` | que las guías entren en la bahía y cuadren los agujeros laterales | sube `sleeve_clearance` | agujeros desplazados: `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` |
-> | `test_rack` | la separación de los agujeros del rack y sus insertos | no cuadran los agujeros: `rack_hole_slot` | el inserto gira: baja `rack_insert_d`; entra torcido: súbelo |
+> | `test_rack` | la separación de los agujeros del rack y sus insertos; con los insertos puestos tiene que seguir entrando en una bahía | no cuadran los agujeros: `rack_hole_slot` | el inserto gira: baja `rack_insert_d`; entra torcido: súbelo |
+> | `test_button` | que entre la tecla MX, el pulsador metálico o el botón impreso | MX: sube `mx_cut` | MX: baja `mx_cut` |
 >
-> El resto funciona igual: `cover_clear` para las tapas de keystone, `mount_clear` para los dispositivos de los
+> En un kit se llaman `tests/test_*.stl`; en [`stl/tests`](stl/README.md#tests), `bay-plate` / `bay-bezel`,
+> `rack-M6-heatset`, `keystone-metal` / `keystone-standard` y `button-mx` / `button-metal-16` / `button-retro`.
+> El resto funciona igual: `cover_clear` para los tapones de keystone, `mount_clear` para los dispositivos de los
 > módulos del rack, `nkvm_insert_d` y `bay_insert_d` para los insertos pequeños. En el generador web están en el paso
-> **Ajustes de impresión**.
+> **Holguras de impresión**.
 
 - Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los
   techos de las ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.
 - Se recomienda PETG o ABS/ASA dentro de una caja caliente; el PLA sirve si la caja está fresca.
 - 3–4 perímetros y 20–30 % de relleno.
 - La versión de 3 bahías ocupa 148 × 128 mm en la cama y mide unos 66–70 mm de alto.
+- Insertos, montaje, cables y alimentación: mira la [guía de montaje](docs/BUILD.es.md).
 
 <p align="center"><img src="docs/img/print.png" width="420" alt="Orientación de impresión"></p>
 
@@ -243,7 +245,19 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 
 Cada render muestra una línea resumen, la lista de materiales y un `WARNING`/`NOTE` cuando los tornillos, insertos o
 rellenos no caben. `python scripts/test_models.py` genera los casos límite (1–6 bahías, cada frontal, relleno, tornillo,
-fijación y módulo) y todos los montajes del configurador, y los comprueba; se ejecuta en cada push.
+fijación y módulo) y todos los montajes del configurador, y comprueba sus avisos y su lista de materiales; se ejecuta
+en cada push.
+
+### El vídeo
+
+Blender 5.2, Cycles (HIP), 1600×900, 60 fps (30 fps más los fotogramas intermedios, `--between`), 17 s.
+`scripts/blender/hero.py` monta la escena a partir de exportaciones GLB del visor web; `scripts/blender/encode.py` hace
+el etalonaje y genera MP4 (H.264), WebM (VP9) y el GIF.
+
+| | | |
+|---|---|---|
+| ![El sleeper se despliega](docs/img/film/unfold.webp) | ![Un servidor moderno dentro](docs/img/film/server.webp) | ![El frontal del rack](docs/img/film/front.webp) |
+| ![Cables por las ranuras PCI](docs/img/film/cables.webp) | ![Blades de Raspberry Pi en el nodo Proxmox](docs/img/film/pi-cluster.webp) | ![El homelab](docs/img/film/hero.webp) |
 
 ## Estructura del repositorio
 
@@ -254,7 +268,7 @@ src/lib/
   standards.scad         tablas de tornillos, insertos y tuercas, longitudes estándar
   config.scad            medidas derivadas, comprobaciones, lista de materiales
   util.scad              utilidades de geometría
-  fills.scad             keystones (metálico / estándar), rejilla, pasacables, LED, etiqueta
+  fills.scad             keystones (metálico / estándar), ventilación, pasacables, etiqueta, botonera, ventiladores
   adapter.scad           fijaciones de rack, guía de bahía, marco frontal
   panels.scad            rellenos, paneles de rack, piezas de prueba
   preview.scad           tornillería, cortes y torre de PC (solo previsualización)
@@ -262,9 +276,12 @@ scripts/build.py         tabla de variantes -> presets + stl/ + stl/README.md
 scripts/render_docs.py   imágenes del README
 scripts/test_models.py   tests del modelo (CI)
 scripts/check_assemblies.py  todos los ejemplos y combinaciones bahías x encaje x frontal, sin avisos (CI)
+scripts/makerworld.py    kit para subir a MakerWorld (scripts/makerworld/: las descripciones)
 scripts/blender/         vídeo: hero.py (escena, materiales, animación), encode.py (etalonaje + MP4 / WebM / GIF)
 web/                     visor y generador web (Cloudflare Pages, Vite + pnpm)
 stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md
+docs/BUILD.es.md         guía de montaje: qué comprar, orden de impresión, insertos, montaje, cables y alimentación
+docs/CASES.es.md         lista de compatibilidad y comprobaciones de la caja
 docs/img/, docs/gallery/ imágenes del README y de la web
 ```
 
