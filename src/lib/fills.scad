@@ -7,12 +7,12 @@
 //  fill_cut = everything cut out of the plate
 // ---------------------------------------------------------------------
 module fill_add(type, w, h, t) {
-    if (type == "keystone") keystone_add(w, h, t);
+    if (type == "keystone") keystone_add(min(w, 2 * x_in - 1), h, t);
     else if (type == "buttons") buttons_add(w, h, t);
 }
 
 module fill_cut(type, w, h, t) {
-    if (type == "keystone") keystone_cut(w, h, t);
+    if (type == "keystone") keystone_cut(min(w, 2 * x_in - 1), h, t);
     else if (type == "vent")  vent_cut(w, h, t);
     else if (type == "cable") cable_cut(w, h, t);
     else if (type == "label") label_cut(w, h, t);
@@ -168,7 +168,7 @@ module label_cut(w, h, t) {
         // raised: the band round the text is cut; in multicolour the letters go too (the label piece fills them)
         if (label_relief == "raised") difference() {
             offset(r = sz * 0.35) hull() label_text2d(w, h);
-            if (!labels_multicolour) label_text2d(w, h);
+            if (!labels_multicolour || (t == ft && filler_mode != "separate")) label_text2d(w, h);
         }
         else label_text2d(w, h);
     }
@@ -247,10 +247,13 @@ function btn_leds(w, h) =
 // the halo needs a keyboard switch; the other buttons take a plain LED ring instead
 btn_led_style = btn_type != "mx" && led_style == "halo" ? "ring" : led_style;
 
+// the room a button panel needs, w x h
+function btn_need() = btn_type == "retro" ? [118, 30] : btn_type == "metal" ? [btn_count >= 2 ? 90 : 60, btn_metal_d + 12]
+                    : [btn_count >= 2 ? 100 : 60, mx_cut + 13];
+function btn_fits(w, h) = h >= btn_need()[1] && w >= btn_need()[0];
 module buttons_check(w, h) {
-    need = btn_type == "retro" ? [118, 30] : btn_type == "metal" ? [btn_count >= 2 ? 90 : 60, btn_metal_d + 12]
-         : [btn_count >= 2 ? 100 : 60, mx_cut + 13];
-    if (h < need[1] || w < need[0])
+    need = btn_need();
+    if (!btn_fits(w, h))
         echo(str("WARNING: the button panel needs about ", need[0], " x ", need[1], " mm, this zone is ", round(w * 10) / 10, " x ", round(h * 10) / 10, " mm"));
 }
 
@@ -398,6 +401,7 @@ module button_carrier(h = U - 0.79) {
 // ---------------------------------------------------------------------
 function fan40_pitch(w) = fan40_count < 2 ? 0 : min(46, (min(w, 2 * x_in - 1) - 40) / (fan40_count - 1));
 function fan40_xs(w) = [for (i = [0 : fan40_count - 1]) (i - (fan40_count - 1) / 2) * fan40_pitch(w)];
+function fan40_fits(w, h) = h >= 41 && (fan40_count < 2 || fan40_pitch(w) >= 40.3);
 module fan40_cut(w, h, t) {
     if (h < 41) echo(str("WARNING: 40 mm fans need a zone at least 41 mm tall, this one is ", round(h * 10) / 10, " mm"));
     else if (fan40_count > 1 && fan40_pitch(w) < 40.3)

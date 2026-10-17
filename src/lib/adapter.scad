@@ -12,8 +12,9 @@ module rack_cut(x, z, sgn) {
             slot_y(R[1], 0, -ft - eps, T_post - 1.2);
         else if (rack_fixing == "nut_trap") {
             slot_y(R[0], r_slot, -ft - eps, T_post + 2 * eps);
+            // (and on through the fillet behind the post, so the nut can go in from the back)
             hull() for (s = [-1, 1]) translate([s * r_slot / 2, post_d - R[5] - 0.4, 0])
-                rotate([-90, 0, 0]) rotate([0, 0, 30]) cylinder(d = (R[4] + 0.3) / cos(30), h = R[5] + 0.4 + 2 * eps, $fn = 6);
+                rotate([-90, 0, 0]) rotate([0, 0, 30]) cylinder(d = (R[4] + 0.3) / cos(30), h = R[5] + 0.4 + fillet_d + 2, $fn = 6);
         } else if (rack_fixing == "square_nut") {
             sq = R[6] + 0.5;
             slot_y(R[0], r_slot, -ft - eps, T_post - 1.5);

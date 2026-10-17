@@ -156,9 +156,13 @@ bom("filler panels", part == "assembly" ? n_fill : (part == "filler" || part == 
 bom("drive bay", bom_adapter ? n_bay : 0, bay_screw, bay_L, bay_screw_head, bay_fixing, B);
 bom("rack module", part == "rack_module" ? 2 * len(panel_zs(mod_u(module_type))) : 0, rack_screw, rack_L_dev, rack_screw_head, "adapter", R);
 bom("rack panel", part == "rack_panel" ? 2 * len(panel_zs(panel_u)) : 0, rack_screw, rack_L_dev, rack_screw_head, "adapter", R);
+// the room a fill of the strip gets: a separate filler panel between the rack holes (0.8 mm clearance in height),
+// or the frame between the posts
+function zone_w_of(zn) = filler_mode == "separate" ? hole_s - R[0] - 6 : 2 * x_in - 2;
+function zone_h_of(zn) = filler_mode == "separate" ? zn[1] - 0.8 : zn[1];
 // keystone jacks and covers: one set per patch panel whose ports fit (a patch that does not fit is left out)
 function ks_fit_in(w, h) = len(ks_layout(w, h, len(ks_types))) > 0;
-function zone_ks_ok(zn) = filler_mode == "separate" ? ks_fit_in(hole_s - R[0] - 6, zn[1] - 0.8) : ks_fit_in(2 * x_in - 2, zn[1]);
+function zone_ks_ok(zn) = ks_fit_in(zone_w_of(zn), zone_h_of(zn));
 function n_patch() = part == "rack_panel" ? (panel_fill == "keystone" && ks_fit_in(hole_s - R[0] - 6, panel_u * U - 0.79) ? 1 : 0)
         : part == "rack_module" ? (module_type == "patch" && ks_fit_in(hole_s - R[0] - 6, U - 0.79) ? 1 : 0)
         : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
@@ -200,7 +204,7 @@ n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
       : (part == "button_carrier" || part == "button_cap") ? 1          // the button panel these pieces are for
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
          || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-        ? len([for (zn = zones) if (zn[2] == "buttons") 1])
+        ? len([for (zn = zones) if (zn[2] == "buttons" && btn_fits(zone_w_of(zn), zone_h_of(zn))) 1])
           + (part == "assembly" ? len([for (m = used_mods) if (m == "buttons") 1]) : 0)
       : 0;
 n_keys = btn_count + (btn_type == "retro" && btn_turbo ? 1 : 0);
@@ -222,18 +226,23 @@ if (n_btn > 0) {
         echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
     }
 }
-n_fan = part == "rack_panel" ? (panel_fill == "fan80" ? 1 : 0)
+n_fan = part == "rack_panel" ? (panel_fill == "fan80" && panel_u * U - 0.79 >= 82 ? 1 : 0)
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
          || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-        ? len([for (zn = zones) if (zn[2] == "fan80" && zn[1] - (filler_mode == "separate" ? 0.8 : 0) >= 82) 1]) : 0;
+        ? len([for (zn = zones) if (zn[2] == "fan80" && zone_h_of(zn) >= 82 && zone_w_of(zn) >= 82) 1]) : 0;
 if (n_fan > 0) echo(str("BOM | fan: ", n_fan, " x 80 mm fan (80 x 80 x 25) + ", 4 * n_fan, " x fan screws"));
-n_fan40 = fan40_count * (part == "rack_panel" ? (panel_fill == "fan40" ? 1 : 0)
-      : len([for (m = bom_mods) if (m == "fan40") 1])
-        + ((part == "assembly" || (part == "adapter" && filler_mode != "separate")
-            || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-           ? len([for (zn = zones) if (zn[2] == "fan40" && zn[1] - (filler_mode == "separate" ? 0.8 : 0) >= 41) 1]) : 0));
+// 40 mm fans: only where they fit side by side (the model leaves them out otherwise); the screws go through the
+// thickest plate that holds fans (a 1U module, the filler panel, or the frame when they are cut into it)
+fan40_zones = (part == "assembly" || (part == "adapter" && filler_mode != "separate")
+               || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+            ? [for (zn = zones) if (zn[2] == "fan40" && fan40_fits(zone_w_of(zn), zone_h_of(zn))) zn] : [];
+fan40_mods = fan40_fits(hole_s - R[0] - 6, U - 0.79) ? len([for (m = bom_mods) if (m == "fan40") 1]) : 0;
+n_fan40 = fan40_count * (part == "rack_panel" ? (panel_fill == "fan40" && fan40_fits(hole_s - R[0] - 6, panel_u * U - 0.79) ? 1 : 0)
+      : fan40_mods + len(fan40_zones));
+fan40_plate = max(concat(fan40_mods > 0 || part == "rack_panel" ? [panel_t] : [],
+                         len(fan40_zones) > 0 ? [filler_mode == "separate" ? filler_t : ft] : [], [0]));
 if (n_fan40 > 0) echo(str("BOM | fans: ", n_fan40, " x 40 mm fan (40 x 40 x ", fan40_t, ") + ", 4 * n_fan40,
-                         " x M3 x ", min([for (l = [16, 20, 25, 30, 35, 40]) if (l >= fan40_t + panel_t + 2.6) l]),
+                         " x M3 x ", min([for (l = [16, 20, 25, 30, 35, 40, 45, 50]) if (l >= fan40_t + fan40_plate + 2.6) l]),
                          " screw + nut (5 or 12 V, to a fan header)"));
 if ((part == "assembly" && rear_slots) || part == "pci_bracket")
     echo(str("BOM | rear slots: ", part == "pci_bracket" ? 1 : 2, " x printed PCI-slot bracket",
@@ -267,12 +276,16 @@ if (bezel_mode && units * U > frame_h + 0.01)
     echo(str("NOTE: rack panels overlap the case front by ", round((units * U - frame_h) / 2 * 10) / 10, " mm above and below the bezel"));
 if (hole_s / 2 + r_feat / 2 + 1.2 > fw / 2)
     echo("WARNING: rack holes are too close to the frame edge - wider frame or smaller screws");
-// the rack fixings sit in the posts, a few mm from the bay's steel side: a thin wall bulges when the insert goes in
-rack_side_wall = sw - (hole_s / 2 + R[2] / 2);
+// the rack fixings sit in the posts, a few mm from the bay's steel side: a thin wall bulges when the insert goes in,
+// and a nut pocket or slot as wide as a big nut breaks through it
+rack_side_wall = sw - (hole_s / 2 + r_feat / 2 + r_slot / 2);
 has_rack_fix = n_dev + n_fill > 0;                   // (a panel-only front cut into the frame has no rack screws)
-if (has_rack_fix && rack_fixing == "heatset" && rack_side_wall < 1)
-    echo(str("WARNING: the rack inserts leave only ", round(rack_side_wall * 10) / 10,
-             " mm of plastic to the bay side - smaller screws or another rack_fixing"));
+FIX_NAME = rack_fixing == "heatset" ? "inserts" : rack_fixing == "tap" ? "self-tapping holes"
+         : rack_fixing == "channel" ? "nut channels" : "nut pockets";
+if (has_rack_fix && rack_side_wall < 1)
+    echo(str("WARNING: the rack ", FIX_NAME, " leave only ", round(rack_side_wall * 10) / 10,
+             " mm of plastic to the bay side - smaller screws (", rack_fixing == "heatset" ? "M5 or M4" : "M5 or M4 with a square nut, M4 with a hex nut",
+             ") or another rack_fixing"));
 else if (has_rack_fix && rack_fixing == "heatset" && rack_side_wall < 2)
     echo(str("NOTE: the rack inserts leave ", round(rack_side_wall * 10) / 10,
              " mm of plastic to the bay side - press them in slowly and slide the rack-holes test piece (test_rack) into a bay to check it still fits",

@@ -653,11 +653,13 @@ module pci_bracket(kind = pci_kind) {
         }
         translate([-2.2, PCI_L - t - 1, 4.5]) cube([4.4, t + 2, 10]);                // screw notch in the tab
         if (kind == "lan") {
-            translate([0, 92, -1]) cylinder(d = 13, h = t + 2, $fn = 48);
+            translate([0, 92, -1]) cylinder(d = 15.6, h = t + 2, $fn = 48);
             hull() for (y = [24, 88]) translate([0, y, -1]) cylinder(d = 7, h = t + 2, $fn = 32);
         } else {
-            translate([0, 80, -1]) cylinder(d = 9, h = t + 2, $fn = 40);
-            for (x = [-4.6, 4.6]) translate([x - 0.9, 54, -1]) cube([1.8, 4.6, t + 2]);
+            // the plug through the round hole, the cable down the slot, a zip tie through the two slits holds it
+            translate([0, 88, -1]) cylinder(d = 15.6, h = t + 2, $fn = 48);
+            hull() for (y = [52, 84]) translate([0, y, -1]) cylinder(d = 7, h = t + 2, $fn = 32);
+            for (x = [-4.6, 4.6]) translate([x - 0.9, 40, -1]) cube([1.8, 4.6, t + 2]);
         }
     }
 }
