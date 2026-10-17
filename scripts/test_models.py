@@ -65,7 +65,9 @@ CASES = (
        adapter("spare-split", spare_pos="split", spare_split=0.78)]
     # rack screws and fixings
     + [adapter(f"screw-{s}", rack_screw=s) for s in ("M3", "M4", "M5", "10-32", "12-24")]
-    + [adapter(f"fixing-{f}", rack_fixing=f) for f in ("tap", "square_nut", "channel")]
+    # (nuts and channels with M5: an M6 nut leaves no wall to the bay side, see the warnings below)
+    + [adapter("fixing-tap", rack_fixing="tap")]
+    + [adapter(f"fixing-{f}-M5", rack_fixing=f, rack_screw="M5") for f in ("square_nut", "channel")]
     + [adapter("fixing-nut_trap-M4", rack_fixing="nut_trap", rack_screw="M4")]
     + [adapter(f"bay-{f}", bay_fixing=f) for f in ("tap", "nut", "clearance")]
     + [adapter("bay-6-32", bay_screw="6-32"), adapter("head-countersunk", rack_screw_head="countersunk")]
@@ -124,6 +126,8 @@ CASES = (
     + [module("kvm:jet+jet+jet", warn="do not fit"),
        adapter("fan80-in-a-1U-strip", warn="80 mm fan", spare_fill="fan80", filler_mode="integral"),
        adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap"),
+       adapter("fixing-square_nut-M6", warn="nut pockets leave only", rack_fixing="square_nut"),
+       adapter("fixing-channel-M6", warn="nut channels leave only", rack_fixing="channel"),
        ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None)]
     # the bill of materials: what each piece needs
     + [("bom/filler-keystones", {"part": "filler"}, None,

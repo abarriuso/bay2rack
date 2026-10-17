@@ -7,7 +7,7 @@
   --plate-2: #eef1ef;
   --ink: #14171a;
   --ink-2: #4c555c;
-  --ink-3: #6f7a82;
+  --ink-3: #59636b;
   --rule: #cfd5d2;
   --signal: #1f63d8;        /* patch-cable blue */
   --signal-ink: #ffffff;
@@ -302,6 +302,10 @@ button:disabled { opacity: .45; cursor: default; }
 .hint { color: var(--ink-3); font-size: 12.5px; line-height: 1.4; }
 .hint.warn { color: var(--warn); }
 .hint.note { color: var(--note); }
+.hint .link { font: inherit; text-decoration: underline; }
+.next-step { flex-basis: 100%; }
+/* read by screen readers only (why a choice is off) */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* phones: the steps scroll on their own, this leads on to the footer */
 .more-link { display: none; }
 

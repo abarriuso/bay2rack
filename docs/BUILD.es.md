@@ -9,8 +9,10 @@ del kit trae los tornillos, insertos y keystones exactos de tu montaje; esta gu�
 
 **Herramientas**
 - Un soldador con punta para insertos térmicos (una para M3 y otra para los insertos del rack, M6 por defecto).
-  ¿Sin soldador? En el paso **Tornillos** elige una tuerca en vez de insertos térmicos: cuadrada para los tornillos M6
-  del rack (la hexagonal solo cabe con M3–M5) y hexagonal para los de la bahía. Solo hace falta un destornillador.
+  ¿Sin soldador? Activa **No tengo soldador** en el paso **Tornillos**: tornillos M5 con tuerca cuadrada en el rack y
+  tuerca hexagonal en la bahía, todo con un destornillador. (La tuerca de M6 es demasiado ancha: no dejaría plástico
+  entre el poste y el lateral de la bahía.) La bahía NanoKVM y el soporte de la botonera retro siguen llevando
+  insertos térmicos M3.
 - Llaves allen o destornilladores para tus tornillos (M6 de cabeza botón: allen de 4 mm; M3: allen de 2 mm o
   Phillips para las cabezas alomadas).
 - Alicates de corte y un desbarbador o una lima pequeña.

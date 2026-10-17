@@ -112,12 +112,14 @@
           <li><b>3</b><h4 data-i18n="how_3_t"></h4><p data-i18n="how_3"></p></li>
         </ol>
         <p class="how-guide"><a href="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-en="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-es="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md"><span data-i18n="how_guide"></span> <span aria-hidden="true">→</span></a></p>
-        <details class="glossary">
+        <details class="glossary" id="glossary">
           <summary data-i18n="gloss_title"></summary>
           <ul>
             <li data-i18n="gloss_rack"></li><li data-i18n="gloss_u"></li><li data-i18n="gloss_bay"></li>
             <li data-i18n="gloss_keystone"></li><li data-i18n="gloss_patch"></li><li data-i18n="gloss_insert"></li>
             <li data-i18n="gloss_bezel"></li><li data-i18n="gloss_kvm"></li><li data-i18n="gloss_homelab"></li>
+            <li data-i18n="gloss_strip"></li><li data-i18n="gloss_module"></li><li data-i18n="gloss_pci"></li>
+            <li data-i18n="gloss_screw"></li><li data-i18n="gloss_stl"></li>
           </ul>
         </details>
       </div>
@@ -150,7 +152,7 @@
             <div id="view" class="view"></div>
             <ul id="legend" class="legend" hidden></ul>
             <div class="floatbar">
-              <span id="status" class="status"></span>
+              <span id="status" class="status" role="status" aria-live="polite"></span>
               <span id="caseName" class="status case-name"></span>
               <button id="warnBadge" class="status warn-badge" type="button" hidden></button>
               <span class="spacer"></span>
@@ -165,6 +167,8 @@
               <button id="kitTests" class="pill" type="button" data-i18n="downloadTests"></button>
               <button id="download" class="pill" type="button" disabled></button>
               <div id="prebuilt" class="prebuilt"></div>
+              <p id="nextStep" class="hint next-step" hidden><span data-i18n="nextStep"></span>
+                <a href="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-en="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-es="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md" data-i18n="how_guide"></a></p>
             </div>
             <div class="cards-2">
               <div class="card"><h3 data-i18n="bom"></h3><ul id="bom" class="bom"></ul></div>
