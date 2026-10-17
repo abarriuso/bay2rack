@@ -35,8 +35,8 @@ def openscad():
 
 
 # ---------------------------------------------------------------- cases: (name, defines, expected warning)
-def adapter(name, warn=None, **d):
-    return (f"adapter/{name}", {"part": "adapter", **d}, warn)
+def adapter(name, warn=None, need=(), **d):
+    return (f"adapter/{name}", {"part": "adapter", **d}, warn, list(need))
 
 
 def module(kind, warn=None, **d):
@@ -45,14 +45,14 @@ def module(kind, warn=None, **d):
 
 CASES = (
     # every bay count, both front styles
-    # (6 bays make a part taller than 250 mm: the model says so, it is not an error)
-    [adapter(f"plate-flush-{b}", bays=b, warn="taller than 250 mm" if b == 6 else None) for b in range(1, 7)]
+    # (6 bays make an adapter longer than 250 mm on the bed: the model says so in a note, it is not an error)
+    [adapter(f"plate-flush-{b}", bays=b, need=["on the bed"] if b == 6 else []) for b in range(1, 7)]
     + [adapter(f"bezel-flush-{b}", bays=b, front_style="bezel", filler_mode="integral",
-               warn="taller than 250 mm" if b == 6 else None) for b in (1, 3, 6)]
+               need=["on the bed"] if b == 6 else []) for b in (1, 3, 6)]
     + [adapter("plate-overhang-1", bays=1, fit="overhang"),
        adapter("plate-overhang-2", bays=2, fit="overhang"),
        adapter("plate-overhang-3-center", bays=3, fit="overhang", hole_pattern="center"),
-       adapter("plate-overhang-6-center", bays=6, fit="overhang", hole_pattern="center", warn="taller than 250 mm"),
+       adapter("plate-overhang-6-center", bays=6, fit="overhang", hole_pattern="center", need=["on the bed"]),
        adapter("bezel-overhang-3-center", bays=3, fit="overhang", front_style="bezel", hole_pattern="center"),
        adapter("panel-only-fan80-buttons", bays=3, fit="panel", filler_mode="integral", spare_pos="split",
                spare_split=0.67, spare_fill="fan80", spare_fill_2="buttons"),
@@ -196,7 +196,7 @@ def run(exe, case):
             problems.append(f"BOM: no '{need}'")
     if tris == 0 and not problems:
         problems.append("empty mesh")
-    if defines.get("part") == "adapter" and (not warn or "250 mm" in warn):
+    if defines.get("part") == "adapter" and not warn:
         summary = re.search(r"bay2rack \| bays=\d+.*units=(\d+)U", log)
         if not summary:
             problems.append("no summary line")

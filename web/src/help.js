@@ -1,6 +1,6 @@
 // Help texts for the tooltips. Simple-mode steps are hand written (EN + ES);
 // advanced parameters fall back to the description in bay2rack.scad when there is no entry.
-import { lang } from './i18n.js';
+import { lang, t } from './i18n.js';
 import { humanize } from './customizer.js';
 
 const STEP_HELP = {
@@ -13,8 +13,8 @@ const STEP_HELP = {
     es: 'Plano: un marco de 4 mm detrás de los paneles de rack. Ideal si el frontal de tu caja es plano a la altura de las bahías.\nBisel 5,25": el contorno exacto de los biseles de unidades apiladas. Rellena el hueco del frontal de plástico y queda enrasado, como una unidad original.',
   },
   fit: {
-    en: 'Inside: everything stays within the bays and a 35–41 mm strip is left over for a patch panel, vents…\nStick out: N bays = N U. The rack panels are a few mm taller than the bays and overlap the case front.',
-    es: 'Dentro: todo queda dentro de las bahías y sobra una franja de 35–41 mm para un patch panel, rejilla…\nSobresale: N bahías = N U. Los paneles de rack son unos mm más altos que las bahías y montan sobre el frontal de la caja.',
+    en: 'Inside the bays: everything stays within the bays and a 35–41 mm strip is left over for a patch panel, vents…\nSticking out: N bays = N U. The rack panels are a few mm taller than the bays and overlap the case front.',
+    es: 'Dentro de las bahías: todo queda dentro de las bahías y sobra una franja de 35–41 mm para un patch panel, rejilla…\nSobresale: N bahías = N U. Los paneles de rack son unos mm más altos que las bahías y montan sobre el frontal de la caja.',
   },
   fill: {
     en: 'What goes in the leftover strip. With the plate front it is a small screw-on panel you can swap later; with the bezel it is cut into the bezel.',
@@ -22,7 +22,7 @@ const STEP_HELP = {
   },
   screw: {
     en: 'The rack screws hold the panels and modules on the adapter\'s posts: the 10" mini rack convention is M6, 10-32 or 12-24, and the modules printed here take whatever you choose. The bay screws hold the adapter in the case.\nThe lengths are worked out for you and listed in "What you need".',
-    es: 'Los tornillos del rack sujetan los paneles y módulos a los postes del adaptador: la norma del mini rack de 10" usa M6, 10-32 o 12-24, y los módulos que se imprimen aquí usan los que elijas. Los de la bahía sujetan el adaptador a la caja.\nLas longitudes se calculan solas y aparecen en "Lo que necesitas".',
+    es: 'Los tornillos del rack sujetan los paneles y módulos a los postes del adaptador: la norma del mini rack de 10" usa M6, 10-32 o 12-24, y los módulos que se imprimen aquí usan los que elijas. Los de la bahía sujetan el adaptador a la caja.\nLas longitudes se calculan solas y aparecen en «Lo que necesitas».',
   },
   preview: {
     en: 'Only changes the 3D view: the real PC case it is shown in (approximate outer size from the makers), example devices, hardware and an exploded view.',
@@ -34,10 +34,10 @@ const STEP_HELP = {
   },
   ports: {
     en: 'Every port of the patch panel: metal or plastic RJ45, HDMI, USB, audio (RCA, 3.5 mm jack, Toslink) keystones, a plain printed cover for an unused port, a split pass-through cover for a cable that comes from the front (e.g. the switch power cable), or no hole.',
-    es: 'Cada puerto del patch panel: keystone RJ45 metálico o de plástico, HDMI, USB, audio (RCA, jack de 3,5 mm, Toslink), una tapa lisa impresa para un puerto sin usar, una tapa pasacables partida para un cable que entra por delante (p. ej. el de alimentación del switch), o sin hueco.',
+    es: 'Cada puerto del patch panel: keystone RJ45 metálico o de plástico, HDMI, USB, audio (RCA, jack de 3,5 mm, Toslink), un tapón liso impreso para un puerto sin usar, un tapón pasacables partido para un cable que entra por delante (p. ej. el de alimentación del switch), o sin hueco.',
   },
   buttons: {
-    en: 'Power and reset (and TURBO on the retro panel) plus power and disk-activity LEDs, wired to the motherboard front-panel header.\nKeyboard switch: Cherry MX compatible, any 1u keycap. Metal PC push button: the round ones sold for cases, with an LED ring. Retro: printed buttons on 12 mm tactile switches held by a printed carrier, like a 90s beige PC.\nLED styles (keyboard switches): ring, a halo round each key, or a hidden glow that lights the engraved icon.',
+    en: 'Power and reset (and TURBO on the retro panel) plus power and disk-activity LEDs, wired to the motherboard front-panel header.\nKeyboard switch: Cherry MX compatible, any 1u keycap. Metal push button: the round ones sold for PC cases, with an LED ring. Retro: printed buttons on 12 mm tactile switches held by a printed carrier, like a 90s beige PC.\nLED styles (keyboard switches): ring, a halo round each key, or a hidden glow that lights the engraved icon.',
     es: 'Encendido y reset (y TURBO en la retro) con LEDs de encendido y de disco, conectados al panel frontal de la placa base.\nTecla mecánica: compatible Cherry MX, cualquier tecla 1u. Pulsador metálico de PC: los redondos que se venden para cajas, con anillo LED. Retro: botones impresos sobre micropulsadores de 12 mm en un soporte impreso, como un PC beige de los 90.\nEstilos de LED (teclas mecánicas): anillo, halo alrededor de cada tecla o brillo oculto que ilumina el icono grabado.',
   },
   scene: {
@@ -45,8 +45,8 @@ const STEP_HELP = {
     es: 'Homelab: este PC como router (con una tarjeta de red de 4 puertos), y al lado un nodo Proxmox, un NAS con TrueNAS y un punto de acceso. Los colores de los cables son VLANs: salen de la caja por chapas impresas en dos ranuras PCI y llegan al patch panel.',
   },
   fans: {
-    en: '40 mm fans (40 x 40 x 10 or x 20) behind round openings or a hex grille, screwed with M3. Three fit side by side between the rack posts. Wire them to a fan header (5 or 12 V).',
-    es: 'Ventiladores de 40 mm (40 x 40 x 10 o x 20) detrás de aberturas redondas o una rejilla hexagonal, atornillados con M3. Caben tres lado a lado entre los postes del rack. Conéctalos a un cabezal de ventilador (5 o 12 V).',
+    en: '40 mm fans (40 x 40 x 10 or x 20) behind round openings (a hex grille in Advanced mode), screwed with M3. Three fit side by side between the rack posts. Wire them to a fan header (5 or 12 V).',
+    es: 'Ventiladores de 40 mm (40 x 40 x 10 o x 20) detrás de aberturas redondas (o una rejilla hexagonal en el modo avanzado), atornillados con M3. Caben tres lado a lado entre los postes del rack. Conéctalos a un cabezal de ventilador (5 o 12 V).',
   },
   devices: {
     en: 'Measure your devices: every tray is made to fit them with a little clearance. The KVM boxes, the switches and your own devices can all be resized.',
@@ -89,7 +89,7 @@ const OPTION_HELP = {
   'test:test_bay': { en: 'One corner with the bay screw holes and the front. Screw it into your case: do the holes line up, is the front flush?', es: 'Una esquina con los agujeros de la bahía y el frontal. Atorníllala en tu caja: ¿coinciden los agujeros?, ¿queda enrasado?' },
   'test:test_rack': { en: 'A bar with two rack fixings at the rack hole spacing. Hold it against a real 6" accessory.', es: 'Una barra con dos fijaciones a la distancia de los agujeros del rack. Compárala con un accesorio de 6" real.' },
   'test:test_keystone': { en: 'One keystone port: the jack should click in firmly.', es: 'Un puerto keystone: el conector debe entrar con un clic y quedar firme.' },
-  'part:keystone_cover': { en: 'Printed covers for unused ports, pushed in from the front.', es: 'Tapas impresas para los puertos sin usar, se meten desde delante.' },
+  'part:keystone_cover': { en: 'Printed covers for unused ports, pushed in from the front.', es: 'Tapones impresos para los puertos sin usar, se meten desde delante.' },
   'part:rack_module': { en: 'The printed modules that go in the rack units.', es: 'Los módulos impresos que van en las U del rack.' },
   'mod:ms105g': { en: 'Mercusys MS105G 5-port switch (105 × 24.9 × 70 mm, W × H × D): it slides into a tunnel from the back, the front window leaves the 5 ports and the power jack free, a zip tie holds it.', es: 'Switch Mercusys MS105G de 5 puertos (105 × 24,9 × 70 mm, ancho × alto × fondo): entra por detrás en un túnel, la ventana frontal deja libres los 5 puertos y la clavija, una brida lo sujeta.' },
   'mod:shelf': { en: 'A shelf with zip-tie slots for small devices: NanoKVM, Raspberry Pi, a mini router…', es: 'Una bandeja con ranuras para bridas para dispositivos pequeños: NanoKVM, Raspberry Pi, un mini router…' },
@@ -102,18 +102,22 @@ const OPTION_HELP = {
   'port:rj45': { en: 'Plastic RJ45 keystone.', es: 'Keystone RJ45 de plástico.' },
   'port:hdmi': { en: 'HDMI keystone coupler.', es: 'Acoplador keystone HDMI.' },
   'port:usb': { en: 'USB keystone coupler.', es: 'Acoplador keystone USB.' },
-  'port:cover': { en: 'Plain printed cover, pushed in from the front.', es: 'Tapa lisa impresa, se mete desde delante.' },
-  'port:pass': { en: 'Split pass-through cover: clip it around a cable and push it in from the front.', es: 'Tapa pasacables partida: se abraza al cable y se mete desde delante.' },
+  'port:cover': { en: 'Plain printed cover, pushed in from the front.', es: 'Tapón liso impreso, se mete desde delante.' },
+  'port:pass': { en: 'Split pass-through cover: clip it around a cable and push it in from the front.', es: 'Tapón pasacables partido: se abraza al cable y se mete desde delante.' },
   'port:rca': { en: 'RCA keystone coupler (analogue audio or S/PDIF coax).', es: 'Acoplador keystone RCA (audio analógico o S/PDIF coaxial).' },
   'port:jack': { en: '3.5 mm stereo jack keystone.', es: 'Keystone de jack estéreo de 3,5 mm.' },
   'port:toslink': { en: 'Toslink optical audio keystone.', es: 'Keystone de audio óptico Toslink.' },
   'mod:kvm': { en: 'KVM-over-IP tray: 1 to 3 boxes side by side, each in its own tunnel with the screen in the front window. JetKVM (43 x 31 x 60), Sipeed NanoKVM (40 x 36 x 40) or your own size. Use two trays for more.', es: 'Bandeja KVM por IP: de 1 a 3 cajas lado a lado, cada una en su túnel con la pantalla en la ventana. JetKVM (43 x 31 x 60), Sipeed NanoKVM (40 x 36 x 40) o tu propia medida. Para más, usa dos bandejas.' },
   'mod:pi': { en: 'Raspberry Pi 5 / 4 / 3 or Zero lying flat on four standoffs (M2.5), USB and Ethernet through the front window. One board leaves room for the USB-C plug; two side by side need PoE HATs.', es: 'Raspberry Pi 5 / 4 / 3 o Zero tumbada sobre cuatro separadores (M2,5), con USB y Ethernet por la ventana. Con una placa queda sitio para el USB-C; dos lado a lado necesitan HAT PoE.' },
-  'mod:nkvm': { en: 'NanoKVM bay in three printed pieces (plate, bay, lid on four M3 heat-set inserts), the heatsink in the open. "Standing, plugs at the sides": out of the case in a little mountain, plug Ethernet (left) and HDMI / USB (right) in from outside; the cables run outside or into the case through the slots. "Drawer, Ethernet in front": the NanoKVM in a drawer that slides out of the front (two screws), up to two keystones beside it. "Network through a keystone": its Ethernet port comes to keystone 1, the NanoKVM flat right behind it with a 10 cm patch cable.', es: 'Bahía NanoKVM en tres piezas impresas (frontal, bahía y tapa con cuatro insertos térmicos M3), con el disipador al aire. "De pie, conectores a los lados": fuera de la caja en una montañita, la red (izquierda) y el HDMI y el USB (derecha) se enchufan desde fuera; los cables van por fuera o hacia dentro por las ranuras. "Cajón, red delante": el NanoKVM en un cajón que sale por delante (dos tornillos), con hasta dos keystones al lado. "Red por keystone": su puerto de red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo de 10 cm.' },
+  'mod:nkvm': { en: 'A bay for the Sipeed NanoKVM Lite (37 x 15 x 23 mm), with a lid on four M3 heat-set inserts and the heatsink in the open. Standing: in a little mountain that comes out of the case (or in the plate), network on the left and HDMI / USB on the right, plugged in from outside. Drawer: it slides out of the front (two screws), up to two keystones beside it. Through a keystone: its network port comes to keystone 1, the NanoKVM flat right behind it with a 10 cm patch cable.', es: 'Una bahía para el Sipeed NanoKVM Lite (37 x 15 x 23 mm), con una tapa sobre cuatro insertos térmicos M3 y el disipador al aire. De pie: en una montañita que sale de la caja (o empotrado en el frontal), la red a la izquierda y el HDMI y el USB a la derecha, enchufados desde fuera. Cajón: sale por delante (dos tornillos), con hasta dos keystones al lado. Por keystone: su red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo de 10 cm.' },
   'mod:piblade': { en: '2U blade tray: up to four Raspberry Pi 5 / 4 / 3 standing on edge, each screwed to its own fin, USB and Ethernet in front, the power edge on top. 26 mm between blades fits a Pi 5 with the active cooler; ~32 mm for PoE HATs.', es: 'Bandeja de blades de 2U: hasta cuatro Raspberry Pi 5 / 4 / 3 de canto, cada una atornillada a su aleta, USB y Ethernet delante y la alimentación arriba. 26 mm entre blades sirve para una Pi 5 con el disipador activo; ~32 mm para HAT PoE.' },
   'mod:fan40': { en: '1U panel with up to three 40 mm fans behind round openings.', es: 'Panel de 1U con hasta tres ventiladores de 40 mm detrás de aberturas redondas.' },
   'mod:uswflex': { en: 'UniFi USW-Flex-Mini (107.2 x 21.2 x 70.2 mm), a managed switch with VLANs: the ports face the front.', es: 'UniFi USW-Flex-Mini (107,2 x 21,2 x 70,2 mm), switch gestionable con VLANs: los puertos quedan delante.' },
   'port:none': { en: 'No hole at all.', es: 'Sin hueco.' },
+  'fixb:heatset': { en: 'Brass heat-set inserts in the sleeve: the strongest, needs a soldering iron.', es: 'Insertos térmicos de latón en las guías: lo más resistente, necesita soldador.' },
+  'fixb:tap': { en: 'The bay screw cuts its own thread in the plastic.', es: 'El tornillo de la bahía hace su propia rosca en el plástico.' },
+  'fixb:nut': { en: 'A hex nut in a pocket inside the sleeve, behind each side hole.', es: 'Una tuerca hexagonal en un alojamiento dentro de las guías, detrás de cada agujero lateral.' },
+  'fixb:clearance': { en: 'A plain hole: the screw goes through and a loose nut holds it inside.', es: 'Un agujero pasante: el tornillo lo atraviesa y una tuerca suelta lo sujeta por dentro.' },
   'led:ring': { en: 'Countersunk hole with an engraved ring; the LED dome sticks out of the front.', es: 'Agujero avellanado con un aro grabado; la cúpula del LED asoma por delante.' },
   'led:halo': { en: 'A thin ring of light around each key, lit from behind.', es: 'Un aro fino de luz alrededor de cada tecla, iluminado por detrás.' },
   'led:glow': { en: 'Invisible when off: the LED shines through a 0.6 mm skin and the engraved icon glows. Print in white or natural filament.', es: 'Invisible apagado: el LED atraviesa una piel de 0,6 mm y el icono grabado brilla. Imprime en blanco o natural.' },
@@ -124,7 +128,7 @@ const PARAM_ES = {
   router_nic_slot: ['Ranura de la tarjeta de red', 'Escena homelab: ranura PCI de la tarjeta de 4 puertos del router (-1 = ninguna).'],
   ks_fit: ['Ajuste de los keystones', 'Holgura extra por lado en cada hueco de keystone (mm). Súbela si el conector no entra, bájala si baila.'],
   ks_names: ['Nombres de los puertos', 'Separados por comas, en orden. Vacío = HDMI, USB… en esos conectores; si no, el número.'],
-  nkvm_dims: ['Medidas del NanoKVM', 'Largo (de la red al HDMI) × alto × ancho, en mm.'],
+  nkvm_dims: ['Medidas del NanoKVM Lite', 'Largo (de la red al HDMI) × alto × ancho, en mm.'],
   nkvm_rj45: ['Puerto de red del NanoKVM', 'Ancho, alto y altura sobre la base de la placa, en mm.'],
   nkvm_keystones: ['Keystones de la bahía NanoKVM', 'Huecos de keystone en el frontal (versión cajón o por keystone).'],
   nkvm_patch: ['Hueco para el latiguillo', 'Distancia entre el keystone 1 y el NanoKVM para los conectores del latiguillo (mm).'],
@@ -148,34 +152,34 @@ const PARAM_ES = {
   btn_metal_d: ['Diámetro del pulsador metálico', 'Agujero de montaje del pulsador (mm).'],
   btn_turbo: ['Botón TURBO', 'Botonera retro: un tercer botón y LED.'],
   btn_cap: ['Botón impreso', 'Qué botón genera la pieza button_cap.'],
-  part: ['Pieza', 'Qué se genera. "assembly" es solo una vista previa: no se imprime.'],
+  part: ['Pieza', 'Qué se genera. La vista del montaje es solo una vista previa: no se imprime.'],
   print_orientation: ['Orientación de impresión', 'Tumba las piezas imprimibles con la cara frontal sobre la cama.'],
   bays: ['Bahías', 'Número de bahías de 5,25" apiladas que ocupa el adaptador.'],
   bay_std: ['Estándar de bahía', 'SFF-8551 / EIA-741 o medidas propias.'],
   custom_bay_w: ['Ancho de bahía', 'Solo con estándar propio.'],
   custom_bay_h: ['Alto de bahía', 'Solo con estándar propio.'],
-  custom_bay_pitch: ['Paso entre bahías', 'Distancia vertical entre bahías apiladas (COMPROBAR).'],
+  custom_bay_pitch: ['Paso entre bahías', 'Distancia vertical entre bahías apiladas (mide la tuya).'],
   custom_bezel_w: ['Ancho de bisel', 'Ancho de un bisel de unidad de 5,25".'],
   sleeve_clearance: ['Holgura de anchura', 'Se resta del ancho total de las guías.'],
   height_clearance: ['Holgura de altura', 'Se resta de la altura de la pila de bahías.'],
-  bay_hole_y1: ['Agujero lateral: fondo', 'Distancia del agujero lateral al frontal de la caja (COMPROBAR).'],
-  bay_hole_y2: ['Agujero trasero: fondo', 'Agujero lateral trasero opcional (COMPROBAR).'],
+  bay_hole_y1: ['Agujero lateral: fondo', 'Distancia del agujero lateral al frontal de la caja (mide la tuya).'],
+  bay_hole_y2: ['Agujero trasero: fondo', 'Agujero lateral trasero opcional (mide la tuya).'],
   use_hole_y2: ['Usar agujero trasero', 'Atornilla también el agujero trasero de cada bahía.'],
-  bay_hole_z1: ['Agujero lateral: altura', 'Altura del agujero sobre la base de cada bahía (COMPROBAR).'],
+  bay_hole_z1: ['Agujero lateral: altura', 'Altura del agujero sobre la base de cada bahía (mide la tuya).'],
   bay_hole_z2: ['Segunda fila: altura', 'Altura de la segunda fila de agujeros sobre la base de la bahía.'],
   use_hole_z2: ['Usar segunda fila', 'Atornilla también la segunda fila de agujeros.'],
   bay_hole_offset: ['Desplazar agujeros', 'Mueve todos los agujeros laterales en profundidad.'],
   bay_hole_slot: ['Alargar agujeros', 'Convierte los agujeros laterales en ranuras (no con insertos).'],
   front_style: ['Frontal', 'plate = marco plano detrás de los paneles. bezel = bisel exacto de 5,25" enrasado con el frontal de la caja.'],
-  bezel_h1: ['Alto de bisel (1 bahía)', 'SFF-8551 (COMPROBAR).'],
-  bezel_depth: ['Profundidad del bisel', 'Cuánto sobresale el frontal de plástico de tu caja respecto a la chapa (COMPROBAR).'],
+  bezel_h1: ['Alto de bisel (1 bahía)', 'SFF-8551 (mide la tuya).'],
+  bezel_depth: ['Profundidad del bisel', 'Cuánto sobresale el frontal de plástico de tu caja respecto a la chapa (mide la tuya).'],
   bezel_clearance: ['Holgura del bisel', 'Se resta de ancho y alto para que entre en el hueco.'],
   bezel_grooves: ['Ranuras entre bahías', 'Ranuras decorativas donde se juntarían los biseles.'],
   fit: ['Encaje', 'flush = N−1 U + franja, no sobresale nada. overhang = N bahías = N U, los paneles sobresalen. panel = sin U de rack, todo el frontal es un panel.'],
   units_override: ['Forzar U', 'Unidades de rack (0 = automático).'],
-  overhang_align: ['Alineación', 'Dónde va la altura extra cuando no hay zona libre.'],
+  overhang_align: ['Alineación', 'Dónde va la altura extra cuando no hay franja.'],
   spare_pos: ['Posición de la franja', 'Arriba, abajo o las dos (la altura libre se reparte).'],
-  min_spare: ['Zona libre mínima', 'Por debajo de esto la zona libre se queda como borde del marco.'],
+  min_spare: ['Franja mínima', 'Por debajo de esto la franja se queda como borde del marco.'],
   rack_std: ['Estándar de rack', '6" con las reglas del mini rack de 10" (EIA-310, 1U = 44,45 mm, mismo margen al agujero).'],
   custom_panel_w: ['Ancho de panel', 'Solo con estándar propio.'],
   custom_hole_spacing: ['Distancia entre agujeros', 'Entre centros de los agujeros izquierdo y derecho.'],
@@ -205,9 +209,9 @@ const PARAM_ES = {
   sleeve_depth: ['Fondo de las guías', 'Cuánto entra el adaptador en la bahía.'],
   sleeve_style: ['Tipo de guía', 'Solo laterales, o laterales + placas arriba y abajo.'],
   lighten: ['Aligerar', 'Ventanas imprimibles sin soporte en paredes y placas.'],
-  filler_mode: ['Tipo de relleno', 'separate = panel atornillado intercambiable. integral = cortado en el marco.'],
-  spare_fill: ['Relleno', 'Qué va en la zona libre.'],
-  spare_fill_2: ['Relleno 2', 'Relleno de la zona de arriba si la zona libre está partida.'],
+  filler_mode: ['Panel de la franja', 'separate = panel atornillado intercambiable. integral = cortado en el marco.'],
+  spare_fill: ['Contenido de la franja', 'Qué va en la franja (con la franja partida, en la de abajo).'],
+  spare_fill_2: ['Contenido de la franja de arriba', 'Con la franja partida, lo que va en la de arriba.'],
   filler_t: ['Grosor del relleno', 'Grosor del panel de la franja.'],
   label_text: ['Texto', 'Texto del panel de etiqueta (grabado o en relieve).'],
   ks_style: ['Tipo de keystone', 'metal = celdas para keystones metálicos. standard = hueco para keystones de plástico.'],
@@ -242,13 +246,13 @@ const PARAM_ES = {
   show_hardware: ['Mostrar tornillería', 'Dibuja tornillos, insertos y tuercas en la vista.'],
   section: ['Corte', 'Corta la vista para ver la tornillería por dentro.'],
   scene: ['Escena', 'Homelab: dos PCs cliente + punto de acceso + cables. O solo este PC.'],
-  ks_ports_list: ['Tipo de cada puerto', 'Lista separada por comas: rj45m, rj45, hdmi, usb, rca, jack, toslink, cover (tapa), pass (pasacables), none.'],
-  cover_type: ['Tipo de tapa', 'Lisa o pasacables partida (para la pieza keystone_cover).'],
-  cover_clear: ['Holgura de la tapa', 'Por cada lado dentro del puerto.'],
-  cover_cable_d: ['Diámetro del cable', 'Para la tapa pasacables.'],
+  ks_ports_list: ['Tipo de cada puerto', 'Lista separada por comas: rj45m, rj45, hdmi, usb, rca, jack, toslink, cover (tapón), pass (pasacables), none.'],
+  cover_type: ['Tipo de tapón', 'Liso o pasacables partido (para la pieza del tapón).'],
+  cover_clear: ['Holgura del tapón', 'Por cada lado dentro del puerto.'],
+  cover_cable_d: ['Diámetro del cable', 'Para el tapón pasacables.'],
   rack_modules: ['Módulos del rack', 'De arriba abajo, separados por comas: ms105g, uswflex, ux, kvm:jet+nano, nkvm:side / nkvm:front / nkvm:ks, pi:pi5, piblade:pi5+pi5 (2U), dev1, dev2, shelf, patch, fan40, buttons, vent, blank, cable, label.'],
   module_type: ['Módulo a generar', 'Para la pieza rack_module.'],
-  ms_w: ['Switch: ancho', 'Mercusys MS105G (COMPROBAR).'],
+  ms_w: ['Switch: ancho', 'Mercusys MS105G (mide el tuyo).'],
   ms_h: ['Switch: alto', 'Alto del switch.'],
   ms_d: ['Switch: fondo', 'Fondo del switch.'],
   mount_clear: ['Holgura del soporte', 'Alrededor del dispositivo.'],
@@ -266,10 +270,10 @@ const PARAM_ES = {
   bay_tab_d: ['Fondo de la ranura', 'Cuánto entran las pestañas en la bahía; la pared lleva un nervio por dentro.'],
   wall_ribs: ['Reforzar paredes', 'Labios interiores arriba y abajo y cartelas hacia los postes, fuera del hueco del rack.'],
   wall_lip: ['Ancho de los labios', 'Ancho de los labios interiores que refuerzan las paredes.'],
-  spare_split: ['Reparto de la zona libre', 'Con la zona partida: fracción de la altura que va a la zona de abajo.'],
+  spare_split: ['Reparto de la franja', 'Con la franja partida: fracción de la altura que va a la de abajo.'],
   kvm_boxes: ['Cajas de la bandeja KVM', 'De izquierda a derecha, unidas con +: jet, nano, custom.'],
-  jetkvm_dims: ['JetKVM (ancho, alto, fondo)', 'COMPROBAR con tu unidad.'],
-  nanokvm_dims: ['NanoKVM (ancho, alto, fondo)', 'Sipeed NanoKVM Full con carcasa (COMPROBAR).'],
+  jetkvm_dims: ['JetKVM (ancho, alto, fondo)', 'Mide el tuyo.'],
+  nanokvm_dims: ['NanoKVM (ancho, alto, fondo)', 'Sipeed NanoKVM Full con carcasa (mide el tuyo).'],
   kvm_custom: ['Otro KVM (ancho, alto, fondo)', 'Medidas de otro KVM: ancho, alto y fondo en mm.'],
   pi_boards: ['Placas Raspberry Pi', 'Unidas con +: pi5, pi4, pi3, zero. Bandeja plana: 1 o 2; blades: hasta 4 (no Zero).'],
   pi_fixing: ['Fijación de la Pi', 'Tornillos M2,5 autorroscantes o insertos térmicos M2,5.'],
@@ -304,7 +308,7 @@ const PARAM_EN = {
   ksm_ramp_d: 'Metal cell: latch ramp depth', ksm_lip_d: 'Metal cell: lip depth', ksm_lip_top: 'Metal cell: top lip', ksm_lip_bot: 'Metal cell: bottom lip',
   ksm_depth: 'Metal cell: depth', ksm_wall: 'Metal cell: wall', ksm_pitch: 'Metal cell: pitch', ks_w: 'Plastic keystone: width', ks_h: 'Plastic keystone: height',
   ks_pitch: 'Plastic keystone: pitch', ks_plate_t: 'Plastic keystone: plate thickness', ks_style: 'Keystone type',
-  nkvm_dims: 'NanoKVM size (length, height, width)', nkvm_rj45: 'NanoKVM Ethernet port', nkvm_keystones: 'NanoKVM bay keystones',
+  nkvm_dims: 'NanoKVM Lite size (length, height, width)', nkvm_rj45: 'NanoKVM Ethernet port', nkvm_keystones: 'NanoKVM bay keystones',
   nkvm_patch: 'Room for the patch cable', nkvm_plugs: 'Room for the plugs', nkvm_cover: 'Sides covered', nkvm_raised: 'Out of the case (mountain)',
   nkvm_split: 'Three pieces', nkvm_vents: 'Vent slots', nkvm_insert_d: 'NanoKVM insert hole', labels_multicolour: 'Multicolour letters',
   label_dx: 'Label: move left / right', label_dz: 'Label: move down / up', btn_type: 'Button type', btn_metal_d: 'Metal button diameter',
@@ -327,7 +331,7 @@ export function paramLabel(p) {
 const OPT_ES = {
   'part:assembly': 'Vista del montaje', 'part:adapter': 'Adaptador (marco + guías)', 'part:filler': 'Panel de la franja', 'part:filler_2': 'Segundo panel de la franja',
   'part:rack_panel': 'Panel de rack suelto', 'part:rack_module': 'Módulo de rack', 'part:rack_module_lid': 'Tapa de la bahía NanoKVM',
-  'part:rack_module_bay': 'Bahía NanoKVM aparte (hueco, montañita o cajón)', 'part:button_cap': 'Botón retro impreso', 'part:button_carrier': 'Soporte de los micropulsadores',
+  'part:rack_module_bay': 'Bahía NanoKVM aparte (cubeta, montañita o cajón)', 'part:button_cap': 'Botón retro impreso', 'part:button_carrier': 'Soporte de los micropulsadores',
   'part:keystone_cover': 'Tapón de keystone', 'part:pci_bracket': 'Chapa PCI', 'part:test_rack': 'Prueba: agujeros del rack', 'part:test_bay': 'Prueba: esquina de bahía',
   'part:test_keystone': 'Prueba: puerto keystone', 'part:test_button': 'Prueba: un botón de la botonera', 'part:filler_labels': 'Letras multicolor del panel de la franja',
   'part:rack_module_labels': 'Letras multicolor de un módulo', 'part:rack_panel_labels': 'Letras multicolor del panel de rack',
@@ -373,10 +377,17 @@ const OPT_ES = {
   'module_type:blank': 'Panel ciego de 1U', 'module_type:cable': 'Pasacables de 1U', 'module_type:label': 'Etiqueta de 1U', 'module_type:buttons': 'Botonera de 1U',
   'overhang_align:center': 'Centrado', 'overhang_align:top': 'Arriba', 'overhang_align:bottom': 'Abajo',
 };
+const OPT_EN = {
+  'overhang_align:center': 'Centred', 'overhang_align:top': 'Top', 'overhang_align:bottom': 'Bottom',
+  'case_window:left': 'Left', 'case_window:right': 'Right', 'case_window:none': 'None',
+  'label_align:left': 'Left', 'label_align:center': 'Centre', 'label_align:right': 'Right',
+  'spare_pos:top': 'Top', 'spare_pos:bottom': 'Bottom', 'spare_pos:split': 'Both (split)',
+};
 export function optionLabel(p, o) {
-  if (lang !== 'es') return o.label;
-  const fill = /^(spare_fill|spare_fill_2|panel_fill)$/.test(p.name) ? OPT_ES[`fill:${o.value}`] : undefined;
-  return fill ?? OPT_ES[`${p.name}:${o.value}`] ?? (p.name === 'part' ? OPT_ES[`part:${o.value}`] : undefined) ?? o.label.replace(/ - (\d+) bays$/, ' · $1 bahías');
+  // the fills have the names of the Leftover strip step
+  if (/^(spare_fill|spare_fill_2|panel_fill)$/.test(p.name)) return t('fill_' + o.value);
+  if (lang !== 'es') return OPT_EN[`${p.name}:${o.value}`] ?? o.label;
+  return OPT_ES[`${p.name}:${o.value}`] ?? (p.name === 'part' ? OPT_ES[`part:${o.value}`] : undefined) ?? o.label.replace(/ - (\d+) bays$/, ' · $1 bahías');
 }
 
 export function paramHelp(p) {
@@ -391,23 +402,23 @@ const BOM_ES = [
   [/^NanoKVM bay lid:/, 'Tapa de la bahía NanoKVM:'], [/^NanoKVM bay to plate:/, 'Bahía NanoKVM al frontal:'],
   [/^NanoKVM mountain to plate:/, 'Montañita NanoKVM al frontal:'], [/^NanoKVM drawer:/, 'Cajón NanoKVM:'], [/^NanoKVM bay:/, 'Bahía NanoKVM:'],
   [/\(in the mountain posts\)/, '(en los postes de la montañita)'], [/\(behind the plate\)/, '(detrás del frontal)'],
-  [/RJ45 keystone coupler \(female-female\)/, 'keystone RJ45 empalme (hembra-hembra)'],
+  [/RJ45 keystone coupler \(female-female\)/, 'empalme keystone RJ45 (hembra-hembra)'],
   [/10 cm patch cable \(keystone to NanoKVM\)/, 'latiguillo de 10 cm (del keystone al NanoKVM)'],
-  [/^devices \(not included\):/, 'Aparatos (no incluidos):'], [/5-port switch \(MS105G size\)/g, 'switch de 5 puertos (medida MS105G)'],
+  [/^devices \(not included\):/, 'Dispositivos:'], [/5-port switch \(MS105G size\)/g, 'switch de 5 puertos (medida MS105G)'],
   [/your device (\d)/g, 'tu dispositivo $1'], [/KVM \(your size\)/g, 'KVM (tu medida)'],
-  [/^cables and power \(not included\): .*/, "Cables y corriente (no incluidos): un latiguillo de red por puerto, los cables HDMI + USB de cada KVM a su equipo, y la alimentación de los aparatos (su fuente, USB-C o PoE)"],
+  [/^cables and power \(not included\): .*/, (m) => `Cables y alimentación: un latiguillo de red por puerto${/HDMI/.test(m) ? ', los cables HDMI + USB de cada KVM a su equipo' : ''} y la alimentación de los dispositivos (su fuente, USB-C o PoE)`],
   [/\(into the adapter's fixings - nothing else to buy\)/, '(a las fijaciones del adaptador, no hace falta nada más)'],
   [/from the back/, 'por detrás'], [/\(in the plate\)/, '(en el frontal)'], [/countersunk/, 'avellanado'],
   [/tactile switch/, 'micropulsador'], [/the printed caps \(part = button_cap\)/, 'los botones impresos'],
   [/switch carrier/, 'soporte de los micropulsadores'], [/metal push button, momentary, LED ring/, 'pulsador metálico, sin enclavamiento, con anillo LED'],
-  [/^rack accessories:/, 'Accesorios del rack:'], [/^filler panels:/, 'Panel de la franja:'], [/^drive bay:/, 'Bahía:'],
+  [/^rack accessories:/, 'Tornillos del rack:'], [/^filler panels:/, 'Panel de la franja:'], [/^drive bay:/, 'Tornillos de la bahía:'],
   [/^keystones:/, 'Keystones:'], [/^zip ties:/, 'Bridas:'], [/^buttons:/, 'Botonera:'],
   [/button head/g, 'cabeza botón'], [/socket head/g, 'allen'], [/countersunk/g, 'avellanado'], [/pan head/g, 'cabeza alomada'],
   [/heat-set insert/g, 'inserto térmico'], [/hex nut/g, 'tuerca hexagonal'], [/square nut/g, 'tuerca cuadrada'], [/\(hole /g, '(agujero '],
   [/metal \/ shielded RJ45 keystone/g, 'keystone RJ45 metálico / apantallado'], [/RJ45 keystone/g, 'keystone RJ45'],
   [/HDMI keystone/g, 'keystone HDMI'], [/USB keystone/g, 'keystone USB'],
   [/printed keystone cover/g, 'tapón de keystone impreso'], [/printed cable pass-through cover/g, 'tapón pasacables impreso'],
-  [/cable tie \(holds the device\)/g, 'brida (sujeta el dispositivo)'],
+  [/cable tie \(holds the device\)/g, 'brida (para sujetar los dispositivos)'],
   [/Cherry MX compatible keyboard switch \+ 1u keycap/g, 'interruptor de teclado compatible Cherry MX + tecla 1u'],
   [/\(power, reset\)/g, '(encendido, reset)'], [/\(power\)/g, '(encendido)'],
   [/dome LED \(power, disk activity\) \+ front-panel header wires/g, 'LED (encendido, actividad de disco) + cables al panel frontal de la placa'],
@@ -425,31 +436,49 @@ const BOM_ES = [
   // Spanish order: the thing first, then its size
   [/(\d+) x (M[\d.]+|#?\d+-\d+) (inserto térmico|tuerca hexagonal|tuerca cuadrada)/g, '$1 x $3 $2'],
   [/: (\d+) x ([\d.]+(?: x [\d.]+)?(?:-[\d.]+)? mm) (pulsador metálico|LED|micropulsador|brida)/, ': $1 x $3 de $2'],
+  // "18 x M6 x 12 cabeza botón" -> "18 tornillos M6 × 12 de cabeza botón"
+  [/(\d+) x (M[\d.]+|#?\d+-\d+) x (\S+?),? (cabeza botón|allen|avellanado|cabeza alomada)/g,
+    (m, n, d, l, head) => `${n} ${n === '1' ? 'tornillo' : 'tornillos'} ${d} × ${l} ${{ 'cabeza botón': 'de cabeza botón', allen: 'allen', avellanado: 'de cabeza avellanada', 'cabeza alomada': 'de cabeza alomada' }[head]}`],
+  [/(\d+) x (tornillo|inserto térmico|tuerca hexagonal|tuerca cuadrada|brida|tapón de keystone impreso|tapón pasacables impreso|chapa de ranura PCI impresa)\b/g,
+    (m, n, x) => `${n} ${n === '1' ? x : { tornillo: 'tornillos', 'inserto térmico': 'insertos térmicos', 'tuerca hexagonal': 'tuercas hexagonales',
+      'tuerca cuadrada': 'tuercas cuadradas', brida: 'bridas', 'tapón de keystone impreso': 'tapones de keystone impresos',
+      'tapón pasacables impreso': 'tapones pasacables impresos', 'chapa de ranura PCI impresa': 'chapas de ranura PCI impresas' }[x]}`],
 ];
+// the English lines read better with a capital and without the parameter names
+const BOM_EN = [
+  [/^rack accessories:/, 'Rack screws:'], [/^filler panels:/, 'Strip panel:'], [/^drive bay:/, 'Bay screws:'],
+  [/^keystones:/, 'Keystones:'], [/^zip ties:/, 'Zip ties:'], [/^buttons:/, 'Buttons:'], [/^rear slots:/, 'Rear slots:'],
+  [/^fan:/, 'Fan:'], [/^fans:/, 'Fans:'], [/^rack module:/, 'Rack module:'], [/^rack panel:/, 'Rack panel:'],
+  [/^devices \(not included\):/, 'Devices:'], [/^cables and power \(not included\):/, 'Cables and power:'],
+  [/the printed caps \(part = button_cap\)/, 'the printed buttons'],
+];
+// for both languages: a multiplication sign between sizes, an en dash in a range of sizes
+const tidy = (x) => x.replace(/(\d) x /g, '$1 × ').replace(/(\d[.,]\d+)-(\d[.,]\d+) mm/g, '$1–$2 mm');
 
 const WARN_ES = [
   [/^the rack inserts leave only (.+) mm of plastic to the bay side - .*$/, 'Los insertos del rack dejan solo $1 mm de plástico hacia el lateral de la bahía: usa tornillos más pequeños u otra fijación'],
-  [/^the rack inserts leave (.+) mm of plastic to the bay side - press them in slowly and slide test_rack into a bay to check it still fits( \(M5 or M4 inserts leave 2 mm or more\))?$/,
+  [/^the rack inserts leave (.+) mm of plastic to the bay side - press them in slowly and slide the rack-holes test piece \(test_rack\) into a bay to check it still fits( \(M5 or M4 inserts leave 2 mm or more\))?$/,
     (m, w, m6) => `Los insertos del rack dejan ${w} mm de plástico hacia el lateral de la bahía: mételos despacio y prueba que la pieza «Agujeros del rack» sigue entrando en una bahía${m6 ? ' (con M5 o M4 quedan 2 mm o más)' : ''}`],
-  [/^ks_ports_list sets (\d+) ports - ks_ports \((\d+)\) only counts when the list is empty$/, 'La lista de puertos tiene $1 puertos: ks_ports ($2) solo cuenta si la lista está vacía'],
-  [/^the raised NanoKVM bay sticks out (.+) mm from the rack front - .*$/, 'La bahía NanoKVM en montañita sobresale $1 mm del frontal del rack: comprueba que la puerta de tu caja sigue cerrando (si no, desactiva «Montañita»)'],
-  [/^(.+) screw length (.+)mm is outside the usable range (.+)-(.+)mm(.*)$/, (m, a, l, r0, r1, rest) => `Tornillo ${a}: ${l} mm está fuera del rango útil (${r0}-${r1} mm)${rest ? ': ningún largo estándar cabe, ajusta post_d o la fijación' : ''}`],
-  [/^rack holes are too close to the frame edge - wider frame or smaller screws$/, 'Los agujeros del rack quedan muy cerca del borde del marco: usa un marco más ancho o tornillos más pequeños'],
-  [/^posts too shallow for these heat-set inserts - raise post_d$/, 'Los postes son muy cortos para estos insertos: sube post_d'],
-  [/^countersunk heads are deeper than the filler\/panel thickness$/, 'Las cabezas avelladas son más hondas que el grosor del panel'],
-  [/^rack hole at z=(.+) breaks out of the frame edge - smaller screws or another hole_pattern$/, 'El agujero del rack a z=$1 se sale del borde del marco: usa tornillos más pequeños u otro patrón de agujeros'],
-  [/^rack hole at z=(.+) is outside the posts \(only the frame holds it\)$/, 'El agujero del rack a z=$1 queda fuera de los postes (solo lo sujeta el marco)'],
+  [/^ks_ports_list sets (\d+) ports - ks_ports \((\d+)\) only counts when the list is empty$/, 'La lista de puertos tiene $1 puertos: el número de puertos ($2) solo cuenta si la lista está vacía'],
+  [/^the raised NanoKVM bay sticks out (.+) mm from the rack front - .*$/, 'La bahía NanoKVM en montañita sobresale $1 mm del frontal del rack: comprueba que la puerta de tu caja sigue cerrando (si no, elige «Empotrado» en «Forma»)'],
+  [/^(.+) screw length (.+)mm is outside the usable range (.+)-(.+)mm(.*)$/, (m, a, l, r0, r1, rest) => `Tornillo ${a}: ${l} mm está fuera del rango útil (${r0}-${r1} mm)${rest ? ': ningún largo estándar cabe, cambia la fijación o el fondo de los postes (modo avanzado)' : ''}`],
+  [/^rack holes are too close to the frame edge - wider frame or smaller screws$/, 'Los agujeros del rack quedan muy cerca del borde del marco: usa tornillos más pequeños (M5 o M4) o insertos térmicos'],
+  [/^posts too shallow for these heat-set inserts - raise post_d$/, 'Los postes son muy cortos para estos insertos: sube el fondo de los postes (modo avanzado)'],
+  [/^countersunk heads are deeper than the filler\/panel thickness$/, 'Las cabezas avellanadas son más hondas que el grosor del panel'],
+  [/^a rack hole (.+) mm from the bottom of the frame breaks out of its edge - .*$/, 'Un agujero del rack, a $1 mm del borde de abajo del marco, se sale del marco: usa tornillos más pequeños u otro patrón de agujeros (modo avanzado)'],
+  [/^a rack hole (.+) mm from the bottom of the frame is outside the posts \(only the frame holds it\)$/, 'Un agujero del rack, a $1 mm del borde de abajo del marco, queda fuera de los postes (solo lo sujeta el marco)'],
   [/^(\d+) keystones do not fit in (.+) x (.+) mm - skipped$/, '$1 keystones no caben en $2 x $3 mm: no se ponen'],
   [/^the button panel needs about (.+) x (.+) mm, this zone is (.+) x (.+) mm$/, 'La botonera necesita unos $1 x $2 mm y esta zona mide $3 x $4 mm'],
   [/^the switch mount is wider than the rack opening$/, 'El soporte del switch es más ancho que el hueco del rack'],
   [/^the device mount is wider than the rack opening$/, 'El soporte del dispositivo es más ancho que el hueco del rack'],
   [/^the device is too tall for 1U$/, 'El dispositivo es demasiado alto para 1U'],
-  [/^the NanoKVM with its plugs \(nkvm_plugs\) (.+)$/, 'El NanoKVM con sus conectores (nkvm_plugs) no cabe: acorta los conectores o usa otra versión'],
-  [/^the NanoKVM is too tall for the 1U bay - lower nkvm_dims\[1\]$/, 'El NanoKVM es demasiado alto para la bahía de 1U: baja su alto'],
-  [/^the NanoKVM is too wide to stand in the 1U pocket - lower nkvm_dims\[2\]$/, 'El NanoKVM es demasiado ancho para ir de pie en 1U: baja su ancho'],
+  [/^the NanoKVM with its plugs \(nkvm_plugs\) is wider than the rack opening.*$/, 'El NanoKVM con sus conectores es más ancho que el hueco del rack: elige la versión «Cajón» o tornillos más pequeños'],
+  [/^the NanoKVM with its plugs \(nkvm_plugs\) does not fit in the pocket.*$/, 'El NanoKVM con sus conectores no cabe en el frontal: pon menos keystones o elige la versión «Cajón»'],
+  [/^the NanoKVM is too tall for the 1U bay - lower nkvm_dims\[1\]$/, 'El NanoKVM es demasiado alto para la bahía de 1U: revisa su alto en «Tus dispositivos»'],
+  [/^the NanoKVM is too wide to stand in the 1U pocket - lower nkvm_dims\[2\]$/, 'El NanoKVM es demasiado ancho para ir de pie en 1U: revisa su ancho en «Tus dispositivos»'],
   [/^the NanoKVM bay holds one board; extra items ignored$/, 'La bahía NanoKVM lleva una sola placa: se ignora lo demás'],
   [/^the NanoKVM bay is (\d+) mm deep - patch cable about (\d+) mm \(10 cm\) from keystone 1 to the NanoKVM$/, 'La bahía NanoKVM mide $1 mm de fondo: latiguillo de unos 10 cm del keystone 1 al NanoKVM'],
-  [/^the standing NanoKVM bay has no room for keystones - use nkvm:ks to bring its network port to a keystone$/, 'La bahía NanoKVM de pie no tiene sitio para keystones: usa «Red por keystone»'],
+  [/^the standing NanoKVM bay has no room for keystones - use nkvm:ks to bring its network port to a keystone$/, 'La bahía NanoKVM de pie no tiene sitio para keystones: usa la versión «Por keystone»'],
   [/^only the (NanoKVM bay|three-piece NanoKVM bays).*$/, 'Esta pieza solo existe en la bahía NanoKVM correspondiente'],
   [/^the switch carrier is for btn_type = retro$/, 'El soporte de micropulsadores es para la botonera retro'],
   [/^filler_mode = integral - the fill is cut into the adapter, no separate filler$/, 'El relleno va tallado en el adaptador: no hay panel de la franja aparte'],
@@ -467,8 +496,8 @@ const WARN_ES = [
   [/^mount_lip closes the switch window - lower it$/, 'El labio cierra la ventana del switch: bájalo'],
   [/^preview case (.+) - approx\. (.+) mm, (\d+) x 5\.25in bays$/, 'Caja de la vista: $1 (aprox. $2 mm, $3 bahías de 5,25")'],
   [/^rack panels overlap the case front by (.+)mm above and below the bezel$/, 'Los paneles montan $1 mm sobre el frontal por encima y por debajo del bisel'],
-  [/^part is taller than 250 mm - check your print bed$/, 'La pieza mide más de 250 mm de alto: comprueba que cabe en tu cama'],
-  [/^units do not fit in the frame - lower units_override or use overhang$/, 'Las U no caben en el marco: baja units_override o usa «Sobresale»'],
+  [/^the adapter lies (.+) x (.+) mm on the bed - check your printer takes it$/, 'El adaptador ocupa $1 x $2 mm en la cama: comprueba que cabe en tu impresora'],
+  [/^units do not fit in the frame - lower units_override or use overhang$/, 'Las U no caben en el marco: baja «Forzar U» (modo avanzado) o usa «Sobresale»'],
   [/^bay screw holes are deeper than the sleeve - raise sleeve_depth$/, 'Los agujeros de la bahía quedan más hondos que las guías: alarga las guías'],
   [/^the KVM boxes (.+) do not fit in one 1U tray - use fewer boxes or two trays$/, 'Las cajas KVM $1 no caben en una bandeja de 1U: quita alguna o usa dos bandejas'],
   [/^a KVM tray takes 3 boxes at most$/, 'Una bandeja KVM lleva 3 cajas como mucho'],
@@ -477,20 +506,57 @@ const WARN_ES = [
   [/^a Raspberry Pi tray takes 2 boards at most$/, 'Una bandeja de Raspberry Pi lleva 2 placas como mucho'],
   [/^Zero boards go in the flat pi tray, not in the blades$/, 'Las Pi Zero van en la bandeja plana, no en los blades'],
   [/^the blade tray takes 4 boards at most$/, 'La bandeja de blades lleva 4 placas como mucho'],
-  [/^(\d+) blades at (.+) mm do not fit between the rack posts - lower pi_blade_pitch or use fewer boards$/, '$1 blades a $2 mm no caben entre los postes: baja pi_blade_pitch o usa menos placas'],
+  [/^(\d+) blades at (.+) mm do not fit between the rack posts - lower pi_blade_pitch or use fewer boards$/, '$1 blades a $2 mm no caben entre los postes: baja la separación entre blades o usa menos placas'],
   [/^40 mm fans need a zone at least 41 mm tall, this one is (.+) mm$/, 'Los ventiladores de 40 mm necesitan una zona de 41 mm de alto y esta mide $1 mm'],
   [/^(\d+) fans of 40 mm do not fit side by side here - use fewer fans$/, '$1 ventiladores de 40 mm no caben lado a lado aquí: pon menos'],
   [/^an 80 mm fan needs an 82 x 82 mm zone, this one is (.+) x (.+) mm - use more bays or give this zone more of the height$/, 'Un ventilador de 80 mm necesita una zona de 82 x 82 mm y esta mide $1 x $2 mm: usa más bahías o dale más altura a esta zona'],
   [/^the adapter needs (\d+) bays but the (.+) has (\d+)$/, 'El adaptador necesita $1 bahías y la $2 solo tiene $3'],
 ];
 
+// the English messages of the model, without its parameter names
+const WARN_EN = [
+  [/^the rack inserts leave only (.+) mm of plastic to the bay side - .*$/, 'The rack inserts leave only $1 mm of plastic to the bay side: use smaller screws or another fixing'],
+  [/slide the rack-holes test piece \(test_rack\) into a bay/, 'slide the "Rack holes" test piece into a bay'],
+  [/^ks_ports_list sets (\d+) ports - ks_ports \((\d+)\) only counts when the list is empty$/, 'The port list has $1 ports: the port count ($2) only counts when the list is empty'],
+  [/\(else set nkvm_raised = false: in the plate\)/, '(else choose "In the plate" under Shape)'],
+  [/ \(no standard length fits - adjust post_d or the fixing\)$/, ': no standard length fits, change the fixing or the post depth (Advanced mode)'],
+  [/^rack holes are too close to the frame edge - .*$/, 'The rack holes are too close to the frame edge: use smaller screws (M5 or M4) or heat-set inserts'],
+  [/^posts too shallow for these heat-set inserts - raise post_d$/, 'The posts are too shallow for these heat-set inserts: raise the post depth (Advanced mode)'],
+  [/ - smaller screws or another hole_pattern$/, ': smaller screws or another hole pattern (Advanced mode)'],
+  [/^the NanoKVM with its plugs \(nkvm_plugs\) is wider than the rack opening.*$/, 'The NanoKVM with its plugs is wider than the rack opening: choose the "Drawer" version or smaller screws'],
+  [/^the NanoKVM with its plugs \(nkvm_plugs\) does not fit in the pocket.*$/, 'The NanoKVM with its plugs does not fit in the plate: fewer keystones, or the "Drawer" version'],
+  [/ - lower nkvm_dims\[1\]$/, ': check its height in "Your devices"'], [/ - lower nkvm_dims\[2\]$/, ': check its width in "Your devices"'],
+  [/ - use nkvm:ks to bring its network port to a keystone$/, ': use the "Through a keystone" version'],
+  [/^the switch carrier is for btn_type = retro$/, 'The switch carrier is for the retro button panel'],
+  [/^filler_mode = integral - the fill is cut into the adapter, no separate filler$/, 'The fill is cut into the adapter: there is no separate strip panel'],
+  [/^no second spare zone \(use spare_pos = split\)$/, 'There is no second strip (choose "Both")'],
+  [/^unknown keystone type '(.+)' in ks_ports_list - use .*$/, "Unknown keystone type '$1'"],
+  [/^frame_w_override is narrower than the sleeve - /, 'The frame is narrower than the sleeve: '],
+  [/^custom_hole_spacing puts the rack holes outside the panel - .*$/, 'That hole spacing puts the rack holes outside the panel'],
+  [/ - turn use_hole_y2 off$/, ': turn the rear one off'], [/^pci_lan_slot and pci_power_slot are the same slot$/, 'The two PCI brackets are in the same slot'],
+  [/^bezel_depth is deeper than the sleeve - raise sleeve_depth$/, 'The bezel is deeper than the sleeve: make the sleeve deeper (Advanced mode)'],
+  [/ - raise sleeve_depth$/, ': make the sleeve deeper (Advanced mode)'], [/^mount_lip closes the switch window - lower it$/, 'The window lip closes the switch window: lower it'],
+  [/^units do not fit in the frame - lower units_override or use overhang$/, 'The rack units do not fit in the frame: lower "Rack units" (Advanced mode) or choose "Sticking out"'],
+  [/ - lower pi_blade_pitch or use fewer boards$/, ': lower the distance between blades or use fewer boards'],
+  [/ - /, ': '],
+];
+// the boxes of a tray by their names (the model lists them as jet + nano)
+const BOXES = { jet: 'JetKVM', nano: 'NanoKVM', custom: () => t('box_custom'), pi5: 'Pi 5', pi4: 'Pi 4', pi3: 'Pi 3', zero: 'Pi Zero' };
+const boxNames = (x) => x.replace(/^((?:the |Las cajas KVM |Las placas )?(?:KVM boxes |boards )?)([a-z0-9]+(?: \+ [a-z0-9]+)+|[a-z0-9]+)(?= (?:do not fit|no caben))/,
+  (m, pre, list) => pre + list.split(' + ').map((b) => (typeof BOXES[b] === 'function' ? BOXES[b]() : BOXES[b] ?? b)).join(' + '));
+// one decimal at most, a multiplication sign between sizes, a capital to start
+const tidyWarn = (x) => {
+  const y = tidy(x.replace(/\d+\.\d{2,}/g, (n) => String(Math.round(Number(n) * 10) / 10)).replace(/(\d)mm\b/g, '$1 mm'));
+  return y.charAt(0).toUpperCase() + y.slice(1);
+};
 export function warnText(line) {
-  return lang === 'es' ? WARN_ES.reduce((acc, [re, to]) => acc.replace(re, to), line).replace(/(\d)\.(\d)/g, '$1,$2') : line;
+  if (lang !== 'es') return tidyWarn(boxNames(WARN_EN.reduce((acc, [re, to]) => acc.replace(re, to), line)));
+  return tidyWarn(boxNames(WARN_ES.reduce((acc, [re, to]) => acc.replace(re, to), line))).replace(/(\d)\.(\d)/g, '$1,$2');
 }
 
 export function bomText(line) {
   const s = line.replace(/ {2}\+ {2}/g, ' + ');
-  if (lang !== 'es') return s;
+  if (lang !== 'es') return tidy(BOM_EN.reduce((acc, [re, to]) => acc.replace(re, to), s));
   // decimals with a comma in Spanish (12.7 mm -> 12,7 mm, M2.5 -> M2,5)
-  return BOM_ES.reduce((acc, [re, to]) => acc.replace(re, to), s).replace(/(\d)\.(\d)/g, '$1,$2');
+  return tidy(BOM_ES.reduce((acc, [re, to]) => acc.replace(re, to), s).replace(/(\d)\.(\d)/g, '$1,$2'));
 }

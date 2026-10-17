@@ -55,7 +55,7 @@ function ks_layout(w, h, ports) =
 
 module ks_check(w, h, types)
     if (len(types) > 0 && len(ks_layout(w, h, len(types))) == 0)
-        echo(str("WARNING: ", len(types), " keystones do not fit in ", w, " x ", h, " mm - skipped"));
+        echo(str("WARNING: ", len(types), " keystones do not fit in ", round(w * 10) / 10, " x ", round(h * 10) / 10, " mm - skipped"));
 
 module keystone_add(w, h, t, types = ks_types)
     if (ksm_depth > t)
@@ -76,21 +76,22 @@ module ksm_void(t) {
 }
 
 // what is written over each port: its name from ks_names, else HDMI / USB / RCA / AUDIO / OPTICAL for those
-// jacks, else its number in order (only the ports that show a number are counted)
+// jacks, else the number of its place (covers, pass-throughs and empty places keep their place but show nothing)
 function ks_type_name(tp) = tp == "hdmi" ? "HDMI" : tp == "usb" ? "USB" : tp == "rca" ? "RCA"
                           : tp == "jack" ? "AUDIO" : tp == "toslink" ? "OPTICAL" : "";
 PORT_NAMES = split_keep(ks_names);
 function ks_name(i) = i < len(PORT_NAMES) ? PORT_NAMES[i] : "";
-function ks_numbered(types, i) = ks_name(i) == "" && ks_type_name(types[i]) == "" && types[i] != "none";
+function ks_jack(tp) = tp != "cover" && tp != "pass" && tp != "none";
 function ks_label(types, i) =
     ks_name(i) != "" ? ks_name(i)
   : ks_type_name(types[i]) != "" ? ks_type_name(types[i])
-  : str(ks_label_start + len([for (j = [0 : 1 : i - 1]) if (ks_numbered(types, j)) 1]));
+  : ks_jack(types[i]) ? str(ks_label_start + len([for (j = [0 : 1 : i - 1]) if (ks_jack(types[j])) 1]))
+  : "";
 // letters shrink so a long name still fits over its port
 function ks_label_size(s) = min(3.2, (ks_px - 3) / (0.7 * max(1, len(s))));
 ks_label_d = 0.6;
 module ks_labels2d(w, h, types = ks_types)
-    for (p = ks_layout(w, h, len(types))) if (types[p[3]] != "none") let(s = ks_label(types, p[3]))
+    for (p = ks_layout(w, h, len(types))) let(s = ks_label(types, p[3])) if (s != "")
         translate([p[0], p[1] + ks_label_dz]) legend2d(s, ks_label_size(s));
 // small engraved letters, a little bolder so their strokes do not close up with a 0.4 mm nozzle (face-down print)
 module legend2d(s, size) offset(r = 0.1) text(s, size = size, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
@@ -250,7 +251,7 @@ module buttons_check(w, h) {
     need = btn_type == "retro" ? [118, 30] : btn_type == "metal" ? [btn_count >= 2 ? 90 : 60, btn_metal_d + 12]
          : [btn_count >= 2 ? 100 : 60, mx_cut + 13];
     if (h < need[1] || w < need[0])
-        echo(str("WARNING: the button panel needs about ", need[0], " x ", need[1], " mm, this zone is ", w, " x ", h, " mm"));
+        echo(str("WARNING: the button panel needs about ", need[0], " x ", need[1], " mm, this zone is ", round(w * 10) / 10, " x ", round(h * 10) / 10, " mm"));
 }
 
 // LED holder tube behind the plate
@@ -398,7 +399,7 @@ module button_carrier(h = U - 0.79) {
 function fan40_pitch(w) = fan40_count < 2 ? 0 : min(46, (min(w, 2 * x_in - 1) - 40) / (fan40_count - 1));
 function fan40_xs(w) = [for (i = [0 : fan40_count - 1]) (i - (fan40_count - 1) / 2) * fan40_pitch(w)];
 module fan40_cut(w, h, t) {
-    if (h < 41) echo(str("WARNING: 40 mm fans need a zone at least 41 mm tall, this one is ", h, " mm"));
+    if (h < 41) echo(str("WARNING: 40 mm fans need a zone at least 41 mm tall, this one is ", round(h * 10) / 10, " mm"));
     else if (fan40_count > 1 && fan40_pitch(w) < 40.3)
         echo(str("WARNING: ", fan40_count, " fans of 40 mm do not fit side by side here - use fewer fans"));
     else for (x = fan40_xs(w)) translate([x, 0, h / 2]) {
@@ -412,7 +413,7 @@ module fan40_cut(w, h, t) {
 }
 
 module fan80_cut(w, h, t) {
-    if (h < 82 || w < 82) echo(str("WARNING: an 80 mm fan needs an 82 x 82 mm zone, this one is ", w, " x ", h, " mm - use more bays or give this zone more of the height"));
+    if (h < 82 || w < 82) echo(str("WARNING: an 80 mm fan needs an 82 x 82 mm zone, this one is ", round(w * 10) / 10, " x ", round(h * 10) / 10, " mm - use more bays or give this zone more of the height"));
     else translate([0, 0, h / 2]) {
         xz_extrude(-t - eps, t + 2 * eps) if (fan_guard == "open") circle(d = 77, $fn = 144);
             else intersection() {
