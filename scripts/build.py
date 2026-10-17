@@ -56,7 +56,7 @@ def plate_flush(b):
                    {"bays": b, "fit": "flush", "front_style": "plate", "filler_mode": "separate"}, parts)
 
 
-def plate_overhang(b, pattern="eia"):
+def plate_overhang(b, pattern="auto"):
     return variant(f"plate-overhang/{b}bay-{b}U", f"{b} bay{'s' if b > 1 else ''}, {b}U",
                    {"bays": b, "fit": "overhang", "front_style": "plate", "hole_pattern": pattern},
                    [("adapter.stl", {"part": "adapter"})])
@@ -70,7 +70,7 @@ def bezel_flush(b):
                    [("adapter.stl", {"part": "adapter"})])
 
 
-def bezel_overhang(b, pattern="eia"):
+def bezel_overhang(b, pattern="auto"):
     return variant(f"bezel-overhang/{b}bay-{b}U", f"{b} bay{'s' if b > 1 else ''}, {b}U",
                    {"bays": b, "fit": "overhang", "front_style": "bezel", "hole_pattern": pattern},
                    [("adapter.stl", {"part": "adapter"})])
@@ -96,8 +96,8 @@ def test(name, title, part, **extra):
     return variant(f"tests/{name}", title, {"part": part, **extra}, [("", {})], flat=True)
 
 
-# M6 inserts only fit the outer EIA holes when the frame is tall enough;
-# the tighter overhang variants use one centred hole per U.
+# hole_pattern auto: EIA holes inside the bays, one centred hole per U where the panels stick out
+# (M6 inserts in the outer EIA holes would break out of the posts there).
 VARIANTS = (
     [plate_flush(b) for b in (1, 2, 3, 4)]
     + [plate_overhang(1), plate_overhang(2), plate_overhang(3, "center")]
@@ -111,7 +111,7 @@ VARIANTS = (
     + [panel("1U-patch6", "1U, 6 keystones", 1, "keystone"),
        panel("1U-vent", "1U, vented", 1, "vent"),
        panel("1U-blank", "1U, blank", 1, "blank"),
-       panel("2U-patch12", "2U, 12 keystones", 2, "keystone", ks_ports=12),
+       panel("2U-patch12", "2U, 12 keystones", 2, "keystone", ks_ports=12, ks_ports_list=""),
        panel("1U-fan40", "1U, three 40 mm fans", 1, "fan40")]
     + [module("ms105g", "Mercusys MS105G switch tray (1U)", "ms105g"),
        module("uswflex", "UniFi USW-Flex-Mini tray (1U)", "uswflex"),
@@ -135,7 +135,10 @@ VARIANTS = (
        test("bay-bezel", "Bay screw corner, bezel front (checks flushness)", "test_bay", front_style="bezel"),
        test("rack-M6-heatset", "Rack hole spacing bar, M6 heat-set", "test_rack"),
        test("keystone-metal", "One metal keystone holder cell", "test_keystone", ks_style="metal"),
-       test("keystone-standard", "One standard keystone cut-out", "test_keystone", ks_style="standard")]
+       test("keystone-standard", "One standard keystone cut-out", "test_keystone", ks_style="standard"),
+       test("button-mx", "One MX key cut-out of the button panel", "test_button", btn_type="mx"),
+       test("button-metal-16", "One 16 mm metal push-button hole", "test_button", btn_type="metal", btn_metal_d=16),
+       test("button-retro", "One retro cap opening + carrier post", "test_button", btn_type="retro")]
 )
 
 
@@ -212,7 +215,9 @@ def write_index(results):
              "Every file is already in print orientation (front face down, no supports).",
              "Defaults: 6in rack with 10in mini rack rules (134.925 mm hole spacing, EIA-310), M6 heat-set inserts "
              "for the rack, M3 heat-set inserts for the bay screws. Need something else? Change it in the "
-             "Customizer and export your own.", ""]
+             "Customizer and export your own.",
+             "The devices, their cables and power supplies are not included; the build guide is in "
+             "[docs/BUILD.md](../docs/BUILD.md).", ""]
     for fam, desc in FAMILIES.items():
         rows = [v for v in VARIANTS if v["path"].split("/")[0] == fam and v["path"] in by_variant]
         if not rows:
@@ -224,7 +229,7 @@ def write_index(results):
             bom = []
             for r in rs:
                 for e in r["echoes"]:
-                    if e.startswith("BOM | ") and e[6:] not in bom:
+                    if e.startswith("BOM | ") and e[6:] not in bom and not e.startswith("BOM | cables and power"):
                         bom.append(e[6:])
             hw = "<br>".join(b.replace("  +  ", " + ") for b in bom) or "-"
             lines.append(f"| **{v['path'].split('/', 1)[1]}**<br>{v['title']} | {files} | {hw} |")
@@ -236,7 +241,8 @@ def write_index(results):
         rs = by_variant.get(v["path"], [])
         bom = []
         for r in rs:
-            bom += [e[6:] for e in r["echoes"] if e.startswith("BOM | ") and e[6:] not in bom]
+            bom += [e[6:] for e in r["echoes"] if e.startswith("BOM | ") and e[6:] not in bom
+                    and not e.startswith("BOM | cables and power")]
         catalog["variants"].append({
             "path": v["path"], "family": v["path"].split("/")[0], "title": v["title"], "params": v["params"],
             "files": [r["file"].relative_to(STL).as_posix() for r in rs if r["ok"]], "bom": bom})

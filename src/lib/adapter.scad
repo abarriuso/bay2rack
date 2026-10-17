@@ -152,9 +152,12 @@ module posts()
         translate([s > 0 ? x_in : -sw, 0, pz0]) cube([sw - x_in, post_d, pz1 - pz0]);
 
 // opening between the posts, clipped so the frame keeps a rim
-module opening(z0, h) {
-    lo = max(z0, frame_z0) + frame_rim;
-    hi = min(z0 + h, frame_z1) - frame_rim;
+// (need: the opening is at least this tall if the zone allows it, e.g. a fan behind a separate filler)
+module opening(z0, h, need = 0) {
+    span = min(z0 + h, frame_z1) - max(z0, frame_z0);
+    rim = need > 0 ? max(0.6, min(frame_rim, (span - need) / 2)) : frame_rim;
+    lo = max(z0, frame_z0) + rim;
+    hi = min(z0 + h, frame_z1) - rim;
     if (hi - lo > 2)
         translate([-x_in, -ft - eps, lo]) cube([2 * x_in, ft + 2 * eps, hi - lo]);
 }
@@ -182,7 +185,7 @@ module adapter() {
         if (units > 0) opening(units_z0, units * U);
         for (zn = zones) {
             if (filler_mode == "separate") {
-                opening(zn[0], zn[1]);
+                opening(zn[0], zn[1], zn[2] == "fan80" ? 80.8 : zn[2] == "fan40" ? 40.8 : 0);
                 if (rack_fixing != "channel")
                     for (s = [-1, 1]) rack_cut(s * hole_s / 2, zn[0] + zn[1] / 2, s);
             } else {
