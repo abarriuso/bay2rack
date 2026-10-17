@@ -243,6 +243,7 @@ module module_labels(type) {
     lay = mod_kind(type) == "nkvm" ? nk_layout(mod_items(type)) : "";
     n = lay == "" ? 0 : nk_nks(lay);
     if (type == "patch") fill_labels("keystone", hole_s - R[0] - 6, h, panel_t);
+    else if (type == "buttons") fill_labels("buttons", hole_s - R[0] - 6, h, panel_t);
     else if (type == "label") fill_labels("label", hole_s - R[0] - 6, h, panel_t);
     else if (lay != "") {
         if (n > 0 && ks_labels) translate([nk_ks_x0(lay) + nk_ks_w(n) / 2, 0, 0]) xz_extrude(-panel_t, ks_label_d)
@@ -336,8 +337,12 @@ module nk_r_plate() {
         plate(panel_w, h, panel_t, 0.6);
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
         translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_rrect(x0 + 5, nk_zv0 + 4, x0 + L - 5, nk_zv0 + W - 4, 2.5);
+        // cable ways into the case at both ends: a keyhole, the plug (HDMI / RJ45) through the wide part, the cable up the slot
         for (x = [x0 - nkvm_plugs[0] + 2, x0 + L + nkvm_plugs[1] - 2])
-            translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_rrect(x - 3.5, h / 2 - 9, x + 3.5, h / 2 + 9, 3.4);
+            translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) {
+                nk_rrect(x - 7, 2.5, x + 7, 24.5, 3);
+                nk_rrect(x - 3.5, 2.5, x + 3.5, h - 4, 3.4);
+            }
         if (nkvm_split) for (q = nk_posts("side")) translate([x0 + q[0], eps, nk_zv0 + q[1]]) rotate([90, 0, 0]) {
             cylinder(d = NK_M3[0], h = panel_t + 2 * eps, $fn = 20);
             cylinder(d1 = 6.4, d2 = NK_M3[0], h = 1.7, $fn = 24);
@@ -359,9 +364,13 @@ module nk_r_mountain() {
         // the lid sits in the top of the mountain
         translate([0, nk_r_lf - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_lid_t + 1 + eps)
             nk_rrect(x0 + nk_u0("side") - 0.4, nk_zv0 - nk_c - nk_pd - 0.4, x0 + nk_u1() + 0.4, nk_zv0 + W + nk_c + nk_pd + 0.4, 3.4);
-        // the caves at both ends, where the plugs go in
-        for (e = [0, 1]) translate([e == 0 ? x0 + nk_u0("side") - nk_r_foot - 5 : x0 + L, nk_r_lb, nk_zv0 + 0.5])
-            cube([nk_r_foot + 5 + nk_fs + nk_c, -panel_t - nk_r_lb + 1, W - 1]);
+        // the caves at both ends, where the plugs go in: between the corner fingers (2.5 mm over the board's edges),
+        // which keep stopping the board lengthwise; the HDMI plug is as wide as the board, so at that end the cave
+        // is full height from 4.5 mm off the board's underside (clear of the fingers' foot) up to the lid
+        for (e = [0, 1]) let(xs = e == 0 ? x0 + nk_u0("side") - nk_r_foot - 5 : x0 + L, cl = nk_r_foot + 5 + nk_fs + nk_c) {
+            translate([xs, nk_r_lb, nk_zv0 + 2.5]) cube([cl, -panel_t - nk_r_lb + 1, W - 5]);
+            if (e == 1) translate([xs, nk_r_lb, nk_zv0 + 0.5]) cube([cl, -panel_t - nk_c - 4.5 - nk_r_lb, W - 1]);
+        }
         // heat-set inserts: the lid at the top of the posts, (three pieces) the plate screws at their foot
         for (q = nk_posts("side")) translate([x0 + q[0], 0, nk_zv0 + q[1]]) {
             translate([0, nk_r_lb - eps, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
@@ -399,9 +408,10 @@ function nk_f_xd() = nk_n_ks() > 0 ? (nk_ks_x0("front") + nk_ks_w(nk_n_ks()) + x
 function nk_f_dw() = nkvm_dims[2] + 2 * (nk_c + nk_pd);                        // drawer width
 function nk_f_len() = nk_c + nk_u1();                                          // drawer length behind the face
 function nk_f_zt() = nk_zf + nk_top + nk_lid_t;                                // top of the face (lid top)
-nk_f_bz = 6;                                                                   // bezel round the face (sides, top)
+nk_f_bz = 9;                                                                   // bezel round the face (sides, top)
+// the two screws: their insert bosses behind the plate clear of the opening the drawer slides through
 function nk_f_screws() = let(x0 = nk_f_xd() - nk_f_dw() / 2, x1 = nk_f_xd() + nk_f_dw() / 2, z = (nk_zf + nk_f_zt()) / 2)
-    [[x0 - nk_f_bz / 2 - 0.3, z], [x1 + nk_f_bz / 2 + 0.3, z]];
+    [[x0 - mount_clear - 4.2, z], [x1 + mount_clear + 4.2, z]];
 module nk_f_face2d(g = 0) let(xd = nk_f_xd(), dw = nk_f_dw())
     translate([xd - dw / 2 - g, nk_zf - min(g, 0.3)]) square([dw + 2 * g, nk_f_zt() - nk_zf + g + min(g, 0.3)]);
 
@@ -448,7 +458,7 @@ module nk_f_plate(nks, kt, xk) {
         }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
         if (nks > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(nks) + 0.1, h, panel_t, kt);
-        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_f_face2d(0);
+        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_f_face2d(mount_clear);
         for (p = nk_f_screws()) translate([p[0], 0, p[1]]) {
             translate([0, -panel_t - 1, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3[0], h = panel_t + 2, $fn = 20);
             translate([0, 7 + eps, 0]) rotate([90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.3, $fn = 24);   // insert from behind
@@ -775,7 +785,7 @@ module test_rack() {
     difference() {
         union() {
             plate(fw, h, ft, frame_chamfer);
-            for (s = [-1, 1]) translate([s > 0 ? x_in : -fw / 2, 0, 0]) cube([fw / 2 - x_in, post_d, h]);
+            for (s = [-1, 1]) translate([s > 0 ? x_in : -sw, 0, 0]) cube([sw - x_in, post_d, h]);   // the real posts
         }
         translate([-x_in + 6, -ft - eps, 4]) cube([2 * x_in - 12, ft + 2 * eps, h - 8]);
         for (s = [-1, 1]) {
@@ -801,6 +811,21 @@ module test_bay() {
 }
 
 // one keystone port with the same plate thickness as the filler panels
+// one button of the button panel (btn_type), as thick as that panel: the MX switch clips, the metal button's
+// hole, or (retro) a cap's opening with one carrier post for the insert
+module test_button() {
+    h = U - 0.79; w = hole_s - R[0] - 6; t = btn_panel_t;
+    k = btn_keys(w, h)[0];
+    bx = btn_type == "retro" ? [k[0] - 16, k[0] + 26] : [k[0] - 17, k[0] + 17];
+    translate([-(bx[0] + bx[1]) / 2, 0, 0]) intersection() {
+        difference() {
+            union() { plate(w, h, t, 0.6); fill_add("buttons", w, h, t); }
+            fill_cut("buttons", w, h, t);
+        }
+        translate([bx[0], -t - 1, 0]) cube([bx[1] - bx[0], 40, h]);
+    }
+}
+
 module test_keystone() {
     tp = ks_style == "metal" ? "rj45m" : "rj45";
     w = ks_cw + 8;

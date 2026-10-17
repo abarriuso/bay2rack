@@ -7,7 +7,8 @@ Each case is rendered to STL with the OpenSCAD CLI and must:
   - finish without an OpenSCAD error and give a non-empty mesh,
   - print no WARNING (or exactly the warning it is meant to trigger),
   - for an adapter: print the summary line, and a bill of materials whose rack screw count
-    matches the rack units (6 per U with the EIA pattern).
+    matches the rack units (6 per U with the EIA pattern),
+  - (BOM cases) print the bill of materials lines they list.
 The ready-made builds of the web configurator (EXAMPLES in web/src/main.js) are tested too, so the
 site never offers a build that does not fit. Exit code 1 if anything fails (used by CI).
 """
@@ -118,11 +119,27 @@ CASES = (
        ("pci/lan", {"part": "pci_bracket", "pci_kind": "lan"}, None),
        ("pci/power", {"part": "pci_bracket", "pci_kind": "power"}, None)]
     + [(f"test/{t}", {"part": t}, None) for t in ("test_bay", "test_rack", "test_keystone")]
+    + [(f"test/button-{bt}", {"part": "test_button", "btn_type": bt}, None) for bt in ("mx", "metal", "retro")]
     # the model must still warn when something does not fit
     + [module("kvm:jet+jet+jet", warn="do not fit"),
        adapter("fan80-in-a-1U-strip", warn="80 mm fan", spare_fill="fan80", filler_mode="integral"),
        adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap"),
        ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None)]
+    # the bill of materials: what each piece needs
+    + [("bom/filler-keystones", {"part": "filler"}, None,
+        ["keystones: 3 x metal / shielded RJ45 keystone", "keystones: 2 x printed keystone cover", "filler panels: 2 x"]),
+       ("bom/patch-module", {"part": "rack_module", "module_type": "patch"}, None,
+        ["keystones: 3 x metal", "(into the adapter's fixings"]),
+       ("bom/patch12", {"part": "rack_panel", "panel_u": 2, "panel_fill": "keystone", "ks_ports": 12, "ks_ports_list": ""}, None,
+        ["keystones: 12 x metal"]),
+       ("bom/nkvm-drawer", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 1}, None,
+        ["NanoKVM drawer: 2 x M3 x 12 countersunk", "NanoKVM bay lid: 4 x", "keystones: 1 x metal", "devices (not included): 1 x NanoKVM"]),
+       ("bom/nkvm-ks", {"part": "rack_module_lid", "module_type": "nkvm:ks"}, None,
+        ["RJ45 keystone coupler (female-female)", "NanoKVM bay lid: 4 x"]),
+       ("bom/nkvm-mountain", {"part": "rack_module_bay", "module_type": "nkvm:side"}, None,
+        ["NanoKVM mountain to plate: 4 x M3 x 8 countersunk", "(in the mountain posts)"]),
+       ("bom/carrier", {"part": "button_carrier", "btn_type": "retro"}, None, ["2 x M3 x 8 screw"]),
+       ("bom/fan40-20", {"part": "rack_panel", "panel_fill": "fan40", "fan40_t": 20}, None, ["x M3 x 30 screw"])]
 )
 
 
@@ -155,7 +172,8 @@ def triangles(stl):
 
 
 def run(exe, case):
-    name, defines, warn = case
+    name, defines, warn, *more = case
+    bom_need = more[0] if more else []
     with tempfile.TemporaryDirectory() as tmp:
         stl = Path(tmp) / "out.stl"
         args = [exe, "-o", str(stl)]
@@ -173,6 +191,9 @@ def run(exe, case):
             problems.append(f"expected a warning about '{warn}', got none")
     elif warnings:
         problems.append("; ".join(warnings[:3]))
+    for need in bom_need:
+        if need not in log:
+            problems.append(f"BOM: no '{need}'")
     if tris == 0 and not problems:
         problems.append("empty mesh")
     if defines.get("part") == "adapter" and (not warn or "250 mm" in warn):

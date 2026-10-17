@@ -164,7 +164,7 @@ n_patch = part == "rack_panel" ? (panel_fill == "keystone" ? 1 : 0)
           ? len([for (zn = zones) if (zn[2] == "keystone") 1])
             + len([for (m = bom_mods) if (m == "patch") 1])
         : 0;
-function ks_count(tp) = n_patch * len([for (x = ks_types) if (x == tp) 1]);
+function ks_count(tp) = n_patch * len([for (x = ks_types) if (x == tp) 1]) + (tp == (ks_style == "metal" ? "rj45m" : "rj45") ? n_nk_jacks : 0);
 KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],
             ["usb", "USB keystone"], ["rca", "RCA keystone"], ["jack", "3.5 mm audio keystone"], ["toslink", "Toslink optical keystone"],
             ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
@@ -176,22 +176,34 @@ n_pi = sum_list([for (m = bom_mods) mod_kind(m) == "pi" ? len(pi_list(mod_items(
                                       : mod_kind(m) == "piblade" ? len(blade_list(mod_items(m))) : 0]);
 if (n_pi > 0) echo(str("BOM | Raspberry Pi: ", 4 * n_pi, " x M2.5 x 6 screw",
     pi_fixing == "heatset" ? str(" + ", 4 * n_pi, " x M2.5 heat-set insert (hole 3.6 mm)") : " (self-tapping into the standoffs)"));
-// NanoKVM bay: the lid screws onto four heat-set inserts
-n_nkvm = part == "rack_module_lid" ? (mod_kind(module_type) == "nkvm" ? 1 : 0) : len([for (m = bom_mods) if (mod_kind(m) == "nkvm") 1]);
-n_nkvm_split = nkvm_split && (part == "rack_module_bay" || part == "rack_module" || part == "assembly")
-    ? len([for (m = part == "assembly" ? used_mods : [module_type]) if (mod_kind(m) == "nkvm" && mod_items(m)[0] != "front") 1]) : 0;
-if (n_nkvm > 0) echo(str("BOM | NanoKVM bay lid: ", 4 * n_nkvm, " x M3 x 8 countersunk  +  ", 4 * n_nkvm,
-    " x M3 heat-set insert (hole ", hw("M3")[2], " x ", hw("M3")[3], " mm)"));
-if (n_nkvm_split > 0) echo(str("BOM | NanoKVM bay plate to pocket: ", 4 * n_nkvm_split, " x M3 x 8 pan head, from the back  +  ", 4 * n_nkvm_split,
-    " x M3 heat-set insert (in the plate)"));
+// NanoKVM bays: the hardware of the whole bay, for the assembly or any of its pieces
+nk_bom = [for (m = part == "assembly" ? used_mods
+                 : (part == "rack_module" || part == "rack_module_bay" || part == "rack_module_lid") ? [module_type] : [])
+          if (mod_kind(m) == "nkvm") nk_layout(mod_items(m))];
+function nk_bom_n(lay) = len([for (l = nk_bom) if (l == lay) 1]);
+n_nk_jacks = sum_list([for (l = nk_bom) nk_nks(l)]) - nk_bom_n("ks");      // (ks: keystone 1 is the coupler)
+nk_drawer_L = max([for (l = [6, 8, 10, 12, 16, 20]) if (l <= 2 + panel_t + 7) l]);   // bezel + plate + the insert boss
+if (len(nk_bom) > 0) echo(str("BOM | NanoKVM bay lid: ", 4 * len(nk_bom), " x M3 x 8 countersunk  +  ", 4 * len(nk_bom),
+    " x M3 heat-set insert (hole ", NK_M3[2], " x ", NK_M3[3], " mm)"));
+if (nkvm_split && !nkvm_raised && nk_bom_n("side") > 0) echo(str("BOM | NanoKVM bay to plate: ", 4 * nk_bom_n("side"),
+    " x M3 x 8 pan head, from the back  +  ", 4 * nk_bom_n("side"), " x M3 heat-set insert (in the plate)"));
+if (nkvm_split && nkvm_raised && nk_bom_n("side") > 0) echo(str("BOM | NanoKVM mountain to plate: ", 4 * nk_bom_n("side"),
+    " x M3 x 8 countersunk, from the back  +  ", 4 * nk_bom_n("side"), " x M3 heat-set insert (in the mountain posts)"));
+if (nkvm_split && nk_bom_n("front") > 0) echo(str("BOM | NanoKVM drawer: ", 2 * nk_bom_n("front"), " x M3 x ", nk_drawer_L,
+    " countersunk  +  ", 2 * nk_bom_n("front"), " x M3 heat-set insert (behind the plate)"));
+if (nk_bom_n("ks") > 0) echo(str("BOM | NanoKVM bay: ", nk_bom_n("ks"), " x RJ45 keystone coupler (female-female)  +  ",
+    nk_bom_n("ks"), " x 10 cm patch cable (keystone to NanoKVM)"));
 n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
       : part == "rack_module" ? (module_type == "buttons" ? 1 : 0)
+      : (part == "button_carrier" || part == "button_cap") ? 1          // the button panel these pieces are for
       : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
          || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
         ? len([for (zn = zones) if (zn[2] == "buttons") 1])
           + (part == "assembly" ? len([for (m = used_mods) if (m == "buttons") 1]) : 0)
       : 0;
 n_keys = btn_count + (btn_type == "retro" && btn_turbo ? 1 : 0);
+// the first button panel's thickness (caps, test piece): a spare zone (its filler, or the frame when cut into it), else a 1U module
+btn_panel_t = len([for (zn = zones) if (zn[2] == "buttons") 1]) > 0 ? (filler_mode == "separate" ? filler_t : ft) : panel_t;
 if (n_btn > 0) {
     if (btn_type == "metal") {
         echo(str("BOM | buttons: ", n_btn * btn_count, " x ", btn_metal_d, " mm metal push button, momentary, LED ring (",
@@ -201,7 +213,7 @@ if (n_btn > 0) {
         echo(str("BOM | buttons: ", n_btn * n_keys, " x 12 x 12 mm tactile switch (12 x 12 x 7.3) + the printed caps (part = button_cap)"));
         echo(str("BOM | buttons: ", n_btn * (btn_turbo ? 3 : 2), " x ", led_d, " mm dome LED (power green, HDD amber",
                  btn_turbo ? ", turbo yellow" : "", ") + front-panel header wires"));
-        echo(str("BOM | buttons: ", n_btn * 2, " x M3 x 12 screw + ", n_btn * 2, " x M3 heat-set insert (switch carrier)"));
+        echo(str("BOM | buttons: ", n_btn * 2, " x M3 x 8 screw + ", n_btn * 2, " x M3 heat-set insert (switch carrier)"));
     } else {
         echo(str("BOM | buttons: ", n_btn * btn_count, " x Cherry MX compatible keyboard switch + 1u keycap (",
                  btn_count >= 2 ? "power, reset" : "power", ")"));
@@ -219,11 +231,23 @@ n_fan40 = fan40_count * (part == "rack_panel" ? (panel_fill == "fan40" ? 1 : 0)
             || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
            ? len([for (zn = zones) if (zn[2] == "fan40" && zn[1] - (filler_mode == "separate" ? 0.8 : 0) >= 41) 1]) : 0));
 if (n_fan40 > 0) echo(str("BOM | fans: ", n_fan40, " x 40 mm fan (40 x 40 x ", fan40_t, ") + ", 4 * n_fan40,
-                         " x M3 x ", fan40_t + 6, " screw + nut (5 or 12 V, to a fan header)"));
+                         " x M3 x ", min([for (l = [16, 20, 25, 30, 35, 40]) if (l >= fan40_t + panel_t + 2.6) l]),
+                         " screw + nut (5 or 12 V, to a fan header)"));
 if ((part == "assembly" && rear_slots) || part == "pci_bracket")
     echo(str("BOM | rear slots: ", part == "pci_bracket" ? 1 : 2, " x printed PCI-slot bracket",
              part == "pci_bracket" ? (pci_kind == "lan" ? " (network cables)" : " (power cable)") : " (network cables, power cable)", " + the case's slot screws"));
 if (n_ties > 0) echo(str("BOM | zip ties: ", 2 * n_ties, " x 2.5-3.6 mm cable tie (holds the device)"));
+function dev_of(m) = let(k = mod_kind(m), it = mod_items(m))
+    k == "ms105g" ? ["5-port switch (MS105G size)"] : k == "uswflex" ? ["UniFi USW-Flex-Mini"] : k == "ux" ? ["UniFi Express"]
+  : k == "kvm" ? [for (b = it) b == "jet" ? "JetKVM" : b == "nano" ? "NanoKVM Full" : "KVM (your size)"]
+  : k == "pi" || k == "piblade" ? [for (b = k == "pi" ? pi_list(it) : blade_list(it))
+                                   b == "zero" ? "Raspberry Pi Zero" : str("Raspberry Pi ", str_split(b, "i")[1])]
+  : k == "nkvm" ? ["NanoKVM"] : k == "dev1" ? ["your device 1"] : k == "dev2" ? ["your device 2"] : [];
+bom_devs = [for (m = bom_mods) each dev_of(m)];
+if (len(bom_devs) > 0) {
+    echo(str("BOM | devices (not included): ", count_list(bom_devs)));
+    echo("BOM | cables and power (not included): a network patch cable per port, HDMI + USB cables from each KVM to its computer, the devices' power supplies (or USB-C / PoE)");
+}
 
 module check_len(label, s, L, r)
     if (L < r[0] - 0.01 || L > r[1] + 0.01)
@@ -239,6 +263,15 @@ if (bezel_mode && units * U > frame_h + 0.01)
     echo(str("NOTE: rack panels overlap the case front by ", (units * U - frame_h) / 2, "mm above and below the bezel"));
 if (hole_s / 2 + r_feat / 2 + 1.2 > fw / 2)
     echo("WARNING: rack holes are too close to the frame edge - wider frame or smaller screws");
+// the rack fixings sit in the posts, a few mm from the bay's steel side: a thin wall bulges when the insert goes in
+rack_side_wall = sw - (hole_s / 2 + R[2] / 2);
+if (rack_fixing == "heatset" && rack_side_wall < 1)
+    echo(str("WARNING: the rack inserts leave only ", round(rack_side_wall * 10) / 10,
+             " mm of plastic to the bay side - smaller screws or another rack_fixing"));
+else if (rack_fixing == "heatset" && rack_side_wall < 2)
+    echo(str("NOTE: the rack inserts leave ", round(rack_side_wall * 10) / 10,
+             " mm of plastic to the bay side - press them in slowly and slide test_rack into a bay to check it still fits",
+             rack_screw == "M6" ? " (M5 or M4 inserts leave 2 mm or more)" : ""));
 if (rack_fixing == "heatset" && T_post < R[3] + 1)
     echo("WARNING: posts too shallow for these heat-set inserts - raise post_d");
 if (rack_screw_head == "countersunk" && (head_dims("countersunk", R[8])[0] + 0.4 - R[0]) / 2 > min(filler_t, panel_t))
@@ -282,5 +315,11 @@ if (rear_slots && pci_lan_slot == pci_power_slot)
     echo("WARNING: pci_lan_slot and pci_power_slot are the same slot");
 if (bezel_mode && bezel_depth > sleeve_depth)
     echo("WARNING: bezel_depth is deeper than the sleeve - raise sleeve_depth");
+if (ks_ports_list != "" && ks_ports != len(ks_types))
+    echo(str("NOTE: ks_ports_list sets ", len(ks_types), " ports - ks_ports (", ks_ports, ") only counts when the list is empty"));
+if (nkvm_raised && len([for (m = concat(used_mods, [module_type])) if (mod_kind(m) == "nkvm" && nk_layout(mod_items(m)) == "side") 1]) > 0
+    && (part == "assembly" || mod_kind(module_type) == "nkvm"))
+    echo(str("NOTE: the raised NanoKVM bay sticks out ", round((-nk_r_lf - panel_t) * 10) / 10,
+             " mm from the rack front - check that your case door still closes (else turn nkvm_raised off)"));
 if (mount_lip * 2 >= min(ms_w, ms_h))
     echo("WARNING: mount_lip closes the switch window - lower it");

@@ -79,8 +79,8 @@ module ksm_void(t) {
 // jacks, else its number in order (only the ports that show a number are counted)
 function ks_type_name(tp) = tp == "hdmi" ? "HDMI" : tp == "usb" ? "USB" : tp == "rca" ? "RCA"
                           : tp == "jack" ? "AUDIO" : tp == "toslink" ? "OPTICAL" : "";
-KS_NAMES = split_keep(ks_names);
-function ks_name(i) = i < len(KS_NAMES) ? KS_NAMES[i] : "";
+PORT_NAMES = split_keep(ks_names);
+function ks_name(i) = i < len(PORT_NAMES) ? PORT_NAMES[i] : "";
 function ks_numbered(types, i) = ks_name(i) == "" && ks_type_name(types[i]) == "" && types[i] != "none";
 function ks_label(types, i) =
     ks_name(i) != "" ? ks_name(i)
@@ -91,8 +91,9 @@ function ks_label_size(s) = min(3.2, (ks_px - 3) / (0.7 * max(1, len(s))));
 ks_label_d = 0.6;
 module ks_labels2d(w, h, types = ks_types)
     for (p = ks_layout(w, h, len(types))) if (types[p[3]] != "none") let(s = ks_label(types, p[3]))
-        translate([p[0], p[1] + ks_label_dz])
-            text(s, size = ks_label_size(s), font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+        translate([p[0], p[1] + ks_label_dz]) legend2d(s, ks_label_size(s));
+// small engraved letters, a little bolder so their strokes do not close up with a 0.4 mm nozzle (face-down print)
+module legend2d(s, size) offset(r = 0.1) text(s, size = size, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
 
 module keystone_cut(w, h, t, types = ks_types) {
     ks_check(w, h, types);
@@ -182,6 +183,7 @@ module fill_labels(type, w, h, t) {
         translate([-w / 2 + 1, 1]) square([w - 2, h - 2]);
         label_text2d(w, h);
     }
+    else if (type == "buttons") xz_extrude(-t, 0.6) btn_legends2d(w, h);
 }
 
 // ---------------------------------------------------------------------
@@ -229,7 +231,8 @@ function rt_keys(h) = let(zc = h / 2 + rt_zc)
     concat([[37, zc, "power", 24, 14]], btn_count >= 2 ? [[11, zc, "reset", 12, 8]] : [],
            btn_turbo ? [[btn_count >= 2 ? -7 : 11, zc, "turbo", 12, 8]] : []);
 function rt_left(h) = min([for (k = rt_keys(h)) k[0] - k[3] / 2]) - 2.4;       // left edge of the buttons + collar
-function rt_posts(h) = [[rt_left(h) - 4.2, h / 2 + rt_zc], [37 + 12 + 2.4 + 4.2, h / 2 + rt_zc]];   // carrier screws
+rt_post_d = 8.2;                                     // carrier posts: 2 mm of wall round the M3 insert
+function rt_posts(h) = [[rt_left(h) - 4.7, h / 2 + rt_zc], [37 + 12 + 2.4 + 4.7, h / 2 + rt_zc]];   // carrier screws
 function rt_leds(h) = let(n = btn_turbo ? 3 : 2, x1 = rt_posts(h)[0][0] - 3.5 - 7.5, zc = h / 2 + rt_zc)
     [for (i = [0 : n - 1]) [x1 - (n - 1 - i) * 12, zc + 1, btn_turbo ? ["power", "turbo", "hdd"][i] : ["power", "hdd"][i]]];
 function btn_keys(w, h) =
@@ -276,7 +279,7 @@ module buttons_add(w, h, t) {
     for (k = btn_leds(w, h)) led_tube(k);
     // retro: two posts with heat-set inserts for the switch carrier
     if (btn_type == "retro") for (p = rt_posts(h)) translate([p[0], -eps, p[1]]) rotate([-90, 0, 0])
-        cylinder(d = 7, h = rt_carrier_y + eps, $fn = 28);
+        cylinder(d = rt_post_d, h = rt_carrier_y + eps, $fn = 32);
 }
 
 module buttons_cut(w, h, t) {
@@ -285,7 +288,6 @@ module buttons_cut(w, h, t) {
     else for (k = btn_keys(w, h)) {
         if (btn_type == "metal") {
             translate([k[0], 0, k[1]]) slot_y(btn_metal_d + 0.3, 0, -t - eps, t + 2 * eps);
-            xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - btn_metal_d / 2 - 5.5]) icon2d(k[2], 4.6);
         } else {
             // MX cut-out through, plate thinned to 1.5 mm from behind so the clips catch
             xz_extrude(-t - eps, t + 2 * eps) translate([k[0], k[1]]) square(mx_cut, center = true);
@@ -299,17 +301,26 @@ module buttons_cut(w, h, t) {
                         square(2 * halo_w + 1.2, center = true);
                 }
             }
-            // engraved icon under the key
-            xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - mx_cut / 2 - (led_style == "halo" ? 7.5 : 5.2)])
-                icon2d(k[2], 4.6);
         }
     }
-    for (k = btn_leds(w, h)) led_cut(k, t, btn_led_style, btn_type != "retro");
+    for (k = btn_leds(w, h)) led_cut(k, t, btn_led_style, false);
+    xz_extrude(-t - eps, 0.6 + eps) btn_legends2d(w, h);
     if (btn_type == "retro") for (p = rt_posts(h)) translate([p[0], rt_carrier_y + eps, p[1]]) rotate([90, 0, 0])
         cylinder(d = hw("M3")[2], h = hw("M3")[3] + 0.3, $fn = 24);     // heat-set inserts for the carrier screws
-    if (btn_type == "retro") for (k = btn_leds(w, h))                 // retro LEDs are named, not drawn
-        xz_extrude(-t - eps, 0.6 + eps) translate([k[0], k[1] - led_d / 2 - 5.5])
-            text(upper(k[2]), size = 2.1, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
+}
+
+// the engraved icons and names of a button panel (0.6 mm deep): under each key, and under the ring LEDs
+module btn_legends2d(w, h) {
+    if (btn_type == "retro") {
+        for (k = rt_keys(h)) translate([k[0], k[1] - k[4] / 2 - 4.2]) legend2d(upper(k[2]), 2.6);
+        for (k = btn_leds(w, h)) translate([k[0], k[1] - led_d / 2 - 5.5]) legend2d(upper(k[2]), 2.1);   // named, not drawn (12 mm apart: no bigger)
+    } else {
+        for (k = btn_keys(w, h))
+            translate([k[0], k[1] - (btn_type == "metal" ? btn_metal_d / 2 + 5.5 : mx_cut / 2 + (led_style == "halo" ? 7.5 : 5.2))])
+                icon2d(k[2], 4.6);
+        if (btn_led_style == "ring") for (k = btn_leds(w, h))
+            translate([k[0], k[1] - led_d / 2 - 6]) icon2d(k[2] == "hdd" ? "hdd" : "power", 4.2);
+    }
 }
 
 // ---- retro ---------------------------------------------------------------------------------------
@@ -333,9 +344,6 @@ module retro_cut(w, h, t) {
         // the seat of the collar, widening 45 deg to the back face
         hull() for (g = [0, 1]) translate([0, -min(rt_collar, t - 0.6) + g * (min(rt_collar, t - 0.6) + eps), 0])
             rotate([90, 0, 0]) mirror([0, 0, 1]) linear_extrude(0.01) rt_opening2d(k[3], k[4], g * min(rt_collar, t - 0.6));
-        // its name under it
-        xz_extrude(-t - eps, 0.6 + eps) translate([0, -k[4] / 2 - 4.2])
-            text(upper(k[2]), size = 2.4, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
     }
     // pinstripes like the beige cases: two across the top, and a block on the left where there is room
     for (z = [h - 3.6, h - 6]) if (z > zc + 9)
@@ -346,9 +354,8 @@ module retro_cut(w, h, t) {
 }
 
 // a printed button: in its own coordinates, front face at z = 0 (prints face-down), the press along +z
-module button_cap(kind = btn_cap) {
+module button_cap(kind = btn_cap, t = filler_t) {
     c = rt_cap(kind);
-    t = filler_t;
     body = t + 1.5 - min(rt_collar, t - 0.6);
     cl = min(rt_collar, t - 0.6);
     linear_extrude(body) rt_opening2d(c[1] - 0.6, c[2] - 0.6);

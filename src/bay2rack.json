@@ -29,13 +29,13 @@
             "bays": "1",
             "fit": "overhang",
             "front_style": "plate",
-            "hole_pattern": "eia"
+            "hole_pattern": "auto"
         },
         "plate-overhang/2bay-2U": {
             "bays": "2",
             "fit": "overhang",
             "front_style": "plate",
-            "hole_pattern": "eia"
+            "hole_pattern": "auto"
         },
         "plate-overhang/3bay-3U": {
             "bays": "3",
@@ -68,7 +68,7 @@
             "bays": "1",
             "fit": "overhang",
             "front_style": "bezel",
-            "hole_pattern": "eia"
+            "hole_pattern": "auto"
         },
         "bezel-overhang/2bay-2U": {
             "bays": "2",
@@ -133,7 +133,8 @@
             "part": "rack_panel",
             "panel_u": "2",
             "panel_fill": "keystone",
-            "ks_ports": "12"
+            "ks_ports": "12",
+            "ks_ports_list": ""
         },
         "panels/1U-fan40": {
             "part": "rack_panel",
@@ -229,6 +230,19 @@
         "tests/keystone-standard": {
             "part": "test_keystone",
             "ks_style": "standard"
+        },
+        "tests/button-mx": {
+            "part": "test_button",
+            "btn_type": "mx"
+        },
+        "tests/button-metal-16": {
+            "part": "test_button",
+            "btn_type": "metal",
+            "btn_metal_d": "16"
+        },
+        "tests/button-retro": {
+            "part": "test_button",
+            "btn_type": "retro"
         }
     }
 }

@@ -376,6 +376,7 @@ function tolerancesEditor(mods, fills) {
     ...(v.rack_fixing === 'heatset' ? [['rack_insert_d', 'tol_insert', 0.05, 'test_rack']] : []),
     ...(v.bay_fixing === 'heatset' ? [['bay_insert_d', 'tol_bay_insert', 0.05, 'test_bay']] : []),
     ...(mods.some((m) => modKind(m) === 'nkvm') ? [['nkvm_insert_d', 'tol_nkvm_insert', 0.05, 'first']] : []),
+    ...((fills.includes('buttons') || mods.includes('buttons')) && v.btn_type === 'mx' ? [['mx_cut', 'tol_mx', 0.05, 'test_button']] : []),
   ];
   return h('div', { className: 'tol' },
     h('small', { className: 'hint', textContent: t('tol_hint') }),
@@ -449,8 +450,18 @@ function trayEditor(kind, items, onChange) {
 }
 
 // smallest zone height (mm) each fill needs; the model warns too, the editor just won't offer what can't fit
-const FILL_MIN = { fan80: 82, fan40: 41, keystone: 30, buttons: 22 };
-const fillMin = (f) => FILL_MIN[f] ?? 6;
+// the height a fill needs, as the model checks it (a separate filler loses 0.8 mm to its clearance)
+const FILL_MIN = { fan80: 82, fan40: 41 };
+function fillMin(f) {
+  const v = S.values;
+  const sep = v.filler_mode === 'separate' ? 0.8 : 0;
+  if (f === 'buttons') return sep + (v.btn_type === 'retro' ? 30 : v.btn_type === 'metal' ? Number(v.btn_metal_d) + 12 : v.mx_cut + 13);
+  if (f === 'keystone') {
+    const metal = ksTypes(v).some((x) => x === 'rj45m' || ((x === 'cover' || x === 'pass') && v.ks_style === 'metal'));
+    return sep + 2 + (metal ? v.ksm_cav_h + 2 * v.ks_fit + 2 * v.ksm_wall : v.ks_h + 2 * v.ks_fit + 7);
+  }
+  return sep + (FILL_MIN[f] ?? 6);
+}
 
 // The spare zone(s): where they go, how the height is shared, and what fills each one. A fill that does
 // not fit at the current share but would fit at another one moves the share for you.
@@ -845,7 +856,7 @@ function showEchoes(echoes, errors) {
 function kitList(v, withTests = $('#withTests').checked) {
   const c = calc(v);
   const files = [{ name: 'adapter.stl', qty: 1, part: { part: 'adapter' } }];
-  const lettered = (fill) => fill === 'label' || (fill === 'keystone' && v.ks_labels);
+  const lettered = (fill) => fill === 'label' || fill === 'buttons' || (fill === 'keystone' && v.ks_labels);
   if (v.filler_mode === 'separate' && c.zones.length) {
     files.push({ name: 'filler.stl', qty: 1, part: { part: 'filler' } });
     if (v.labels_multicolour && lettered(c.zones[0])) files.push({ name: 'filler-labels.stl', qty: 1, part: { part: 'filler_labels' } });
@@ -858,7 +869,7 @@ function kitList(v, withTests = $('#withTests').checked) {
   for (const m of new Set(mods)) {
     const qty = mods.filter((x) => x === m).length;
     files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
-    if (v.labels_multicolour && (m === 'label' || (v.ks_labels && (m === 'patch'
+    if (v.labels_multicolour && (m === 'label' || m === 'buttons' || (v.ks_labels && (m === 'patch'
         || (modKind(m) === 'nkvm' && (modItems(m)[0] === 'side' ? v.nkvm_cover : modItems(m)[0] === 'ks' || v.nkvm_keystones > 0))))))
       files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
@@ -881,7 +892,8 @@ function kitList(v, withTests = $('#withTests').checked) {
     const q = sets * types.filter((x) => x === kind).length;
     if (q) files.push({ name: `keystone-${file}.stl`, qty: q, part: { part: 'keystone_cover', cover_type: file } });
   }
-  if (withTests) for (const x of TESTS) files.push({ name: `tests/${x}.stl`, qty: 1, part: { part: x } });
+  if (withTests) for (const x of [...TESTS, ...(btnSets ? ['test_button'] : [])])
+    files.push({ name: `tests/${x}.stl`, qty: 1, part: { part: x } });
   return files;
 }
 
