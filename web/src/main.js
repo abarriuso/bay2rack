@@ -1054,7 +1054,8 @@ function wire() {
   $('#fit').onclick = () => viewer.fit();
   $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
-  const narrow = matchMedia('(max-width: 900px)');
+  // (the same query as the one-screen configurator in style.css)
+  const narrow = matchMedia('(max-width: 900px) and (max-aspect-ratio: 5/4)');
   const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.viewer').after($('.results')));
   narrow.addEventListener('change', placeResults);
   placeResults();
