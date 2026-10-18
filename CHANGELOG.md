@@ -5,6 +5,13 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web generator: a first question (a fan or buttons, sockets, or a rack for devices); a "No soldering iron" switch
+  (M5 with square nuts, hex nuts in the bay); fixings that leave under 1 mm of wall to the bay side are off; the
+  modules left out of the rack, the ports and the fans limited to what fits; plain warnings without parameter names;
+  keyboard and screen-reader fixes; a mirror on GitHub Pages (https://abarriuso.github.io/bay2rack/).
+- Model: the side-wall check covers every rack fixing (an M6 square nut or channel left 0.2 mm); hex nut pockets open
+  behind the post; fans and button panels in the BOM only where they fit; metal keystone cells stay between the posts;
+  PCI brackets with a keyhole an RJ45 plug passes; ports numbered by their place (covers carry no number).
 - Build guide (`docs/BUILD.md`, in Spanish too): what to buy, the print order, the heat-set inserts, the assembly, the
   cables and power. The compatibility list has a five-minute case checklist and a Spanish version.
 - Bill of materials: the keystones are back (a renamed list had hidden them); the hardware of every NanoKVM bay as it

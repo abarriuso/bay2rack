@@ -1,11 +1,12 @@
-name: Redirect to the web generator (GitHub Pages)
+name: Web generator mirror (GitHub Pages)
 
 # The web generator lives on Cloudflare Pages (https://bay2rack.pages.dev/, built from web/ on every push).
-# The old GitHub Pages address only sends visitors there, keeping the #anchor (e.g. #build).
+# This builds the same site on GitHub Pages (https://abarriuso.github.io/bay2rack/): a mirror for when the
+# Cloudflare address cannot be reached (Spanish ISPs block Cloudflare IP ranges during football matches).
 on:
   push:
     branches: [main]
-    paths: [.github/workflows/pages.yml]
+    paths: [web/**, src/**, stl/**, docs/img/**, docs/gallery/**, docs/video/**, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions:
@@ -20,22 +21,24 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
     steps:
-      - run: |
-          mkdir site
-          cat > site/index.html <<'HTML'
-          <!doctype html>
-          <meta charset="utf-8">
-          <title>bay2rack</title>
-          <link rel="canonical" href="https://bay2rack.pages.dev/">
-          <meta http-equiv="refresh" content="0; url=https://bay2rack.pages.dev/">
-          <script>location.replace('https://bay2rack.pages.dev/' + location.hash)</script>
-          <p>bay2rack has moved to <a href="https://bay2rack.pages.dev/">bay2rack.pages.dev</a>.</p>
-          HTML
-          cp site/index.html site/404.html
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: web/dist
 
   deploy:
     needs: build

@@ -9,9 +9,11 @@ un router con VLANs, switches, KVM por IP, blades de Raspberry Pi y un patch pan
 
 ![Un sleeper beige de los 90 se despliega: dentro, un servidor moderno; sus bahías de 5,25" se convierten en un rack](docs/video/assemble.gif)
 
-> **[Abre el generador web](https://bay2rack.pages.dev/)**: parte de un montaje ya hecho, elige las bahías,
+> **[Abre el generador web](https://bay2rack.pages.dev/)** ([copia](https://abarriuso.github.io/bay2rack/) si esa
+> dirección no carga): di qué quieres en las bahías (un ventilador o botones, enchufes o un rack para aparatos), elige
 > qué va en cada U del rack y en cada puerto del patch panel, míralo montado en una caja de PC real (o en un sleeper de
-> los 90) y descarga un **kit (.zip)** con todos los STL y la lista de materiales. Todo se ejecuta en tu navegador.
+> los 90) y descarga un **kit (.zip)** con todos los STL, la lista de materiales y los ajustes de impresión. Todo se
+> ejecuta en tu navegador.
 >
 > **¿Solo quieres imprimir?** Las variantes ya generadas están en [`stl/`](stl/README.md), con los tornillos e insertos
 > que necesita cada una. Imprime primero las [piezas de prueba](stl/README.md#tests) y [ajusta las holguras](#impresión).
@@ -95,7 +97,7 @@ de 2U) que se atornilla a los agujeros del rack:
 | `kvm:jet+nano` | **Bandeja de KVM por IP**: de 1 a 3 cajas a elegir una al lado de otra (`jet` JetKVM, `nano` NanoKVM, `custom`), p. ej. `kvm:nano+nano`; avisa si no caben |
 | `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2,5, USB y Ethernet por delante; dos placas una al lado de otra con HAT PoE |
 | `piblade:pi5+pi5+pi5+pi5` | **Blades de Raspberry Pi de 2U**: hasta cuatro placas de canto, cada una en su aleta, con separadores que se imprimen sin soportes |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM** en tres piezas (`ks`: dos), con tapa sobre insertos térmicos M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
+| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM Lite** en tres piezas (`ks`: dos), con tapa sobre insertos térmicos M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
 | `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
 | `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas o una rejilla hexagonal (`fan_guard`) |
 | `shelf` | Estante con ranuras para bridas para dispositivos pequeños |
@@ -173,7 +175,7 @@ Si tus accesorios son distintos, usa `rack_std = custom`.
 |---|---|
 | Tornillo de rack | M3, M4, M5, M6, 10-32, 12-24 |
 | Cabeza | botón (ISO 7380), allen (ISO 4762), avellanada (ISO 10642, añade avellanado a los paneles), alomada (ISO 7045) |
-| Fijación de rack | inserto térmico, autorroscante, tuerca hexagonal, tuerca cuadrada lateral, canal continuo de tuercas cuadradas (tornillos a cualquier altura) |
+| Fijación de rack | inserto térmico, autorroscante, tuerca hexagonal, tuerca cuadrada lateral, canal continuo de tuercas cuadradas (tornillos a cualquier altura). Las tuercas piden M5 o menos (la hexagonal, M4): la de M6 no deja plástico entre el poste y el lateral de la bahía, y el modelo lo avisa |
 | Tornillo de bahía | M3 o 6-32, con inserto térmico, autorroscante, tuerca hexagonal o agujero pasante + tuerca suelta |
 | Ajustes finos | `rack_insert_d/l`, `bay_insert_d/l` para tus insertos; `rack_screw_len`, `bay_screw_len` (0 = automático) |
 
@@ -230,7 +232,8 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 
 ## Personalizar
 
-- **Generador web:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) ejecuta OpenSCAD compilado a
+- **Generador web:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) (copia en
+  [GitHub Pages](https://abarriuso.github.io/bay2rack/), generada desde el mismo `main`) ejecuta OpenSCAD compilado a
   WebAssembly en el navegador: un modo sencillo paso a paso con ayuda al pasar el ratón, un modo avanzado con todos los
   parámetros, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit
   .zip con todos los STL. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.

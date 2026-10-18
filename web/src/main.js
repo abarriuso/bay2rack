@@ -88,7 +88,8 @@ function setColour(name, hex) {
 }
 
 const $ = (s) => document.querySelector(s);
-const NARROW = '(max-width: 900px)';
+// phones and narrow windows: the one-screen configurator (the same query as in style.css)
+const NARROW = '(max-width: 900px) and (max-aspect-ratio: 5/4)';
 const h = (tag, { dataset, ...props } = {}, ...kids) => {
   // aria-* are attributes, not properties
   const aria = Object.entries(props).filter(([k]) => k.startsWith('aria-'));

@@ -30,6 +30,7 @@
   --r: 6px;
   --r-s: 3px;
   --measure: 1200px;
+  --page: 1640px;                 /* the wide frame: header, hero and configurator share its edges */
   --gutter: clamp(16px, 4vw, 40px);
   color-scheme: light;
 }
@@ -60,7 +61,7 @@
 html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); scroll-snap-type: y proximity; -webkit-text-size-adjust: 100%; }
 :root { --top-h: calc(57px + env(safe-area-inset-top, 0px)); }
 .hero-band, .band, .build { scroll-snap-align: start; }
-.hero-band, .band { min-height: calc(100svh - var(--top-h)); display: grid; align-content: center; }
+.hero-band, .band { min-height: min(calc(100svh - var(--top-h)), 1200px); display: grid; align-content: center; }
 .hero-band > *, .band > * { min-width: 0; width: 100%; }
 .foot { scroll-snap-align: end; }
 @media (prefers-reduced-motion: reduce) {
@@ -115,7 +116,8 @@ button:disabled { opacity: .45; cursor: default; }
 .top {
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: var(--s-4);
-  padding: calc(10px + env(safe-area-inset-top, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px)) 10px max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding: calc(10px + env(safe-area-inset-top, 0px)) max(var(--gutter), env(safe-area-inset-right, 0px), calc((100% - var(--page)) / 2 + var(--gutter)))
+    10px max(var(--gutter), env(safe-area-inset-left, 0px), calc((100% - var(--page)) / 2 + var(--gutter)));
   transition: transform .25s ease;
   background: color-mix(in srgb, var(--ground) 86%, transparent); backdrop-filter: saturate(1.2) blur(12px);
   border-bottom: 1px solid var(--rule);
@@ -137,7 +139,7 @@ button:disabled { opacity: .45; cursor: default; }
 /* text on the left, the film on the right (two thirds of the width) */
 .hero {
   display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7.5fr); gap: clamp(28px, 3.5vw, 60px); align-items: center;
-  max-width: 1640px; margin: 0 auto; padding: clamp(28px, 4vw, 60px) var(--gutter) clamp(40px, 5vw, 76px);
+  max-width: var(--page); margin: 0 auto; padding: clamp(28px, 4vw, 60px) var(--gutter) clamp(40px, 5vw, 76px);
 }
 .hero-copy { display: grid; gap: var(--s-4); align-content: center; min-width: 0; }
 .hero h1 {
@@ -258,7 +260,7 @@ button:disabled { opacity: .45; cursor: default; }
 #examplesList { padding: var(--s-3) 0 0; }
 .layout {
   --panel-w: 410px;
-  display: grid; grid-template-columns: var(--panel-w) minmax(0, 1fr); align-items: start; max-width: 1680px; margin: 0 auto;
+  display: grid; grid-template-columns: var(--panel-w) minmax(0, 1fr); align-items: start; max-width: var(--page); margin: 0 auto;
   border-block: 1px solid var(--rule);
   /* the steps column keeps its fill and its edge down the whole configurator */
   background: linear-gradient(90deg, var(--plate) calc(var(--panel-w) - 1px), var(--rule) 0 var(--panel-w), transparent 0);
@@ -411,7 +413,7 @@ button:disabled { opacity: .45; cursor: default; }
 .slider input[type=range] { width: 100%; accent-color: var(--signal); }
 
 .stage { display: grid; min-width: 0; padding: var(--s-4) var(--gutter) var(--s-6) var(--s-5); gap: var(--s-4); }
-.viewer { position: relative; height: clamp(420px, calc(100vh - var(--top-h) - 110px), 900px); border-radius: var(--r); overflow: hidden; background: var(--stage); border: 1px solid var(--rule); }
+.viewer { position: relative; height: clamp(280px, calc(100vh - var(--top-h) - 110px), 900px); border-radius: var(--r); overflow: hidden; background: var(--stage); border: 1px solid var(--rule); }
 .view { position: absolute; inset: 0; }
 .view canvas { width: 100%; height: 100%; display: block; }
 .tabs {
@@ -541,8 +543,15 @@ button:disabled { opacity: .45; cursor: default; }
 }
 @media (max-width: 900px) {
   .nav { display: none; }
-  /* the configurator is one screen: the 3D view on top, the steps (and then the downloads) scroll on their
-     own below it, so nothing slides under the view and each area keeps its own touch */
+  .how { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
+  .how li:not(:last-child)::after { left: 17px; right: auto; top: 36px; bottom: calc(-1 * var(--s-5)); width: 3px; height: auto; }
+  .how li { grid-template-columns: 36px minmax(0, 1fr); column-gap: var(--s-4); }
+  .how li b { grid-row: span 2; margin: 0; }
+}
+/* narrow and upright (phones, tablets): the configurator is one screen, the 3D view on top and the steps (and then
+   the downloads) scrolling on their own below it, so nothing slides under the view and each area keeps its own touch.
+   The same query is in main.js (STACKED). */
+@media (max-width: 900px) and (max-aspect-ratio: 5/4) {
   /* on phones the site header slides away while you scroll down and comes back when you scroll up */
   html.head-off .top { transform: translateY(-100%); }
   /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
@@ -552,7 +561,7 @@ button:disabled { opacity: .45; cursor: default; }
     border-block: 0;
   }
   .stage { display: contents; }
-  .viewer { order: -1; margin: 0; height: min(42svh, 440px); min-height: 220px; flex: none; border-radius: 0; border-width: 0 0 1px; }
+  .viewer { order: -1; margin: 0; height: min(42svh, 440px); min-height: 200px; flex: none; border-radius: 0; border-width: 0 0 1px; }
   .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
   .panel {
     /* the end of the steps does not carry the page on: the 3D view stays on screen */
@@ -565,10 +574,11 @@ button:disabled { opacity: .45; cursor: default; }
   .panel .more-link { display: block; margin-top: var(--s-4); color: var(--ink-3); font-size: 13px; }
   .downloads .primary { flex: 1 1 100%; }
   .prebuilt { margin-left: 0; }
-  .how { grid-template-columns: minmax(0, 1fr); gap: var(--s-5); }
-  .how li:not(:last-child)::after { left: 17px; right: auto; top: 36px; bottom: calc(-1 * var(--s-5)); width: 3px; height: auto; }
-  .how li { grid-template-columns: 36px minmax(0, 1fr); column-gap: var(--s-4); }
-  .how li b { grid-row: span 2; margin: 0; }
+}
+/* narrow and wide (zoomed in, phone on its side): steps and view side by side, a narrower steps column */
+@media (max-width: 900px) and (min-aspect-ratio: 501/400) {
+  .layout { --panel-w: clamp(240px, 38vw, 340px); }
+  .panel { padding-inline: var(--s-3); }
 }
 /* ------------------------------------------------------------ phone */
 @media (max-width: 760px) {

@@ -9,9 +9,10 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 
 ![A beige 90s sleeper unfolds: a modern server inside, its 5.25" bays become a rack](docs/video/assemble.gif)
 
-> **[Open the web generator](https://bay2rack.pages.dev/)**: start from a ready-made build, choose the bays,
+> **[Open the web generator](https://bay2rack.pages.dev/)** ([mirror](https://abarriuso.github.io/bay2rack/) if that
+> address does not load): say what you want in the bays (a fan or buttons, sockets, or a rack for devices), choose
 > what goes in every rack unit and every patch panel port, see it mounted in a real PC case (or a 90s sleeper), and
-> download a **kit (.zip)** with every STL and the bill of materials. It all runs in your browser.
+> download a **kit (.zip)** with every STL, the bill of materials and the print settings. It all runs in your browser.
 >
 > **Just want to print?** Pre-built variants are in [`stl/`](stl/README.md), with the screws and inserts they need.
 > Print the [test pieces](stl/README.md#tests) first and [tune the print fits](#printing).
@@ -95,7 +96,7 @@ that screws to the rack holes:
 | `kvm:jet+nano` | **KVM over IP tray**: 1 to 3 boxes of your choice side by side (`jet` JetKVM, `nano` NanoKVM, `custom`), e.g. `kvm:nano+nano`; it warns when they don't fit |
 | `pi:pi5` | **Raspberry Pi tray**: Pi 5 / 4 / 3 or Zero flat on M2.5 standoffs, USB and Ethernet through the front; two boards side by side with PoE HATs |
 | `piblade:pi5+pi5+pi5+pi5` | **2U Raspberry Pi blades**: up to four boards on edge, each on its own fin, standoffs that print without supports |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **NanoKVM bay** in three pieces (`ks`: two) with a lid on M3 heat-set inserts, the heatsink in the open. `side`: standing out of the case in a little mountain, its ports open at both sides so you plug in from outside; the cables run outside or into the case through slots at the ends (`nkvm_raised`; off = in a pocket of the plate). `front`: a drawer with the Ethernet port in its face that slides out of the front with the NanoKVM (two screws), up to two keystones beside it. `ks`: the Ethernet port comes to keystone 1, the NanoKVM flat right behind it with a straight 10 cm patch cable (`nkvm_patch`). `nkvm_split = false` prints the plate and the bay in one piece |
+| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **NanoKVM Lite bay** in three pieces (`ks`: two) with a lid on M3 heat-set inserts, the heatsink in the open. `side`: standing out of the case in a little mountain, its ports open at both sides so you plug in from outside; the cables run outside or into the case through slots at the ends (`nkvm_raised`; off = in a pocket of the plate). `front`: a drawer with the Ethernet port in its face that slides out of the front with the NanoKVM (two screws), up to two keystones beside it. `ks`: the Ethernet port comes to keystone 1, the NanoKVM flat right behind it with a straight 10 cm patch cable (`nkvm_patch`). `nkvm_split = false` prints the plate and the bay in one piece |
 | `dev1`, `dev2` | A made-to-measure tray for any device: set its width, height and depth |
 | `fan40` | 1U panel with up to three **40 mm fans** behind round openings or a hex grille (`fan_guard`) |
 | `shelf` | Shelf with zip-tie slots for small devices |
@@ -173,7 +174,7 @@ If your gear differs, set `rack_std = custom`.
 |---|---|
 | Rack screw | M3, M4, M5, M6, 10-32, 12-24 |
 | Head | button (ISO 7380), socket (ISO 4762), countersunk (ISO 10642, adds countersinks to panels), pan (ISO 7045) |
-| Rack fixing | heat-set insert, self-tapping, hex nut trap, square nut side slot, sliding square-nut channel (screws at any height) |
+| Rack fixing | heat-set insert, self-tapping, hex nut trap, square nut side slot, sliding square-nut channel (screws at any height). Nuts need M5 or smaller (hex nut: M4): an M6 nut leaves no plastic between the post and the side of the bay, and the model warns |
 | Bay screw | M3 or 6-32, with heat-set insert, self-tapping, hex nut or clearance + loose nut |
 | Overrides | `rack_insert_d/l`, `bay_insert_d/l` for your inserts; `rack_screw_len`, `bay_screw_len` (0 = auto) |
 
@@ -230,7 +231,8 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 
 ## Customizing
 
-- **Web generator:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) runs OpenSCAD compiled to
+- **Web generator:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) (mirror on
+  [GitHub Pages](https://abarriuso.github.io/bay2rack/), built from the same `main`) runs OpenSCAD compiled to
   WebAssembly in the browser: a simple step-by-step mode with hover help, an advanced mode with every parameter,
   shareable links, the bill of materials, single-part STL / coloured 3MF downloads and a kit .zip with every STL.
   The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
