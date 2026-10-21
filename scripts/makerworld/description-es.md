@@ -37,8 +37,9 @@ tuercas en vez de insertos...) está en el modelo paramétrico: usa el configura
 
 ## Tornillería (adaptador de 3 bahías, valores por defecto)
 
-- Rack: tornillos M6 x 12 de cabeza de botón + insertos térmicos M6 (agujero de 8 mm) en el adaptador; los módulos
-  se atornillan a esos insertos, no necesitan los suyos. ¿Sin soldador? Elige una tuerca en el configurador (cuadrada con M6).
+- Rack: tornillos M5 x 10 de cabeza de botón + insertos térmicos M5 (agujero de 6,4 mm) en el adaptador; los módulos
+  se atornillan a esos insertos, no necesitan los suyos. ¿Sin soldador? Activa «No tengo soldador» en el configurador
+  (tuercas cuadradas). M6, 10-32 o 12-24 si lo prefieres.
 - Bahía: 6 tornillos M3 x 5 + insertos térmicos M3.
 - Keystones: estándar de 14,9 x 16,4 mm o RJ45 metálicos / apantallados (la celda los sujeta por detrás).
 

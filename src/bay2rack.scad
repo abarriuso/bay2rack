@@ -88,8 +88,8 @@ rack_u_h = 44.45; // [40:0.01:50]
 hole_pattern = "auto"; // [auto:Auto - EIA inside the bays / centre when the units stick out, eia:EIA-310 - 3 holes per U, eia_outer:2 holes per U - outer, center:1 hole per U - centre, none:No holes]
 
 /* [Rack hardware] */
-// 10in mini rack convention: M6, 10-32 or 12-24
-rack_screw = "M6"; // [M3, M4, M5, M6, 10-32, 12-24]
+// 10in mini rack convention: M6, 10-32 or 12-24. M5 by default: it leaves more plastic between the inserts or nuts and the bay side, and M5 screws go through the M6 holes of other mini rack panels too
+rack_screw = "M5"; // [M3, M4, M5, M6, 10-32, 12-24]
 // Rack screw head (countersunk adds countersinks to the panels)
 rack_screw_head = "button"; // [button:Button head - ISO 7380, socket:Socket head - ISO 4762, countersunk:Countersunk - ISO 10642, pan:Pan head - ISO 7045]
 // Screw length in mm (0 = pick the right standard length automatically)

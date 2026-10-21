@@ -5,6 +5,14 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- **M5 rack screws by default** (were M6): an M5 heat-set insert leaves 2.2 mm of plastic to the bay side instead of
+  1.4 mm, the nuts fit too (no soldering iron), and M5 screws still go through the M6 holes of other mini rack
+  panels. M6, 10-32 and 12-24 stay in the Screws step. Every pre-built STL is rebuilt; the rack test piece is now
+  `tests/rack-M5-heatset.stl`.
+- NanoKVM bay in a pocket (`nkvm:side`, not raised): its floor, roof and posts stop short of the rim of the adapter's
+  front frame for the depth of that frame, and the plate's screw bosses keep clear of its edges.
+- Web generator: the hero film loads after the page and is 960 px on phones (1.1 MB instead of 3.4 MB); it stays a
+  still with reduced motion or data saving. Page weight on a phone: 3.2 MB -> 1.3 MB.
 - Web generator, simpler: the steps most people leave as they are (device sizes, screws, print fits, multicolour,
   colour, 3D view) are folded to one line that says what they are set to; a "Download the kit" button stays at the
   foot of the steps from the first one; a first visit opens the ready-made builds; plain questions for the step

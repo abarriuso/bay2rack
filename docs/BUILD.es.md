@@ -8,12 +8,12 @@ del kit trae los tornillos, insertos y keystones exactos de tu montaje; esta gu�
 ## 1. Lo que necesitas
 
 **Herramientas**
-- Un soldador con punta para insertos térmicos (una para M3 y otra para los insertos del rack, M6 por defecto).
-  ¿Sin soldador? Activa **No tengo soldador** en el paso **Tornillos**: tornillos M5 con tuerca cuadrada en el rack y
-  tuerca hexagonal en la bahía, todo con un destornillador. (La tuerca de M6 es demasiado ancha: no dejaría plástico
-  entre el poste y el lateral de la bahía.) La bahía NanoKVM y el soporte de la botonera retro siguen llevando
+- Un soldador con punta para insertos térmicos (una para M3 y otra para los insertos del rack, M5 por defecto).
+  ¿Sin soldador? Activa **No tengo soldador** en el paso **Tornillos**: tuercas cuadradas para los tornillos M5 del rack
+  y hexagonales en la bahía, todo con un destornillador. (Las tuercas piden M5 o menos: la de M6 es demasiado ancha y
+  no dejaría plástico entre el poste y el lateral de la bahía.) La bahía NanoKVM y el soporte de la botonera retro siguen llevando
   insertos térmicos M3.
-- Llaves allen o destornilladores para tus tornillos (M6 de cabeza botón: allen de 4 mm; M3: allen de 2 mm o
+- Llaves allen o destornilladores para tus tornillos (M5 de cabeza botón: allen de 3 mm; M3: allen de 2 mm o
   Phillips para las cabezas alomadas).
 - Alicates de corte y un desbarbador o una lima pequeña.
 
@@ -24,8 +24,10 @@ del kit trae los tornillos, insertos y keystones exactos de tu montaje; esta gu�
 - Cama: un adaptador de 3 bahías ocupa 148 × 128 mm en la cama y mide unos 70 mm de alto.
 
 **Tornillería** (las cantidades están en la lista del kit)
-- Tornillos e insertos del rack: por defecto *M6 × 12 de cabeza botón (ISO 7380)* e *insertos térmicos M6 de
-  8 mm de agujero y 12,7 mm de largo*. Marcas como Ruthex o CNC Kitchen tienen las dos medidas.
+- Tornillos e insertos del rack: por defecto *M5 × 10 de cabeza botón (ISO 7380)* e *insertos térmicos M5 de
+  6,4 mm de agujero y 9,5 mm de largo*. Marcas como Ruthex o CNC Kitchen tienen las dos medidas. (Los tornillos M5
+  pasan también por los agujeros M6 de paneles hechos para otros mini racks; M6 está en el paso **Tornillos** si lo
+  prefieres.)
 - Tornillos de la bahía: *M3 × 5 de cabeza alomada* con *insertos térmicos M3 (agujero de 4,2 mm, 5,7 mm de largo)*.
   Los tornillos del lector de DVD viejo suelen ser M3 × 5 y valen.
 - Keystones: las **celdas metálicas** del patch panel llevan keystones RJ45 metálicos / apantallados, que entran por
@@ -38,7 +40,7 @@ del kit trae los tornillos, insertos y keystones exactos de tu montaje; esta gu�
 ## 2. Imprime primero las piezas de prueba
 
 Están en la carpeta `tests/` del kit (`test_bay`, `test_rack`, `test_keystone` y `test_button` si hay botonera). En
-[`stl/tests`](../stl/README.md#tests) se llaman `bay-plate` / `bay-bezel`, `rack-M6-heatset`, `keystone-metal` /
+[`stl/tests`](../stl/README.md#tests) se llaman `bay-plate` / `bay-bezel`, `rack-M5-heatset`, `keystone-metal` /
 `keystone-standard` y `button-mx` / `button-metal-16` / `button-retro`.
 
 | Pieza de prueba | Qué miras | Si no va bien |
@@ -63,9 +65,9 @@ solo objeto con varias partes»; luego da a las letras el segundo filamento.
 - Usa la temperatura que indique el fabricante de tus insertos para tu filamento (normalmente 200–250 °C).
 - Pon el inserto sobre el agujero, empuja recto y despacio con la punta que le corresponde y para cuando quede
   enrasado. Déjalo enfriar antes de atornillar.
-- **Insertos del rack (delante de los postes del adaptador):** con M6 solo quedan 1,4 mm de plástico entre el
-  inserto y el lateral de la bahía (el modelo lo avisa en una nota). Mételos despacio para que esa pared no se abombe
-  y comprueba después que el adaptador sigue entrando en las bahías. Con M5 o M4 quedan 2 mm o más.
+- **Insertos del rack (delante de los postes del adaptador):** los M5 dejan 2,2 mm de plástico entre el inserto y el
+  lateral de la bahía. Mételos rectos para que esa pared no se abombe y comprueba después que el adaptador sigue
+  entrando en las bahías. (Los M6 solo dejan 1,4 mm; el modelo lo avisa en una nota.)
 - **Insertos de la bahía:** dentro de las guías, en las torretas que quedan detrás de los agujeros laterales.
 - Módulos: los postes de la tapa y las torretas del cajón del NanoKVM (M3), los postes del soporte de la botonera
   retro (M3).

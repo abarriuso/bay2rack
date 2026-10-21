@@ -47,7 +47,7 @@ STLS = [
     ("pci-bracket-lan.stl", "rear/pci-lan.stl"),
     ("pci-bracket-power.stl", "rear/pci-power.stl"),
     ("test-bay-plate.stl", "tests/bay-plate.stl"),
-    ("test-rack-M6.stl", "tests/rack-M6-heatset.stl"),
+    ("test-rack-M5.stl", "tests/rack-M5-heatset.stl"),
     ("test-keystone-metal.stl", "tests/keystone-metal.stl"),
 ]
 # first one is the cover

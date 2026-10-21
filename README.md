@@ -164,7 +164,7 @@ There is no official 6" standard, so this project uses **the 10" mini rack rules
 - 152.4 mm (6") panels
 - **134.925 mm hole spacing**: the same 8.74 mm edge-to-hole inset as the 10" standard (254 mm panel, 236.525 mm spacing)
 - EIA-310 vertical hole pattern (6.35 / 22.225 / 38.1 mm in each U), 1U = 44.45 mm
-- M6, 10-32 or 12-24 screws, with M6 as the default
+- M6, 10-32 or 12-24 screws, or M5 (the default: more plastic to the bay side, and it still goes through M6 holes)
 
 If your gear differs, set `rack_std = custom`.
 
@@ -183,8 +183,8 @@ ear thickness, the case sheet thickness and the fixing type, and warns when noth
 Every render prints a bill of materials:
 
 ```
-BOM | rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)
-BOM | filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)
+BOM | rack accessories: 12 x M5 x 10 button head  +  12 x M5 heat-set insert (hole 6.4 x 9.5 mm)
+BOM | filler panels: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)
 BOM | drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)
 ```
 
@@ -215,7 +215,7 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 > | `test_button` | the MX key, metal push button or printed cap fits | MX: raise `mx_cut` | MX: lower `mx_cut` |
 >
 > In a kit they are `tests/test_*.stl`; in [`stl/tests`](stl/README.md#tests) they are `bay-plate` / `bay-bezel`,
-> `rack-M6-heatset`, `keystone-metal` / `keystone-standard` and `button-mx` / `button-metal-16` / `button-retro`.
+> `rack-M5-heatset`, `keystone-metal` / `keystone-standard` and `button-mx` / `button-metal-16` / `button-retro`.
 > The rest follow the same idea: `cover_clear` for the keystone covers, `mount_clear` for the devices in the rack
 > modules, `nkvm_insert_d` and `bay_insert_d` for the small heat-set inserts. In the web generator they are in the
 > **Print fits** step.
