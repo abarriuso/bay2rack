@@ -43,6 +43,10 @@ function split_keep(s, sep = ",", i = 0, cur = "") =
   : s[i] == " " && cur == "" ? split_keep(s, sep, i + 1, cur)
   : split_keep(s, sep, i + 1, str(cur, s[i]));
 
+// what follows the first c in s ("" if there is none); "_" -> " " (unscore: a space in a module spec)
+function str_after(s, c, i = 0) = !is_string(s) || i >= len(s) ? "" : s[i] == c ? str_from(s, i + 1) : str_after(s, c, i + 1);
+function str_from(s, i) = i >= len(s) ? "" : str(s[i], str_from(s, i + 1));
+function unscore(s) = !is_string(s) || len(s) == 0 ? "" : str_join([for (ch = s) ch == "_" ? " " : ch], "");
 function sum_list(v, i = 0) = i >= len(v) ? 0 : v[i] + sum_list(v, i + 1);
 function str_join(v, sep = ", ", i = 0) = i >= len(v) ? "" : str(v[i], i < len(v) - 1 ? sep : "", str_join(v, sep, i + 1));
 // "2 x a, 1 x b" from ["a", "b", "a"], in the order they first appear

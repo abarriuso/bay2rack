@@ -100,9 +100,9 @@ that screws to the rack holes:
 | `dev1`, `dev2` | A made-to-measure tray for any device: set its width, height and depth |
 | `fan40` | 1U panel with up to three **40 mm fans** behind round openings or a hex grille (`fan_guard`) |
 | `shelf` | Shelf with zip-tie slots for small devices |
-| `patch` | 1U patch panel with the ports you choose |
+| `patch` | 1U patch panel with the ports you choose: a bare `patch` takes `ks_ports_list` / `ks_names`, `patch:rj45m=NAS+hdmi+cover` has its own (port type, `=` its name, `_` for a space) |
 | `buttons` | 1U button panel (see below) |
-| `vent`, `blank`, `cable`, `label` | Vented (slots, louvres, honeycomb or holes), blank, cable pass-through and label panels |
+| `vent`, `blank`, `cable`, `label` | Vented (slots, louvres, honeycomb or holes), blank, cable pass-through and label panels (`label` says `label_text`, `label:MY_LAB` its own text) |
 
 A module can take more than one unit (the blades take 2U): the rack is filled from the top and a module that no
 longer fits becomes a blank.

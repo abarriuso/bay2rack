@@ -419,9 +419,9 @@ module mx_models(w, h, z0, yf) {
 }
 
 // yf = front face of the plate, t = its thickness (the fans sit behind it)
-module fill_devices(type, w, h, z0, yf, t = 3) {
+module fill_devices(type, w, h, z0, yf, t = 3, types = ks_types) {
     if (type == "keystone")
-        for (p = ks_layout(w, h, len(ks_types))) translate([p[0], 0, z0 + p[1]]) jack_model(ks_types[p[3]], yf);
+        for (p = ks_layout_of(min(w, 2 * x_in - 1), h, types)) translate([p[0], 0, z0 + p[1]]) jack_model(types[p[3]], yf);
     else if (type == "buttons") buttons_models(w, h, z0, yf);
     else if (type == "fan40" && h >= 41) for (x = fan40_xs(w)) fan_model(40, fan40_t, x, yf + t + 0.2, z0 + h / 2);
     else if (type == "fan80" && h >= 82) fan_model(80, 25, 0, yf + t + 0.2, z0 + h / 2);
@@ -455,7 +455,7 @@ module rack_contents() for (k = [0 : 1 : len(placed_mods) - 1]) if (preview_item
         else if (m == "fan40") fill_devices("fan40", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t, panel_t);
         else if (m == "shelf") nanokvm_model(yb + 6, z + shelf_z + 2);
         else if (mod_kind(m) == "nkvm") translate([0, yb, z]) nkvm_model(nk_layout(mod_items(m)));
-        else if (m == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
+        else if (mod_kind(m) == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t, types = patch_types(m));
         else if (m == "buttons") fill_devices("buttons", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);
     }
 }

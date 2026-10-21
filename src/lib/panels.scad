@@ -29,15 +29,15 @@ module filler_panel(zn) {
 // rack hole heights of an n-U panel (panel bottom at z = 0)
 function panel_zs(n) = [for (u = [0 : n - 1]) for (o = pat(hole_pat)) u * U + o - 0.395];
 
-module rack_panel_u(n, fill) {
+module rack_panel_u(n, fill, types = ks_types, names = PORT_NAMES, text = label_text) {
     h = n * U - 0.79;
     difference() {
         union() {
             plate(panel_w, h, panel_t, 0.6);
-            fill_add(fill, hole_s - R[0] - 6, h, panel_t);
+            fill_add(fill, hole_s - R[0] - 6, h, panel_t, types);
         }
         panel_holes(panel_zs(n), panel_t, panel_hole_slot);
-        fill_cut(fill, hole_s - R[0] - 6, h, panel_t);
+        fill_cut(fill, hole_s - R[0] - 6, h, panel_t, types, names, text);
     }
 }
 
@@ -55,7 +55,9 @@ module rack_module(type) {
     else if (type == "dev1") dev_mount(dev1_dims);
     else if (type == "dev2") dev_mount(dev2_dims);
     else if (type == "shelf") shelf_mount();
-    else rack_panel_u(1, type == "patch" ? "keystone" : type);
+    else if (mod_kind(type) == "patch") rack_panel_u(1, "keystone", patch_types(type), patch_names(type));
+    else if (mod_kind(type) == "label") rack_panel_u(1, "label", text = label_of(type));
+    else rack_panel_u(1, type);
 }
 
 // ---------------------------------------------------------------------
@@ -164,7 +166,8 @@ function nk_layout(items) = len(items) > 0 && (items[0] == "front" || items[0] =
 function nk_nks(lay) = lay == "ks" ? max(1, nk_n_ks()) : lay == "side" ? 0 : nk_n_ks();
 nk_ks_rear = 28.6;                                     // back of a metal keystone jack, behind the plate
 function nk_n_ks() = max(0, min(2, nkvm_keystones));
-function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
+nk_ksm = ks_style == "metal";                          // its jacks follow ks_style
+function nk_ks_w(n) = ks_cw_of(nk_ksm) + (n - 1) * ks_px_of(nk_ksm);   // width of the keystone group
 // the keystones' left edge: centred (ks), or 6 mm from the rack post with the drawer centred in what is left (front)
 function nk_ks_x0(lay = "side") = lay == "ks" ? -nk_ks_w(nk_nks("ks")) / 2 : lay == "front" ? -x_in + 6 : -x_in + 2;
 nk_top = nk_fl + nk_H + nk_c;                 // front layout: post tops = underside of the lid
@@ -246,9 +249,9 @@ module module_labels(type) {
     h = U - 0.79;
     lay = mod_kind(type) == "nkvm" ? nk_layout(mod_items(type)) : "";
     n = lay == "" ? 0 : nk_nks(lay);
-    if (type == "patch") fill_labels("keystone", hole_s - R[0] - 6, h, panel_t);
+    if (mod_kind(type) == "patch") fill_labels("keystone", hole_s - R[0] - 6, h, panel_t, patch_types(type), patch_names(type));
     else if (type == "buttons") fill_labels("buttons", hole_s - R[0] - 6, h, panel_t);
-    else if (type == "label") fill_labels("label", hole_s - R[0] - 6, h, panel_t);
+    else if (mod_kind(type) == "label") fill_labels("label", hole_s - R[0] - 6, h, panel_t, text = label_of(type));
     else if (lay != "") {
         if (n > 0 && ks_labels) translate([nk_ks_x0(lay) + nk_ks_w(n) / 2, 0, 0]) xz_extrude(-panel_t, ks_label_d)
             ks_labels2d(nk_ks_w(n) + 0.1, h, [for (i = [0 : n - 1]) ks_style == "metal" ? "rj45m" : "rj45"]);
@@ -402,7 +405,7 @@ module nk_side_mount(n, types, xk) {
 // ---- front layout: lying flat behind the plate ----
 // [x, y] of the board's Ethernet-end corner: centred, or right after the keystones so its port reads as one more in the row
 function nk_place_front(lay = "front") = lay == "ks"
-    ? [nk_ks_x0("ks") + ks_cw / 2 + nkvm_dims[2] / 2, nk_ks_rear + nkvm_patch]       // in line behind keystone 1
+    ? [nk_ks_x0("ks") + ks_cw_of(nk_ksm) / 2 + nkvm_dims[2] / 2, nk_ks_rear + nkvm_patch]       // in line behind keystone 1
     : [nk_f_xd() + nkvm_dims[2] / 2, nk_c];
 // ---- front layout: the NanoKVM in a drawer --------------------------------------------------------
 // Three pieces: the plate (two guides behind it that hold the drawer at the height that puts the Ethernet port in
@@ -849,8 +852,8 @@ module test_button() {
 
 module test_keystone() {
     tp = ks_style == "metal" ? "rj45m" : "rj45";
-    w = ks_cw + 8;
-    h = ks_hi - ks_lo + 8;
+    w = ks_cw_of(ks_metal_of([tp])) + 8;
+    h = ks_hi_of(ks_metal_of([tp])) - ks_lo_of(ks_metal_of([tp])) + 8;
     difference() {
         union() {
             plate(w, h, filler_t, 0.6);

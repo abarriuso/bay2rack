@@ -60,7 +60,8 @@ function makeParam(name, { type, value }, spec, desc) {
 // a typed value kept inside the parameter's range (and rounded to its step); a choice that is not on the list,
 // a vector of the wrong length or a number that is not one fall back to the default
 export function clampValue(p, v) {
-  if (p.options && !p.options.some((o) => String(o.value) === String(v))) return p.value;
+  // (a rack module may carry its settings after a colon: kvm:jet+nano, patch:rj45m=NAS+hdmi, label:MY_LAB)
+  if (p.options && !p.options.some((o) => String(o.value) === String(v) || String(o.value) === String(v).split(':')[0])) return p.value;
   if (p.type === 'vector' && (!Array.isArray(v) || v.length !== p.value.length || v.some((x) => !Number.isFinite(Number(x))))) return p.value;
   if (p.type === 'number' && !Number.isFinite(Number(v))) return p.value;
   const one = (x) => {

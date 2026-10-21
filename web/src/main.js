@@ -147,6 +147,8 @@ const modU = (m) => (modKind(m) === 'piblade' ? 2 : 1);
 const modLabel = (m) => {
   const items = TRAYS[modKind(m)] ? modItems(m) : [];
   if (!MODULES.includes(modKind(m))) return String(m);
+  if (modKind(m) === 'patch' && m.includes(':')) return `${t('mod_patch')} · ${t('nPorts', { n: patchOf(m).types.length })}`;
+  if (modKind(m) === 'label' && m.includes(':')) return `${t('mod_label')} · «${labelOf(m)}»`;
   return t('mod_' + modKind(m)) + (items.length ? ` · ${items.map((x) => (TRAYS[modKind(m)].items.includes(x) ? t('box_' + x) : x)).join(' + ')}` : '');
 };
 const modFile = (m) => String(m).replace(/[:+]/g, '-');
@@ -201,17 +203,23 @@ const zoneBox = (v, height) => (v.filler_mode === 'separate' ? [panelW(v), heigh
 const moduleBox = (v) => [panelW(v), v.rack_u_h - 0.79];
 // how many keystones fit in w x h (ks_layout in fills.scad)
 const isMetalPort = (x, v) => x === 'rj45m' || ((x === 'cover' || x === 'pass') && v.ks_style === 'metal');
-function ksCapacity([w, h], v = S.values) {
-  const metal = ksTypes(v).some((x) => isMetalPort(x, v));
+function ksCapacity([w, h], v = S.values, types = ksTypes(v)) {
+  const metal = types.some((x) => isMetalPort(x, v));
   const cw = metal ? v.ksm_w + 2 * v.ks_fit + 2 * v.ksm_wall : v.ks_w + 2 * v.ks_fit + 3;
   const px = metal ? v.ksm_pitch : v.ks_pitch;
   const cell = (metal ? v.ksm_cav_h + 2 * v.ks_fit + 2 * v.ksm_wall : v.ks_h + 2 * v.ks_fit + 7) + 1;
   return cw > w ? 0 : (Math.floor((w - cw) / px) + 1) * Math.max(0, Math.floor((h - 1) / cell));
 }
-// every place with the patch panel's ports, as [w, h]
+// every place with the strip's patch panel ports (ks_ports_list), as [w, h]: keystone zones and bare patch modules
 function ksPlaces(v, c = calc(v)) {
   return [...zoneList(v, c).filter(([f]) => f === 'keystone').map(([, hh]) => zoneBox(v, hh)),
     ...usedMods(v, c.units).filter((m) => m === 'patch').map(() => moduleBox(v))];
+}
+// every patch panel of the build with its own ports: [box, types, names]
+function patchSets(v, c = calc(v)) {
+  const names = String(v.ks_names ?? '').split(',').map((x) => x.trim());
+  return [...ksPlaces(v, c).map((box) => [box, ksTypes(v), names]),
+    ...usedMods(v, c.units).filter((m) => modKind(m) === 'patch' && m !== 'patch').map((m) => [moduleBox(v), patchOf(m).types, patchOf(m).names])];
 }
 // how many 40 mm fans fit side by side in w x h (fan40_pitch in fills.scad)
 function fanMax([w, h]) {
@@ -222,11 +230,24 @@ function fanMax([w, h]) {
 // what is written over each port (ks_label in fills.scad): its name, else HDMI / USB…, else the number of its place
 const TYPE_NAMES = { hdmi: 'HDMI', usb: 'USB', rca: 'RCA', jack: 'AUDIO', toslink: 'OPTICAL' };
 const isJack = (tp) => tp !== 'cover' && tp !== 'pass' && tp !== 'none';
-function portLabels(v, types = ksTypes(v)) {
-  const names = String(v.ks_names ?? '').split(',').map((x) => x.trim());
+function portLabels(v, types = ksTypes(v), names = String(v.ks_names ?? '').split(',').map((x) => x.trim())) {
   const start = Number(v.ks_label_start ?? 1);
   return types.map((tp, i) => names[i] || TYPE_NAMES[tp] || (isJack(tp) ? String(start + types.slice(0, i).filter(isJack).length) : ''));
 }
+// a patch module with its own ports, "patch:rj45m=NAS+hdmi+cover" (_ = a space in a name), and a label module with
+// its own text, "label:MY_LAB"; a bare patch / label takes the strip's ks_ports_list / ks_names / label_text
+// (patch_types / patch_names / label_of in config.scad)
+const specText = (s) => String(s).replace(/[,:+="\\]/g, ' ').trim().replace(/\s+/g, '_');
+const unscore = (s) => String(s).replace(/_/g, ' ').trim();
+function patchOf(m, v = S.values) {
+  const spec = String(m).split(':')[1];
+  if (!spec) return { types: ksTypes(v), names: String(v.ks_names ?? '').split(',').map((x) => x.trim()) };
+  const items = spec.split('+').filter(Boolean).map((x) => x.split('='));
+  return { types: items.map(([tp]) => tp), names: items.map(([, n]) => unscore(n ?? '')) };
+}
+const patchSpec = (types, names) => 'patch:' + types.map((tp, i) => (specText(names[i] ?? '') ? `${tp}=${specText(names[i])}` : tp)).join('+');
+const labelOf = (m, v = S.values) => (String(m).includes(':') ? unscore(String(m).slice(String(m).indexOf(':') + 1)) : String(v.label_text));
+const labelSpec = (text) => 'label:' + (specText(text) || '_');
 
 // ---------------------------------------------------------------- engine
 const viewer = new Viewer($('#view'));
@@ -397,9 +418,10 @@ function renderSteps() {
       { cls: 'seg-btn', disabled: x > max, tip: x > max ? t('fansMax', { n: max }) : undefined }))),
       rowTitle('fans_thick'), segmented('fan40_t', [10, 20], (x) => `${x}\u00a0mm`));
   }
+  // the strip's patch panel (and a bare patch module); a patch module with its own ports edits them in its row
   if (fills.includes('keystone') || mods.includes('patch')) add('ports', portsEditor(6));
   if (fills.includes('buttons') || mods.includes('buttons')) add('buttons', buttonsEditor());
-  if (fills.includes('label') || mods.includes('label')) add('label', labelEditor());
+  if (fills.includes('label') || mods.some((m) => modKind(m) === 'label')) add('label', labelEditor(fills.includes('label') || mods.includes('label')));
   if (fills.includes('vent') || mods.includes('vent'))
     add('vent', segmented('vent_style', ['slots', 'louvres', 'hex', 'dots'], (x) => t('vent_' + x)), sliderRow('vent_margin', t('vent_margin')));
   // 3. making it: screws, and the fits to tune after printing the test pieces
@@ -452,12 +474,13 @@ function sliderRow(name, label) {
 }
 
 // the engraved label: what it says, how big, where, and whether it goes into or out of the panel
-function labelEditor() {
+// (the text here is the strip's; a label module says its own, written in its row)
+function labelEditor(withText = true) {
   const v = S.values;
   const text = h('input', { type: 'text', className: 'text label-text', value: v.label_text, maxLength: 40,
     placeholder: 'HOMELAB', onchange: () => update({ label_text: text.value }) });
   return [
-    h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text),
+    withText ? h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text) : null,
     segmented('label_relief', ['engraved', 'raised'], (x) => t('relief_' + x)),
     segmented('label_align', ['left', 'center', 'right'], (x) => t('align_' + x)),
     sliderRow('label_size', t('lab_size')),
@@ -500,9 +523,9 @@ const INSERT_D = { M3: 4.2, M4: 5.6, M5: 6.4, M6: 8, '6-32': 4.4, '10-32': 6.4, 
 // the fits that depend on your printer: print the test pieces first, then move these
 function tolerancesEditor(mods, fills) {
   const v = S.values;
-  const keystones = fills.includes('keystone') || mods.includes('patch') || mods.some((m) => modKind(m) === 'nkvm');
-  const devices = mods.some((m) => m !== 'blank' && !FILLS.includes(m) && m !== 'patch');
-  const covers = ksTypes(v).some((x) => x === 'cover' || x === 'pass') && (fills.includes('keystone') || mods.includes('patch'));
+  const keystones = fills.includes('keystone') || mods.some((m) => modKind(m) === 'patch' || modKind(m) === 'nkvm');
+  const devices = mods.some((m) => m !== 'blank' && !FILLS.includes(modKind(m)) && modKind(m) !== 'patch');
+  const covers = patchSets(v).some(([, types]) => types.some((x) => x === 'cover' || x === 'pass'));
   // [parameter, label, step, the test piece that checks it]
   const rows = [
     ['sleeve_clearance', 'tol_sleeve', 0.05, 'test_bay'],
@@ -545,7 +568,19 @@ function contentsEditor(placed) {
       h('span', { className: 'u', textContent: p.top === 0 ? `${u}\u00a0·\u00a0${t('top')}` : u }),
       // a 2U module is only offered where two units are left
       select(null, MODULES.map((x) => [x, modU(x) > units - p.top ? `${t('mod_' + x)} ${t('needs2U')}` : t('mod_' + x), modU(x) > units - p.top]),
-        kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}` : val)));
+        kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}`
+          // a new patch panel / label starts as a copy of the strip's, then it is its own
+          : val === 'patch' ? patchSpec(ksTypes(S.values), patchOf('patch').names) : val === 'label' ? labelSpec(S.values.label_text) : val)));
+    if (kind === 'patch') {
+      const own = patchOf(p.m);
+      return [row, h('div', { className: 'tray tray-ports' },
+        portsEditor(6, { ...own, set: (types, names) => set(k, patchSpec(types, names)) }))];
+    }
+    if (kind === 'label') {
+      const text = h('input', { type: 'text', className: 'text label-text', value: labelOf(p.m), maxLength: 40, placeholder: 'HOMELAB',
+        'aria-label': `${t('lab_text')} · ${u}`, onchange: () => set(k, labelSpec(text.value)) });
+      return [row, h('div', { className: 'tray' }, h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text))];
+    }
     // the NanoKVM bays share their settings: the first one shows them, the others say so
     return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`), kind === 'nkvm' && k !== firstNkvm)] : row;
   });
@@ -754,14 +789,15 @@ function devicesEditor(entries) {
   return [h('div', { className: 'devs' }, rows), h('small', { className: 'hint', textContent: t('devHint', { n: num(S.values.mount_clear) }) })];
 }
 
-function portsEditor(most) {
+// own = a patch module's own ports { types, names, set(types, names) }; without it, the strip's
+function portsEditor(most, own = null) {
   const v = S.values;
-  const types = ksTypes(v);
+  const types = own ? own.types : ksTypes(v);
   // as many as the smallest patch panel takes (all of them are left out when they do not fit)
   // (none at all: the strip is too small for a patch panel, the Leftover strip step says so)
-  const cap = Math.min(...ksPlaces(v).map((box) => ksCapacity(box, v)));
+  const cap = own ? ksCapacity(moduleBox(v), v, types) : Math.min(...ksPlaces(v).map((box) => ksCapacity(box, v)));
   const max = cap < 1 ? most : Math.min(most, cap);
-  const setTypes = (list) => update({ ks_ports_list: list.join(','), ks_ports: list.length });
+  const setTypes = own ? (list) => own.set(list, own.names) : (list) => update({ ks_ports_list: list.join(','), ks_ports: list.length });
   const cycle = (i, dir) => {
     const list = [...types];
     list[i] = PORTS[(PORTS.indexOf(list[i]) + dir + PORTS.length) % PORTS.length];
@@ -784,24 +820,25 @@ function portsEditor(most) {
           dataset: { tip: t('portRemove') }, onclick: () => setTypes(types.slice(0, -1)) }))),
     cap >= 1 && types.length > cap ? h('small', { className: 'hint warn', textContent: t('portsTooMany', { n: types.length, m: cap }) })
       : h('small', { className: 'hint', textContent: t('portHint') }),
-    // the RJ45 ports follow the type (metal cells or plastic cut-outs), so do the covers
-    rowTitle('ks_style_t'), h('div', { className: 'seg' }, ['metal', 'standard'].map((x) => choice('ks_style', x, t('ks_' + x), {
+    // the RJ45 ports follow the type (metal cells or plastic cut-outs), so do the covers (one setting for all)
+    own ? null : [rowTitle('ks_style_t'), h('div', { className: 'seg' }, ['metal', 'standard'].map((x) => choice('ks_style', x, t('ks_' + x), {
       cls: 'seg-btn',
       extra: () => (String(v.ks_ports_list).trim()
         ? { ks_ports_list: types.map((tp) => (tp === 'rj45m' || tp === 'rj45' ? (x === 'metal' ? 'rj45m' : 'rj45') : tp)).join(',') } : {}),
     }))),
-    h('small', { className: 'hint', textContent: t('ks_hint') }),
-    portNames(types),
+    h('small', { className: 'hint', textContent: t('ks_hint') })],
+    portNames(types, own),
   ];
 }
 
 // what is written over each port: your name, else HDMI / USB... for those jacks, else the number of its place
-function portNames(types) {
+function portNames(types, own = null) {
   const v = S.values;
-  const names = String(v.ks_names ?? '').split(',').map((x) => x.trim());
-  const auto = portLabels({ ...v, ks_names: '' }, types);
+  const names = own ? own.names : String(v.ks_names ?? '').split(',').map((x) => x.trim());
+  const auto = portLabels(v, types, []);
   const set = (i, val) => {
     const list = types.map((_, j) => (j === i ? val.replace(/,/g, ' ').trim() : names[j] ?? ''));
+    if (own) return own.set(types, list);
     while (list.length && !list[list.length - 1]) list.pop();
     update({ ks_names: list.join(',') });
   };
@@ -868,9 +905,11 @@ function pieceLabel(f, v) {
   // a device's tray reads "Mount for…", so it is clear the device itself is not printed
   if (p.part === 'rack_module') return (DEVICE_MODS.includes(modKind(p.module_type)) ? t('piece_mount', { x: modLabel(p.module_type) })
     : modKind(p.module_type) === 'nkvm' && v.nkvm_split && ['side', 'front'].includes(modItems(p.module_type)[0])
-      ? `${modLabel(p.module_type)} · ${t('piece_plate')}` : modLabel(p.module_type)) + qty;
+      ? `${modLabel(p.module_type)} · ${t('piece_plate')}` : ownIndex(p.module_type, v)
+        ? modLabel(p.module_type).replace(' · ', ` ${ownIndex(p.module_type, v)} · `) : modLabel(p.module_type)) + qty;
   if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part === 'filler_labels' ? t('piece_filler')
-    : p.part === 'filler_2_labels' ? t('piece_filler2') : modLabel(p.module_type)}`;
+    : p.part === 'filler_2_labels' ? t('piece_filler2') : ownIndex(p.module_type, v)
+      ? modLabel(p.module_type).replace(' · ', ` ${ownIndex(p.module_type, v)} · `) : modLabel(p.module_type)}`;
   if (p.part === 'rack_module_lid') return `${modLabel(p.module_type)} · ${t('piece_lid')}${qty}`;
   if (p.part === 'rack_module_bay') return `${modLabel(p.module_type)} · ${t(modItems(p.module_type)[0] === 'front' ? 'piece_drawer'
     : v.nkvm_raised ? 'piece_mountain' : 'piece_pocket')}${qty}`;
@@ -986,7 +1025,7 @@ function showPrebuilt() {
 function hashString(values = S.values) {
   const q = new URLSearchParams();
   for (const [k, x] of Object.entries(values)) if (!same(x, S.defaults[k])) q.set(k, Array.isArray(x) ? x.join(',') : String(x));
-  return '#' + q.toString().replace(/\+/g, '%20').replace(/%2C/g, ',').replace(/%2B/g, '+').replace(/%3A/g, ':');
+  return '#' + q.toString().replace(/\+/g, '%20').replace(/%2C/g, ',').replace(/%2B/g, '+').replace(/%3A/g, ':').replace(/%3D/g, '=');
 }
 function writeHash() {
   history.replaceState(null, '', hashString());
@@ -1127,12 +1166,18 @@ function bomGroups(bom) {
 }
 
 // ---------------------------------------------------------------- kit download
+// patch panels and labels with their own ports / text are numbered in the order they are in the rack (0 = not one)
+function ownIndex(m, v) {
+  const own = [...new Set(usedMods(v, calc(v).units))].filter((x) => modKind(x) === modKind(m) && x.includes(':'));
+  return ['patch', 'label'].includes(modKind(m)) && m.includes(':') ? own.indexOf(m) + 1 : 0;
+}
 function kitList(v, withTests = $('#withTests').checked) {
   const c = calc(v);
   const files = [{ name: 'adapter.stl', qty: 1, part: { part: 'adapter' } }];
   // a letters piece only where there are letters: some text, port names that fit, a button panel
   const types = ksTypes(v);
-  const portsLettered = (box) => v.ks_labels && portLabels(v, types).some(Boolean) && ksCapacity(box, v) >= types.length;
+  const portsLettered = (box, ty = types, names = undefined) => v.ks_labels && portLabels(v, ty, names).some(Boolean)
+    && ksCapacity(box, v, ty) >= ty.length;
   const lettered = (fill, box) => (fill === 'label' && String(v.label_text).trim() !== '') || fill === 'buttons'
     || (fill === 'keystone' && portsLettered(box));
   const zl = zoneList(v, c);
@@ -1145,12 +1190,15 @@ function kitList(v, withTests = $('#withTests').checked) {
     }
   }
   const mods = usedMods(v, c.units);
+  const fileOf = (m) => (ownIndex(m, v) ? `${modKind(m)}-${ownIndex(m, v)}` : modFile(m));
   for (const m of new Set(mods)) {
     const qty = mods.filter((x) => x === m).length;
-    files.push({ name: `module-${modFile(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
-    if (v.labels_multicolour && (lettered(m, moduleBox(v)) || (m === 'patch' && portsLettered(moduleBox(v)))
+    const modLettered = modKind(m) === 'label' ? labelOf(m, v) !== '' : modKind(m) === 'patch'
+      ? portsLettered(moduleBox(v), patchOf(m, v).types, patchOf(m, v).names) : lettered(m, moduleBox(v));
+    files.push({ name: `module-${fileOf(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
+    if (v.labels_multicolour && (modLettered
         || (v.ks_labels && modKind(m) === 'nkvm' && (modItems(m)[0] === 'side' ? v.nkvm_cover : modItems(m)[0] === 'ks' || v.nkvm_keystones > 0))))
-      files.push({ name: `module-${modFile(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
+      files.push({ name: `module-${fileOf(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
       if (v.nkvm_split && ['side', 'front'].includes(modItems(m)[0]))
@@ -1166,13 +1214,14 @@ function kitList(v, withTests = $('#withTests').checked) {
   }
   if (v.rear_slots) for (const k of ['lan', 'power'])
     files.push({ name: `pci-bracket-${k}.stl`, qty: 1, part: { part: 'pci_bracket', pci_kind: k } });
-  // covers only for the patch panels whose ports fit (the model leaves the others out)
-  const sets = ksPlaces(v, c).filter((box) => ksCapacity(box, v) >= types.length).length;
+  // covers only for the patch panels whose ports fit (the model leaves the others out), each with its own ports
+  const sets = patchSets(v, c).filter(([box, ty]) => ksCapacity(box, v, ty) >= ty.length);
   for (const [kind, file] of [['cover', 'blank'], ['pass', 'pass']]) {
-    const q = sets * types.filter((x) => x === kind).length;
+    const q = sets.reduce((n, [, ty]) => n + ty.filter((x) => x === kind).length, 0);
     if (q) files.push({ name: `keystone-${file}.stl`, qty: q, part: { part: 'keystone_cover', cover_type: file } });
   }
-  const keystones = c.zones.includes('keystone') || mods.includes('patch') || mods.some((m) => modKind(m) === 'nkvm' && (modItems(m)[0] === 'ks' || v.nkvm_keystones > 0));
+  const keystones = c.zones.includes('keystone') || mods.some((m) => modKind(m) === 'patch')
+    || mods.some((m) => modKind(m) === 'nkvm' && (modItems(m)[0] === 'ks' || v.nkvm_keystones > 0));
   if (withTests) for (const x of [...TESTS.filter((x) => x !== 'test_keystone' || keystones), ...(btnSets ? ['test_button'] : [])])
     files.push({ name: `tests/${x}.stl`, qty: 1, part: { part: x } });
   return files;

@@ -5,6 +5,12 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Every patch panel and label module of the rack has its own ports, port names and text (`patch:rj45m=NAS+hdmi+cover`,
+  `label:MY_LAB`): two of them no longer share the first one's. The web editor edits each in its row of the rack
+  contents, and the kit, the letters pieces, the covers and the bill of materials count each one. A bare `patch` /
+  `label` still takes the strip's settings, so old links make the same pieces.
+- Web generator: in the piece view, a rack module with settings after a colon (a KVM tray, a NanoKVM bay) showed the
+  switch instead.
 - NanoKVM bay, after a test print: `nkvm_headroom` (5 mm) of room over the board for its heatsink and the cables on its
   pins, so the mountain stands taller and the pocket and drawer lids sit higher; the drawer's opening in the plate is
   1.5 mm taller than the lid; nothing behind the plate (the drawer guides, the `nkvm:ks` rails and pedestal) reaches

@@ -101,9 +101,9 @@ de 2U) que se atornilla a los agujeros del rack:
 | `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
 | `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas o una rejilla hexagonal (`fan_guard`) |
 | `shelf` | Estante con ranuras para bridas para dispositivos pequeños |
-| `patch` | Patch panel de 1U con los puertos que elijas |
+| `patch` | Patch panel de 1U con los puertos que elijas: `patch` a secas usa `ks_ports_list` / `ks_names`, `patch:rj45m=NAS+hdmi+cover` lleva los suyos (tipo de puerto, `=` su nombre, `_` para un espacio) |
 | `buttons` | Botonera de 1U (ver abajo) |
-| `vent`, `blank`, `cable`, `label` | Paneles de ventilación (ranuras, lamas, panal o agujeros), paneles ciegos, pasacables y de etiqueta |
+| `vent`, `blank`, `cable`, `label` | Paneles de ventilación (ranuras, lamas, panal o agujeros), paneles ciegos, pasacables y de etiqueta (`label` pone `label_text`, `label:MI_LAB` su propio texto) |
 
 Un módulo puede ocupar más de una U (los blades ocupan 2U): el rack se llena desde arriba y un módulo que ya no cabe
 se convierte en un panel ciego.

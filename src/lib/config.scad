@@ -64,6 +64,12 @@ function mod_items(m) = let(p = str_split(m, ":"), k = mod_kind(m))
   : k == "kvm" ? str_split(kvm_boxes, "+")
   : k == "pi" ? str_split(pi_boards, "+")
   : [];
+// a patch module's own ports: "patch:rj45m=NAS+hdmi+cover" (type, = its name with _ for spaces); a bare "patch"
+// takes ks_ports_list / ks_names like the strip.  A label module's own text: "label:MY_LAB"; a bare "label" says label_text
+function patch_types(m) = let(it = mod_items(m)) len(it) == 0 ? ks_types : [for (x = it) let(p = str_split(x, "=")) len(p) > 0 ? p[0] : "none"];
+function patch_names(m) = let(it = mod_items(m)) len(it) == 0 ? PORT_NAMES
+    : [for (x = it) let(p = str_split(x, "=")) len(p) > 1 ? unscore(p[1]) : ""];
+function label_of(m) = let(a = str_after(m, ":")) a == "" ? label_text : unscore(a);
 function mod_u(m) = mod_kind(m) == "piblade" ? 2 : 1;                 // rack units taken by a module
 // modules placed from the top: [module, bottom unit (0 = bottom)]; one that no longer fits becomes a blank
 function place_mods(i, top) =
@@ -160,17 +166,21 @@ bom("rack panel", part == "rack_panel" ? 2 * len(panel_zs(panel_u)) : 0, rack_sc
 // or the frame between the posts
 function zone_w_of(zn) = filler_mode == "separate" ? hole_s - R[0] - 6 : 2 * x_in - 2;
 function zone_h_of(zn) = filler_mode == "separate" ? zn[1] - 0.8 : zn[1];
-// keystone jacks and covers: one set per patch panel whose ports fit (a patch that does not fit is left out)
-function ks_fit_in(w, h) = len(ks_layout(w, h, len(ks_types))) > 0;
+// keystone jacks and covers: the ports of every patch panel this part makes whose ports fit (one that does
+// not fit is left out); each patch module has its own
+function ks_fit_in(w, h, types = ks_types) = len(ks_layout_of(w, h, types)) > 0;
 function zone_ks_ok(zn) = ks_fit_in(zone_w_of(zn), zone_h_of(zn));
-function n_patch() = part == "rack_panel" ? (panel_fill == "keystone" && ks_fit_in(hole_s - R[0] - 6, panel_u * U - 0.79) ? 1 : 0)
-        : part == "rack_module" ? (module_type == "patch" && ks_fit_in(hole_s - R[0] - 6, U - 0.79) ? 1 : 0)
-        : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
-           || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-          ? len([for (zn = zones) if (zn[2] == "keystone" && zone_ks_ok(zn)) 1])
-            + (ks_fit_in(hole_s - R[0] - 6, U - 0.79) ? len([for (m = bom_mods) if (m == "patch") 1]) : 0)
-        : 0;
-function ks_count(tp) = n_patch() * len([for (x = ks_types) if (x == tp) 1]) + (tp == (ks_style == "metal" ? "rj45m" : "rj45") ? n_nk_jacks : 0);
+function patch_sets() = let(mw = hole_s - R[0] - 6, mh = U - 0.79)
+    part == "rack_panel" ? (panel_fill == "keystone" && ks_fit_in(mw, panel_u * U - 0.79) ? [ks_types] : [])
+  : part == "rack_module" ? (mod_kind(module_type) == "patch" && ks_fit_in(mw, mh, patch_types(module_type)) ? [patch_types(module_type)] : [])
+  : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
+     || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+    ? concat([for (zn = zones) if (zn[2] == "keystone" && zone_ks_ok(zn)) ks_types],
+             [for (m = bom_mods) if (mod_kind(m) == "patch" && ks_fit_in(mw, mh, patch_types(m))) patch_types(m)])
+  : [];
+function n_patch() = len(patch_sets());
+function ks_count(tp) = sum_list([for (s = patch_sets()) len([for (x = s) if (x == tp) 1])])
+    + (tp == (ks_style == "metal" ? "rj45m" : "rj45") ? n_nk_jacks : 0);
 KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],
             ["usb", "USB keystone"], ["rca", "RCA keystone"], ["jack", "3.5 mm audio keystone"], ["toslink", "Toslink optical keystone"],
             ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
@@ -315,9 +325,11 @@ function known(x, list) = len([for (y = list) if (y == x) 1]) > 0;
 for (tp = ks_types) if (!known(tp, KS_TYPES)) echo(str("WARNING: unknown keystone type '", tp, "' in ks_ports_list - use ", KS_TYPES));
 for (m = concat(rack_mods, [module_type])) if (!known(mod_kind(m), MOD_KINDS))
     echo(str("WARNING: unknown rack module '", m, "' - it is made as a blank panel"));
-for (m = rack_mods) {
+for (m = part == "rack_module" ? [module_type] : rack_mods) {   // (the modules of this part)
     k = mod_kind(m);
-    for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "front", "ks"]
+    if (k == "patch") { for (tp = patch_types(m)) if (!known(tp, KS_TYPES))
+        echo(str("WARNING: unknown keystone type '", tp, "' in the patch module (", m, ") - use ", KS_TYPES)); }
+    else if (k != "label") for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "front", "ks"]
                                         : (k == "pi" || k == "piblade") ? ["pi5", "pi4", "pi3", "zero"] : [b]))
         echo(str("WARNING: '", b, "' is not a box of the ", k, " module (", m, ")"));
 }
