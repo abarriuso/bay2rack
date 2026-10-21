@@ -6,16 +6,17 @@
 //  fill_add = material added behind the plate (keystone holder cells)
 //  fill_cut = everything cut out of the plate
 // ---------------------------------------------------------------------
-module fill_add(type, w, h, t) {
-    if (type == "keystone") keystone_add(min(w, 2 * x_in - 1), h, t);
+// types / names: the ports of this patch panel (a patch module has its own), text: what this label says
+module fill_add(type, w, h, t, types = ks_types) {
+    if (type == "keystone") keystone_add(min(w, 2 * x_in - 1), h, t, types);
     else if (type == "buttons") buttons_add(w, h, t);
 }
 
-module fill_cut(type, w, h, t) {
-    if (type == "keystone") keystone_cut(min(w, 2 * x_in - 1), h, t);
+module fill_cut(type, w, h, t, types = ks_types, names = PORT_NAMES, text = label_text) {
+    if (type == "keystone") keystone_cut(min(w, 2 * x_in - 1), h, t, types, names);
     else if (type == "vent")  vent_cut(w, h, t);
     else if (type == "cable") cable_cut(w, h, t);
-    else if (type == "label") label_cut(w, h, t);
+    else if (type == "label") label_cut(w, h, t, text);
     else if (type == "buttons") buttons_cut(w, h, t);
     else if (type == "fan80") fan80_cut(w, h, t);
     else if (type == "fan40") fan40_cut(w, h, t);
@@ -32,35 +33,44 @@ module fill_cut(type, w, h, t) {
 //  standard cut-out; cover / pass -> the panel's ks_style; none -> no hole.
 // ---------------------------------------------------------------------
 function ks_metal_port(tp) = tp == "rj45m" || ((tp == "cover" || tp == "pass") && ks_style == "metal");
-ks_metal = len([for (tp = ks_types) if (ks_metal_port(tp)) 1]) > 0;   // layout uses the bigger metal cells
+// a panel with any metal port lays all its ports out in the bigger metal cells (m = that, per panel)
+function ks_metal_of(types) = len([for (tp = types) if (ks_metal_port(tp)) 1]) > 0;
 ksm_vc   = ksm_chamfer + ksm_face_h / 2;            // opening centre above the cavity floor
-ks_cw    = ks_metal ? ksm_w + 2 * ks_fit + 2 * ksm_wall : ks_w + 2 * ks_fit + 3;   // cell width
-ks_lo    = ks_metal ? -ksm_vc - ks_fit - ksm_wall : -(ks_h + 2 * ks_fit + 7) / 2;   // cell bottom from opening centre
-ks_hi    = ks_metal ? ksm_cav_h + ks_fit + ksm_wall - ksm_vc : (ks_h + 2 * ks_fit + 7) / 2;
-ks_px    = ks_metal ? ksm_pitch : ks_pitch;
-ks_label_dz = (ks_metal ? ksm_face_h : ks_h) / 2 + 3.0;
+function ks_cw_of(m) = m ? ksm_w + 2 * ks_fit + 2 * ksm_wall : ks_w + 2 * ks_fit + 3;   // cell width
+function ks_lo_of(m) = m ? -ksm_vc - ks_fit - ksm_wall : -(ks_h + 2 * ks_fit + 7) / 2;  // cell bottom from opening centre
+function ks_hi_of(m) = m ? ksm_cav_h + ks_fit + ksm_wall - ksm_vc : (ks_h + 2 * ks_fit + 7) / 2;
+function ks_px_of(m) = m ? ksm_pitch : ks_pitch;
+function ks_label_dz_of(m) = (m ? ksm_face_h : ks_h) / 2 + 3.0;
+// the ports of the strip's patch panel (ks_ports_list)
+ks_metal = ks_metal_of(ks_types);
+ks_cw    = ks_cw_of(ks_metal);
+ks_lo    = ks_lo_of(ks_metal);
+ks_hi    = ks_hi_of(ks_metal);
+ks_px    = ks_px_of(ks_metal);
 
 // port positions [x, z of the opening centre, number, index] or [] if they do not fit
-function ks_layout(w, h, ports) =
-    let(per_row = max(1, floor((w - ks_cw) / ks_px) + 1),
+function ks_layout(w, h, ports, m = ks_metal) =
+    let(cw = ks_cw_of(m), px = ks_px_of(m), lo = ks_lo_of(m), hi = ks_hi_of(m),
+        per_row = max(1, floor((w - cw) / px) + 1),
         rows = ceil(ports / per_row),
-        cell_v = ks_hi - ks_lo + 1,
+        cell_v = hi - lo + 1,
         need = rows * cell_v + 1)
-    (ports < 1 || need > h || ks_cw > w) ? [] :
+    (ports < 1 || need > h || cw > w) ? [] :
     [for (r = [0 : rows - 1])
         let(n = min(per_row, ports - r * per_row),
             zb = h / 2 + ((rows - 1) / 2 - r) * cell_v,
-            zc = zb - (ks_hi + ks_lo) / 2)
-        for (i = [0 : n - 1]) [(i - (n - 1) / 2) * ks_px, zc, ks_label_start + r * per_row + i, r * per_row + i]];
+            zc = zb - (hi + lo) / 2)
+        for (i = [0 : n - 1]) [(i - (n - 1) / 2) * px, zc, ks_label_start + r * per_row + i, r * per_row + i]];
+function ks_layout_of(w, h, types) = ks_layout(w, h, len(types), ks_metal_of(types));
 
 module ks_check(w, h, types)
-    if (len(types) > 0 && len(ks_layout(w, h, len(types))) == 0)
+    if (len(types) > 0 && len(ks_layout_of(w, h, types)) == 0)
         echo(str("WARNING: ", len(types), " keystones do not fit in ", round(w * 10) / 10, " x ", round(h * 10) / 10, " mm - skipped"));
 
 module keystone_add(w, h, t, types = ks_types)
-    if (ksm_depth > t)
-        for (p = ks_layout(w, h, len(types))) if (ks_metal_port(types[p[3]]))
-            translate([p[0] - ks_cw / 2, -eps, p[1] + ks_lo]) cube([ks_cw, ksm_depth - t + eps, ks_hi - ks_lo]);
+    if (ksm_depth > t) let(m = ks_metal_of(types), cw = ks_cw_of(m), lo = ks_lo_of(m), hi = ks_hi_of(m))
+        for (p = ks_layout_of(w, h, types)) if (ks_metal_port(types[p[3]]))
+            translate([p[0] - cw / 2, -eps, p[1] + lo]) cube([cw, ksm_depth - t + eps, hi - lo]);
 
 // void of one metal holder cell: profile (cavity height v, depth d from the front face)
 module ksm_void(t) {
@@ -75,30 +85,30 @@ module ksm_void(t) {
         linear_extrude(ksm_w + 2 * ks_fit) offset(delta = ks_fit) polygon([for (p = v) [p[1] - t, p[0] - ksm_vc]]);
 }
 
-// what is written over each port: its name from ks_names, else HDMI / USB / RCA / AUDIO / OPTICAL for those
-// jacks, else the number of its place (covers, pass-throughs and empty places keep their place but show nothing)
+// what is written over each port: its name (ks_names, or the patch module's own), else HDMI / USB / RCA / AUDIO /
+// OPTICAL for those jacks, else the number of its place (covers, pass-throughs and empty places show nothing)
 function ks_type_name(tp) = tp == "hdmi" ? "HDMI" : tp == "usb" ? "USB" : tp == "rca" ? "RCA"
                           : tp == "jack" ? "AUDIO" : tp == "toslink" ? "OPTICAL" : "";
 PORT_NAMES = split_keep(ks_names);
-function ks_name(i) = i < len(PORT_NAMES) ? PORT_NAMES[i] : "";
+function ks_name(i, names = PORT_NAMES) = i < len(names) ? names[i] : "";
 function ks_jack(tp) = tp != "cover" && tp != "pass" && tp != "none";
-function ks_label(types, i) =
-    ks_name(i) != "" ? ks_name(i)
+function ks_label(types, i, names = PORT_NAMES) =
+    ks_name(i, names) != "" ? ks_name(i, names)
   : ks_type_name(types[i]) != "" ? ks_type_name(types[i])
   : ks_jack(types[i]) ? str(ks_label_start + len([for (j = [0 : 1 : i - 1]) if (ks_jack(types[j])) 1]))
   : "";
 // letters shrink so a long name still fits over its port
-function ks_label_size(s) = min(3.2, (ks_px - 3) / (0.7 * max(1, len(s))));
+function ks_label_size(s, m = ks_metal) = min(3.2, (ks_px_of(m) - 3) / (0.7 * max(1, len(s))));
 ks_label_d = 0.6;
-module ks_labels2d(w, h, types = ks_types)
-    for (p = ks_layout(w, h, len(types))) let(s = ks_label(types, p[3])) if (s != "")
-        translate([p[0], p[1] + ks_label_dz]) legend2d(s, ks_label_size(s));
+module ks_labels2d(w, h, types = ks_types, names = PORT_NAMES) let(m = ks_metal_of(types))
+    for (p = ks_layout_of(w, h, types)) let(s = ks_label(types, p[3], names)) if (s != "")
+        translate([p[0], p[1] + ks_label_dz_of(m)]) legend2d(s, ks_label_size(s, m));
 // small engraved letters, a little bolder so their strokes do not close up with a 0.4 mm nozzle (face-down print)
 module legend2d(s, size) offset(r = 0.1) text(s, size = size, font = "Liberation Sans:style=Bold", halign = "center", valign = "center");
 
-module keystone_cut(w, h, t, types = ks_types) {
+module keystone_cut(w, h, t, types = ks_types, names = PORT_NAMES) {
     ks_check(w, h, types);
-    for (p = ks_layout(w, h, len(types))) if (types[p[3]] != "none") translate([p[0], 0, p[1]]) {
+    for (p = ks_layout_of(w, h, types)) if (types[p[3]] != "none") translate([p[0], 0, p[1]]) {
         if (ks_metal_port(types[p[3]])) ksm_void(t);
         else {
             xz_extrude(-t - eps, t + 2 * eps) square([ks_w + 2 * ks_fit, ks_h + 2 * ks_fit], center = true);
@@ -106,7 +116,7 @@ module keystone_cut(w, h, t, types = ks_types) {
                 xz_extrude(-t + ks_plate_t, t - ks_plate_t + 2 * eps) square([ks_w + 2 * ks_fit + 3, ks_h + 2 * ks_fit + 7], center = true);
         }
     }
-    if (ks_labels) xz_extrude(-t - eps, ks_label_d + eps) ks_labels2d(w, h, types);
+    if (ks_labels) xz_extrude(-t - eps, ks_label_d + eps) ks_labels2d(w, h, types, names);
 }
 
 // ---------------------------------------------------------------------
@@ -153,24 +163,24 @@ module cable_cut(w, h, t)
 
 // engraved = the letters cut into the panel; raised = a band round the text is cut away and the letters
 // stay at the panel face (raised relief that still prints face-down, flat, without supports)
-module label_text2d(w, h) {
+module label_text2d(w, h, text = label_text) {
     sz = label_size > 0 ? label_size : min(h * 0.4, 9);
     x = (label_align == "left" ? -w / 2 + 4 : label_align == "right" ? w / 2 - 4 : 0) + label_dx;
     translate([x, h / 2 + label_dz])
-        text(label_text, size = sz, font = str("Liberation Sans", label_bold ? ":style=Bold" : ""),
+        text(text, size = sz, font = str("Liberation Sans", label_bold ? ":style=Bold" : ""),
              halign = label_align, valign = "center");
 }
 label_d = min(label_depth, max(filler_t, panel_t) - 0.8);
-module label_cut(w, h, t) {
+module label_cut(w, h, t, text = label_text) {
     sz = label_size > 0 ? label_size : min(h * 0.4, 9);
     xz_extrude(-t - eps, label_d + eps) intersection() {
         translate([-w / 2 + 1, 1]) square([w - 2, h - 2]);         // never past the zone
         // raised: the band round the text is cut; in multicolour the letters go too (the label piece fills them)
         if (label_relief == "raised") difference() {
-            offset(r = sz * 0.35) hull() label_text2d(w, h);
-            if (!labels_multicolour || (t == ft && filler_mode != "separate")) label_text2d(w, h);
+            offset(r = sz * 0.35) hull() label_text2d(w, h, text);
+            if (!labels_multicolour || (t == ft && filler_mode != "separate")) label_text2d(w, h, text);
         }
-        else label_text2d(w, h);
+        else label_text2d(w, h, text);
     }
 }
 
@@ -178,11 +188,11 @@ module label_cut(w, h, t) {
 //  Multicolour labels: the letters as a separate body, exactly where they are cut out of the panel, so a
 //  multi-material printer prints them in another filament (load both STLs as one object)
 // ---------------------------------------------------------------------
-module fill_labels(type, w, h, t) {
-    if (type == "keystone" && ks_labels) xz_extrude(-t, ks_label_d) ks_labels2d(w, h);
+module fill_labels(type, w, h, t, types = ks_types, names = PORT_NAMES, text = label_text) {
+    if (type == "keystone" && ks_labels) xz_extrude(-t, ks_label_d) ks_labels2d(min(w, 2 * x_in - 1), h, types, names);
     else if (type == "label") xz_extrude(-t, label_d) intersection() {
         translate([-w / 2 + 1, 1]) square([w - 2, h - 2]);
-        label_text2d(w, h);
+        label_text2d(w, h, text);
     }
     else if (type == "buttons") xz_extrude(-t, 0.6) btn_legends2d(w, h);
 }
