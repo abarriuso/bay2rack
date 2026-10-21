@@ -5,6 +5,11 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- NanoKVM bay, after a test print: `nkvm_headroom` (5 mm) of room over the board for its heatsink and the cables on its
+  pins, so the mountain stands taller and the pocket and drawer lids sit higher; the drawer's opening in the plate is
+  1.5 mm taller than the lid; nothing behind the plate (the drawer guides, the `nkvm:ks` rails and pedestal) reaches
+  the bottom 3.5 mm any more, where it hit the rim of the adapter's opening; more room round the RJ45 and HDMI plugs
+  (the drawer's port hole 2 mm wider all round with a chamfer, both caves of the mountain full height, wider cable ways).
 - Web generator: a first question (a fan or buttons, sockets, or a rack for devices); a "No soldering iron" switch
   (M5 with square nuts, hex nuts in the bay); fixings that leave under 1 mm of wall to the bay side are off; the
   modules left out of the rack, the ports and the fans limited to what fits; plain warnings without parameter names;
