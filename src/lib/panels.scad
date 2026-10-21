@@ -152,6 +152,10 @@ nk_pd = 7;                                            // post thickness
 nk_fs = 1.6;                                          // corner fingers that stop the board lengthwise
 nk_lid_t = 2.4;
 nk_wall = 2;                                          // pocket walls (side layout)
+nk_H = nkvm_dims[1] + nkvm_headroom;                  // board + room over it (heatsink, pin cables): the lid sits on top
+nk_lo = frame_rim + 1;                                // nothing behind the plate lower (or higher, from the top) than
+                                                      // this: the adapter's front frame keeps a rim round the opening
+nk_plug_c = 2;                                        // extra room round the RJ45 / HDMI plugs (their boots are wider than the jacks)
 NK_M3 = with_insert(hw("M3"), nkvm_insert_d, 0);   // M3 heat-set inserts of the lid (and the split plate)
 function nk_layout(items) = len(items) > 0 && (items[0] == "front" || items[0] == "ks") ? items[0] : "side";
 // ks = the network port reaches the front through keystone 1: the board lies flat right behind it, its Ethernet
@@ -163,7 +167,7 @@ function nk_n_ks() = max(0, min(2, nkvm_keystones));
 function nk_ks_w(n) = ks_cw + (n - 1) * ks_px;        // width of the keystone group
 // the keystones' left edge: centred (ks), or 6 mm from the rack post with the drawer centred in what is left (front)
 function nk_ks_x0(lay = "side") = lay == "ks" ? -nk_ks_w(nk_nks("ks")) / 2 : lay == "front" ? -x_in + 6 : -x_in + 2;
-nk_top = nk_fl + nkvm_dims[1] + nk_c;                 // front layout: post tops = underside of the lid
+nk_top = nk_fl + nk_H + nk_c;                 // front layout: post tops = underside of the lid
 // the end stop at u = 0 is the plate itself in the front layout
 function nk_u0(lay) = lay == "front" ? -nk_c : -nk_c - nk_fs;    // (ks: away from the plate, with fingers)
 function nk_u1() = nkvm_dims[0] + nk_c + nk_fs;
@@ -193,7 +197,7 @@ nk_h = U - 0.79;
 nk_zv0 = (nk_h - nkvm_dims[2]) / 2;                    // bottom edge of the standing board
 nk_yp0 = -panel_t + 0.6 + nk_lid_t;                    // back of the lid = front of the posts
 nk_yd0 = nk_yp0 + nk_c;                                // front of the board (heatsink)
-nk_yb0 = nk_yd0 + nkvm_dims[1] + nk_c;                 // back wall
+nk_yb0 = nk_yd0 + nk_H + nk_c;                         // back wall
 nk_yb1 = nk_yb0 + 2.4;
 // pocket [x left, x right] and the board's Ethernet end x
 function nk_pocket() = let(n = 0, need = nk_u1() - nk_u0("side") + nkvm_plugs[0] + nkvm_plugs[1] + 2 * nk_wall,
@@ -313,7 +317,7 @@ module nk_side_bay() {
 // The board stands in front of the plate, its back on it, the lid at the top of the mountain. The ends of the
 // mountain are open caves where the plugs go in from the sides (Ethernet left, HDMI / USB right); the cables
 // run along the plate, or into the case through the slots at its ends. Prints back face down, the mountain up.
-nk_r_lb = -panel_t - 2 * nk_c - nkvm_dims[1];          // back of the lid (front of the posts)
+nk_r_lb = -panel_t - 2 * nk_c - nk_H;                  // back of the lid (front of the posts)
 nk_r_lf = nk_r_lb - nk_lid_t;                          // front of the lid
 nk_r_wall = 2;
 nk_r_foot = 12;                                        // how far the slopes reach past the posts at the plate
@@ -340,8 +344,8 @@ module nk_r_plate() {
         // cable ways into the case at both ends: a keyhole, the plug (HDMI / RJ45) through the wide part, the cable up the slot
         for (x = [x0 - nkvm_plugs[0] + 2, x0 + L + nkvm_plugs[1] - 2])
             translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) {
-                nk_rrect(x - 7, 2.5, x + 7, 24.5, 3);
-                nk_rrect(x - 3.5, 2.5, x + 3.5, h - 4, 3.4);
+                nk_rrect(x - 8, nk_lo, x + 8, 26.5, 3);
+                nk_rrect(x - 3.5, nk_lo, x + 3.5, h - nk_lo, 3.4);
             }
         if (nkvm_split) for (q = nk_posts("side")) translate([x0 + q[0], eps, nk_zv0 + q[1]]) rotate([90, 0, 0]) {
             cylinder(d = NK_M3[0], h = panel_t + 2 * eps, $fn = 20);
@@ -365,11 +369,12 @@ module nk_r_mountain() {
         translate([0, nk_r_lf - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_lid_t + 1 + eps)
             nk_rrect(x0 + nk_u0("side") - 0.4, nk_zv0 - nk_c - nk_pd - 0.4, x0 + nk_u1() + 0.4, nk_zv0 + W + nk_c + nk_pd + 0.4, 3.4);
         // the caves at both ends, where the plugs go in: between the corner fingers (2.5 mm over the board's edges),
-        // which keep stopping the board lengthwise; the HDMI plug is as wide as the board, so at that end the cave
-        // is full height from 4.5 mm off the board's underside (clear of the fingers' foot) up to the lid
+        // which keep stopping the board lengthwise; the plug boots are as wide as the board or wider, so the cave is
+        // also full height (and nk_plug_c past the board) from 4.5 mm off the board's underside (clear of the
+        // fingers' foot) up to the lid
         for (e = [0, 1]) let(xs = e == 0 ? x0 + nk_u0("side") - nk_r_foot - 5 : x0 + L, cl = nk_r_foot + 5 + nk_fs + nk_c) {
             translate([xs, nk_r_lb, nk_zv0 + 2.5]) cube([cl, -panel_t - nk_r_lb + 1, W - 5]);
-            if (e == 1) translate([xs, nk_r_lb, nk_zv0 + 0.5]) cube([cl, -panel_t - nk_c - 4.5 - nk_r_lb, W - 1]);
+            translate([xs, nk_r_lb, nk_zv0 - nk_plug_c]) cube([cl, -panel_t - nk_c - 4.5 - nk_r_lb, W + 2 * nk_plug_c]);
         }
         // heat-set inserts: the lid at the top of the posts, (three pieces) the plate screws at their foot
         for (q = nk_posts("side")) translate([x0 + q[0], 0, nk_zv0 + q[1]]) {
@@ -428,9 +433,17 @@ module nk_f_drawer() {
                 linear_extrude(2) offset(-0.6) nk_rrect(xd - dw / 2 - nk_f_bz, nk_zf, xd + dw / 2 + nk_f_bz, nk_f_zt() + nk_f_bz * 0.6, 2.5);
             }
         }
-        // the Ethernet port
-        translate([xd - (nkvm_rj45[0] + 1) / 2, -panel_t - 3, nk_zf + nk_fl + nkvm_rj45[2] - 0.5])
-            cube([nkvm_rj45[0] + 1, panel_t + 4, nkvm_rj45[1] + 1]);
+        // the Ethernet port, with room round it for the plug boot (and a chamfer to find it)
+        translate([xd, -panel_t - 2, nk_zf + nk_fl + nkvm_rj45[2] + nkvm_rj45[1] / 2]) rotate([-90, 0, 0]) {
+            translate([-(nkvm_rj45[0] + 2 * nk_plug_c) / 2, -(nkvm_rj45[1] + 2 * nk_plug_c) / 2, -1])
+                cube([nkvm_rj45[0] + 2 * nk_plug_c, nkvm_rj45[1] + 2 * nk_plug_c, panel_t + 4]);
+            hull() {
+                translate([-(nkvm_rj45[0] + 2 * nk_plug_c + 2) / 2, -(nkvm_rj45[1] + 2 * nk_plug_c + 2) / 2, -eps])
+                    cube([nkvm_rj45[0] + 2 * nk_plug_c + 2, nkvm_rj45[1] + 2 * nk_plug_c + 2, eps]);
+                translate([-(nkvm_rj45[0] + 2 * nk_plug_c) / 2, -(nkvm_rj45[1] + 2 * nk_plug_c) / 2, 1])
+                    cube([nkvm_rj45[0] + 2 * nk_plug_c, nkvm_rj45[1] + 2 * nk_plug_c, eps]);
+            }
+        }
         // the two screws, countersunk in the bezel
         for (p = nk_f_screws()) translate([p[0], -panel_t - 2 - eps, p[1]]) rotate([-90, 0, 0]) {
             cylinder(d = NK_M3[0], h = 3, $fn = 20);
@@ -448,8 +461,9 @@ module nk_f_plate(nks, kt, xk) {
             plate(panel_w, h, panel_t, 0.6);
             for (s = [-1, 1]) let(xe = xd + s * dw / 2) {
                 // an L guide under each edge of the drawer: the floor slides on it, the lip keeps it straight
-                translate([s < 0 ? xe - 2.1 : xe - 3, -eps, 0]) cube([5.1, len + eps, nk_zf - 0.1]);
-                translate([s < 0 ? xe - 2.1 : xe + 0.3, -eps, 0]) cube([1.8, len + eps, nk_zf + 2.5]);
+                // (from nk_lo up: lower they would hit the rim of the adapter's opening)
+                translate([s < 0 ? xe - 2.1 : xe - 3, -eps, nk_lo]) cube([5.1, len + eps, nk_zf - 0.1 - nk_lo]);
+                translate([s < 0 ? xe - 2.1 : xe + 0.3, -eps, nk_lo]) cube([1.8, len + eps, nk_zf + 2.5 - nk_lo]);
                 translate([s < 0 ? xe - 2.1 : xe + 0.3, 0, 0]) multmatrix(YZ) linear_extrude(1.8)
                     polygon([[-eps, nk_zf + 2.5 - eps], [12, nk_zf + 2.5 - eps], [-eps, nk_zf + 12]]);
             }
@@ -458,7 +472,12 @@ module nk_f_plate(nks, kt, xk) {
         }
         panel_holes(panel_zs(1), panel_t, panel_hole_slot);
         if (nks > 0) translate([xk, 0, 0]) keystone_cut(nk_ks_w(nks) + 0.1, h, panel_t, kt);
-        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) nk_f_face2d(mount_clear);
+        // the opening the drawer slides through: the face plus 1.5 mm over the lid (its screw heads, a lid printed
+        // a little thick); the bezel covers the gap
+        translate([0, -panel_t - 1, 0]) multmatrix(XZ_Y) linear_extrude(panel_t + 2) {
+            nk_f_face2d(mount_clear);
+            translate([nk_f_xd() - nk_f_dw() / 2 - mount_clear, nk_f_zt()]) square([nk_f_dw() + 2 * mount_clear, mount_clear + 1.5]);
+        }
         for (p = nk_f_screws()) translate([p[0], 0, p[1]]) {
             translate([0, -panel_t - 1, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3[0], h = panel_t + 2, $fn = 20);
             translate([0, 7 + eps, 0]) rotate([90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.3, $fn = 24);   // insert from behind
@@ -516,15 +535,15 @@ module nkvm_mount(items) {
                 nk_front_frame(lay) {
                     translate([0, 0, nk_zf]) nk_tray_local(lay);
                     // the pedestal: two walls along the board and one across its back end
-                    if (nk_zf > eps) {
+                    if (nk_zf > nk_lo + 1) {
                         for (v = [-nk_c - nk_pd, nkvm_dims[2] + nk_c + nk_pd - 2])
-                            translate([u0, v, 0]) cube([nk_u1() - u0, 2, nk_zf + eps]);
-                        translate([nk_u1() - 2, -nk_c - nk_pd, 0]) cube([2, nkvm_dims[2] + 2 * (nk_c + nk_pd), nk_zf + eps]);
+                            translate([u0, v, nk_lo]) cube([nk_u1() - u0, 2, nk_zf - nk_lo + eps]);
+                        translate([nk_u1() - 2, -nk_c - nk_pd, nk_lo]) cube([2, nkvm_dims[2] + 2 * (nk_c + nk_pd), nk_zf - nk_lo + eps]);
                     }
                 }
                 // ks: two rails from the plate to the tray, under the keystone and the patch cable, with gussets
                 if (lay == "ks") for (x = rail) {
-                    translate([x, -eps, 0]) cube([2.4, Pf[1] + u0 + 2 * eps, nk_zf + nk_fl]);
+                    translate([x, -eps, nk_lo]) cube([2.4, Pf[1] + u0 + 2 * eps, nk_zf + nk_fl - nk_lo]);
                     translate([x, 0, 0]) multmatrix(YZ) linear_extrude(2.4)
                         polygon([[-eps, nk_zf + nk_fl - eps], [24, nk_zf + nk_fl - eps], [-eps, nk_zf + nk_fl + 10]]);
                 }

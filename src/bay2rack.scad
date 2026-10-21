@@ -274,6 +274,8 @@ kvm_custom = [50, 25, 60]; // [5:0.1:200]
 nkvm_dims = [37, 15, 23]; // [10:0.1:80]
 // Its Ethernet port: width, height, height above the bottom of the board (nkvm:front cuts it through the plate)
 nkvm_rj45 = [16, 13.5, 1]; // [0:0.1:20]
+// Room over the NanoKVM for its heatsink and the cables on its pins: the lid sits this much higher than nkvm_dims says
+nkvm_headroom = 5; // [0:0.5:15]
 // Keystone openings on the left of the NanoKVM bay (nkvm:ks always has one: its network port)
 nkvm_keystones = 0; // [0:1:2]
 // nkvm:ks - room between the back of keystone 1 and the NanoKVM for the patch cable plugs
