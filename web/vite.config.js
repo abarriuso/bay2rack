@@ -2,6 +2,7 @@ import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+import { dict } from './src/strings.js';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'model/stl', '.md': 'text/markdown', '.webp': 'image/webp', '.png': 'image/png', '.mp4': 'video/mp4', '.webm': 'video/webm' };
@@ -36,10 +37,19 @@ const liveRepoFiles = () => ({
   },
 });
 
+// The English texts written into index.html at build time (applyI18n puts them in at run time too): search engines
+// and the first paint get the words, and the page does not jump when the script fills them in.
+const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const staticTexts = () => ({
+  name: 'bay2rack-static-texts',
+  transformIndexHtml: (html) => html.replace(/(<([a-z0-9]+)\b[^>]*\bdata-i18n="([^"]+)"[^>]*>)(<\/\2>)/g,
+    (m, open, tag, key, close) => (dict.en[key] != null ? open + esc(dict.en[key]).replace(/\{\w+\}/g, '') + close : m)),
+});
+
 // Relative base so the build works on any path (GitHub Pages serves it under /bay2rack/).
 export default defineConfig({
   base: './',
-  plugins: [liveRepoFiles()],
-  build: { target: 'es2022', chunkSizeWarningLimit: 1500 },
+  plugins: [liveRepoFiles(), staticTexts()],
+  build: { target: 'es2022', chunkSizeWarningLimit: 1500, sourcemap: true },
   worker: { format: 'es' },
 });

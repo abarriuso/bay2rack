@@ -7,6 +7,14 @@
   <meta name="description" content="Turn the 5.25 inch bays of an old PC case into a 6 inch mini rack for a cheap homelab: router with VLANs, switches, KVM, Raspberry Pi blades, patch panel. Configure it, see it mounted in 3D and download every STL in your browser.">
   <meta property="og:title" content="bay2rack · old PC case → 6&quot; homelab rack">
   <meta property="og:image" content="https://bay2rack.pages.dev/img/og.jpg">
+  <meta property="og:description" content="Turn the 5.25 inch bays of an old PC case into a 6 inch mini rack for a cheap homelab. Configure it, see it in 3D and download every STL in your browser.">
+  <meta property="og:url" content="https://bay2rack.pages.dev/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- one address for search engines (the GitHub Pages mirror points here too) -->
+  <link rel="canonical" href="https://bay2rack.pages.dev/">
+  <!-- the first thing you see: the still of the hero film -->
+  <link rel="preload" as="image" href="video/hero.webp" fetchpriority="high">
   <meta name="theme-color" content="#e9ecea">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='26' height='24' rx='3' fill='%2314171a'/%3E%3Crect x='7' y='9' width='18' height='5' rx='1' fill='%231f63d8'/%3E%3Crect x='7' y='17' width='18' height='5' rx='1' fill='%23f7f8f6'/%3E%3C/svg%3E">
 </head>
@@ -19,7 +27,7 @@
     <nav class="nav" aria-label="Sections" data-i18n-aria="aria_sections">
       <a class="nav-link" href="#why" data-i18n="nav_why"></a>
       <a class="nav-link" href="#gallery" data-i18n="nav_gallery"></a>
-      <a class="nav-link" href="#how" data-i18n="how_title"></a>
+      <a class="nav-link" href="#build" data-i18n="how_title"></a>
     </nav>
     <div class="top-actions">
       <a class="btn small" href="#build" data-i18n="nav_build"></a>
@@ -46,6 +54,7 @@
                    poster="video/hero.webp" width="1600" height="900">
               <source src="video/hero.webm" type="video/webm">
               <source src="video/hero.mp4" type="video/mp4">
+              <track kind="captions" src="video/hero.vtt" srclang="en" label="English">
             </video>
           </div>
         </figure>
@@ -100,16 +109,14 @@
       </div>
     </section>
 
-    <section class="band alt" id="how">
-      <div class="wrap">
-        <div class="section-head">
-          <span class="tape" data-i18n="how_tape"></span>
-          <h2 data-i18n="how_title"></h2>
-        </div>
+    <section class="build" id="build">
+      <div class="wrap section-head build-head" id="how">
+        <span class="tape" data-i18n="build_tape"></span>
+        <h2 data-i18n="build_title"></h2>
         <ol class="how">
-          <li><b>1</b><h4 data-i18n="how_1_t"></h4><p data-i18n="how_1"></p></li>
-          <li><b>2</b><h4 data-i18n="how_2_t"></h4><p data-i18n="how_2"></p></li>
-          <li><b>3</b><h4 data-i18n="how_3_t"></h4><p data-i18n="how_3"></p></li>
+          <li><b>1</b><h3 data-i18n="how_1_t"></h3><p data-i18n="how_1"></p></li>
+          <li><b>2</b><h3 data-i18n="how_2_t"></h3><p data-i18n="how_2"></p></li>
+          <li><b>3</b><h3 data-i18n="how_3_t"></h3><p data-i18n="how_3"></p></li>
         </ol>
         <p class="how-guide"><a href="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-en="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-es="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md"><span data-i18n="how_guide"></span> <span aria-hidden="true">→</span></a></p>
         <details class="glossary" id="glossary">
@@ -123,22 +130,20 @@
           </ul>
         </details>
       </div>
-    </section>
-
-    <section class="build" id="build">
-      <div class="wrap section-head build-head">
-        <span class="tape" data-i18n="build_tape"></span>
-        <h2 data-i18n="build_title"></h2>
-        <p class="section-lead" data-i18n="build_lead"></p>
-      </div>
       <details class="wrap examples" id="examples">
         <summary><span data-i18n="step_example"></span> <small data-i18n="ex_hint"></small></summary>
         <div id="examplesList"></div>
       </details>
       <div class="layout">
+        <!-- the steps and the 3D view in one frame, one screen tall; the downloads and the lists go under it -->
+        <div class="workbench">
         <aside class="panel">
           <h3 class="panel-title" data-i18n="steps"></h3>
           <div id="steps"></div>
+          <div class="kit-bar">
+            <button id="kitBar" class="primary" type="button"></button>
+            <small data-i18n="kitBarHint"></small>
+          </div>
           <label class="toggle advanced">
             <input type="checkbox" id="advanced"><span class="track"></span>
             <span><b data-i18n="advanced"></b> <small data-i18n="advancedHint"></small></span>
@@ -148,7 +153,7 @@
 
         <div class="stage">
           <div class="viewer">
-            <div id="tabs" class="tabs"></div>
+            <div id="tabs" class="tabs" role="tablist"></div>
             <div id="view" class="view"></div>
             <ul id="legend" class="legend" hidden></ul>
             <div class="floatbar">
@@ -160,6 +165,8 @@
               <button id="share" class="pill" type="button" data-i18n="share"></button>
             </div>
           </div>
+        </div>
+        </div>
           <div class="results">
             <div class="downloads">
               <button id="kit" class="primary" type="button" data-i18n="downloadKit"></button>
@@ -177,7 +184,6 @@
             <details class="log"><summary data-i18n="log"></summary><pre id="log"></pre></details>
             <a class="more-link" href="#credits" data-i18n="toFooter"></a>
           </div>
-        </div>
       </div>
     </section>
   </main>

@@ -48,7 +48,7 @@ Están en la carpeta `tests/` del kit (`test_bay`, `test_rack`, `test_keystone` 
 | Puerto keystone (`test_keystone`) | el keystone se engancha y no se sale | justo: sube *Huecos de keystone* (+0,1 a +0,2); holgado: bájalo |
 | Un botón (`test_button`) | la tecla, el pulsador o el botón impreso encajan | MX: *Hueco de la tecla MX* |
 
-Cambia lo que haga falta en el paso **Holguras de impresión** del generador web, vuelve a descargar el kit e imprime
+Cambia lo que haga falta en el paso **Ajustar tras imprimir las pruebas** del generador web, vuelve a descargar el kit e imprime
 el resto.
 
 ## 3. Imprime el resto
@@ -102,7 +102,7 @@ solo objeto con varias partes»; luego da a las letras el segundo filamento.
 
 ## 7. Si algo no encaja
 
-| Problema | Qué cambiar (web: Holguras de impresión / Avanzado) |
+| Problema | Qué cambiar (web: Ajustar tras imprimir las pruebas / Todos los parámetros) |
 |---|---|
 | El adaptador entra justo en las bahías | sube *Guías en la bahía* (`sleeve_clearance`) |
 | No cabe en la altura de las bahías | sube *Altura en las bahías* (`height_clearance`) |

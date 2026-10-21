@@ -221,7 +221,7 @@ button:disabled { opacity: .45; cursor: default; }
 .shot:hover img { transform: scale(1.025); }
 .shot .tape { position: absolute; left: 10px; top: 10px; }
 .shot figcaption { display: grid; gap: 6px; align-content: start; }
-.shot h4 { font-size: 1.08rem; font-weight: 720; font-stretch: 104%; }
+.shot h3 { font-size: 1.08rem; font-weight: 720; font-stretch: 104%; }
 .shot p { color: var(--ink-2); font-size: .93rem; max-width: 60ch; }
 .shot .spec { font: 500 11.5px/1.4 var(--f-mono); font-stretch: 87.5%; color: var(--ink-3); }
 .load {
@@ -240,7 +240,7 @@ button:disabled { opacity: .45; cursor: default; }
   position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--ink); color: var(--ground);
   font: 700 15px var(--f-mono); box-shadow: 0 0 0 6px var(--ground); margin-bottom: var(--s-2);
 }
-.how h4 { font-size: 1.1rem; font-weight: 720; font-stretch: 104%; }
+.how h3 { font-size: 1.1rem; font-weight: 720; font-stretch: 104%; }
 .how p { color: var(--ink-2); max-width: 38ch; }
 
 /* ------------------------------------------------------------ configurator */
@@ -258,18 +258,18 @@ button:disabled { opacity: .45; cursor: default; }
 .examples summary small { font-weight: 400; color: var(--ink-3); }
 .examples summary:hover { border-color: var(--ink-3); }
 #examplesList { padding: var(--s-3) 0 0; }
-.layout {
+.layout { display: grid; gap: var(--s-5); max-width: var(--page); margin: 0 auto; padding-inline: var(--gutter); }
+/* the steps and the 3D view in one frame, as tall as the screen under the header (in CSS px, so it follows the
+   browser zoom): both columns end at the same line, the steps scroll inside their own column */
+.workbench {
   --panel-w: 410px;
-  display: grid; grid-template-columns: var(--panel-w) minmax(0, 1fr); align-items: start; max-width: var(--page); margin: 0 auto;
-  border-block: 1px solid var(--rule);
-  /* the steps column keeps its fill and its edge down the whole configurator */
-  background: linear-gradient(90deg, var(--plate) calc(var(--panel-w) - 1px), var(--rule) 0 var(--panel-w), transparent 0);
+  display: grid; grid-template-columns: var(--panel-w) minmax(0, 1fr);
+  height: max(280px, calc(100svh - var(--top-h) - var(--s-5))); scroll-margin-top: calc(var(--top-h) + var(--s-3));
+  border: 1px solid var(--rule); border-radius: var(--r); overflow: hidden; background: var(--plate);
 }
-/* the steps scroll on their own and stay in sight while the page goes down to the results */
 .panel {
-  position: sticky; top: var(--top-h); max-height: calc(100vh - var(--top-h));
-  overflow: auto; padding: var(--s-5) var(--s-4) var(--s-6) max(var(--s-4), calc(var(--gutter) - 8px));
-  overscroll-behavior: contain; min-width: 0;
+  height: 100%; min-height: 0; overflow: auto; overscroll-behavior: contain; min-width: 0;
+  padding: var(--s-5) var(--s-4) var(--s-6); border-right: 1px solid var(--rule);
 }
 .panel-title { font: 600 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 0 4px var(--s-3); }
 
@@ -290,6 +290,30 @@ button:disabled { opacity: .45; cursor: default; }
 @media (max-width: 600px) { .port-name-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .piece-select { max-width: min(340px, 60vw); }
 .step:first-child { border-top: 0; padding-top: 4px; }
+/* a step you can leave as it is: one line with its setting, open it to change it */
+.step.fold > summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; flex-wrap: wrap; }
+.step.fold > summary::-webkit-details-marker { display: none; }
+.step.fold > summary h3 { flex: 0 1 auto; }
+.step.fold > summary::after { content: '▸'; color: var(--ink-3); margin-left: auto; transition: transform .15s; }
+.step.fold[open] > summary::after { transform: rotate(90deg); }
+.step.fold[open] > summary { margin-bottom: var(--s-3); }
+.fold-sum { color: var(--ink-3); font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.step.fold[open] .fold-sum { display: none; }
+/* the patch panel ports of a rack module: one line until you open them */
+.tray-ports > summary { cursor: pointer; color: var(--ink-2); font-size: 13px; padding: 2px 0; }
+.tray-ports > summary:hover { color: var(--ink); }
+/* the kit is ready from the first step: the button stays at the foot of the steps */
+.kit-bar {
+  position: sticky; bottom: calc(-1 * var(--s-6)); z-index: 2; display: grid; gap: 4px;
+  margin: var(--s-4) -4px 0; padding: var(--s-3) 4px var(--s-4); background: var(--plate); border-top: 1px solid var(--rule);
+}
+.kit-bar button { width: 100%; }
+.kit-bar small { color: var(--ink-3); font-size: 12px; }
+/* a short window (a laptop zoomed in, a phone on its side): the bar keeps only its button */
+@media (max-height: 560px) {
+  .kit-bar { padding-block: var(--s-2); margin-top: var(--s-3); }
+  .kit-bar small { display: none; }
+}
 .step header { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-3); cursor: help; }
 .step h3 { font-size: 1rem; font-weight: 700; font-stretch: 104%; flex: 1; }
 .step-num {
@@ -412,8 +436,8 @@ button:disabled { opacity: .45; cursor: default; }
 .slider { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 6px; align-items: center; }
 .slider input[type=range] { width: 100%; accent-color: var(--signal); }
 
-.stage { display: grid; min-width: 0; padding: var(--s-4) var(--gutter) var(--s-6) var(--s-5); gap: var(--s-4); }
-.viewer { position: relative; height: clamp(280px, calc(100vh - var(--top-h) - 110px), 900px); border-radius: var(--r); overflow: hidden; background: var(--stage); border: 1px solid var(--rule); }
+.stage { min-width: 0; min-height: 0; }
+.viewer { position: relative; height: 100%; overflow: hidden; background: var(--stage); }
 .view { position: absolute; inset: 0; }
 .view canvas { width: 100%; height: 100%; display: block; }
 .tabs {
@@ -530,7 +554,7 @@ button:disabled { opacity: .45; cursor: default; }
 
 /* ------------------------------------------------------------ laptop */
 @media (max-width: 1240px) {
-  .layout { --panel-w: 350px; }
+  .workbench { --panel-w: 350px; }
   .cards-2 { grid-template-columns: minmax(0, 1fr); }
 }
 /* ------------------------------------------------------------ tablet */
@@ -555,17 +579,18 @@ button:disabled { opacity: .45; cursor: default; }
   /* on phones the site header slides away while you scroll down and comes back when you scroll up */
   html.head-off .top { transform: translateY(-100%); }
   /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
-  .layout {
-    display: flex; flex-direction: column; align-items: stretch; background: none;
+  .layout { padding-inline: 0; gap: 0; }
+  .workbench {
+    display: flex; flex-direction: column; align-items: stretch;
     height: 100svh; height: 100dvh; scroll-snap-align: start; scroll-margin-top: calc(-1 * var(--top-h));
-    border-block: 0;
+    border: 0; border-radius: 0;
   }
   .stage { display: contents; }
-  .viewer { order: -1; margin: 0; height: min(42svh, 440px); min-height: 200px; flex: none; border-radius: 0; border-width: 0 0 1px; }
+  .viewer { order: -1; margin: 0; height: min(42svh, 440px); min-height: 200px; flex: none; border-bottom: 1px solid var(--rule); }
   .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
   .panel {
     /* the end of the steps does not carry the page on: the 3D view stays on screen */
-    position: static; flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior-y: contain;
+    flex: 1 1 auto; height: auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; border-right: 0;
     background: var(--plate);
     padding: var(--s-4) max(var(--gutter), calc((100% - 680px) / 2)) calc(var(--s-6) + env(safe-area-inset-bottom, 0px));
   }
@@ -577,7 +602,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* narrow and wide (zoomed in, phone on its side): steps and view side by side, a narrower steps column */
 @media (max-width: 900px) and (min-aspect-ratio: 501/400) {
-  .layout { --panel-w: clamp(240px, 38vw, 340px); }
+  .workbench { --panel-w: clamp(240px, 38vw, 340px); }
   .panel { padding-inline: var(--s-3); }
 }
 /* ------------------------------------------------------------ phone */

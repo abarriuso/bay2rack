@@ -2,7 +2,6 @@ import '@fontsource-variable/archivo/wdth.css';
 import '@fontsource-variable/martian-mono/standard.css';
 import './style.css';
 import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
-import { Viewer } from './viewer.js';
 import { parseCustomizer, scadLiteral, fromPreset, same, clampValue } from './customizer.js';
 import { t, lang, setLang, applyI18n } from './i18n.js';
 import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText, optionLabel } from './help.js';
@@ -84,7 +83,7 @@ function setColour(name, hex) {
   UI.filament = name;
   if (hex) UI.custom = hex;
   saveUI();
-  viewer.setFilament(filamentHexes());
+  viewer?.setFilament(filamentHexes());
 }
 
 const $ = (s) => document.querySelector(s);
@@ -250,12 +249,31 @@ const labelOf = (m, v = S.values) => (String(m).includes(':') ? unscore(String(m
 const labelSpec = (text) => 'label:' + (specText(text) || '_');
 
 // ---------------------------------------------------------------- engine
-const viewer = new Viewer($('#view'));
-if (import.meta.env.DEV) window.__b2r = { viewer, S, EXAMPLES, applyExample: (k) => applyExample(k) };
-const worker = new Worker(new URL('./openscad-worker.js', import.meta.url), { type: 'module' });
+// The 3D view (three.js) and the OpenSCAD engine (11 MB of WebAssembly) start when the configurator comes near the
+// screen, so the page itself opens fast; a link with settings in it starts them at once.
+let viewer = null;
+let worker = null;
+let engineStarted = null;
+if (import.meta.env.DEV) window.__b2r = { S, EXAMPLES, applyExample: (k) => applyExample(k) };
+function startEngine() {
+  if (engineStarted) return engineStarted;
+  setStatus(t('loading'), 'busy');
+  worker = new Worker(new URL('./openscad-worker.js', import.meta.url), { type: 'module' });
+  worker.onmessage = onEngine;
+  worker.postMessage({ type: 'init', base: BASE });
+  engineStarted = import('./viewer.js').then(({ Viewer }) => {
+    viewer = new Viewer($('#view'));
+    viewer.setTheme(document.documentElement.dataset.theme);
+    viewer.setFilament(filamentHexes());
+    viewer.show.cables = UI.cables;
+    viewer.show.side = UI.side;
+    if (import.meta.env.DEV) window.__b2r.viewer = viewer;
+  });
+  return engineStarted;
+}
 const jobs = new Map();
 let nextJob = 1;
-worker.onmessage = ({ data: m }) => {
+function onEngine({ data: m }) {
   if (m.type === 'ready') {
     S.engine = 'ready';
     setStatus(t('ready'), 'ok');
@@ -267,8 +285,7 @@ worker.onmessage = ({ data: m }) => {
     jobs.get(m.id)?.(m);
     jobs.delete(m.id);
   }
-};
-worker.postMessage({ type: 'init', base: BASE });
+}
 const runJob = (defines, out) => new Promise((resolve) => {
   const id = nextJob++;
   jobs.set(id, resolve);
@@ -288,6 +305,7 @@ function setStatus(text, kind = '') {
 // every value that comes in (steps, advanced form, link) stays inside its parameter's range
 const clamped = (patch) => Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, S.params[k] ? clampValue(S.params[k], v) : v]));
 function update(patch) {
+  startEngine();
   Object.assign(S.values, clamped(patch));
   normalize(S.values);
   refresh();
@@ -373,6 +391,27 @@ function step(n, key, ...body) {
     h('div', { className: 'body' }, body));
 }
 
+// a step most people can leave as it is: closed, what it is set to on its title line, open when you want it
+// (and it stays open across the re-renders, and the next visit)
+const openSteps = new Set(Array.isArray(UI.open) ? UI.open : []);
+function foldStep(n, key, summary, ...body) {
+  const help = stepHelp(key);
+  const d = h('details', { className: 'step fold', open: openSteps.has(key) },
+    h('summary', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
+      h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
+      h('span', { className: 'fold-sum', textContent: summary })),
+    h('div', { className: 'body' }, body));
+  d.addEventListener('toggle', () => {
+    if (d.open) openSteps.add(key); else openSteps.delete(key);
+    UI.open = [...openSteps];
+    saveUI();
+  });
+  return d;
+}
+// the fits you tune after the test prints (tolerancesEditor): how many are not as they come
+const TOL_KEYS = ['sleeve_clearance', 'height_clearance', 'bezel_clearance', 'ks_fit', 'cover_clear', 'mount_clear', 'rack_insert_d',
+  'bay_insert_d', 'nkvm_insert_d', 'mx_cut'];
+
 // ---------------------------------------------------------------- simple mode
 function renderSteps() {
   S.leftOut = '';
@@ -381,6 +420,7 @@ function renderSteps() {
   const list = [];
   let n = 0;
   const add = (key, ...body) => list.push(step(++n, key, ...body));
+  const fold = (key, summary, ...body) => list.push(foldStep(++n, key, summary, ...body));
   const group = (key) => list.push(h('h4', { className: 'step-group', textContent: t('grp_' + key) }));
   const placed = placeMods(v, c.units);
   const mods = placed.map((p) => p.m);
@@ -407,7 +447,7 @@ function renderSteps() {
   const rear = toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on }));
   if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }), rear);
   const devs = deviceEntries(mods);
-  if (devs.length) add('devices', devicesEditor(devs));
+  if (devs.length) fold('devices', devs.map((e) => e.title).join(', '), devicesEditor(devs));
   if (c.hasSpare) add(c.units > 0 ? 'fill' : 'fill_panel', fillEditor(), c.units > 0 ? null : rear);
   const fills = c.zones;
   if (fills.includes('fan40') || mods.includes('fan40')) {
@@ -429,7 +469,8 @@ function renderSteps() {
   // (a panel-only front cut into the frame has no rack screws)
   const rackScrews = c.units > 0 || (v.filler_mode === 'separate' && c.zones.length > 0);
   const noIron = v.rack_fixing !== 'heatset' && v.bay_fixing !== 'heatset';
-  add('screw', toggle(t('noIron'), noIron, (on) => update(on
+  fold('screw', rackScrews ? `${v.rack_screw} · ${t('fix_' + v.rack_fixing)}` : `${v.bay_screw} · ${t('fixb_' + v.bay_fixing)}`,
+    toggle(t('noIron'), noIron, (on) => update(on
       ? { rack_screw: fixingFits(v, 'square_nut', v.rack_screw) ? v.rack_screw : 'M5', rack_fixing: 'square_nut', bay_fixing: 'nut' }
       : { rack_screw: S.defaults.rack_screw, rack_fixing: 'heatset', bay_fixing: 'heatset' })),
     h('small', { className: 'hint', textContent: t(noIron ? 'noIronOn' : 'screwEasy') }),
@@ -449,12 +490,16 @@ function renderSteps() {
     rowTitle('screwFix'),
     h('div', { className: 'chips small' }, BAY_FIXINGS.map((f) => choice('bay_fixing', f, t('fixb_' + f), { tip: tipOf('fixb:' + f) }))),
     h('small', { className: 'hint', textContent: t('screwBuy') }));
-  add('tol', tolerancesEditor(mods, fills));
-  add('multi', multicolourEditor());
+  const tolChanged = TOL_KEYS.filter((k) => k in S.defaults && !same(v[k], S.defaults[k])).length;
+  fold('tol', tolChanged ? t('sum_changed', { n: tolChanged }) : t('sum_default'), tolerancesEditor(mods, fills));
+  fold('multi', t(v.labels_multicolour ? 'sum_on' : 'sum_off'), multicolourEditor());
   group('view');
-  add('colour', colourEditor());
-  if (v.part === 'assembly') add('preview', previewEditor());
+  fold('colour', t('fil_' + UI.filament), colourEditor());
+  if (v.part === 'assembly') fold('preview', t('scene_' + v.scene), previewEditor());
   $('#steps').replaceChildren(...list);
+  // the kit can be downloaded from the first step on: the bar at the foot of the steps says so
+  const pieces = kitList(v).reduce((a, f) => a + f.qty, 0);
+  $('#kitBar').textContent = t('kitBar', { n: pieces });
   $('#examplesList').replaceChildren(examplesEditor());
 }
 
@@ -511,7 +556,7 @@ function colourEditor() {
 function multicolourEditor() {
   const multi = S.values.labels_multicolour;
   const lc = h('input', { type: 'color', value: UI.labelColour, 'aria-label': t('labelColour'),
-    oninput: () => { UI.labelColour = lc.value; saveUI(); viewer.setFilament(filamentHexes()); lcs.style.setProperty('--c', lc.value); } });
+    oninput: () => { UI.labelColour = lc.value; saveUI(); viewer?.setFilament(filamentHexes()); lcs.style.setProperty('--c', lc.value); } });
   const lcs = h('span', { className: 'swatch custom active', style: `--c:${UI.labelColour}` }, lc);
   return [toggle(t('multicolour'), multi, (on) => update({ labels_multicolour: on })),
     multi ? h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('labelColour') }), lcs) : null,
@@ -553,6 +598,7 @@ function tolerancesEditor(mods, fills) {
     }));
 }
 
+const openPorts = new Set();          // the rack units whose patch panel ports are open
 function contentsEditor(placed) {
   const mods = placed.map((p) => p.m);
   const units = placed.reduce((n, p) => n + p.u, 0);
@@ -573,8 +619,12 @@ function contentsEditor(placed) {
           : val === 'patch' ? patchSpec(ksTypes(S.values), patchOf('patch').names) : val === 'label' ? labelSpec(S.values.label_text) : val)));
     if (kind === 'patch') {
       const own = patchOf(p.m);
-      return [row, h('div', { className: 'tray tray-ports' },
-        portsEditor(6, { ...own, set: (types, names) => set(k, patchSpec(types, names)) }))];
+      const names = own.names.filter(Boolean);
+      const d = h('details', { className: 'tray tray-ports', open: openPorts.has(k) },
+        h('summary', { textContent: `${t('nPorts', { n: own.types.length })}${names.length ? ' · ' + names.join(', ') : ''} · ${t('portsEdit')}` }),
+        portsEditor(6, { ...own, set: (types, nm) => set(k, patchSpec(types, nm)) }));
+      d.addEventListener('toggle', () => { if (d.open) openPorts.add(k); else openPorts.delete(k); });
+      return [row, d];
     }
     if (kind === 'label') {
       const text = h('input', { type: 'text', className: 'text label-text', value: labelOf(p.m), maxLength: 40, placeholder: 'HOMELAB',
@@ -718,7 +768,7 @@ function applyExample(k) {
   const reset = Object.fromEntries(EXAMPLE_KEYS.filter((x) => x in S.defaults).map((x) => [x, S.defaults[x]]));
   update({ ...reset, ...EXAMPLES[k], part: 'assembly' });
   // on a phone the examples sit above the configurator: bring it into view
-  if (matchMedia(NARROW).matches) { $('#examples').open = false; $('.layout').scrollIntoView({ behavior: 'smooth' }); }
+  if (matchMedia(NARROW).matches) { $('#examples').open = false; $('.workbench').scrollIntoView({ behavior: 'smooth' }); }
 }
 // the first question: a front with a fan or buttons (no rack), sockets on the front, or a rack for devices. It keeps
 // your bays and front, and sets the fit and what goes in for that
@@ -875,10 +925,10 @@ function previewEditor() {
       (val) => update(val === 'none' ? { case_view: 'none' } : { case_view: 'tower', case_model: val })),
     h('div', { className: 'toggles' },
       toggle(t('cables'), UI.cables, (on) => {
-        UI.cables = on; saveUI(); viewer.setVisible('cables', on);
+        UI.cables = on; saveUI(); viewer?.setVisible('cables', on);
         $('#legend').hidden = !on || !$('#legend').childElementCount;
       }),
-      toggle(t('sidePanel'), UI.side, (on) => { UI.side = on; saveUI(); viewer.setVisible('side', on); }),
+      toggle(t('sidePanel'), UI.side, (on) => { UI.side = on; saveUI(); viewer?.setVisible('side', on); }),
       toggle(t('devices'), v.demo_devices === 'homelab', (on) => update({ demo_devices: on ? 'homelab' : 'generic' })),
       toggle(t('hardware'), v.show_hardware, (on) => update({ show_hardware: on })),
       toggle(t('sleeper'), UI.sleeper, (on) => { UI.sleeper = on; saveUI(); render(); }),
@@ -1053,6 +1103,7 @@ async function render() {
   const defs = definesFor(values);
   if (ext === '3mf') defs.push('web_scene=true');
   const res = await runJob(defs, 'out.' + ext);
+  await engineStarted;                                  // (the 3D view loads alongside the engine)
   S.busy = false;
   try {
     showResult(res, ext, values);
@@ -1231,6 +1282,7 @@ async function downloadKit(testsOnly = false) {
   if (S.engine !== 'ready' || S.kitBusy) return;
   S.kitBusy = true;
   $('#kit').disabled = true;
+  $('#kitBar').disabled = true;
   $('#kitTests').disabled = true;
   const v = { ...S.values };
   const listed = testsOnly ? kitList(v, true).filter((f) => f.name.startsWith('tests/')) : kitList(v);
@@ -1272,6 +1324,7 @@ async function downloadKit(testsOnly = false) {
   } finally {
     S.kitBusy = false;
     $('#kit').disabled = false;
+    $('#kitBar').disabled = false;
     $('#kitTests').disabled = false;
     if (S.wantRender) render();
   }
@@ -1328,12 +1381,14 @@ function renderGallery() {
     const units = calc(v).units;
     return h('figure', { className: 'shot' },
       h('span', { className: 'shot-img' },
-        h('img', { src: `${BASE}img/gallery/${k}.webp`, alt: t('ex_' + k), loading: 'lazy', decoding: 'async', width: 1200, height: 900,
+        // (a 640 px copy for the card size; the big one for sharp screens)
+        h('img', { src: `${BASE}img/gallery/${k}.webp`, srcset: `${BASE}img/gallery/${k}-640.webp 640w, ${BASE}img/gallery/${k}.webp 1200w`,
+          sizes: '(max-width: 600px) 82vw, 420px', alt: t('ex_' + k), loading: 'lazy', decoding: 'async', width: 1200, height: 900,
           onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
         h('span', { className: 'tape', textContent: units > 0 ? `${units}U` : t('opt_panel') })),
       h('figcaption', {},
         h('span', { className: 'spec', textContent: buildSpec(k) }),
-        h('h4', { textContent: t('ex_' + k) }),
+        h('h3', { textContent: t('ex_' + k) }),
         h('p', { textContent: t('ex_' + k + '_tip') }),
         h('button', { type: 'button', className: 'load', 'aria-label': `${t('gallery_load')}: ${t('ex_' + k)}`,
           onclick: () => { applyExample(k); $('#build').scrollIntoView(); } },
@@ -1369,7 +1424,7 @@ function renderBayTable() {
 // ---------------------------------------------------------------- chrome
 function applyTheme(th) {
   document.documentElement.dataset.theme = th;
-  viewer.setTheme(th);
+  viewer?.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
   // the browser's own bars (Safari on iPhone) take the colour of the page
   const meta = document.querySelector('meta[name="theme-color"]');
@@ -1387,7 +1442,7 @@ function wire() {
   $('#lang').onclick = () => {
     setLang(lang === 'es' ? 'en' : 'es');
     $('#lang').textContent = lang === 'es' ? 'EN' : 'ES';
-    buildAdvanced();
+    if (adv.checked) buildAdvanced(); else $('#form').replaceChildren();
     refresh();
     renderGallery();
     renderBayTable();
@@ -1398,6 +1453,7 @@ function wire() {
   const adv = $('#advanced');
   try { adv.checked = localStorage.getItem('advanced') === '1'; } catch { /* private mode */ }
   const showAdv = () => {
+    if (adv.checked && !$('#form').childElementCount) buildAdvanced();
     $('#form').hidden = !adv.checked;
     try { localStorage.setItem('advanced', adv.checked ? '1' : '0'); } catch { /* private mode */ }
   };
@@ -1412,18 +1468,18 @@ function wire() {
     el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
     if (el.tagName === 'DETAILS') el.open = true;
   });
-  $('#fit').onclick = () => viewer.fit();
+  $('#fit').onclick = () => viewer?.fit();
   $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
   const narrow = matchMedia(NARROW);
-  const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.viewer').after($('.results')));
+  const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.workbench').after($('.results')));
   narrow.addEventListener('change', placeResults);
   placeResults();
   // narrow screens: the header hides while scrolling down and over the full-screen configurator
   let lastY = scrollY;
   const head = () => {
     const y = scrollY;
-    const r = $('.layout').getBoundingClientRect();
+    const r = $('.workbench').getBoundingClientRect();
     const inApp = r.top <= 1 && r.bottom >= innerHeight - 1;
     const root = document.documentElement.classList;
     if (!narrow.matches || y < 80) root.remove('head-off');
@@ -1435,6 +1491,7 @@ function wire() {
   narrow.addEventListener('change', head);
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
   $('#kit').onclick = () => downloadKit();
+  $('#kitBar').onclick = () => downloadKit();
   $('#kitTests').onclick = () => downloadKit(true);
   $('#share').onclick = async () => {
     try { await navigator.clipboard.writeText(location.href); setStatus(t('copied'), 'ok'); } catch { prompt('URL', location.href); }
@@ -1455,7 +1512,6 @@ async function boot() {
   document.documentElement.lang = lang;
   $('#lang').textContent = lang === 'es' ? 'EN' : 'ES';
   applyI18n();
-  setStatus(t('loading'), 'busy');
   const [src, presets, catalog] = await Promise.all([
     fetch(BASE + 'scad/bay2rack.scad').then((r) => r.text()),
     fetch(BASE + 'scad/bay2rack.json').then((r) => r.json()),
@@ -1467,17 +1523,20 @@ async function boot() {
   S.catalog = catalog;
   S.values = { ...S.defaults };
   readHash();
-  viewer.setFilament(filamentHexes());
-  viewer.show.cables = UI.cables;
-  viewer.show.side = UI.side;
+  if (!/=/.test(location.hash)) $('#examples').open = true;
   wire();
-  buildAdvanced();
   refresh();
   renderGallery();
   renderBayTable();
   heroRelabel = wireHeroVideo();
   S.wantRender = true;
-  if (S.engine === 'ready') render();
+  // the engine and the 3D view: with settings in the link at once, otherwise when the configurator is near
+  if (/=/.test(location.hash)) startEngine();
+  else {
+    const near = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { near.disconnect(); startEngine(); } },
+      { rootMargin: '1200px 0px' });
+    near.observe($('#build'));
+  }
 }
 
 boot();
