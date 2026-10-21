@@ -7,7 +7,7 @@
   --plate-2: #eef1ef;
   --ink: #14171a;
   --ink-2: #4c555c;
-  --ink-3: #6f7a82;
+  --ink-3: #59636b;
   --rule: #cfd5d2;
   --signal: #1f63d8;        /* patch-cable blue */
   --signal-ink: #ffffff;
@@ -203,7 +203,7 @@ button:disabled { opacity: .45; cursor: default; }
 .plate header { display: flex; align-items: center; gap: 12px; }
 .plate h4 { font-size: 1.05rem; font-weight: 720; font-stretch: 104%; }
 .plate p { color: var(--ink-2); font-size: .95rem; }
-.plate code { color: var(--ink-3); border-top: 1px dashed var(--rule); padding-top: 10px; overflow-wrap: anywhere; }
+.plate .needs { color: var(--ink-3); border-top: 1px dashed var(--rule); padding-top: 10px; font-size: 13.5px; }
 .use-ico { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--r-s); background: var(--signal-soft); color: var(--signal); }
 .use-ico svg { width: 20px; height: 20px; }
 
@@ -303,6 +303,13 @@ button:disabled { opacity: .45; cursor: default; }
 .body { display: grid; gap: 10px; min-width: 0; }
 .hint { color: var(--ink-3); font-size: 12.5px; line-height: 1.4; }
 .hint.warn { color: var(--warn); }
+.hint.note { color: var(--note); }
+.hint .link { font: inherit; text-decoration: underline; }
+.next-step { flex-basis: 100%; }
+/* read by screen readers only (why a choice is off) */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* phones: the steps scroll on their own, this leads on to the footer */
+.more-link { display: none; }
 
 .seg { display: flex; flex-wrap: wrap; background: var(--plate-2); border: 1px solid var(--rule); border-radius: var(--r-s); padding: 3px; gap: 3px; }
 .seg-btn {
@@ -341,7 +348,9 @@ button:disabled { opacity: .45; cursor: default; }
 .zone-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .zone-head b { font-size: 13.5px; }
 .zone-size { font: 500 11.5px var(--f-mono); font-stretch: 87.5%; color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.zone .chip:disabled { opacity: .38; cursor: not-allowed; text-decoration: line-through; }
+/* a choice that is off: still tappable, the tap says why */
+.zone .chip.off, .seg-btn.off, .chip.off, .mini.off { opacity: .38; cursor: not-allowed; }
+.zone .chip.off { text-decoration: line-through; }
 .zone .chip.active.misfit { background: var(--warn); border-color: var(--warn); }
 .split { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .split input[type=range] { width: 100%; accent-color: var(--signal); }
@@ -355,7 +364,11 @@ button:disabled { opacity: .45; cursor: default; }
   display: grid; place-items: center; align-content: center; gap: 1px; padding: 2px; background: var(--plate-2);
   font-size: 10px; line-height: 1.1; text-align: center; overflow: hidden;
 }
+.port { position: relative; }
 .port b { font: 600 13px var(--f-mono); }
+/* the type list sits invisible over the port: a tap opens the system picker */
+.port-pick { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; font-size: 16px; }
+.port:focus-within { outline: 2px solid var(--signal); outline-offset: 2px; }
 .port:hover { border-color: var(--ink-3); }
 .port-rj45m { background: linear-gradient(160deg, #e6e9ee, #b9c0ca); color: #24282e; }
 .port-rj45 { background: #fbfaf7; color: #2b2723; }
@@ -432,6 +445,7 @@ button:disabled { opacity: .45; cursor: default; }
 .status.ok { color: var(--ok); }
 .status.error { color: var(--warn); }
 .warn-badge { cursor: pointer; color: var(--warn); border-color: var(--warn); font-weight: 600; }
+.warn-badge .badge-n { display: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .results { display: grid; gap: var(--s-4); }
@@ -447,6 +461,15 @@ button:disabled { opacity: .45; cursor: default; }
 .card h3 { margin: 0 0 8px; font: 600 11px/1 var(--f-mono); font-stretch: 87.5%; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-3); }
 .card ul { margin: 0; padding-left: 18px; }
 .card li { margin: 4px 0; font-size: 14px; overflow-wrap: anywhere; }
+.bom .bom-group { list-style: none; margin: var(--s-4) 0 2px -18px; font: 600 11px/1.2 var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.bom .bom-group:first-child { margin-top: 0; }
+.row-head { display: block; font-size: 13.5px; margin: var(--s-3) 0 0; }
+.row-head:first-child { margin-top: 0; }
+.how-guide { margin-top: var(--s-5); font-weight: 650; }
+.how-guide a { color: var(--signal); text-underline-offset: 3px; }
+.glossary { margin-top: var(--s-4); border: 1px solid var(--rule); border-radius: var(--r); background: var(--ground); padding: var(--s-3) var(--s-4); }
+.glossary summary { cursor: pointer; font-weight: 650; }
+.glossary ul { margin: var(--s-3) 0 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); max-width: 80ch; }
 .bom b { font-weight: 650; }
 .warnings li.warn { color: var(--warn); }
 .warnings li.note { color: var(--note); }
@@ -541,12 +564,14 @@ button:disabled { opacity: .45; cursor: default; }
   .viewer { order: -1; margin: 0; height: min(42svh, 440px); min-height: 200px; flex: none; border-radius: 0; border-width: 0 0 1px; }
   .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
   .panel {
-    position: static; flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior-y: auto;
+    /* the end of the steps does not carry the page on: the 3D view stays on screen */
+    position: static; flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior-y: contain;
     background: var(--plate);
     padding: var(--s-4) max(var(--gutter), calc((100% - 680px) / 2)) calc(var(--s-6) + env(safe-area-inset-bottom, 0px));
   }
   /* moved inside the steps by main.js on narrow screens */
   .panel .results { padding: var(--s-5) 0 0; margin-top: var(--s-4); border-top: 1px solid var(--rule); }
+  .panel .more-link { display: block; margin-top: var(--s-4); color: var(--ink-3); font-size: 13px; }
   .downloads .primary { flex: 1 1 100%; }
   .prebuilt { margin-left: 0; }
 }
@@ -577,8 +602,26 @@ button:disabled { opacity: .45; cursor: default; }
   .status { font-size: 11px; padding: 6px 8px; }
   .viewer .legend { display: none; }
   .case-name { display: none; }
-  .row { grid-template-columns: 62px minmax(0, 1fr); }
+  .row { grid-template-columns: 78px minmax(0, 1fr); }
   .tray { margin-left: 0; }
+  .tray-slots { grid-template-columns: minmax(0, 1fr); }
+  /* the warnings badge shows only its count, so the bar over the 3D view stays one row */
+  .warn-badge .badge-words { display: none; }
+  .warn-badge .badge-n { display: inline; }
   .seg-btn { min-width: 34px; padding: 7px 4px; }
   .foot-main { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ------------------------------------------------------------ touch screens */
+@media (pointer: coarse) {
+  /* 16 px text in the fields: Safari on iPhone zooms in on anything smaller */
+  input, select, textarea, .param .num, .param .text, .param .select, .dim .num, .port-name, .tray-slots .select { font-size: 16px; }
+  /* targets a finger can hit (44 px), with the visible size kept where the layout is tight */
+  .chip, .seg-btn, .tab, .pill, .file, .tray-slots .select, .select { min-height: 44px; }
+  .chips.small .chip { min-height: 40px; }
+  .mini { width: 44px; height: 44px; }
+  .info { width: 30px; height: 30px; position: relative; }
+  .info::after { content: ''; position: absolute; inset: -7px; }
+  .swatch { position: relative; }
+  .swatch::after { content: ''; position: absolute; inset: -9px; }
 }

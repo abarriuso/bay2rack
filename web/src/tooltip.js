@@ -1,8 +1,10 @@
 // One floating tooltip for every element with data-tip (and optional data-tip-title).
-// Mouse: shows after a short hover. Touch / keyboard: the (i) buttons toggle it.
+// Mouse: shows after a short hover. Touch / keyboard: the (i) buttons toggle it, and so does a tap on a
+// choice that is off (aria-disabled), which says why.
 export function initTooltips(tip) {
   let timer = null;
   let current = null;
+  let touch = false;
 
   const place = (el) => {
     const r = el.getBoundingClientRect();
@@ -12,9 +14,9 @@ export function initTooltips(tip) {
     const th = tip.offsetHeight;
     let left = r.right + 12;
     let top = r.top;
-    if (left + tw > window.innerWidth - 8) {        // no room on the right: below
+    if (left + tw > window.innerWidth - 8) {        // no room on the right: below (above on a touch screen, off the controls)
       left = Math.max(8, Math.min(r.left, window.innerWidth - tw - 8));
-      top = r.bottom + 8;
+      top = touch && r.top - th - 8 >= 8 ? r.top - th - 8 : r.bottom + 8;
     }
     if (top + th > window.innerHeight - 8) top = Math.max(8, r.top - th - 8);
     tip.style.left = `${left}px`;
@@ -38,6 +40,7 @@ export function initTooltips(tip) {
     tip.hidden = true;
   };
 
+  document.addEventListener('pointerdown', (e) => { touch = e.pointerType === 'touch'; }, true);
   document.addEventListener('pointerover', (e) => {
     if (e.pointerType === 'touch') return;
     const el = e.target.closest('[data-tip]');
@@ -47,6 +50,13 @@ export function initTooltips(tip) {
     timer = setTimeout(() => show(el), current ? 0 : 350);
   });
   document.addEventListener('click', (e) => {
+    const off = e.target.closest('[aria-disabled="true"][data-tip]');
+    if (off) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (current === off && !tip.hidden) hide(); else show(off);
+      return;
+    }
     const btn = e.target.closest('.info');
     if (!btn) { if (!e.target.closest('[data-tip]')) hide(); return; }
     e.preventDefault();
@@ -54,6 +64,12 @@ export function initTooltips(tip) {
     const el = btn.closest('[data-tip]');
     if (current === el && !tip.hidden) hide(); else show(el);
   }, true);
+  // keyboard: the help of what has the focus (not on a click, that would cover what you just pressed)
+  document.addEventListener('focusin', (e) => {
+    const el = e.target.closest?.('[data-tip]');
+    if (el && e.target.matches(':focus-visible')) show(el);
+  });
+  document.addEventListener('focusout', () => { if (!touch) hide(); });
   document.addEventListener('scroll', hide, true);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
 }

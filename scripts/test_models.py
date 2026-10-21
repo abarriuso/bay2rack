@@ -35,8 +35,8 @@ def openscad():
 
 
 # ---------------------------------------------------------------- cases: (name, defines, expected warning)
-def adapter(name, warn=None, **d):
-    return (f"adapter/{name}", {"part": "adapter", **d}, warn)
+def adapter(name, warn=None, need=(), **d):
+    return (f"adapter/{name}", {"part": "adapter", **d}, warn, list(need))
 
 
 def module(kind, warn=None, **d):
@@ -45,14 +45,14 @@ def module(kind, warn=None, **d):
 
 CASES = (
     # every bay count, both front styles
-    # (6 bays make a part taller than 250 mm: the model says so, it is not an error)
-    [adapter(f"plate-flush-{b}", bays=b, warn="taller than 250 mm" if b == 6 else None) for b in range(1, 7)]
+    # (6 bays make an adapter longer than 250 mm on the bed: the model says so in a note, it is not an error)
+    [adapter(f"plate-flush-{b}", bays=b, need=["on the bed"] if b == 6 else []) for b in range(1, 7)]
     + [adapter(f"bezel-flush-{b}", bays=b, front_style="bezel", filler_mode="integral",
-               warn="taller than 250 mm" if b == 6 else None) for b in (1, 3, 6)]
+               need=["on the bed"] if b == 6 else []) for b in (1, 3, 6)]
     + [adapter("plate-overhang-1", bays=1, fit="overhang"),
        adapter("plate-overhang-2", bays=2, fit="overhang"),
        adapter("plate-overhang-3-center", bays=3, fit="overhang", hole_pattern="center"),
-       adapter("plate-overhang-6-center", bays=6, fit="overhang", hole_pattern="center", warn="taller than 250 mm"),
+       adapter("plate-overhang-6-center", bays=6, fit="overhang", hole_pattern="center", need=["on the bed"]),
        adapter("bezel-overhang-3-center", bays=3, fit="overhang", front_style="bezel", hole_pattern="center"),
        adapter("panel-only-fan80-buttons", bays=3, fit="panel", filler_mode="integral", spare_pos="split",
                spare_split=0.67, spare_fill="fan80", spare_fill_2="buttons"),
@@ -65,7 +65,9 @@ CASES = (
        adapter("spare-split", spare_pos="split", spare_split=0.78)]
     # rack screws and fixings
     + [adapter(f"screw-{s}", rack_screw=s) for s in ("M3", "M4", "M5", "10-32", "12-24")]
-    + [adapter(f"fixing-{f}", rack_fixing=f) for f in ("tap", "square_nut", "channel")]
+    # (nuts and channels with M5: an M6 nut leaves no wall to the bay side, see the warnings below)
+    + [adapter("fixing-tap", rack_fixing="tap")]
+    + [adapter(f"fixing-{f}-M5", rack_fixing=f, rack_screw="M5") for f in ("square_nut", "channel")]
     + [adapter("fixing-nut_trap-M4", rack_fixing="nut_trap", rack_screw="M4")]
     + [adapter(f"bay-{f}", bay_fixing=f) for f in ("tap", "nut", "clearance")]
     + [adapter("bay-6-32", bay_screw="6-32"), adapter("head-countersunk", rack_screw_head="countersunk")]
@@ -124,6 +126,8 @@ CASES = (
     + [module("kvm:jet+jet+jet", warn="do not fit"),
        adapter("fan80-in-a-1U-strip", warn="80 mm fan", spare_fill="fan80", filler_mode="integral"),
        adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap"),
+       adapter("fixing-square_nut-M6", warn="nut pockets leave only", rack_fixing="square_nut"),
+       adapter("fixing-channel-M6", warn="nut channels leave only", rack_fixing="channel"),
        ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None)]
     # the bill of materials: what each piece needs
     + [("bom/filler-keystones", {"part": "filler"}, None,
@@ -196,7 +200,7 @@ def run(exe, case):
             problems.append(f"BOM: no '{need}'")
     if tris == 0 and not problems:
         problems.append("empty mesh")
-    if defines.get("part") == "adapter" and (not warn or "250 mm" in warn):
+    if defines.get("part") == "adapter" and not warn:
         summary = re.search(r"bay2rack \| bays=\d+.*units=(\d+)U", log)
         if not summary:
             problems.append("no summary line")

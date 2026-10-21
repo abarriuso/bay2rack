@@ -9,12 +9,16 @@ KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the ca
 
 ![A beige 90s sleeper unfolds: a modern server inside, its 5.25" bays become a rack](docs/video/assemble.gif)
 
-> **[Open the web generator](https://bay2rack.pages.dev/)**: start from a ready-made build, choose the bays,
+> **[Open the web generator](https://bay2rack.pages.dev/)** ([mirror](https://abarriuso.github.io/bay2rack/) if that
+> address does not load): say what you want in the bays (a fan or buttons, sockets, or a rack for devices), choose
 > what goes in every rack unit and every patch panel port, see it mounted in a real PC case (or a 90s sleeper), and
-> download a **kit (.zip)** with every STL and the bill of materials. It all runs in your browser.
+> download a **kit (.zip)** with every STL, the bill of materials and the print settings. It all runs in your browser.
 >
 > **Just want to print?** Pre-built variants are in [`stl/`](stl/README.md), with the screws and inserts they need.
-> Print the [test pieces](stl/README.md#tests) first and [tune the tolerances](#printing).
+> Print the [test pieces](stl/README.md#tests) first and [tune the print fits](#printing).
+>
+> **Building one?** The [build guide](docs/BUILD.md) covers what to buy, the print order, the inserts, the
+> assembly and the cables and power.
 
 > **Work in progress.** Found a defect, a part that doesn't fit your case or a print problem? [Open an issue](https://github.com/abarriuso/bay2rack/issues)
 > with photos and your case model. Measurements of other cases and rack gear, new modules and fixes are welcome as
@@ -31,19 +35,8 @@ Evolution of the original
 |---|---|
 | ![Router + VLANs](docs/gallery/router.webp) **Router + VLANs**: the PC runs OPNsense / pfSense with a 4-port network card; a managed UniFi switch carries the VLANs, a second switch the servers, JetKVM + NanoKVM, patch panel | ![Network rack](docs/gallery/network.webp) **Network rack**: 5 bays, two switches, a UniFi Express and a full patch panel |
 | ![Raspberry Pi cluster](docs/gallery/pi.webp) **Raspberry Pi cluster**: a UniFi switch and four Raspberry Pi 5 standing as 2U blades | ![KVM station](docs/gallery/kvm.webp) **KVM station**: two trays, two JetKVM and two NanoKVM, HDMI and USB keystones |
-| ![Audio](docs/gallery/audio.webp) **Audio**: a Raspberry Pi 4 streamer, three 40 mm fans, RCA, 3.5 mm jack and Toslink keystones | ![Buttons + 80 mm fan](docs/gallery/client.webp) **Proxmox / TrueNAS box**: no rack, just a bezel with an 80 mm fan and a power / reset button panel |
+| ![Audio](docs/gallery/audio.webp) **Audio**: a Raspberry Pi 4 streamer, three 40 mm fans, RCA, 3.5 mm jack and Toslink keystones | ![Proxmox / TrueNAS box](docs/gallery/client.webp) **Proxmox / TrueNAS box**: no rack, just a front panel with an 80 mm fan and a power / reset button panel |
 | ![UniFi](docs/gallery/unifi.webp) **UniFi**: Flex Mini switch and UniFi Express | ![Flush bezel](docs/gallery/bezel.webp) **Flush bezel**: an exact 5.25" bezel, flush with the case front |
-
-### The film
-
-Blender 5.2, Cycles (HIP), 1600×900, 60 fps (30 fps plus the in-between frames, `--between`), 17 s.
-`scripts/blender/hero.py` builds the scene from GLB exports of the web viewer; `scripts/blender/encode.py` grades it
-and writes MP4 (H.264), WebM (VP9) and the GIF.
-
-| | | |
-|---|---|---|
-| ![The sleeper unfolds](docs/img/film/unfold.webp) | ![A modern server inside](docs/img/film/server.webp) | ![The rack front](docs/img/film/front.webp) |
-| ![Cables through the PCI slots](docs/img/film/cables.webp) | ![Raspberry Pi blades in the Proxmox node](docs/img/film/pi-cluster.webp) | ![The homelab](docs/img/film/hero.webp) |
 
 ## A homelab from old PCs
 
@@ -88,24 +81,24 @@ Use the plate front when your case front is flat at the drive bays. If the case 
 stands out from the metal, use the bezel front and set `bezel_depth` to how far that front stands out.
 
 Other knobs: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split),
-and the spare-zone fill (`keystone`, `buttons`, `vent`, `cable`, `led`, `label`, `blank`).
+and the spare-zone fill (`keystone`, `buttons`, `vent`, `cable`, `label`, `fan40`, `fan80`, `blank`).
 The fill can be `separate` (a screw-on panel in the same plane as the rack accessories) or `integral` (cut into the frame).
 
 ## Rack modules
 
-`rack_modules` lists what goes in every rack unit, top first. Every module is a separate 1U print that screws to
-the rack holes:
+`rack_modules` lists what goes in every rack unit, top first. Every module is a separate print (1U; the blades 2U)
+that screws to the rack holes:
 
 | Module | |
 |---|---|
-| `ms105g` | **Mercusys MS105G** 5-port switch (105 × 70 × 24.9 mm): it slides into a tunnel from the back, the front window leaves the 5 ports and the power jack free, a zip tie behind it holds it |
+| `ms105g` | 5-port switch, **Mercusys MS105G** size (105 × 24.9 × 70 mm, W × H × D; set your switch's size): it slides into a tunnel from the back, the front window leaves the 5 ports and the power jack free, a zip tie behind it holds it |
 | `uswflex`, `ux` | **UniFi USW-Flex-Mini** (managed, VLANs) and **UniFi Express** in the same kind of tunnel |
 | `kvm:jet+nano` | **KVM over IP tray**: 1 to 3 boxes of your choice side by side (`jet` JetKVM, `nano` NanoKVM, `custom`), e.g. `kvm:nano+nano`; it warns when they don't fit |
 | `pi:pi5` | **Raspberry Pi tray**: Pi 5 / 4 / 3 or Zero flat on M2.5 standoffs, USB and Ethernet through the front; two boards side by side with PoE HATs |
 | `piblade:pi5+pi5+pi5+pi5` | **2U Raspberry Pi blades**: up to four boards on edge, each on its own fin, standoffs that print without supports |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **NanoKVM bay** in three pieces with a lid on M3 heat-set inserts, the heatsink in the open. `side`: standing out of the case in a little mountain, its ports open at both sides so you plug in from outside; the cables run outside or into the case through slots at the ends (`nkvm_raised`; off = in a pocket of the plate). `front`: a drawer with the Ethernet port in its face that slides out of the front with the NanoKVM (two screws), up to two keystones beside it. `ks`: the Ethernet port comes to keystone 1, the NanoKVM flat right behind it with a straight 10 cm patch cable (`nkvm_patch`). `nkvm_split = false` prints the plate and the bay in one piece |
+| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **NanoKVM Lite bay** in three pieces (`ks`: two) with a lid on M3 heat-set inserts, the heatsink in the open. `side`: standing out of the case in a little mountain, its ports open at both sides so you plug in from outside; the cables run outside or into the case through slots at the ends (`nkvm_raised`; off = in a pocket of the plate). `front`: a drawer with the Ethernet port in its face that slides out of the front with the NanoKVM (two screws), up to two keystones beside it. `ks`: the Ethernet port comes to keystone 1, the NanoKVM flat right behind it with a straight 10 cm patch cable (`nkvm_patch`). `nkvm_split = false` prints the plate and the bay in one piece |
 | `dev1`, `dev2` | A made-to-measure tray for any device: set its width, height and depth |
-| `fan40` | 1U panel with up to three **40 mm fans** behind round openings |
+| `fan40` | 1U panel with up to three **40 mm fans** behind round openings or a hex grille (`fan_guard`) |
 | `shelf` | Shelf with zip-tie slots for small devices |
 | `patch` | 1U patch panel with the ports you choose |
 | `buttons` | 1U button panel (see below) |
@@ -118,7 +111,8 @@ longer fits becomes a blank.
 
 ## Keystones
 
-The patch panel takes 1–12 ports (rows are added automatically) with optional engraved numbers.
+The patch panel takes up to 6 ports in a 1U row and more rows when it is taller (12 in a 2U panel), with engraved
+numbers or your own names (`ks_names`).
 `ks_ports_list` sets **every port**: `rj45m` (metal / shielded RJ45), `rj45`, `hdmi`, `usb`, `rca`, `jack` (3.5 mm),
 `toslink` (standard keystones),
 `cover` (a plain printed cover for an unused port), `pass` (a split pass-through cover that clips around a cable, e.g.
@@ -133,9 +127,15 @@ the switch power cable) or `none`. Both covers are pushed in from the front and 
 
 ## Button panel
 
-A fill or a 1U module with **power and reset keys made from normal keyboard switches** (Cherry MX compatible:
-14 mm cut-out in a 1.5 mm plate, any 1u keycap) plus **power and disk-activity LEDs** (3 or 5 mm), wired to the
-motherboard's front-panel header. Three LED designs, all printable front face down:
+A fill or a 1U module with **power and reset buttons** plus **power and disk-activity LEDs** (3 or 5 mm), wired to
+the motherboard's front-panel header. Three kinds of button (`btn_type`):
+
+- `mx`: normal keyboard switches (Cherry MX compatible: 14 mm cut-out in a 1.5 mm plate, any 1u keycap).
+- `metal`: the metal push buttons sold for PC cases, 12–22 mm (`btn_metal_d`), with their LED ring.
+- `retro`: printed caps on 12 × 12 mm tactile switches held by a printed carrier, a big POWER, RESET and an
+  optional TURBO (`btn_turbo`) like the beige 90s PCs, with named LEDs and pinstripes.
+
+Three LED designs, all printable front face down:
 
 - `ring`: a countersunk hole with an engraved ring; the LED dome sticks out by `led_protrude`.
 - `halo`: a thin ring of light around each key.
@@ -154,8 +154,8 @@ motherboard's front-panel header. Three LED designs, all printable front face do
   its strength), so you don't have to bend them flat.
 - **Stiff side walls**: an inner lip along their top and bottom edges and a fillet into each rack post, all outside
   the rack opening.
-- Bay screws, heat-set inserts or nuts; 80 mm and 40 mm fan openings are plain round holes, nothing in front of
-  the fan.
+- Bay screws, heat-set inserts or nuts; the 80 mm and 40 mm fan openings are round holes or a hex grille
+  (`fan_guard`).
 
 ## Rack standard
 
@@ -174,7 +174,7 @@ If your gear differs, set `rack_std = custom`.
 |---|---|
 | Rack screw | M3, M4, M5, M6, 10-32, 12-24 |
 | Head | button (ISO 7380), socket (ISO 4762), countersunk (ISO 10642, adds countersinks to panels), pan (ISO 7045) |
-| Rack fixing | heat-set insert, self-tapping, hex nut trap, square nut side slot, sliding square-nut channel (screws at any height) |
+| Rack fixing | heat-set insert, self-tapping, hex nut trap, square nut side slot, sliding square-nut channel (screws at any height). Nuts need M5 or smaller (hex nut: M4): an M6 nut leaves no plastic between the post and the side of the bay, and the model warns |
 | Bay screw | M3 or 6-32, with heat-set insert, self-tapping, hex nut or clearance + loose nut |
 | Overrides | `rack_insert_d/l`, `bay_insert_d/l` for your inserts; `rack_screw_len`, `bay_screw_len` (0 = auto) |
 
@@ -211,8 +211,11 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 > |---|---|---|---|
 > | `test_keystone` | the keystone jack clips in | raise `ks_fit` (+0.1 to +0.2) | lower `ks_fit` (negative) |
 > | `test_bay` | the sleeve slides into the bay, the side holes line up | raise `sleeve_clearance` | holes off: `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` |
-> | `test_rack` | rack hole spacing and the rack inserts | holes don't line up: `rack_hole_slot` | insert spins: lower `rack_insert_d`; goes in crooked: raise it |
+> | `test_rack` | rack hole spacing and the rack inserts; with its inserts in, it must still slide into a bay | holes don't line up: `rack_hole_slot` | insert spins: lower `rack_insert_d`; goes in crooked: raise it |
+> | `test_button` | the MX key, metal push button or printed cap fits | MX: raise `mx_cut` | MX: lower `mx_cut` |
 >
+> In a kit they are `tests/test_*.stl`; in [`stl/tests`](stl/README.md#tests) they are `bay-plate` / `bay-bezel`,
+> `rack-M6-heatset`, `keystone-metal` / `keystone-standard` and `button-mx` / `button-metal-16` / `button-retro`.
 > The rest follow the same idea: `cover_clear` for the keystone covers, `mount_clear` for the devices in the rack
 > modules, `nkvm_insert_d` and `bay_insert_d` for the small heat-set inserts. In the web generator they are in the
 > **Print fits** step.
@@ -222,12 +225,14 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 - PETG or ABS/ASA is recommended inside a warm case; PLA works for cool cases.
 - 3–4 perimeters, 20–30 % infill.
 - 3 bays print at 148 × 128 mm on the bed, about 66–70 mm tall.
+- Inserts, assembly, cables and power: see the [build guide](docs/BUILD.md).
 
 <p align="center"><img src="docs/img/print.png" width="420" alt="Print orientation"></p>
 
 ## Customizing
 
-- **Web generator:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) runs OpenSCAD compiled to
+- **Web generator:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) (mirror on
+  [GitHub Pages](https://abarriuso.github.io/bay2rack/), built from the same `main`) runs OpenSCAD compiled to
   WebAssembly in the browser: a simple step-by-step mode with hover help, an advanced mode with every parameter,
   shareable links, the bill of materials, single-part STL / coloured 3MF downloads and a kit .zip with every STL.
   The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
@@ -243,7 +248,18 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 
 Every render prints a summary line, the BOM and a `WARNING`/`NOTE` whenever the screws, inserts or fills don't fit.
 `python scripts/test_models.py` renders the edge cases (1–6 bays, every front, fill, screw, fixing and module) and
-every ready-made build of the configurator, and checks them; it runs on every push.
+every ready-made build of the configurator, and checks their warnings and bill of materials; it runs on every push.
+
+### The film
+
+Blender 5.2, Cycles (HIP), 1600×900, 60 fps (30 fps plus the in-between frames, `--between`), 17 s.
+`scripts/blender/hero.py` builds the scene from GLB exports of the web viewer; `scripts/blender/encode.py` grades it
+and writes MP4 (H.264), WebM (VP9) and the GIF.
+
+| | | |
+|---|---|---|
+| ![The sleeper unfolds](docs/img/film/unfold.webp) | ![A modern server inside](docs/img/film/server.webp) | ![The rack front](docs/img/film/front.webp) |
+| ![Cables through the PCI slots](docs/img/film/cables.webp) | ![Raspberry Pi blades in the Proxmox node](docs/img/film/pi-cluster.webp) | ![The homelab](docs/img/film/hero.webp) |
 
 ## Repository layout
 
@@ -254,7 +270,7 @@ src/lib/
   standards.scad         screw / insert / nut tables, standard lengths
   config.scad            derived dimensions, checks, bill of materials
   util.scad              geometry helpers
-  fills.scad             keystones (metal / standard), vent, cable, LED, label
+  fills.scad             keystones (metal / standard), vents, cable, label, buttons, fans
   adapter.scad           rack fixings, bay sleeve, front frame
   panels.scad            fillers, rack panels, test pieces
   preview.scad           hardware models, sections, PC tower (preview only)
@@ -262,9 +278,12 @@ scripts/build.py         variant table -> presets + stl/ + stl/README.md
 scripts/render_docs.py   README images
 scripts/test_models.py   model tests (CI)
 scripts/check_assemblies.py  every example and bays x fit x front assembly, no warnings (CI)
+scripts/makerworld.py    MakerWorld upload kit (scripts/makerworld/: the descriptions)
 scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF)
 web/                     browser viewer + generator (Cloudflare Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md
+docs/BUILD.md            build guide: what to buy, print order, inserts, assembly, cables and power
+docs/CASES.md            compatibility list and a case checklist
 docs/img/, docs/gallery/ README and site images
 ```
 
