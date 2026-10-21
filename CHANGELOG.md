@@ -5,6 +5,21 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web generator, simpler: the steps most people leave as they are (device sizes, screws, print fits, multicolour,
+  colour, 3D view) are folded to one line that says what they are set to; a "Download the kit" button stays at the
+  foot of the steps from the first one; a first visit opens the ready-made builds; plain questions for the step
+  titles ("What is the front of your case like?", "How does it sit at the front?", "What goes in the gap that is
+  left?"), "Like a CD drive" for the bezel, "Pieces apart" for the exploded view, "Every parameter" for the
+  advanced form; a patch panel module folds its ports to one line; "How it works" and the glossary moved next to
+  the configurator.
+- Web generator layout: the steps and the 3D view share one frame as tall as the window (both end at the same line,
+  at any zoom), with the downloads, the bill of materials and the warnings under it.
+- Web generator speed (Lighthouse on a phone: 47 -> 97, accessibility, best practices and SEO 100): the 3D view
+  and the 11 MB OpenSCAD engine load when the configurator comes near the screen (at once with a link that has
+  settings), the "Every parameter" form is built when it is opened, the English texts are in the HTML (no jump when
+  the script fills them, and search engines read them), 640 px gallery images, robots.txt, sitemap.xml, llms.txt,
+  a canonical address, security and cache headers, source maps, a caption track for the silent hero film, heading
+  order and the tab list role.
 - Every patch panel and label module of the rack has its own ports, port names and text (`patch:rj45m=NAS+hdmi+cover`,
   `label:MY_LAB`): two of them no longer share the first one's. The web editor edits each in its row of the rack
   contents, and the kit, the letters pieces, the covers and the bill of materials count each one. A bare `patch` /

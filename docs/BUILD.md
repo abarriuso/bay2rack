@@ -46,7 +46,7 @@ button panel). In [`stl/tests`](../stl/README.md#tests) they are `bay-plate` / `
 | Keystone port (`test_keystone`) | the jack clips in and stays | tight: raise *Keystone openings* (+0.1 to +0.2); loose: lower it |
 | One button (`test_button`) | the key, push button or printed cap fits | MX: *MX key cut-out* |
 
-Change what you need in the **Print fits** step of the web generator, download the kit again and print the rest.
+Change what you need in the **Adjust after the test prints** step of the web generator, download the kit again and print the rest.
 
 ## 3. Print the rest
 
@@ -98,7 +98,7 @@ letters the second filament.
 
 ## 7. If something does not fit
 
-| Problem | Change (web: Print fits / Advanced) |
+| Problem | Change (web: Adjust after the test prints / Every parameter) |
 |---|---|
 | The adapter is tight in the bays | *Sleeve in the bay* (`sleeve_clearance`) up |
 | Too tall for the stack of bays | *Height in the bays* (`height_clearance`) up |
