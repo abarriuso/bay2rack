@@ -9,6 +9,8 @@ on the photos and in the MakerWorld notes.
   1.4 mm, the nuts fit too (no soldering iron), and M5 screws still go through the M6 holes of other mini rack
   panels. M6, 10-32 and 12-24 stay in the Screws step. Every pre-built STL is rebuilt; the rack test piece is now
   `tests/rack-M5-heatset.stl`.
+  A link made before this change that kept the old default (no `rack_screw` in it) now opens with M5: printed
+  pieces still work (M5 screws pass M6 holes); set M6 in the Screws step to get the old kit again.
 - NanoKVM bay in a pocket (`nkvm:side`, not raised): its floor, roof and posts stop short of the rim of the adapter's
   front frame for the depth of that frame, and the plate's screw bosses keep clear of its edges.
 - Web generator: the hero film loads after the page and is 960 px on phones (1.1 MB instead of 3.4 MB); it stays a
