@@ -11,7 +11,8 @@ Se atornilla a las bahías como una unidad. Los accesorios de rack se atornillan
 **Trabajo en proceso, se agradece la ayuda.** Es un proyecto en marcha. Si algo no encaja en tu caja, una pieza sale mal o encuentras un defecto, cuéntamelo en los comentarios o abre un issue en GitHub (https://github.com/abarriuso/bay2rack/issues), con fotos y el modelo de tu caja si puedes. Se agradecen pull requests con medidas de otras cajas y accesorios de rack, módulos nuevos y correcciones.
 
 **Configúralo en el navegador, con vista 3D de la caja:** https://bay2rack.pages.dev/
-(elige las bahías, cada U del rack y cada puerto keystone, y descarga un kit con todos los STL y la lista de materiales).
+(copia: https://abarriuso.github.io/bay2rack/). Elige las bahías, qué va en cada U del rack y cada puerto de cada patch
+panel, y descarga un kit con todos los STL, la lista de materiales y los ajustes de impresión.
 Código y documentación: https://github.com/abarriuso/bay2rack
 
 ## Qué incluye
@@ -21,12 +22,13 @@ Código y documentación: https://github.com/abarriuso/bay2rack
 - **Rellenos** para la franja: 6 keystones, rejilla, ciego.
 - **Módulos de rack** (1U): switch Mercusys MS105G, UniFi Flex Mini, UniFi Express, JetKVM + NanoKVM, Raspberry Pi 5,
   tres ventiladores de 40 mm, patch panel de 6 puertos, botonera de encendido / reset con interruptores MX.
-  **2U**: cuatro blades de Raspberry Pi.
+  **2U**: cuatro Raspberry Pi de canto. En el configurador web también: una **bahía para NanoKVM Lite** (de pie
+  saliendo de la caja, en un cajón o detrás de un keystone), un estante, etiquetas y bandejas para tus aparatos.
 - **Bisel sin rack**: ventilador de 80 mm + botonera, para los demás PCs del homelab.
 - **Tapas de keystone** (lisa y pasacables) y **soportes para ranuras PCI** para meter los cables por detrás.
-- **Piezas de prueba**: imprímelas primero y compruébalas con tu caja. Si el keystone, la funda o un inserto quedan justos u holgados, cámbialo en el paso «Ajustes de impresión» del configurador web antes de imprimir el resto.
+- **Piezas de prueba**: imprímelas primero y compruébalas con tu caja. Si el keystone, la funda o un inserto quedan justos u holgados, cámbialo en el paso «Ajustar tras imprimir las pruebas» del configurador web antes de imprimir el resto.
 
-Todo lo demás (otro número de bahías, otros switches, las medidas de tus dispositivos, tornillos M4/M5/10-32/12-24,
+Todo lo demás (otro número de bahías, otros switches, las medidas de tus dispositivos, tornillos M3/M4/M6/10-32/12-24,
 tuercas en vez de insertos...) está en el modelo paramétrico: usa el configurador web, o abre el archivo .scad en OpenSCAD.
 
 ## Impresión

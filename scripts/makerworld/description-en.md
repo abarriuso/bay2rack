@@ -11,7 +11,8 @@ It screws into the bays like a drive. The rack accessories screw into the adapte
 **Work in progress, help welcome.** This is an ongoing project. If something doesn't fit your case, a part prints badly or you find a defect, tell me in the comments or open an issue on GitHub (https://github.com/abarriuso/bay2rack/issues), with photos and your case model if you can. Measurements of other cases and rack gear, new modules and fixes are welcome as pull requests.
 
 **Configure it in your browser, with a 3D preview of the case:** https://bay2rack.pages.dev/
-(choose the bays, every rack unit and every keystone port, then download a kit with every STL and the bill of materials).
+(mirror: https://abarriuso.github.io/bay2rack/). Choose the bays, what goes in every rack unit and every keystone port
+of every patch panel, then download a kit with every STL, the bill of materials and the print settings.
 Source and docs: https://github.com/abarriuso/bay2rack
 
 ## What's included
@@ -20,12 +21,14 @@ Source and docs: https://github.com/abarriuso/bay2rack
   an exact 5.25" bezel and a 6-port patch panel.
 - **Fillers** for the strip: 6 keystones, vents, blank.
 - **Rack modules** (1U): Mercusys MS105G switch, UniFi Flex Mini, UniFi Express, JetKVM + NanoKVM, Raspberry Pi 5,
-  three 40 mm fans, 6-port patch panel, power / reset buttons with MX switches. **2U**: four Raspberry Pi blades.
+  three 40 mm fans, 6-port patch panel, power / reset buttons with MX switches. **2U**: four Raspberry Pi on edge.
+  In the web configurator too: a **NanoKVM Lite bay** (standing out of the case, in a drawer, or behind a keystone),
+  a shelf, labels, and trays for your own devices.
 - **Bezel without a rack**: 80 mm fan + power / reset buttons, for the other PCs of the homelab.
 - **Keystone covers** (blank and cable pass-through) and **PCI-slot brackets** to bring the cables in from the back.
-- **Test pieces**: print these first and check them against your case. If the keystone jack, the sleeve or an insert comes out tight or loose, change it in the "Print fits" step of the web configurator before printing the rest.
+- **Test pieces**: print these first and check them against your case. If the keystone jack, the sleeve or an insert comes out tight or loose, change it in the "Adjust after the test prints" step of the web configurator before printing the rest.
 
-Anything else (other bay counts, other switches, your own device sizes, M4/M5/10-32/12-24 screws, nut traps
+Anything else (other bay counts, other switches, your own device sizes, M3/M4/M6/10-32/12-24 screws, nuts
 instead of inserts...) is in the parametric model: use the web configurator, or open the .scad file in OpenSCAD.
 
 ## Print
