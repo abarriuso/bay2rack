@@ -23,7 +23,7 @@ copy(join(wasm, 'LICENSES'), 'openscad/LICENSES');
 copy(join(repo, 'docs', 'img', 'og.jpg'), 'img/og.jpg');
 if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'), 'img/gallery');
 // the hero film (the GIFs next to it are for the README only)
-for (const f of ['hero.mp4', 'hero.webm', 'hero.webp'])
+for (const f of ['hero.mp4', 'hero.webm', 'hero-960.mp4', 'hero-960.webm', 'hero.webp'])
   if (existsSync(join(repo, 'docs', 'video', f))) copy(join(repo, 'docs', 'video', f), `video/${f}`);
 // the film has no sound: its one caption says so and what it shows
 writeFileSync(join(pub, 'video', 'hero.vtt'), `WEBVTT

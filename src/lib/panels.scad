@@ -220,8 +220,9 @@ module nk_side_frame(y) multmatrix([[1, 0, 0, nk_x0()], [0, 0, 1, y], [0, 1, 0, 
 nk_boss = 8;                                           // corner boss (split) / plate corner left over the pocket
 nk_pboss = 7;                                          // depth of the bosses on the back of the plate (the inserts)
 function nk_split() = nkvm_split;
-function nk_bosses() = let(p = nk_pocket(), o = nk_wall + nk_boss / 2)
-    [for (x = [p[0] + o, p[1] - o], z = [o, nk_h - o]) [x, z]];
+// (kept nk_lo clear of the plate's bottom and top edges, like everything right behind the plate)
+function nk_bosses() = let(p = nk_pocket(), o = nk_wall + nk_boss / 2, oz = max(o, nk_lo + nk_boss / 2))
+    [for (x = [p[0] + o, p[1] - o], z = [oz, nk_h - oz]) [x, z]];
 // the pocket opening in the plate: with nkvm_cover just the lid's outline (the plugs and the inside of
 // the case stay hidden behind the plate), otherwise the whole pocket (corners kept in the split version)
 module nk_opening2d() {
@@ -303,6 +304,10 @@ module nk_side_bay() {
             // cable anchors: a bar from floor to roof near each end wall, at the back; a zip tie goes round it and the cable
             for (x = [p[0] + nk_wall + 4, p[1] - nk_wall - 4 - 3]) translate([x, nk_yb1 - 3, 0]) cube([3, 3, h]);
         }
+        // the first ft mm behind the plate go through the adapter's front frame, whose rim takes the bottom and the
+        // top nk_lo of the opening: the floor, the roof and the posts stop short of it there (behind the frame the
+        // sleeve is taller)
+        for (z = [-1, h - nk_lo]) translate([p[0] - 1, -1, z]) cube([p[1] - p[0] + 2, ft + 1.5, nk_lo + 1]);
         // an open back behind the board
         translate([0, nk_yb0 - 1, 0]) multmatrix(XZ_Y) linear_extrude(nk_yb1 - nk_yb0 + 2)
             nk_rrect(x0 + 5, nk_zv0 + 4, x0 + L - 5, nk_zv0 + W - 4, 2.5);

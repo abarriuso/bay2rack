@@ -165,7 +165,7 @@ No existe un estándar oficial de 6", así que el proyecto aplica **las reglas d
 - Paneles de 152,4 mm (6")
 - **134,925 mm entre agujeros**: el mismo margen de 8,74 mm del borde al agujero que el estándar de 10" (panel de 254 mm, agujeros a 236,525 mm)
 - Patrón vertical EIA-310 (6,35 / 22,225 / 38,1 mm en cada U) y 1U = 44,45 mm
-- Tornillos M6, 10-32 o 12-24, con M6 por defecto
+- Tornillos M6, 10-32 o 12-24, o M5 (por defecto: deja más plástico hacia el lateral de la bahía y pasa igual por agujeros M6)
 
 Si tus accesorios son distintos, usa `rack_std = custom`.
 
@@ -184,8 +184,8 @@ grosor de las orejas del accesorio, el grosor de la chapa de la caja y el tipo d
 cabe ninguna. Cada render muestra la lista de materiales:
 
 ```
-BOM | rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)
-BOM | filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)
+BOM | rack accessories: 12 x M5 x 10 button head  +  12 x M5 heat-set insert (hole 6.4 x 9.5 mm)
+BOM | filler panels: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)
 BOM | drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)
 ```
 
@@ -216,7 +216,7 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 > | `test_button` | que entre la tecla MX, el pulsador metálico o el botón impreso | MX: sube `mx_cut` | MX: baja `mx_cut` |
 >
 > En un kit se llaman `tests/test_*.stl`; en [`stl/tests`](stl/README.md#tests), `bay-plate` / `bay-bezel`,
-> `rack-M6-heatset`, `keystone-metal` / `keystone-standard` y `button-mx` / `button-metal-16` / `button-retro`.
+> `rack-M5-heatset`, `keystone-metal` / `keystone-standard` y `button-mx` / `button-metal-16` / `button-retro`.
 > El resto funciona igual: `cover_clear` para los tapones de keystone, `mount_clear` para los dispositivos de los
 > módulos del rack, `nkvm_insert_d` y `bay_insert_d` para los insertos pequeños. En el generador web están en el paso
 > **Holguras de impresión**.

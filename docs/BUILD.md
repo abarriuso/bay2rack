@@ -8,11 +8,11 @@ From the kit (.zip) of the [web generator](https://bay2rack.pages.dev/) to a rac
 ## 1. What you need
 
 **Tools**
-- A soldering iron with a heat-set insert tip (one for M3, one for the rack inserts, M6 by default).
-  No iron? Switch on **No soldering iron** in the **Screws** step: M5 rack screws with square nuts and hex nuts for
-  the bay screws, all with a screwdriver. (An M6 nut is too wide: it would leave no plastic between the post and the
-  side of the bay.) The NanoKVM bay and the retro button carrier still take M3 heat-set inserts.
-- Hex keys or screwdrivers for your screws (M6 button head: 4 mm hex; M3: 2 mm hex or a Phillips for pan heads).
+- A soldering iron with a heat-set insert tip (one for M3, one for the rack inserts, M5 by default).
+  No iron? Switch on **No soldering iron** in the **Screws** step: square nuts for the M5 rack screws and hex nuts for
+  the bay screws, all with a screwdriver. (Nuts need M5 or smaller: an M6 nut is too wide, it would leave no plastic
+  between the post and the side of the bay.) The NanoKVM bay and the retro button carrier still take M3 heat-set inserts.
+- Hex keys or screwdrivers for your screws (M5 button head: 3 mm hex; M3: 2 mm hex or a Phillips for pan heads).
 - Flush cutters and a deburring tool or a small file.
 
 **Filament and print settings**
@@ -22,8 +22,9 @@ From the kit (.zip) of the [web generator](https://bay2rack.pages.dev/) to a rac
 - Bed: a 3-bay adapter is 148 × 128 mm on the bed and about 70 mm tall.
 
 **Hardware** (the kit's list has the quantities)
-- Rack screws and heat-set inserts: by default *M6 × 12 button head (ISO 7380)* and *M6 heat-set inserts,
-  8 mm hole, 12.7 mm long*. Brands such as Ruthex or CNC Kitchen make both sizes.
+- Rack screws and heat-set inserts: by default *M5 × 10 button head (ISO 7380)* and *M5 heat-set inserts,
+  6.4 mm hole, 9.5 mm long*. Brands such as Ruthex or CNC Kitchen make both sizes. (M5 screws also go through the M6
+  holes of panels made for other mini racks; M6 is in the **Screws** step if you want it.)
 - Bay screws: *M3 × 5 pan head* plus *M3 heat-set inserts (4.2 mm hole, 5.7 mm long)*. The screws of the old
   DVD drive are usually M3 × 5 and work.
 - Keystones: the patch panel's **metal cells** take metal / shielded RJ45 keystone jacks, which go in from the back. The
@@ -36,7 +37,7 @@ From the kit (.zip) of the [web generator](https://bay2rack.pages.dev/) to a rac
 ## 2. Print the test pieces first
 
 They are in the kit's `tests/` folder (`test_bay`, `test_rack`, `test_keystone`, and `test_button` when there is a
-button panel). In [`stl/tests`](../stl/README.md#tests) they are `bay-plate` / `bay-bezel`, `rack-M6-heatset`,
+button panel). In [`stl/tests`](../stl/README.md#tests) they are `bay-plate` / `bay-bezel`, `rack-M5-heatset`,
 `keystone-metal` / `keystone-standard` and `button-mx` / `button-metal-16` / `button-retro`.
 
 | Test piece | Check | If it is wrong |
@@ -60,9 +61,9 @@ letters the second filament.
 - Use the temperature your inserts' maker gives for your filament (usually 200–250 °C).
 - Put the insert on the hole, press straight and slowly with the matching tip, and stop when it is flush. Let it cool
   before you screw into it.
-- **Rack inserts (front of the adapter's posts):** with M6 there are only 1.4 mm of plastic between the insert and the
-  side of the bay (the model says so in a note). Press them in slowly so that wall does not bulge, then check that the
-  adapter still slides into the bays. M5 or M4 inserts leave 2 mm or more.
+- **Rack inserts (front of the adapter's posts):** M5 inserts leave 2.2 mm of plastic between the insert and the side
+  of the bay. Press them in straight so that wall does not bulge, then check that the adapter still slides into the
+  bays. (M6 inserts leave only 1.4 mm; the model says so in a note.)
 - **Bay inserts:** inside the sleeve, in the bosses behind the case's side holes.
 - Modules: the NanoKVM lid posts and drawer bosses (M3), the retro button carrier posts (M3).
 

@@ -164,8 +164,8 @@ function placeMods(v, units) {
   return out;
 }
 const usedMods = (v, units) => placeMods(v, units).map((p) => p.m);
-// will these boxes fit side by side in one tray? (default M6 posts: 122 mm between them; OpenSCAD has the last word)
-const OPENING = 122.1;
+// will these boxes fit side by side in one tray? (default M5 posts: 123.7 mm between them; OpenSCAD has the last word)
+const OPENING = 123.7;
 function trayFits(kind, items, v) {
   const sum = (a) => a.reduce((x, y) => x + y, 0);
   if (items.some((b) => !TRAYS[kind]?.items.includes(b))) return true;     // a box it does not know: the model says so
@@ -1331,14 +1331,25 @@ async function downloadKit(testsOnly = false) {
 }
 
 // ---------------------------------------------------------------- hero + gallery
-// the hero film: plays while on screen, paused for reduced motion
+// the hero film: its still is what you see first; the film loads after the page (960 px on phones, 1.1 MB instead
+// of 3.4), plays while on screen, and stays a still for reduced motion or data saving
 function wireHeroVideo() {
   const video = $('#heroVideo');
   const label = () => video.setAttribute('aria-label', t('hero_video_label'));
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (still) { video.removeAttribute('autoplay'); video.pause(); }
-  new IntersectionObserver(([e]) => { if (e.isIntersecting && !still) video.play().catch(() => {}); else video.pause(); })
-    .observe(video);
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData;
+  const start = () => {
+    if (matchMedia('(max-width: 900px)').matches)
+      for (const s of video.querySelectorAll('source')) s.src = s.src.replace(/hero\.(webm|mp4)$/, 'hero-960.$1');
+    video.preload = 'auto';
+    video.autoplay = true;                              // (a play() right after load() can be dropped)
+    video.load();
+    new IntersectionObserver(([e]) => { if (e.isIntersecting) video.play().catch(() => {}); else video.pause(); })
+      .observe(video);
+  };
+  if (!still) {
+    if (document.readyState === 'complete') setTimeout(start, 300);
+    else addEventListener('load', () => setTimeout(start, 300), { once: true });
+  }
   label();
   return label;
 }

@@ -30,7 +30,7 @@
    ],
    "bom": [
     "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -53,9 +53,9 @@
     "plate-flush/2bay-1U/filler-blank.stl"
    ],
    "bom": [
-    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 6 x M5 x 10 button head  +  6 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -78,9 +78,9 @@
     "plate-flush/3bay-2U/filler-blank.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 12 x M5 x 10 button head  +  12 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -103,9 +103,9 @@
     "plate-flush/4bay-3U/filler-blank.stl"
    ],
    "bom": [
-    "rack accessories: 18 x M6 x 12 button head  +  18 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 18 x M5 x 10 button head  +  18 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 8 x M3 x 5 pan head  +  8 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "filler panels: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "filler panels: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -125,7 +125,7 @@
     "plate-overhang/1bay-1U/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
@@ -143,7 +143,7 @@
     "plate-overhang/2bay-2U/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 4 x M6 x 12 button head  +  4 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 4 x M5 x 10 button head  +  4 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
@@ -161,7 +161,7 @@
     "plate-overhang/3bay-3U/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 6 x M5 x 10 button head  +  6 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
@@ -201,7 +201,7 @@
     "bezel-flush/2bay-1U-patch6/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 6 x M5 x 10 button head  +  6 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
@@ -223,7 +223,7 @@
     "bezel-flush/3bay-2U-patch6/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 12 x M6 x 12 button head  +  12 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 12 x M5 x 10 button head  +  12 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
@@ -244,7 +244,7 @@
     "bezel-overhang/1bay-1U/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 2 x M6 x 12 button head  +  2 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 2 x M5 x 10 button head  +  2 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 2 x M3 x 5 pan head  +  2 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
@@ -262,7 +262,7 @@
     "bezel-overhang/2bay-2U/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 4 x M6 x 12 button head  +  4 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 4 x M5 x 10 button head  +  4 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
@@ -280,7 +280,7 @@
     "bezel-overhang/3bay-3U/adapter.stl"
    ],
    "bom": [
-    "rack accessories: 6 x M6 x 12 button head  +  6 x M6 heat-set insert (hole 8 x 12.7 mm)",
+    "rack accessories: 6 x M5 x 10 button head  +  6 x M5 heat-set insert (hole 6.4 x 9.5 mm)",
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)"
    ]
   },
@@ -379,7 +379,7 @@
     "panels/1U-patch6.stl"
    ],
    "bom": [
-    "rack panel: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack panel: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -398,7 +398,7 @@
     "panels/1U-vent.stl"
    ],
    "bom": [
-    "rack panel: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)"
+    "rack panel: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)"
    ]
   },
   {
@@ -414,7 +414,7 @@
     "panels/1U-blank.stl"
    ],
    "bom": [
-    "rack panel: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)"
+    "rack panel: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)"
    ]
   },
   {
@@ -432,7 +432,7 @@
     "panels/2U-patch12.stl"
    ],
    "bom": [
-    "rack panel: 12 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack panel: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "keystones: 12 x metal / shielded RJ45 keystone"
    ]
   },
@@ -449,7 +449,7 @@
     "panels/1U-fan40.stl"
    ],
    "bom": [
-    "rack panel: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack panel: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header)"
    ]
   },
@@ -465,7 +465,7 @@
     "modules/ms105g.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)",
     "devices (not included): 1 x 5-port switch (MS105G size)"
    ]
@@ -482,7 +482,7 @@
     "modules/uswflex.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)",
     "devices (not included): 1 x UniFi USW-Flex-Mini"
    ]
@@ -499,7 +499,7 @@
     "modules/ux.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)",
     "devices (not included): 1 x UniFi Express"
    ]
@@ -516,7 +516,7 @@
     "modules/kvm-jet-nano.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 4 x 2.5-3.6 mm cable tie (holds the device)",
     "devices (not included): 1 x JetKVM, 1 x NanoKVM Full"
    ]
@@ -533,7 +533,7 @@
     "modules/kvm-jet-jet.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 4 x 2.5-3.6 mm cable tie (holds the device)",
     "devices (not included): 2 x JetKVM"
    ]
@@ -550,7 +550,7 @@
     "modules/kvm-nano-nano.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 4 x 2.5-3.6 mm cable tie (holds the device)",
     "devices (not included): 2 x NanoKVM Full"
    ]
@@ -567,7 +567,7 @@
     "modules/pi5.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs)",
     "devices (not included): 1 x Raspberry Pi 5"
    ]
@@ -584,7 +584,7 @@
     "modules/pi-x2.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "Raspberry Pi: 8 x M2.5 x 6 screw (self-tapping into the standoffs)",
     "devices (not included): 2 x Raspberry Pi 5"
    ]
@@ -601,7 +601,7 @@
     "modules/pi-zero.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs)",
     "devices (not included): 1 x Raspberry Pi Zero"
    ]
@@ -618,7 +618,7 @@
     "modules/piblade-x4.stl"
    ],
    "bom": [
-    "rack module: 12 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "Raspberry Pi: 16 x M2.5 x 6 screw (self-tapping into the standoffs)",
     "devices (not included): 4 x Raspberry Pi 5"
    ]
@@ -635,7 +635,7 @@
     "modules/fan40.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header)"
    ]
   },
@@ -651,7 +651,7 @@
     "modules/shelf.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
    ]
   },
@@ -667,7 +667,7 @@
     "modules/buttons.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)",
     "buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires"
    ]
@@ -684,7 +684,7 @@
     "modules/patch6.stl"
    ],
    "bom": [
-    "rack module: 6 x M6 x 12 button head  (into the adapter's fixings - nothing else to buy)",
+    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
     "keystones: 3 x metal / shielded RJ45 keystone",
     "keystones: 2 x printed keystone cover",
     "keystones: 1 x printed cable pass-through cover"
@@ -772,14 +772,14 @@
    "bom": []
   },
   {
-   "path": "tests/rack-M6-heatset",
+   "path": "tests/rack-M5-heatset",
    "family": "tests",
-   "title": "Rack hole spacing bar, M6 heat-set",
+   "title": "Rack hole spacing bar, M5 heat-set",
    "params": {
     "part": "test_rack"
    },
    "files": [
-    "tests/rack-M6-heatset.stl"
+    "tests/rack-M5-heatset.stl"
    ],
    "bom": []
   },

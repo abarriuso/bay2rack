@@ -21,8 +21,8 @@ const STEP_HELP = {
     es: 'Qué va en la franja que sobra. Con el frontal plano es un panelito atornillado que puedes cambiar después; con el bisel va cortado en el propio bisel.',
   },
   screw: {
-    en: 'The rack screws hold the panels and modules on the adapter\'s posts: the 10" mini rack convention is M6, 10-32 or 12-24, and the modules printed here take whatever you choose. The bay screws hold the adapter in the case.\nThe lengths are worked out for you and listed in "What you need".',
-    es: 'Los tornillos del rack sujetan los paneles y módulos a los postes del adaptador: la norma del mini rack de 10" usa M6, 10-32 o 12-24, y los módulos que se imprimen aquí usan los que elijas. Los de la bahía sujetan el adaptador a la caja.\nLas longitudes se calculan solas y aparecen en «Lo que necesitas».',
+    en: 'The rack screws hold the panels and modules on the adapter\'s posts: the 10" mini rack convention is M6, 10-32 or 12-24; M5 is the default here, it leaves more plastic to the bay side and still goes through M6 holes. The modules printed here take whatever you choose. The bay screws hold the adapter in the case.\nThe lengths are worked out for you and listed in "What you need".',
+    es: 'Los tornillos del rack sujetan los paneles y módulos a los postes del adaptador: la norma del mini rack de 10" usa M6, 10-32 o 12-24; aquí M5 va por defecto, porque deja más plástico hacia el lateral de la bahía y pasa igual por agujeros M6. Los módulos que se imprimen aquí usan los que elijas. Los de la bahía sujetan el adaptador a la caja.\nLas longitudes se calculan solas y aparecen en «Lo que necesitas».',
   },
   preview: {
     en: 'Only changes the 3D view: the real PC case it is shown in (approximate outer size from the makers), example devices, hardware and the pieces pulled apart.',
@@ -194,7 +194,7 @@ const PARAM_ES = {
   custom_hole_spacing: ['Distancia entre agujeros', 'Entre centros de los agujeros izquierdo y derecho.'],
   rack_u_h: ['Altura de 1U', 'Altura de una U de rack (44,45 mm).'],
   hole_pattern: ['Patrón de agujeros', 'Auto (EIA-310 dentro de las bahías, 1 centrado si las U sobresalen), EIA-310 (3 por U), 2 por U o 1 centrado.'],
-  rack_screw: ['Tornillo de rack', 'Norma del mini rack de 10": M6, 10-32 o 12-24.'],
+  rack_screw: ['Tornillo de rack', 'M5 por defecto; la norma del mini rack de 10" usa M6, 10-32 o 12-24.'],
   rack_screw_head: ['Cabeza', 'Botón, allen, avellanada (añade avellanado) o alomada.'],
   rack_screw_len: ['Largo del tornillo', 'En mm (0 = el largo estándar adecuado, automático).'],
   rack_fixing: ['Fijación', 'Cómo se rosca el tornillo en el plástico.'],

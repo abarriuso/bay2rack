@@ -220,7 +220,7 @@
             "part": "test_bay",
             "front_style": "bezel"
         },
-        "tests/rack-M6-heatset": {
+        "tests/rack-M5-heatset": {
             "part": "test_rack"
         },
         "tests/keystone-metal": {
