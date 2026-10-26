@@ -597,13 +597,16 @@ wan_port = nic_on ? nic_port(0) : io_nic + [14, 0, 0];
 // Without the printed slot brackets they leave through the back at zs.
 ROOF_FAN = TC[0] == "antec300" || TC[0] == "haf932";
 TIDY_Z = tc_z1 - (ROOF_FAN ? 50 : 10);                  // the ribbon's height along the roof
-TIDY_Y = TC_D - 9;                                      // and its distance down the back wall
+TIDY_Y = TC_D - 15;                                     // and its distance down the back wall
 function tidy_x(k) = -TC_W / 2 + 18 + k * 5.5;
+// (extra points at the bends keep the smooth curve the viewer draws through them off the walls)
 function tidy_route(a, k, xs, zs) =
     let(xr = tidy_x(k), zt = TIDY_Z, yr = TIDY_Y)
-    concat([[a[0], 230, a[1] + 4], [xr, 262, zt], [xr, TC_D - 60, zt], [xr, yr, zt - 34]],
-           rear_slots ? [[xr, yr, zs + 40], [xs, yr - 14, zs], [xs, TC_D + 25, zs]]
-                      : [[xr, yr, zs + 20], [xr, TC_D + 25, zs]]);
+    concat([[a[0], 230, a[1] + 4], [xr, 262, zt], [xr, TC_D - 70, zt], [xr, TC_D - 40, zt - 4], [xr, yr, zt - 24],
+            [xr, yr, zt - 44]],
+           rear_slots ? [[xr, yr, zs + 50], [xr, yr, zs + 34], [xr + 12, yr - 2, zs + 10], [xs - 12, yr - 6, zs],
+                         [xs, yr - 6, zs], [xs, TC_D - 4, zs], [xs, TC_D + 25, zs]]
+                      : [[xr, yr, zs + 20], [xr, yr, zs + 6], [xr, TC_D - 4, zs], [xr, TC_D + 25, zs]]);
 
 // keystone back -> along the inside of the case -> out through the rear LAN slot (or the back) -> target
 function inner_route(p, i) =

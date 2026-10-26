@@ -13,6 +13,10 @@ on the photos and in the MakerWorld notes.
   (the green Pi and card boards too), DIMMs with heat spreaders, slots and latches, PCIe x16 / x4 / x1 slots
   (armoured x16), M.2 heatsinks, a PSU shroud, sleeved 24-pin and EPS cables through rubber grommets next to
   their sockets, SATA cables over the shroud, black drive cage walls with vent and screw holes.
+- 3D view, the back wall cut like the real sheet: openings for the I/O shield and the PSU (both now flush), one
+  per expansion slot behind its cover, and a honeycomb vent field beside the slots. The cooler's backplate and its
+  screws show through the tray's cut-out. The cable ribbon keeps 15 mm off the back wall, with extra points at
+  the bends so the smooth curve never pokes through it.
 - 3D view, the PC cases in detail and consistent with bay2rack.scad:
   - Back: the exhaust fan is a real fan (frame, bore, curved blades) behind a wire guard in a round cut-out,
     the I/O shield has its ports (USB, LAN with LEDs, video, audio jacks), the slot covers have vent slots and a

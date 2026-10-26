@@ -312,6 +312,10 @@ function interior(g0, c, xWall) {
   g.add(sidePanel(xs(1.2), 30, z0 + 20, d - 40, z1 - z0 - 40, 1.2, tiled(MAT.powder(0x1c1d20), 50),
     [mbY + 96, mbTop - 175, 100, 150]));
   const mb = part(g, 'part_board');
+  // the cooler's backplate on the back of the board, its four screws (through the tray's cut-out)
+  add(mb, span(4.4, 6), mbY + 103, mbTop - 133, 70, 70, tiled(MAT.brushed(0x6d7279), 12), 2);
+  for (const [dy, dz] of [[-26, -26], [26, -26], [26, 26], [-26, 26]])
+    mb.add(cyl(xs(4), mbY + 138 + dy, mbTop - 98 + dz, 3.4, 1.6, MAT.zinc(), 'x', 16));
   add(mb, span(6, BS), mbY, mbZ, ATX.depth, ATX.height, MAT.board());
   add(mb, on(0, 26), d - ATX.rear - 26, mbTop - 160, 26, 150, MAT.powder(0x2a2c30));          // rear I/O stack
   add(mb, on(0, 22), mbY + 110, mbTop - 28, 116, 18, dark(0x3a3d42));                          // VRM heatsinks
@@ -463,10 +467,27 @@ export function buildCase(c) {
   }
   part(root, 'top_panel').add(box(-w / 2, 0, z1 - t, w, d, t, body));
   g.add(box(-w / 2, 0, z0, w, d, t, body));
-  // rear wall: the exhaust fan sits behind a round bore next to the I/O shield
+  // rear wall, cut like the real sheet: a round bore for the exhaust fan next to the I/O shield, the I/O and
+  // PSU openings (both fill them flush), one opening per expansion slot (the covers sit outside) and a
+  // honeycomb vent field beside the slots
   const fanX = Math.min(-10, w / 2 - 60 - 66), fanZ = z1 - 120;
+  const [px0, pztop, ppitch, pl] = c.pci?.length === 4 ? c.pci : [w / 2 - 18 - 112, z1 - ATX.top - ATX.slot0, ATX.pitch, 112];
+  const slotZ = (i) => pztop - i * ppitch;
   const rearWall = rrect(new THREE.Shape(), -w / 2, z0, w, h, 2);
+  const cut = (x0, z0_, x1, z1_) => rearWall.holes.push(rrect(new THREE.Path(), x0, z0_, x1 - x0, z1_ - z0_, 1));
   rearWall.holes.push(new THREE.Path().absarc(fanX, fanZ, 58, 0, Math.PI * 2, true));
+  cut(w / 2 - 60, z1 - ATX.top - 4 - 158.75, w / 2 - 60 + 44.45, z1 - ATX.top - 4);
+  cut(-w / 2 + 8, z0 + 6, -w / 2 + 158, z0 + 92);
+  for (let i = 0; i < 7; i++) cut(px0 + 4, slotZ(i) - 6.5, px0 + pl - 4, slotZ(i) + 6.5);
+  const hex = (cx, cz, r) => {
+    const h6 = new THREE.Path();
+    for (let k = 0; k < 6; k++) h6[k ? 'lineTo' : 'moveTo'](cx + r * Math.cos(k * Math.PI / 3), cz + r * Math.sin(k * Math.PI / 3));
+    h6.closePath();
+    rearWall.holes.push(h6);
+  };
+  const vx0 = -w / 2 + 16, vx1 = px0 - 20, vz0 = slotZ(6) - 6, vz1 = slotZ(0) + 6, hp = 6.4;
+  for (let r = 0, cz = vz0; cz <= vz1; r++, cz += hp * 0.866)
+    for (let cx = vx0 + (r % 2 ? hp / 2 : 0); cx <= vx1; cx += hp) hex(cx, cz, 2.6);
   g.add(slab(rearWall, d - t, t, body, 48));
   g.add(fan(fanX, d - t - 25, fanZ, 120, MAT.plastic(0x16171a, 0.5)));
   g.add(fanGuard(fanX, d + 1.2, fanZ, 120, MAT.powder(st.body)));
@@ -481,15 +502,13 @@ export function buildCase(c) {
     g.add(top);
   }
   // rear: I/O shield, PCI slots, the PSU face, the side panels' thumbscrews
-  ioShield(g, w / 2 - 60, d, z1 - ATX.top - 4);
-  psuFace(g, -w / 2 + 8, d, z0 + 6);
+  ioShield(g, w / 2 - 60, d - 0.8, z1 - ATX.top - 4);
+  psuFace(g, -w / 2 + 8, d - t, z0 + 6);
   for (const sx of [-1, 1]) for (const zz of [z0 + 70, z1 - 70]) {
     g.add(cyl(sx * (w / 2 - 5), d + 3, zz, 4.2, 6, tiled(MAT.brushed(0x7d8288), 6), 'y', 18));     // knurled head
     g.add(cyl(sx * (w / 2 - 5), d + 6.1, zz, 3.2, 0.4, MAT.zinc()));
   }
   // expansion slots: horizontal, stacked under the I/O shield (an ATX tower)
-  const [px0, pztop, ppitch, pl] = c.pci?.length === 4 ? c.pci : [w / 2 - 18 - 112, z1 - ATX.top - ATX.slot0, ATX.pitch, 112];
-  const slotZ = (i) => pztop - i * ppitch;
   for (let i = 0; i < 7; i++) {
     if ((c.rearSlots ?? []).includes(i) || i === c.nic || (st.sleeper && i === 3)) continue;   // printed brackets, cards
     slotCover(g, px0, pl, d, slotZ(i));
