@@ -5,6 +5,11 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Gallery pictures rendered in Blender (Cycles), each build in its own case and setting: a Define XL R2 on a desk
+  at night, a HAF 932 in a blue homelab, a silver Stacker 830 on a workbench, an Enthoo Pro close up, a beige
+  sleeper in a living room, an Antec Three Hundred backlit, an Obsidian 750D as a white product shot and late sun
+  on a green bezel build. `scripts/blender/gallery.py` renders them from GLBs exported by the web viewer,
+  `gallery_encode.py` makes the site's sizes.
 - Web generator: "What you can put in it" and "Example builds" are one section, "What you can build": each card is a
   build with what it is for and what to buy, and loads it. The row drags with the mouse like a swipe (touch already
   swipes), settles on a card and hides its scrollbar.
