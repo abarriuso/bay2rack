@@ -5,6 +5,11 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web generator code: `main.js` (1,700 lines) split into modules by what they do: `state` (constants, shared state,
+  DOM helpers), `model` (what fits, mirrors config.scad), `engine` (OpenSCAD workers, render cache, 3D view), `edit`
+  (changes, undo), `widgets`, `steps` and `editors` (the configurator), `tabs`, `hash` (links), `render`, `kit`,
+  `gallery` and `main` (wiring, start). No module runs code when it loads except `main`; lint-clean (no undefined or
+  unused names; a dead helper of the ports editor and of the icons removed).
 - Web generator: "What you can put in it" and "Example builds" are one section, "What you can build": each card is a
   build with what it is for and what to buy, and loads it. The row drags with the mouse like a swipe (touch already
   swipes), settles on a card and hides its scrollbar.

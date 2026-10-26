@@ -2,8 +2,6 @@
 const svg = (body) => `<svg viewBox="0 0 64 44" aria-hidden="true">${body}</svg>`;
 const bayLines = '<g stroke="currentColor" stroke-width="1.2" fill="none" opacity=".45"><path d="M6 6h52M6 38h52"/></g>';
 
-const line = (body) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-
 export const ICONS = {
   // side view: case front line, thin frame behind the panels
   plate: svg(`<path d="M30 4v36" stroke="currentColor" stroke-width="1.5" opacity=".5"/>
