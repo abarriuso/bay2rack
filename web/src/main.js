@@ -38,7 +38,9 @@ const CONTENT_KEYS = ['ks_ports', 'ks_names', 'ks_style', 'ks_labels', 'ks_label
   'btn_metal_d', 'btn_turbo', 'led_style', 'led_d', 'fan40_count', 'fan40_t', 'fan_guard', 'nkvm_keystones', 'nkvm_raised',
   'nkvm_cover', 'nkvm_split', 'kvm_boxes', 'pi_boards', 'units_override', 'bezel_depth', 'labels_multicolour'];
 const EXAMPLE_KEYS = [...new Set([...Object.values(EXAMPLES).flatMap(Object.keys), ...CONTENT_KEYS])];
-const GALLERY = ['router', 'network', 'pi', 'kvm', 'audio', 'client', 'unifi', 'bezel'];
+const GALLERY = ['router', 'kvm', 'pi', 'audio', 'client', 'network', 'unifi', 'bezel'];
+// the builds that show a use of the project: its title, what it is for and what to buy
+const USES = { router: 'router', kvm: 'kvm', pi: 'pi', audio: 'audio', client: 'clients' };
 const PORTS = ['rj45m', 'rj45', 'hdmi', 'usb', 'rca', 'jack', 'toslink', 'cover', 'pass', 'none'];
 const SCREWS = ['M3', 'M4', 'M5', 'M6', '10-32', '12-24'];
 const FIXINGS = ['heatset', 'tap', 'nut_trap', 'square_nut', 'channel'];
@@ -1486,6 +1488,35 @@ const galleryStep = (dir) => {
   const g = $('#galleryGrid');
   g.scrollBy({ left: dir * (g.firstElementChild?.offsetWidth ?? 300), behavior: 'smooth' });
 };
+// drag the row with the mouse like a swipe (touch already swipes): it follows the pointer, then settles on a card;
+// a drag is not a click on the card under it
+{
+  const row = $('#galleryGrid');
+  let drag = null;
+  row.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    drag = { x: e.clientX, left: row.scrollLeft, moved: false };
+  });
+  addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x;
+    if (!drag.moved && Math.abs(dx) < 6) return;
+    if (!drag.moved) { drag.moved = true; row.classList.add('dragging'); }
+    row.scrollLeft = drag.left - dx;
+  });
+  addEventListener('pointerup', () => {
+    if (!drag) return;
+    const moved = drag.moved;
+    drag = null;
+    if (!moved) return;
+    row.classList.remove('dragging');
+    // settle on the nearest card (the snapping was off while dragging)
+    const w = row.querySelector('.shot')?.getBoundingClientRect().width ?? 1;
+    const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
+    row.scrollTo({ left: Math.round(row.scrollLeft / (w + gap)) * (w + gap), behavior: 'smooth' });
+    row.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
+  });
+}
 $('#galPrev').onclick = () => galleryStep(-1);
 $('#galNext').onclick = () => galleryStep(1);
 
@@ -1502,8 +1533,9 @@ function renderGallery() {
         h('span', { className: 'tape', textContent: units > 0 ? `${units}U` : t('opt_panel') })),
       h('figcaption', {},
         h('span', { className: 'spec', textContent: buildSpec(k) }),
-        h('h3', { textContent: t('ex_' + k) }),
-        h('p', { textContent: t('ex_' + k + '_tip') }),
+        h('h3', { textContent: USES[k] ? t(`use_${USES[k]}_t`) : t('ex_' + k) }),
+        h('p', { textContent: USES[k] ? t('use_' + USES[k]) : t('ex_' + k + '_tip') }),
+        USES[k] ? h('p', { className: 'needs', textContent: t(`use_${USES[k]}_needs`) }) : null,
         h('button', { type: 'button', className: 'load', 'aria-label': `${t('gallery_load')}: ${t('ex_' + k)}`,
           onclick: () => { applyExample(k); $('#build').scrollIntoView(); } },
           t('gallery_load'), h('span', { 'aria-hidden': 'true', textContent: '→' }))));

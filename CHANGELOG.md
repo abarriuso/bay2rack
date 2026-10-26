@@ -5,6 +5,9 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web generator: "What you can put in it" and "Example builds" are one section, "What you can build": each card is a
+  build with what it is for and what to buy, and loads it. The row drags with the mouse like a swipe (touch already
+  swipes), settles on a card and hides its scrollbar.
 - Web generator, next level:
   - The last 40 renders are kept: going back to a piece or a view is instant. The kit renders on up to 3 more
     OpenSCAD engines at once (desktop, enough memory).

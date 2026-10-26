@@ -186,31 +186,19 @@ button:disabled { opacity: .45; cursor: default; }
 .u-scale i.spare { background: var(--ink-3); opacity: .45; }
 .table-note { color: var(--ink-3); font-size: 13px; margin-top: var(--s-3); max-width: 80ch; }
 
-.sub { margin: clamp(48px, 7vw, 80px) 0 var(--s-5); font-size: 1.3rem; font-weight: 720; font-stretch: 108%; }
-.uses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); }
-/* a faceplate: four screws in the corners */
-.plate {
-  --screw: radial-gradient(circle, var(--rule) 0 2.6px, transparent 3.2px);
-  display: grid; grid-template-rows: auto 1fr auto; gap: var(--s-3); padding: 22px 22px 18px;
-  background: var(--screw) 8px 8px / 10px 10px no-repeat, var(--screw) calc(100% - 8px) 8px / 10px 10px no-repeat,
-              var(--screw) 8px calc(100% - 8px) / 10px 10px no-repeat, var(--screw) calc(100% - 8px) calc(100% - 8px) / 10px 10px no-repeat,
-              var(--plate);
-  border: 1px solid var(--rule); border-radius: var(--r-s); min-width: 0;
-}
-.plate header { display: flex; align-items: center; gap: 12px; }
-.plate h4 { font-size: 1.05rem; font-weight: 720; font-stretch: 104%; }
-.plate p { color: var(--ink-2); font-size: .95rem; }
-.plate .needs { color: var(--ink-3); border-top: 1px dashed var(--rule); padding-top: 10px; font-size: 13.5px; }
-.use-ico { display: inline-grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: var(--r-s); background: var(--signal-soft); color: var(--signal); }
-.use-ico svg { width: 20px; height: 20px; }
 
 /* gallery: one row of builds that scrolls sideways */
 .gallery {
   display: grid; grid-auto-flow: column; grid-auto-columns: clamp(260px, 30%, 420px); gap: var(--s-4);
   overflow-x: auto; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; padding-bottom: var(--s-3);
-  scrollbar-width: thin;
+  scrollbar-width: none; cursor: grab;
 }
+.gallery::-webkit-scrollbar { display: none; }
+/* while the mouse drags it: no snapping, no text selection, no image drag */
+.gallery.dragging { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+.gallery img { -webkit-user-drag: none; user-select: none; }
 .gallery .shot { scroll-snap-align: start; }
+.shot .needs { color: var(--ink-3); border-top: 1px dashed var(--rule); padding-top: 8px; font-size: 13px; }
 .gallery-nav { display: flex; justify-content: flex-end; gap: 6px; margin: calc(-1 * var(--s-5)) 0 var(--s-3); }
 .shot { margin: 0; display: grid; grid-template-rows: auto 1fr; gap: var(--s-3); min-width: 0; }
 .shot-img { position: relative; display: block; border-radius: var(--r-s); overflow: hidden; background: var(--stage); border: 1px solid var(--rule); }
@@ -569,7 +557,6 @@ button:disabled { opacity: .45; cursor: default; }
   .hero { grid-template-columns: minmax(0, 1fr); }
   .hero-copy { max-width: 760px; }
   .why { grid-template-columns: minmax(0, 1fr); }
-  .uses { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .gallery { grid-auto-columns: clamp(260px, 44%, 420px); }
 }
 @media (max-width: 900px) {
@@ -628,7 +615,6 @@ button:disabled { opacity: .45; cursor: default; }
   .top-actions .btn.small { display: none; }
   .hero-stage .legend { display: none; }
   .legend { font-size: 10px; padding: 6px 8px; gap: 2px; }
-  .uses { grid-template-columns: minmax(0, 1fr); }
   .gallery { grid-auto-columns: 82%; }
   .param { grid-template-columns: minmax(0, 1fr) 128px; }
   .floatbar { gap: 4px; left: 8px; right: 8px; bottom: 8px; }
