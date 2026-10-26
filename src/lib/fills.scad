@@ -41,12 +41,8 @@ function ks_lo_of(m) = m ? -ksm_vc - ks_fit - ksm_wall : -(ks_h + 2 * ks_fit + 7
 function ks_hi_of(m) = m ? ksm_cav_h + ks_fit + ksm_wall - ksm_vc : (ks_h + 2 * ks_fit + 7) / 2;
 function ks_px_of(m) = m ? ksm_pitch : ks_pitch;
 function ks_label_dz_of(m) = (m ? ksm_face_h : ks_h) / 2 + 3.0;
-// the ports of the strip's patch panel (ks_ports_list)
+// the cells of the strip's patch panel (ks_ports_list)
 ks_metal = ks_metal_of(ks_types);
-ks_cw    = ks_cw_of(ks_metal);
-ks_lo    = ks_lo_of(ks_metal);
-ks_hi    = ks_hi_of(ks_metal);
-ks_px    = ks_px_of(ks_metal);
 
 // port positions [x, z of the opening centre, number, index] or [] if they do not fit
 function ks_layout(w, h, ports, m = ks_metal) =

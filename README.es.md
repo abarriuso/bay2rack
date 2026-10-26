@@ -219,7 +219,7 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 > `rack-M5-heatset`, `keystone-metal` / `keystone-standard` y `button-mx` / `button-metal-16` / `button-retro`.
 > El resto funciona igual: `cover_clear` para los tapones de keystone, `mount_clear` para los dispositivos de los
 > módulos del rack, `nkvm_insert_d` y `bay_insert_d` para los insertos pequeños. En el generador web están en el paso
-> **Holguras de impresión**.
+> **Ajustar tras imprimir las pruebas**.
 
 - Los STL ya vienen orientados **con la cara frontal sobre la cama**. Las paredes y los postes crecen en vertical, y los
   techos de las ventanas y los refuerzos de los tornillos tienen forma de gota a 45°, así que **no hacen falta soportes**.
@@ -234,8 +234,8 @@ estas cotas** con la pieza `test_bay`. Puedes ajustarlas con `bay_hole_offset` /
 
 - **Generador web:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) (copia en
   [GitHub Pages](https://abarriuso.github.io/bay2rack/), generada desde el mismo `main`) ejecuta OpenSCAD compilado a
-  WebAssembly en el navegador: un modo sencillo paso a paso con ayuda al pasar el ratón, un modo avanzado con todos los
-  parámetros, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit
+  WebAssembly en el navegador: un modo sencillo paso a paso con ayuda al pasar el ratón, el formulario «Todos los
+  parámetros» para el resto, enlaces para compartir, la lista de materiales, descarga de cada pieza en STL o 3MF con colores y un kit
   .zip con todos los STL. El código está en `web/` (Vite + pnpm); `corepack pnpm --dir web dev` lo arranca en local.
 - **Customizer de OpenSCAD:** abre `src/bay2rack.scad` y ve a *Window → Customizer*. Cada variante es un preset del
   desplegable. F5 previsualiza (el adaptador aparece montado en una torre, `case_view`) y F6 renderiza.
@@ -280,7 +280,8 @@ scripts/render_docs.py   imágenes del README
 scripts/test_models.py   tests del modelo (CI)
 scripts/check_assemblies.py  todos los ejemplos y combinaciones bahías x encaje x frontal, sin avisos (CI)
 scripts/makerworld.py    kit para subir a MakerWorld (scripts/makerworld/: las descripciones)
-scripts/blender/         vídeo: hero.py (escena, materiales, animación), encode.py (etalonaje + MP4 / WebM / GIF)
+scripts/blender/         vídeo: hero.py (escena, materiales, animación), encode.py (etalonaje + MP4 / WebM / GIF);
+                         product.py (las fotos del adaptador de docs/img)
 web/                     visor y generador web (Cloudflare Pages, Vite + pnpm)
 stl/<familia>/<variante>/  STL listos para imprimir, ver stl/README.md
 docs/BUILD.es.md         guía de montaje: qué comprar, orden de impresión, insertos, montaje, cables y alimentación

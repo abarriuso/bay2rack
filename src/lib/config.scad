@@ -178,7 +178,6 @@ function patch_sets() = let(mw = hole_s - R[0] - 6, mh = U - 0.79)
     ? concat([for (zn = zones) if (zn[2] == "keystone" && zone_ks_ok(zn)) ks_types],
              [for (m = bom_mods) if (mod_kind(m) == "patch" && ks_fit_in(mw, mh, patch_types(m))) patch_types(m)])
   : [];
-function n_patch() = len(patch_sets());
 function ks_count(tp) = sum_list([for (s = patch_sets()) len([for (x = s) if (x == tp) 1])])
     + (tp == (ks_style == "metal" ? "rj45m" : "rj45") ? n_nk_jacks : 0);
 KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone"], ["hdmi", "HDMI keystone"],

@@ -330,7 +330,6 @@ nk_r_lf = nk_r_lb - nk_lid_t;                          // front of the lid
 nk_r_wall = 2;
 nk_r_foot = 12;                                        // how far the slopes reach past the posts at the plate
 function nk_r_x0() = (nkvm_plugs[0] - nkvm_plugs[1]) / 2 - nkvm_dims[0] / 2;   // board's Ethernet end, centred between its plugs
-function nk_r_zv0() = nk_zv0;
 module nk_r_frame(y) multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, 1, y], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) children();
 // the mountain, 2D outline at the plate (big) and at the top (the lid with a rim)
 module nk_r_base2d(g = 0) let(x0 = nk_r_x0()) nk_rrect(x0 + nk_u0("side") - nk_r_foot + g, 0.8 + g,

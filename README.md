@@ -218,7 +218,7 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 > `rack-M5-heatset`, `keystone-metal` / `keystone-standard` and `button-mx` / `button-metal-16` / `button-retro`.
 > The rest follow the same idea: `cover_clear` for the keystone covers, `mount_clear` for the devices in the rack
 > modules, `nkvm_insert_d` and `bay_insert_d` for the small heat-set inserts. In the web generator they are in the
-> **Print fits** step.
+> **Adjust after the test prints** step.
 
 - The STL files are already oriented **front face down**. Walls and posts rise vertically, and window
   roofs and screw bosses are 45° teardrops, so **no supports** are needed.
@@ -233,7 +233,7 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
 
 - **Web generator:** [bay2rack.pages.dev](https://bay2rack.pages.dev/) (mirror on
   [GitHub Pages](https://abarriuso.github.io/bay2rack/), built from the same `main`) runs OpenSCAD compiled to
-  WebAssembly in the browser: a simple step-by-step mode with hover help, an advanced mode with every parameter,
+  WebAssembly in the browser: a simple step-by-step mode with hover help, an "Every parameter" form for the rest,
   shareable links, the bill of materials, single-part STL / coloured 3MF downloads and a kit .zip with every STL.
   The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
 
@@ -279,7 +279,8 @@ scripts/render_docs.py   README images
 scripts/test_models.py   model tests (CI)
 scripts/check_assemblies.py  every example and bays x fit x front assembly, no warnings (CI)
 scripts/makerworld.py    MakerWorld upload kit (scripts/makerworld/: the descriptions)
-scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF)
+scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF);
+                         product.py (the adapter shots in docs/img)
 web/                     browser viewer + generator (Cloudflare Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md
 docs/BUILD.md            build guide: what to buy, print order, inserts, assembly, cables and power
