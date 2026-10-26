@@ -56,14 +56,11 @@
 /* ------------------------------------------------------------ base */
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-/* each section fills the screen under the header and the scroll settles on the nearest one
-   (proximity, so the long configurator still scrolls freely) */
-html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); scroll-snap-type: y proximity; -webkit-text-size-adjust: 100%; }
+/* each section fills the screen under the header; the page scrolls freely (no snapping, it tugged at the scroll) */
+html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); -webkit-text-size-adjust: 100%; }
 :root { --top-h: calc(57px + env(safe-area-inset-top, 0px)); }
-.hero-band, .band, .build { scroll-snap-align: start; }
 .hero-band, .band { min-height: min(calc(100svh - var(--top-h)), 1200px); display: grid; align-content: center; }
 .hero-band > *, .band > * { min-width: 0; width: 100%; }
-.foot { scroll-snap-align: end; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -588,6 +585,8 @@ button:disabled { opacity: .45; cursor: default; }
 @media (max-width: 900px) and (max-aspect-ratio: 5/4) {
   /* on phones the site header slides away while you scroll down and comes back when you scroll up */
   html.head-off .top { transform: translateY(-100%); }
+  /* the one-screen configurator: the scroll settles on it when it is close */
+  html { scroll-snap-type: y proximity; }
   /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
   .layout { padding-inline: 0; gap: 0; }
   .workbench {

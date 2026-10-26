@@ -19,6 +19,9 @@ on the photos and in the MakerWorld notes.
   - Patch panels and labels are numbered in rack order in the piece list, the bare one included.
   - Browser tests (Playwright) in CI: the pages, the editor with real renders, the piece view, undo, short links, a
     full kit download.
+  - Smoother scrolling: the page no longer snaps to each section (only the phone's one-screen configurator does),
+    and the 3D view draws a frame only when something changes instead of 60 a second. PCFShadowMap (three.js
+    dropped PCFSoftShadowMap).
 - **M5 rack screws by default** (were M6): an M5 heat-set insert leaves 2.2 mm of plastic to the bay side instead of
   1.4 mm, the nuts fit too (no soldering iron), and M5 screws still go through the M6 holes of other mini rack
   panels. M6, 10-32 and 12-24 stay in the Screws step. Every pre-built STL is rebuilt; the rack test piece is now

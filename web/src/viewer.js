@@ -34,7 +34,7 @@ export class Viewer {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;   // (PCFSoftShadowMap is gone from three.js)
     el.appendChild(this.renderer.domElement);
     // the keyboard turns it too: arrows orbit, + / - zoom, Home (or 0) frames it again; its label says what it shows
     const canvas = this.renderer.domElement;
@@ -50,6 +50,7 @@ export class Viewer {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
+    this.controls.addEventListener('change', () => { this.dirty = true; });
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8b8f99, 0.6));
     this.key = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -89,11 +90,14 @@ export class Viewer {
       last = now;
       if (!this.active) return;
       for (const f of this.hooks) f(dt);
-      this.controls.update();
+      // controls.update() is true while the camera moves (dragging, and the damping after it)
+      const moved = this.controls.update();
+      if (!moved && !this.dirty && !this.hooks.length) return;
+      this.dirty = false;
       this.composer.render();
     };
     requestAnimationFrame(loop);
-    new IntersectionObserver(([e]) => { this.active = e.isIntersecting; }).observe(el);
+    new IntersectionObserver(([e]) => { this.active = e.isIntersecting; this.dirty = true; }).observe(el);
   }
 
   // what the view shows, for screen readers (the canvas is an image to them)
@@ -122,10 +126,12 @@ export class Viewer {
   }
 
   setTheme(theme) {
+    this.dirty = true;
     this.scene.background = theme === 'dark' ? gradient('#232a2e', '#0f1214') : gradient('#f1f3f2', '#d6dbd8');
   }
 
   resize() {
+    this.dirty = true;
     const w = Math.max(this.el.clientWidth, 1);
     const h = Math.max(this.el.clientHeight, 1);
     this.renderer.setSize(w, h, false);
@@ -135,6 +141,7 @@ export class Viewer {
   }
 
   clear() {
+    this.dirty = true;
     for (const o of [this.model, this.extras]) {
       if (!o) continue;
       this.scene.remove(o);
@@ -146,12 +153,14 @@ export class Viewer {
 
   // filament colours for [adapter, fillers, modules]
   setFilament(hexes) {
+    this.dirty = true;
     this.filament = hexes;
     for (const { mat, i } of this.printMats) mat.color.setHex(hexes[i]);
   }
 
   // cables / side panel on or off, without re-rendering
   setVisible(what, on) {
+    this.dirty = true;
     this.show[what] = on;
     this.extras?.traverse((o) => { if (o.userData.role === what) o.visible = on; });
   }
@@ -211,6 +220,7 @@ export class Viewer {
   }
 
   show3d(obj, { keepView = false, focus = null, scene = null } = {}) {
+    this.dirty = true;
     this.model = obj;
     this.scene.add(obj);
     if (scene) {
@@ -242,6 +252,7 @@ export class Viewer {
   }
 
   fit(box = this.focus ?? this.whole) {
+    this.dirty = true;
     if (!box) return;
     const center = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
@@ -256,6 +267,7 @@ export class Viewer {
 
   // camera from eye + target (README captures)
   look(eye, target) {
+    this.dirty = true;
     this.camera.position.set(...eye);
     this.controls.target.set(...target);
     const d = this.camera.position.distanceTo(this.controls.target);
