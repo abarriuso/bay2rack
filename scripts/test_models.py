@@ -9,7 +9,7 @@ Each case is rendered to STL with the OpenSCAD CLI and must:
   - for an adapter: print the summary line, and a bill of materials whose rack screw count
     matches the rack units (6 per U with the EIA pattern),
   - (BOM cases) print the bill of materials lines they list.
-The ready-made builds of the web configurator (EXAMPLES in web/src/main.js) are tested too, so the
+The ready-made builds of the web configurator (EXAMPLES in web/src/examples.js) are tested too, so the
 site never offers a build that does not fit. Exit code 1 if anything fails (used by CI).
 """
 import argparse
@@ -158,8 +158,8 @@ CASES = (
 
 def web_examples():
     """The ready-made builds of the configurator, rendered as adapters."""
-    js = (ROOT / "web" / "src" / "main.js").read_text(encoding="utf-8")
-    block = js[js.index("const EXAMPLES = {"):js.index("const EXAMPLE_KEYS")]
+    js = (ROOT / "web" / "src" / "examples.js").read_text(encoding="utf-8")
+    block = js[js.index("EXAMPLES = {"):]
     out = []
     for m in re.finditer(r"(\w+): \{(.*?)\},\n", block, re.S):
         d = {k: (v.strip("'") if v.startswith("'") else float(v))

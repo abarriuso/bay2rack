@@ -36,6 +36,11 @@ export class Viewer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     el.appendChild(this.renderer.domElement);
+    // the keyboard turns it too: arrows orbit, + / - zoom, Home (or 0) frames it again; its label says what it shows
+    const canvas = this.renderer.domElement;
+    canvas.tabIndex = 0;
+    canvas.setAttribute('role', 'img');
+    canvas.addEventListener('keydown', (e) => this.onKey(e));
 
     this.scene = new THREE.Scene();
     const pmrem = new THREE.PMREMGenerator(this.renderer);
@@ -49,7 +54,7 @@ export class Viewer {
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8b8f99, 0.6));
     this.key = new THREE.DirectionalLight(0xffffff, 2.2);
     this.key.castShadow = true;
-    this.key.shadow.mapSize.set(2048, 2048);
+    this.key.shadow.mapSize.setScalar(mobile ? 1024 : 2048);   // (phones: a quarter of the shadow work)
     this.key.shadow.bias = -0.0004;
     this.key.shadow.normalBias = 0.6;
     this.scene.add(this.key, this.key.target);
@@ -89,6 +94,31 @@ export class Viewer {
     };
     requestAnimationFrame(loop);
     new IntersectionObserver(([e]) => { this.active = e.isIntersecting; }).observe(el);
+  }
+
+  // what the view shows, for screen readers (the canvas is an image to them)
+  setLabel(text) {
+    this.renderer.domElement.setAttribute('aria-label', text);
+  }
+
+  onKey(e) {
+    const step = Math.PI / 18;
+    const up = THREE.Object3D.DEFAULT_UP;                  // Z
+    const off = this.camera.position.clone().sub(this.controls.target);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') off.applyAxisAngle(up, e.key === 'ArrowLeft' ? -step : step);
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      const right = new THREE.Vector3().crossVectors(off, up).normalize();
+      const tilted = off.clone().applyAxisAngle(right, e.key === 'ArrowUp' ? step : -step);
+      const a = tilted.angleTo(up);
+      if (a > 0.05 && a < Math.PI - 0.05) off.copy(tilted);
+    }
+    else if (e.key === '+' || e.key === '=') off.multiplyScalar(0.85);
+    else if (e.key === '-' || e.key === '_') off.multiplyScalar(1 / 0.85);
+    else if (e.key === 'Home' || e.key === '0') { e.preventDefault(); this.fit(); return; }
+    else return;
+    e.preventDefault();
+    this.camera.position.copy(this.controls.target).add(off);
+    this.controls.update();
   }
 
   setTheme(theme) {

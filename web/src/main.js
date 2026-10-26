@@ -1,15 +1,17 @@
 import '@fontsource-variable/archivo/wdth.css';
 import '@fontsource-variable/martian-mono/standard.css';
 import './style.css';
-import { zipSync, strToU8 } from 'three/addons/libs/fflate.module.js';
+import { zipSync, strToU8, strFromU8, deflateSync, inflateSync } from 'three/addons/libs/fflate.module.js';
 import { parseCustomizer, scadLiteral, fromPreset, same, clampValue } from './customizer.js';
 import { t, lang, setLang, applyI18n } from './i18n.js';
 import { stepHelp, optionHelp, paramLabel, paramHelp, bomText, warnText, optionLabel } from './help.js';
 import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
+import { EXAMPLES } from './examples.js';
 import { renderLegend } from './legend.js';
 
-const BASE = new URL('./', document.baseURI).href;
+// the site root (the scripts sit in assets/ next to it; in dev, in src/): the same bundle serves / and /es/
+const BASE = new URL('../', import.meta.url).href;
 const SITE = 'https://bay2rack.pages.dev/';                      // the links in the kit README
 const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
@@ -28,27 +30,6 @@ const KVM_DIMS = { jet: 'jetkvm_dims', nano: 'nanokvm_dims', custom: 'kvm_custom
 const DEVICE_DIMS = {
   ms105g: ['ms_w', 'ms_h', 'ms_d'], uswflex: ['usw_dims'], ux: ['ux_dims'],
   dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'], piblade: ['pi_blade_pitch'], nkvm: ['nkvm_dims', 'nkvm_headroom'],
-};
-// ready-made builds: the examples step and the gallery (applied on top of the defaults)
-const EXAMPLES = {
-  router: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,kvm:jet+nano',
-            spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,pass,pass' },
-  homelab: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'ms105g,kvm:jet+nano',
-             spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
-  network: { bays: 5, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ms105g,ux,patch',
-             spare_pos: 'top', spare_fill: 'vent', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass' },
-  pi: { bays: 4, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,piblade:pi5+pi5+pi5+pi5',
-        spare_pos: 'top', spare_fill: 'vent' },
-  kvm: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'kvm:jet+jet,kvm:nano+nano',
-         spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,hdmi,usb' },
-  audio: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'pi:pi4,fan40',
-           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rca,rca,jack,toslink,rj45m,pass' },
-  unifi: { bays: 3, fit: 'flush', front_style: 'plate', filler_mode: 'separate', rack_modules: 'uswflex,ux',
-           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,rj45m,cover,pass' },
-  client: { bays: 3, fit: 'panel', front_style: 'plate', filler_mode: 'integral', spare_pos: 'split', spare_split: 0.67,
-            spare_fill: 'fan80', spare_fill_2: 'buttons' },
-  bezel: { bays: 3, fit: 'flush', front_style: 'bezel', filler_mode: 'integral', rack_modules: 'ms105g,kvm:jet+nano',
-           spare_pos: 'top', spare_fill: 'keystone', ks_ports_list: 'rj45m,rj45m,rj45m,cover,cover,pass' },
 };
 // an example also clears what you set inside the build (port names, buttons, label, NanoKVM bay…); your case,
 // screws, fits, device sizes and the view stay
@@ -268,6 +249,10 @@ function startEngine() {
     viewer.show.cables = UI.cables;
     viewer.show.side = UI.side;
     if (import.meta.env.DEV) window.__b2r.viewer = viewer;
+  }).catch((e) => {
+    console.warn(e);
+    viewer = null;
+    $('#view').replaceChildren(h('p', { className: 'no-view', textContent: t('noView') }));
   });
   return engineStarted;
 }
@@ -291,6 +276,45 @@ const runJob = (defines, out) => new Promise((resolve) => {
   jobs.set(id, resolve);
   worker.postMessage({ type: 'run', id, defines, out });
 });
+// the last renders, by their settings: going back to a piece or a view you had is instant
+const done = new Map();
+async function cachedJob(run, defines, out) {
+  const key = out + '\n' + defines.join('\n');
+  if (done.has(key)) { const r = done.get(key); done.delete(key); done.set(key, r); return { ...r, cached: true }; }
+  const res = await run(defines, out);
+  if (res.ok) {
+    done.set(key, res);
+    if (done.size > 40) done.delete(done.keys().next().value);
+  }
+  return res;
+}
+// The kit renders its pieces on a few more engines at once (each piece is its own OpenSCAD run): one per spare core,
+// up to 3 more, none on a phone or a device with little memory (every engine holds the model and its geometry).
+let pool = null;
+function kitEngines() {
+  const spare = Math.min(3, (navigator.hardwareConcurrency || 2) - 2);
+  if (spare < 1 || (navigator.deviceMemory ?? 8) < 4 || matchMedia(NARROW).matches) return Promise.resolve([]);
+  pool ??= Array.from({ length: spare }, () => {
+    const w = new Worker(new URL('./openscad-worker.js', import.meta.url), { type: 'module' });
+    const pending = new Map();
+    let next = 1;
+    const ready = new Promise((resolve) => {
+      w.onmessage = ({ data: m }) => {
+        if (m.type === 'ready') resolve(true);
+        else if (m.type === 'error') resolve(false);
+        else if (m.type === 'result') { pending.get(m.id)?.(m); pending.delete(m.id); }
+      };
+    });
+    w.postMessage({ type: 'init', base: BASE });
+    const run = (defines, out) => new Promise((resolve) => {
+      const id = next++;
+      pending.set(id, resolve);
+      w.postMessage({ type: 'run', id, defines, out });
+    });
+    return ready.then((ok) => (ok ? run : null));
+  });
+  return Promise.all(pool).then((runs) => runs.filter(Boolean));
+}
 const definesFor = (v) => Object.entries(v)
   .filter(([k, x]) => S.params[k] && (!same(x, S.defaults[k]) || k === 'part'))
   .map(([k, x]) => `${k}=${scadLiteral(S.params[k], x)}`);
@@ -304,8 +328,22 @@ function setStatus(text, kind = '') {
 // ---------------------------------------------------------------- state changes
 // every value that comes in (steps, advanced form, link) stays inside its parameter's range
 const clamped = (patch) => Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, S.params[k] ? clampValue(S.params[k], v) : v]));
+// undo / redo: every change keeps the settings it came from (the last 60)
+const past = [];
+const future = [];
+const snapshot = () => ({ ...S.values });
+function restore(v) {
+  S.values = { ...v };
+  refresh();
+  schedule(0);
+}
+function undo() { if (past.length) { future.push(snapshot()); restore(past.pop()); } }
+function redo() { if (future.length) { past.push(snapshot()); restore(future.pop()); } }
 function update(patch) {
   startEngine();
+  past.push(snapshot());
+  if (past.length > 60) past.shift();
+  future.length = 0;
   Object.assign(S.values, clamped(patch));
   normalize(S.values);
   refresh();
@@ -500,7 +538,7 @@ function renderSteps() {
   // the kit can be downloaded from the first step on: the bar at the foot of the steps says so
   const pieces = kitList(v).reduce((a, f) => a + f.qty, 0);
   $('#kitBar').textContent = t('kitBar', { n: pieces });
-  $('#examplesList').replaceChildren(examplesEditor());
+  $('#examplesList').replaceChildren(...examplesEditor());
 }
 
 const rowTitle = (key) => h('small', { className: 'row-title', textContent: t(key) });
@@ -796,10 +834,34 @@ function intentEditor() {
 const exampleActive = (k, v = S.values) => Object.entries(EXAMPLES[k]).every(([key, x]) => same(v[key], x));
 
 function examplesEditor() {
-  return h('div', { className: 'chips' }, Object.keys(EXAMPLES).map((k) => h('button', {
+  return [h('div', { className: 'chips' }, Object.keys(EXAMPLES).map((k) => h('button', {
     type: 'button', className: `chip${exampleActive(k) ? ' active' : ''}`, dataset: { tip: t('ex_' + k + '_tip') },
     onclick: () => applyExample(k),
-  }, t('ex_' + k))));
+  }, t('ex_' + k)))), savedEditor()];
+}
+
+// your builds, kept in this browser: a name, the settings (as in a link) and when
+const loadSaved = () => { try { return JSON.parse(localStorage.getItem('saved') || '[]'); } catch { return []; } };
+const storeSaved = (list) => { try { localStorage.setItem('saved', JSON.stringify(list)); } catch { /* private mode */ } };
+function savedEditor() {
+  const list = loadSaved();
+  const here = hashString();
+  const name = h('input', { type: 'text', className: 'text saved-name', maxLength: 40, placeholder: describeView({ ...S.values, part: 'assembly' }).slice(0, 40),
+    'aria-label': t('savedName') });
+  const save = () => {
+    const entry = { name: name.value.trim() || name.placeholder, hash: here, at: new Date().toISOString().slice(0, 10) };
+    storeSaved([entry, ...list.filter((x) => x.hash !== here)].slice(0, 30));
+    $('#examplesList').replaceChildren(...examplesEditor());
+  };
+  return h('div', { className: 'saved' },
+    h('small', { className: 'row-title', textContent: t('savedTitle') }),
+    list.length ? h('div', { className: 'chips' }, list.map((x) => h('span', { className: `chip saved-chip${x.hash === here ? ' active' : ''}` },
+      h('button', { type: 'button', className: 'link', textContent: x.name, dataset: { tip: x.at },
+        onclick: () => { location.hash = x.hash; } }),
+      h('button', { type: 'button', className: 'link saved-del', textContent: '×', 'aria-label': `${t('savedDelete')}: ${x.name}`,
+        onclick: () => { storeSaved(list.filter((y) => y !== x)); $('#examplesList').replaceChildren(...examplesEditor()); } }))))
+      : h('small', { className: 'hint', textContent: t('savedNone') }),
+    h('div', { className: 'saved-new' }, name, h('button', { type: 'button', className: 'pill', textContent: t('savedSave'), onclick: save })));
 }
 
 // the sizes you can edit for the devices in the rack: { name (null = MS105G), title, tip }
@@ -956,10 +1018,10 @@ function pieceLabel(f, v) {
   if (p.part === 'rack_module') return (DEVICE_MODS.includes(modKind(p.module_type)) ? t('piece_mount', { x: modLabel(p.module_type) })
     : modKind(p.module_type) === 'nkvm' && v.nkvm_split && ['side', 'front'].includes(modItems(p.module_type)[0])
       ? `${modLabel(p.module_type)} · ${t('piece_plate')}` : ownIndex(p.module_type, v)
-        ? modLabel(p.module_type).replace(' · ', ` ${ownIndex(p.module_type, v)} · `) : modLabel(p.module_type)) + qty;
+        ? numbered(modLabel(p.module_type), ownIndex(p.module_type, v)) : modLabel(p.module_type)) + qty;
   if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part === 'filler_labels' ? t('piece_filler')
     : p.part === 'filler_2_labels' ? t('piece_filler2') : ownIndex(p.module_type, v)
-      ? modLabel(p.module_type).replace(' · ', ` ${ownIndex(p.module_type, v)} · `) : modLabel(p.module_type)}`;
+      ? numbered(modLabel(p.module_type), ownIndex(p.module_type, v)) : modLabel(p.module_type)}`;
   if (p.part === 'rack_module_lid') return `${modLabel(p.module_type)} · ${t('piece_lid')}${qty}`;
   if (p.part === 'rack_module_bay') return `${modLabel(p.module_type)} · ${t(modItems(p.module_type)[0] === 'front' ? 'piece_drawer'
     : v.nkvm_raised ? 'piece_mountain' : 'piece_pocket')}${qty}`;
@@ -1080,9 +1142,21 @@ function hashString(values = S.values) {
 function writeHash() {
   history.replaceState(null, '', hashString());
 }
+// a short link: the same settings, deflated (#z=...) when that is shorter than the readable ones
+const b64url = (u8) => btoa(String.fromCharCode(...u8)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64url = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0));
+function shortHash(values = S.values) {
+  const plain = hashString(values);
+  const z = '#z=' + b64url(deflateSync(strToU8(plain.slice(1)), { level: 9 }));
+  return z.length < plain.length ? z : plain;
+}
 function readHash() {
+  let hash = location.hash.slice(1);
+  if (hash.startsWith('z=')) {
+    try { hash = strFromU8(inflateSync(unb64url(hash.slice(2)))); } catch { hash = ''; }
+  }
   // a "+" in a link is a plus here (kvm:jet+nano), not a space
-  for (const [k, s] of new URLSearchParams(location.hash.slice(1).replace(/\+/g, '%2B')))
+  for (const [k, s] of new URLSearchParams(hash.replace(/\+/g, '%2B')))
     if (S.params[k]) S.values[k] = clampValue(S.params[k], fromPreset(S.params[k], s));
 }
 
@@ -1102,7 +1176,7 @@ async function render() {
   setStatus(t('rendering'), 'busy');
   const defs = definesFor(values);
   if (ext === '3mf') defs.push('web_scene=true');
-  const res = await runJob(defs, 'out.' + ext);
+  const res = await cachedJob(runJob, defs, 'out.' + ext);
   await engineStarted;                                  // (the 3D view loads alongside the engine)
   S.busy = false;
   try {
@@ -1134,7 +1208,8 @@ function showResult(res, ext, values) {
     } catch { /* ignore a malformed line */ }
   }
   if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
-  viewer.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
+  viewer?.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
+  viewer?.setLabel(`${t('aria_view')} ${describeView(values)}`);
   S.lastScene = ext === '3mf' && UI.cables ? scene : null;
   renderLegend($('#legend'), S.lastScene);
   $('#caseName').textContent = ext === '3mf' && scene.case ? (UI.sleeper ? t('sleeperName') : scene.case.name) : '';
@@ -1216,11 +1291,27 @@ function bomGroups(bom) {
   ];
 }
 
+// what the 3D view shows, in words (for screen readers): the build, or the piece
+function describeView(v) {
+  if (v.part !== 'assembly') {
+    const f = kitList(v, true).find((x) => Object.entries(x.part).every(([k, val]) => v[k] === val));
+    return f ? pieceLabel(f, v) : '';
+  }
+  const c = calc(v);
+  const mods = usedMods(v, c.units).filter((m) => m !== 'blank').map(modLabel);
+  return [t('spec_bays', { n: v.bays }), c.units ? t('spec_units', { n: c.units }) : null, ...mods,
+    ...c.zones.map((z) => t('fill_' + z))].filter(Boolean).join(', ');
+}
+
 // ---------------------------------------------------------------- kit download
 // patch panels and labels with their own ports / text are numbered in the order they are in the rack (0 = not one)
+// "Patch panel · 6 ports" -> "Patch panel 2 · 6 ports"; "Patch panel" -> "Patch panel 2"
+const numbered = (label, n) => (label.includes(' · ') ? label.replace(' · ', ` ${n} · `) : `${label} ${n}`);
+// (counting the bare patch / label too, so the names follow the rack: Patch panel 1, Patch panel 2…; 0 when it is the only one)
 function ownIndex(m, v) {
-  const own = [...new Set(usedMods(v, calc(v).units))].filter((x) => modKind(x) === modKind(m) && x.includes(':'));
-  return ['patch', 'label'].includes(modKind(m)) && m.includes(':') ? own.indexOf(m) + 1 : 0;
+  if (!['patch', 'label'].includes(modKind(m))) return 0;
+  const all = [...new Set(usedMods(v, calc(v).units))].filter((x) => modKind(x) === modKind(m));
+  return all.length > 1 ? all.indexOf(m) + 1 : 0;
 }
 function kitList(v, withTests = $('#withTests').checked) {
   const c = calc(v);
@@ -1241,7 +1332,7 @@ function kitList(v, withTests = $('#withTests').checked) {
     }
   }
   const mods = usedMods(v, c.units);
-  const fileOf = (m) => (ownIndex(m, v) ? `${modKind(m)}-${ownIndex(m, v)}` : modFile(m));
+  const fileOf = (m) => (m.includes(':') && ['patch', 'label'].includes(modKind(m)) ? `${modKind(m)}-${ownIndex(m, v) || 1}` : modFile(m));
   for (const m of new Set(mods)) {
     const qty = mods.filter((x) => x === m).length;
     const modLettered = modKind(m) === 'label' ? labelOf(m, v) !== '' : modKind(m) === 'patch'
@@ -1289,16 +1380,28 @@ async function downloadKit(testsOnly = false) {
   const files = [];
   const zip = {};
   try {
+    // every engine takes the next piece until there are none left
+    setStatus(t('kitStep', { i: 0, n: listed.length, name: listed[0]?.name ?? '' }), 'busy');
+    const engines = [runJob, ...(await kitEngines())];
+    const results = [];
+    let next = 0;
+    let finished = 0;
+    await Promise.all(engines.map(async (run) => {
+      while (next < listed.length) {
+        const i = next++;
+        results[i] = await cachedJob(run, definesFor({ ...v, ...listed[i].part }), 'out.stl');
+        setStatus(t('kitStep', { i: ++finished, n: listed.length, name: listed[i].name }), 'busy');
+      }
+    }));
     for (const [i, f] of listed.entries()) {
-      setStatus(t('kitStep', { i: i + 1, n: listed.length, name: f.name }), 'busy');
-      const res = await runJob(definesFor({ ...v, ...f.part }), 'out.stl');
+      const res = results[i];
       // a letters piece with nothing in it (e.g. every port name blank) is left out, not a failure
       if (!res.ok && f.name.endsWith('-labels.stl') && res.logs.some((l) => /top level object is empty/i.test(l))) continue;
       files.push(f);
       if (!res.ok) { $('#log').textContent = res.logs.join('\n'); setStatus(t('kitFailed', { name: f.name }), 'error'); return; }
       zip['bay2rack/' + f.name] = res.data;
     }
-    const bomRes = await runJob(definesFor({ ...v, part: 'assembly' }), 'out.echo');
+    const bomRes = await cachedJob(runJob, definesFor({ ...v, part: 'assembly' }), 'out.echo');
     const echoText = [...bomRes.logs, ...(bomRes.data ? new TextDecoder().decode(bomRes.data).split(/\r?\n/) : [])];
     const bom = [...new Set(echoText.map((l) => l.match(/^ECHO: "BOM \| (.*)"$/)?.[1]).filter(Boolean))].map(bomText);
     const lines = [
@@ -1505,13 +1608,26 @@ function wire() {
   $('#kitBar').onclick = () => downloadKit();
   $('#kitTests').onclick = () => downloadKit(true);
   $('#share').onclick = async () => {
-    try { await navigator.clipboard.writeText(location.href); setStatus(t('copied'), 'ok'); } catch { prompt('URL', location.href); }
+    const ex = Object.keys(EXAMPLES).find((k) => hashString({ ...S.defaults, ...EXAMPLES[k] }) === hashString());
+    const url = ex ? `${BASE}m/${ex}/` : location.href.split('#')[0] + shortHash();
+    try { await navigator.clipboard.writeText(url); setStatus(t('copied'), 'ok'); } catch { prompt('URL', url); }
   };
-  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') render(); });
+  document.addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (e.key === 'Enter') render();
+    // undo / redo, except while typing in a field (the field's own undo)
+    else if (/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName) && document.activeElement.type !== 'checkbox') return;
+    else if (e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+  });
+  $('#undo').onclick = undo;
+  $('#redo').onclick = redo;
   // a shared link opened in the same tab only changes the hash: load its settings
   addEventListener('hashchange', () => {
     if (location.hash === hashString()) return;
     if (!/=/.test(location.hash)) return;                       // plain section anchors (#build, #gallery…)
+    past.push(snapshot());
+    startEngine();
     S.values = { ...S.defaults };
     readHash();
     refresh();
@@ -1540,6 +1656,9 @@ async function boot() {
   renderGallery();
   renderBayTable();
   heroRelabel = wireHeroVideo();
+  // installable, and offline after the first visit (the service worker is only in the built site)
+  if ('serviceWorker' in navigator && !import.meta.env.DEV)
+    addEventListener('load', () => navigator.serviceWorker.register(BASE + 'sw.js').catch(() => {}), { once: true });
   S.wantRender = true;
   // the engine and the 3D view: with settings in the link at once, otherwise when the configurator is near
   if (/=/.test(location.hash)) startEngine();

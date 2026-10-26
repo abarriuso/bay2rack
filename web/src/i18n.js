@@ -1,7 +1,9 @@
 import { dict } from './strings.js';
 
 const stored = (() => { try { return localStorage.getItem('lang'); } catch { return null; } })();
-export let lang = (stored || navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en';
+// /es/ is the Spanish page (search engines index both); elsewhere your last choice, else the browser's language
+export let lang = /\/es\/(index\.html)?$/.test(location.pathname) ? 'es'
+  : (stored || navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en';
 
 export function t(key, vars = {}) {
   const s = dict[lang][key] ?? dict.en[key] ?? key.replace(/^\w+:/, '');

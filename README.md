@@ -235,7 +235,8 @@ numbers** with the `test_bay` piece. Use `bay_hole_offset` / `bay_hole_slot` to 
   [GitHub Pages](https://abarriuso.github.io/bay2rack/), built from the same `main`) runs OpenSCAD compiled to
   WebAssembly in the browser: a simple step-by-step mode with hover help, an "Every parameter" form for the rest,
   shareable links, the bill of materials, single-part STL / coloured 3MF downloads and a kit .zip with every STL.
-  The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally.
+  The source is in `web/` (Vite + pnpm); `corepack pnpm --dir web dev` runs it locally, and `pnpm --dir web test:e2e`
+  tests the built site in a browser (Playwright). It installs as an app and works offline after the first visit.
 
 - **OpenSCAD Customizer:** open `src/bay2rack.scad` and use *Window → Customizer*. Every variant is a preset
   in the dropdown. Press F5 to preview (the adapter is shown mounted in a PC tower, `case_view`) and F6 to render.

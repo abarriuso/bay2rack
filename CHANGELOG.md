@@ -5,6 +5,20 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web generator, next level:
+  - The last 40 renders are kept: going back to a piece or a view is instant. The kit renders on up to 3 more
+    OpenSCAD engines at once (desktop, enough memory).
+  - Installable app that works offline after the first visit (manifest, service worker); the 11 MB engine is kept
+    until its version changes.
+  - Spanish page at /es/ with its texts in the HTML, hreflang, structured data (SoftwareApplication), and a sitemap
+    with both. A share page per ready-made build (/m/router/ …) with its own picture for link previews.
+  - Undo / redo (buttons and Ctrl+Z / Ctrl+Y), your builds saved in the browser, short links (#z=…) when sharing.
+  - The 3D view turns with the keyboard (arrows, + / -, Home) and tells screen readers what it shows; without WebGL
+    the page says so and the steps, the lists and the kit still work (they hung on "Rendering…").
+  - A link opened in the same tab, or a saved build, starts the engine (it did not).
+  - Patch panels and labels are numbered in rack order in the piece list, the bare one included.
+  - Browser tests (Playwright) in CI: the pages, the editor with real renders, the piece view, undo, short links, a
+    full kit download.
 - **M5 rack screws by default** (were M6): an M5 heat-set insert leaves 2.2 mm of plastic to the bay side instead of
   1.4 mm, the nuts fit too (no soldering iron), and M5 screws still go through the M6 holes of other mini rack
   panels. M6, 10-32 and 12-24 stay in the Screws step. Every pre-built STL is rebuilt; the rack test piece is now
