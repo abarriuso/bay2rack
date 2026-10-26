@@ -12,6 +12,11 @@ on the photos and in the MakerWorld notes.
   `gallery_encode.py` makes the site's sizes.
 - 3D view: the case's front I/O (power key, USB) no longer sits on a printed front that reaches it: it moves
   above the front, or onto the roof when there is no room (a panel-only front, a tall rack in a short case).
+- Web generator code: `main.js` (1,700 lines) split into modules by what they do: `state` (constants, shared state,
+  DOM helpers), `model` (what fits, mirrors config.scad), `engine` (OpenSCAD workers, render cache, 3D view), `edit`
+  (changes, undo), `widgets`, `steps` and `editors` (the configurator), `tabs`, `hash` (links), `render`, `kit`,
+  `gallery` and `main` (wiring, start). No module runs code when it loads except `main`; lint-clean (no undefined or
+  unused names; a dead helper of the ports editor and of the icons removed).
 - Web generator: "What you can put in it" and "Example builds" are one section, "What you can build": each card is a
   build with what it is for and what to buy, and loads it. The row drags with the mouse like a swipe (touch already
   swipes), settles on a card and hides its scrollbar.
@@ -36,8 +41,6 @@ on the photos and in the MakerWorld notes.
   1.4 mm, the nuts fit too (no soldering iron), and M5 screws still go through the M6 holes of other mini rack
   panels. M6, 10-32 and 12-24 stay in the Screws step. Every pre-built STL is rebuilt; the rack test piece is now
   `tests/rack-M5-heatset.stl`.
-  A link made before this change that kept the old default (no `rack_screw` in it) now opens with M5: printed
-  pieces still work (M5 screws pass M6 holes); set M6 in the Screws step to get the old kit again.
 - NanoKVM bay in a pocket (`nkvm:side`, not raised): its floor, roof and posts stop short of the rim of the adapter's
   front frame for the depth of that frame, and the plate's screw bosses keep clear of its edges.
 - Web generator: the hero film loads after the page and is 960 px on phones (1.1 MB instead of 3.4 MB); it stays a
