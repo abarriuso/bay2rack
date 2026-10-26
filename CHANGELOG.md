@@ -10,6 +10,8 @@ on the photos and in the MakerWorld notes.
   sleeper in a living room, an Antec Three Hundred backlit, an Obsidian 750D as a white product shot and late sun
   on a green bezel build. `scripts/blender/gallery.py` renders them from GLBs exported by the web viewer,
   `gallery_encode.py` makes the site's sizes.
+- 3D view: the case's front I/O (power key, USB) no longer sits on a printed front that reaches it: it moves
+  above the front, or onto the roof when there is no room (a panel-only front, a tall rack in a short case).
 - Web generator: "What you can put in it" and "Example builds" are one section, "What you can build": each card is a
   build with what it is for and what to buy, and loads it. The row drags with the mouse like a swipe (touch already
   swipes), settles on a card and hides its scrollbar.
