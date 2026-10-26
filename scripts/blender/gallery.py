@@ -149,7 +149,7 @@ def dress_materials():
         b = principled(mat)
         if not b:
             continue
-        if not mat.name.startswith(("led", "glass", "mesh", "grille")):
+        if not mat.name.startswith(("led", "glass", "mesh")):
             bevel(mat, b)
         n = mat.name.split(".")[0]
         if n.startswith("print"):
