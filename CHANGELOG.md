@@ -5,6 +5,17 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- 3D view, the PC cases in detail and consistent with bay2rack.scad:
+  - Back: the exhaust fan is a real fan (frame, bore, curved blades) behind a wire guard in a round cut-out,
+    the I/O shield has its ports (USB, LAN with LEDs, video, audio jacks), the slot covers have vent slots and a
+    thumbscrew bar, the PSU shows its face (honeycomb, IEC inlet, switch, screws), thumbscrews on the side panels.
+    The fan guards no longer have spokes past their ring (they were a flat texture).
+  - Inside: the PSU reaches the back wall, the drives sit in a cage, the SATA cables end on ports of the board,
+    the motherboard tray is drawn. The board is always on the +X side, like the I/O and the slots (a window on
+    the right showed the board on the wrong side).
+  - Roof fans (Antec Three Hundred, HAF 932) hang under the roof; perforated meshes have holes at their real
+    pitch. The old client PC has a full back (I/O shield with the LAN port where the cable ends, 92 mm fan,
+    slot covers, PSU) and ends where bay2rack.scad ends it; the NAS has fans behind guards.
 - Gallery pictures rendered in Blender (Cycles), each build in its own case and setting: a Define XL R2 on a desk
   at night, a HAF 932 in a blue homelab, a silver Stacker 830 on a workbench, an Enthoo Pro close up, a beige
   sleeper in a living room, an Antec Three Hundred backlit, an Obsidian 750D as a white product shot and late sun

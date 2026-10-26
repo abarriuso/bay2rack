@@ -57,18 +57,6 @@ export const TEX = {
       g.fillRect(0, y, n, 1.2);
     }
   }),
-  // fan grille: rings and spokes (alpha)
-  grille: canvasTexture(256, (g, n) => {
-    g.fillStyle = '#000';
-    g.fillRect(0, 0, n, n);
-    g.strokeStyle = '#fff';
-    g.lineWidth = 5;
-    for (let r = 16; r < n / 2; r += 18) { g.beginPath(); g.arc(n / 2, n / 2, r, 0, Math.PI * 2); g.stroke(); }
-    for (let a = 0; a < 4; a++) {
-      g.beginPath(); g.moveTo(n / 2, n / 2);
-      g.lineTo(n / 2 + Math.cos(a * Math.PI / 2 + 0.6) * n, n / 2 + Math.sin(a * Math.PI / 2 + 0.6) * n); g.stroke();
-    }
-  }),
   // PCB: dark green with traces
   pcb: canvasTexture(256, (g, n) => {
     g.fillStyle = '#13361f';
@@ -94,7 +82,6 @@ export const MAT = {
   plastic: (color, roughness = 0.5) => named('plastic', std({ color, roughness, metalness: 0, bumpMap: TEX.grain, bumpScale: 0.12 })),
   gloss: (color) => named('gloss', std({ color, roughness: 0.22, metalness: 0 })),
   mesh: (color) => named('mesh', std({ color, roughness: 0.45, metalness: 0.7, alphaMap: TEX.perforated, alphaTest: 0.5, side: THREE.DoubleSide })),
-  grille: (color) => named('grille', std({ color, roughness: 0.4, metalness: 0.7, alphaMap: TEX.grille, alphaTest: 0.5, side: THREE.DoubleSide })),
   glass: () => named('glass', new THREE.MeshPhysicalMaterial({
     color: 0x9aa6b4, metalness: 0, roughness: 0.04, transmission: 0.92, thickness: 4, ior: 1.5,
     transparent: true, opacity: 0.35, side: THREE.DoubleSide, envMapIntensity: 1.2 })),

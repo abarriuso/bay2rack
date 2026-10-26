@@ -79,22 +79,135 @@ function plane(cx, cy, cz, sx, sz, mat, normal = 'y') {
   return m;
 }
 
+// a shape in the XZ plane extruded along +Y from y0 (panels with cut-outs)
+function slab(shape, y0, depth, mat, curveSegments = 24) {
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments });
+  g.rotateX(Math.PI / 2);
+  g.translate(0, y0 + depth, 0);
+  return mesh(g, mat);
+}
+
+// a case fan as made: a square frame with a round bore and screw holes (size x size x 25 for 120 mm),
+// seven curved blades on a hub with its sticker, faces -Y, front face at y
 function fan(cx, y, cz, size, frameMat) {
   const g = new THREE.Group();
-  const r = size / 2 - 4;
-  g.add(box(cx - size / 2, y, cz - size / 2, size, 3, size, frameMat, 4));
-  const hub = cyl(cx, y - 1, cz, r * 0.32, 8, MAT.plastic(0x1b1c1f, 0.5));
-  g.add(hub);
+  const depth = Math.round(size * 0.21);
+  const r = size / 2 - 3;
+  const s = rrect(new THREE.Shape(), cx - size / 2, cz - size / 2, size, size, size * 0.06);
+  s.holes.push(new THREE.Path().absarc(cx, cz, r, 0, Math.PI * 2, true));
+  const hole = size * 0.0875 / 2, off = size / 2 - size * 0.075;
+  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]])
+    s.holes.push(new THREE.Path().absarc(cx + sx * off, cz + sz * off, hole, 0, Math.PI * 2, true));
+  g.add(slab(s, y, depth, frameMat, 32));
+  const blades = MAT.plastic(0x1e1f23, 0.4);
+  g.add(cyl(cx, y + depth / 2, cz, r * 0.36, depth * 0.7, MAT.plastic(0x18191c, 0.5), 'y', 40));
+  g.add(cyl(cx, y + depth * 0.15 - 0.2, cz, r * 0.26, 0.4, MAT.plastic(0x2a2b30, 0.6), 'y', 40));   // hub sticker
+  // one blade: a swept outline from the hub to the bore, wider at the tip, 1.6 mm thick and pitched
+  const rh = r * 0.34, rt = r - 1.5;
+  const bs = new THREE.Shape();
+  bs.moveTo(-r * 0.1, rh);
+  bs.quadraticCurveTo(-r * 0.05, (rh + rt) / 2, -r * 0.02, rt);
+  bs.quadraticCurveTo(r * 0.2, rt + 1, r * 0.4, rt - 3);
+  bs.quadraticCurveTo(r * 0.24, (rh + rt) / 2, r * 0.14, rh);
+  bs.quadraticCurveTo(0, rh - 2, -r * 0.1, rh);
+  const bladeGeo = new THREE.ExtrudeGeometry(bs, { depth: 1.6, bevelEnabled: false, curveSegments: 10 });
+  bladeGeo.translate(0, 0, -0.8);
   for (let i = 0; i < 7; i++) {
-    const blade = box(-r * 0.12, -1.5, 0, r * 0.24, 3, r * 0.95, MAT.plastic(0x232428, 0.45));
+    const blade = mesh(bladeGeo, blades);
+    blade.rotation.y = 0.55;                     // the pitch, about the blade's own radius
     const pivot = new THREE.Group();
-    blade.rotation.y = 0.35;
     pivot.add(blade);
-    pivot.position.set(cx, y - 1, cz);
-    pivot.rotation.y = (i / 7) * Math.PI * 2;
+    pivot.rotation.x = Math.PI / 2;              // the shape's plane faces the fan's axis (Y)
+    const spin = new THREE.Group();
+    spin.add(pivot);
+    spin.position.set(cx, y + depth / 2, cz);
+    spin.rotation.y = (i / 7) * Math.PI * 2;
+    g.add(spin);
+  }
+  return g;
+}
+
+// a wire fan guard (rings and four spokes that end on the outer ring), in the XZ plane at y
+function fanGuard(cx, y, cz, size, mat = MAT.steel()) {
+  const g = new THREE.Group();
+  const R = size / 2 - 3;
+  for (let r = R; r > 8; r -= R / 5.2) {
+    const ring = mesh(new THREE.TorusGeometry(r, 0.9, 6, 72), mat);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(cx, y, cz);
+    g.add(ring);
+  }
+  g.add(cyl(cx, y, cz, R * 0.22, 1.6, mat, 'y'));
+  for (let a = 0; a < 4; a++) {
+    const spoke = box(-0.9, -0.9, 0, 1.8, 1.8, R, mat);
+    const pivot = new THREE.Group();
+    pivot.add(spoke);
+    pivot.position.set(cx, y, cz);
+    pivot.rotation.y = Math.PI / 4 + (a * Math.PI) / 2;
     g.add(pivot);
   }
   return g;
+}
+
+// ATX power supply, rear face: honeycomb, IEC C14 inlet with its three pins, rocker switch, four screws.
+// x0 / z0: lower left corner seen from the back is x0 + 150; the face is 150 x 86 at y
+function psuFace(g, x0, y, z0) {
+  const face = tiled(MAT.powder(0x141518), 40);
+  g.add(box(x0, y, z0, 150, 1.4, 86, face, 1));
+  g.add(plane(x0 + 50, y + 1.6, z0 + 43, 84, 70, perforated(0x1b1c1f, 84, 70), 'y'));
+  g.add(plane(x0 + 50, y + 0.5, z0 + 43, 84, 70, MAT.plastic(0x050506, 0.9), 'y'));
+  const inlet = x0 + 122, iz = z0 + 50;
+  g.add(box(inlet - 13.5, y + 1.4, iz - 10, 27, 3, 20, MAT.plastic(0x0d0d0f, 0.6), 1.5));
+  g.add(box(inlet - 10, y + 2.6, iz - 7, 20, 2, 13, MAT.plastic(0x030303, 0.9)));
+  for (const [px, pz] of [[-4.5, -1.5], [4.5, -1.5], [0, 3]]) g.add(box(inlet + px - 1, y + 2.4, iz + pz - 2, 2, 1.4, 4, MAT.steel()));
+  g.add(box(inlet - 7, y + 1.4, z0 + 18, 14, 3, 18, MAT.plastic(0x0d0d0f, 0.6), 1));          // rocker switch
+  g.add(box(inlet - 5.5, y + 3.6, z0 + 19.5, 11, 1.6, 7, MAT.plastic(0x1b1c1f, 0.4), 0.6));
+  for (const [sx, sz] of [[6, 6], [144, 6], [6, 80], [144, 80]]) g.add(cyl(x0 + sx, y + 1.8, z0 + sz, 2.4, 1.2, MAT.zinc()));
+}
+
+// rear I/O shield of the board (44.45 x 158.75, ATX), ports from the top: USB pairs, LAN, video,
+// USB 3 pairs, audio jacks
+function ioShield(g, x0, y, zTop) {
+  const W = 44.45, H = 158.75;
+  g.add(box(x0, y, zTop - H, W, 0.8, H, tiled(MAT.brushed(0xb4b8be), 20)));
+  const port = (z, w, hgt, tongue = null) => {
+    g.add(box(x0 + W / 2 - w / 2, y + 0.6, z, w, 1.4, hgt, MAT.plastic(0x050506, 0.9)));
+    if (tongue) g.add(box(x0 + W / 2 - w / 2 + 1.5, y + 1.4, z + hgt * 0.45, w - 3, 0.8, hgt * 0.22, MAT.plastic(tongue, 0.4)));
+  };
+  let z = zTop - 8;
+  for (let i = 0; i < 2; i++) { z -= 7; port(z, 14, 6, 0x16171a); }       // USB 2
+  z -= 17; port(z, 16, 14);                                                  // LAN with its LEDs
+  g.add(box(x0 + W / 2 - 7, y + 1.8, z + 12.2, 2.4, 0.6, 1.4, MAT.led(0x3ddc84, 2)));
+  g.add(box(x0 + W / 2 + 4.6, y + 1.8, z + 12.2, 2.4, 0.6, 1.4, MAT.led(0xf5d142, 2)));
+  z -= 10; port(z, 16, 6);                                                   // HDMI
+  z -= 10; port(z, 17, 6.5);                                                 // DisplayPort
+  for (let i = 0; i < 4; i++) { z -= 8; port(z, 14, 6, 0x2a5bd7); }       // USB 3
+  [0x6fbcff, 0x7ed957, 0xff7ab3, 0xf28c28, 0x111111].forEach((c, i) => {     // audio jacks
+    const jz = zTop - H + 12 + (i % 3) * 11, jx = x0 + W / 2 + (i < 3 ? -7 : 7);
+    g.add(cyl(jx, y + 1, jz, 3.6, 1.6, MAT.plastic(c, 0.4)));
+    g.add(cyl(jx, y + 1.4, jz, 1.8, 1.6, MAT.plastic(0x030303, 0.9)));
+  });
+}
+
+// perforated steel on a plane w x h mm, holes at `pitch` (the texture has 8 holes a tile)
+function perforated(color, w, h, pitch = 5) {
+  const m = MAT.mesh(color);
+  m.alphaMap = m.alphaMap.clone();
+  m.alphaMap.repeat.set(w / (pitch * 8), h / (pitch * 8));
+  return m;
+}
+
+// a round stamped opening (dark) behind a wire guard, the fan inside, on a rear face at y
+function rearFan(g, x, y, z, size, guardMat) {
+  g.add(cyl(x, y - 0.4, z, size / 2 - 2, 0.8, MAT.plastic(0x060607, 0.9), 'y', 48));
+  g.add(fanGuard(x, y + 1, z, size, guardMat));
+  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) g.add(cyl(x + sx * size * 0.4, y + 0.4, z + sz * size * 0.4, 2, 1, MAT.zinc()));
+}
+
+// expansion slot cover: brushed steel with its vent slots, the screw that holds it at the top end
+function slotCover(g, x0, len, y, zc) {
+  g.add(box(x0, y, zc - 8.2, len, 1, 16.4, tiled(MAT.brushed(0x8d9298), 20)));
+  for (let k = 0; k < 6; k++) g.add(box(x0 + 18 + k * 13, y + 0.8, zc - 3, 8, 0.4, 6, MAT.plastic(0x050506, 0.9), 0.5));
 }
 
 // ------------------------------------------------------------------ cases
@@ -193,6 +306,10 @@ function interior(g0, c, xWall) {
   const slotZ = (i) => mbTop - ATX.slot0 - i * ATX.pitch;
   const add = (grp, [x, sx], y, z, sy, sz, mat, r = 0) => grp.add(box(x, y, z, sx, sy, sz, mat, r));
 
+  // the motherboard tray between the board and the side panel, with the cut-out for the CPU backplate
+  // (what a window on that side shows)
+  g.add(sidePanel(xs(1.2), 30, z0 + 20, d - 40, z1 - z0 - 40, 1.2, tiled(MAT.powder(0x1c1d20), 50),
+    [mbY + 96, mbTop - 175, 100, 150]));
   const mb = part(g, 'part_board');
   add(mb, span(6, BS), mbY, mbZ, ATX.depth, ATX.height, MAT.pcb());
   add(mb, on(0, 26), d - ATX.rear - 26, mbTop - 160, 26, 150, MAT.powder(0x2a2c30));          // rear I/O stack
@@ -220,8 +337,8 @@ function interior(g0, c, xWall) {
 
   // PSU at the bottom rear, its cable bundle up to the 24-pin socket
   const psu = part(g, 'part_psu');
-  psu.add(box(-w / 2 + 8, d - 158, z0 + 6, 150, 150, 86, MAT.powder(0x111214)));
-  psu.add(plane(-w / 2 + 83, d - 158 - 0.6, z0 + 49, 70, 70, MAT.grille(0x2a2c30), 'y'));
+  psu.add(box(-w / 2 + 8, d - 1.4 - 150, z0 + 6, 150, 150, 86, MAT.powder(0x111214), 1));
+  psu.add(box(-w / 2 + 30, d - 1.4 - 150 - 0.6, z0 + 20, 100, 0.6, 50, MAT.plastic(0xd8d8d2, 0.6)));   // rating label
   const harness = new THREE.CatmullRomCurve3([
     new THREE.Vector3(-w / 2 + 60, d - 160, z0 + 60), new THREE.Vector3(xs(60), mbY - 20, (z0 + mbTop) / 2),
     new THREE.Vector3(xs(BS + 20), mbY - 6, mbTop - 124)]);
@@ -229,6 +346,16 @@ function interior(g0, c, xWall) {
 
   // 3.5in drives in the front cage at the bottom, SATA cables to the board's front edge
   const drives = part(g, 'part_drives');
+  // the cage they slide into: two side walls with the rails, a roof, the screws of each drive
+  const cageMat = tiled(MAT.brushed(0x8d9298), 40);
+  for (const x of [-w / 2 + 19, -w / 2 + 22 + 101.6 + 0.4]) drives.add(box(x, 20, z0 + 16, 2.6, 160, 104, cageMat));
+  drives.add(box(-w / 2 + 19, 20, z0 + 117, 101.6 + 6, 160, 1.2, cageMat));
+  for (let i = 0; i < 3; i++) {
+    const zz = z0 + 26 + i * 30;
+    for (const y of [50, 130]) drives.add(cyl(-w / 2 + 19 - 0.4, y, zz + 7, 2.6, 1.2, MAT.zinc(), 'x'));
+    drives.add(box(-w / 2 + 50, 171, zz + 4, 40, 3, 8, MAT.plastic(0x101010, 0.6)));            // SATA data + power
+    add(mb, on(0, 9), mbY - 1, mbZ + 26 + i * 8, 11, 7, MAT.plastic(0x101012, 0.5));              // board SATA port
+  }
   for (let i = 0; i < 3; i++) {
     const zz = z0 + 26 + i * 30;
     drives.add(box(-w / 2 + 22, 24, zz, 101.6, 147, 26, tiled(MAT.brushed(0x9ea3aa), 30)));
@@ -293,25 +420,41 @@ export function buildCase(c) {
   }
   part(root, 'top_panel').add(box(-w / 2, 0, z1 - t, w, d, t, body));
   g.add(box(-w / 2, 0, z0, w, d, t, body));
-  g.add(box(-w / 2, d - t, z0, w, t, h, body));
-  // top: mesh panel or fan grille
-  if (st.top === 'mesh') g.add(plane(0, d * 0.55, z1 + 0.3, w - 40, d * 0.6, MAT.mesh(0x0c0c0d), 'z'));
-  if (st.top === 'fan') {
-    const gr = plane(0, d * 0.5, z1 + 0.3, 180, 180, MAT.grille(0x0c0c0d), 'z');
-    g.add(gr);
+  // rear wall: the exhaust fan sits behind a round bore next to the I/O shield
+  const fanX = Math.min(-10, w / 2 - 60 - 66), fanZ = z1 - 120;
+  const rearWall = rrect(new THREE.Shape(), -w / 2, z0, w, h, 2);
+  rearWall.holes.push(new THREE.Path().absarc(fanX, fanZ, 58, 0, Math.PI * 2, true));
+  g.add(slab(rearWall, d - t, t, body, 48));
+  g.add(fan(fanX, d - t - 25, fanZ, 120, MAT.plastic(0x16171a, 0.5)));
+  g.add(fanGuard(fanX, d + 1.2, fanZ, 120, MAT.powder(st.body)));
+  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) g.add(cyl(fanX + sx * 52.5, d + 0.6, fanZ + sz * 52.5, 2.6, 1.6, MAT.zinc()));
+  // top: mesh panel or a fan
+  if (st.top === 'mesh') g.add(plane(0, d * 0.55, z1 + 0.3, w - 40, d * 0.6, perforated(0x0c0c0d, w - 40, d * 0.6, 6), 'z'));
+  if (st.top === 'fan') {         // a 200 mm fan under a wire guard in the roof
+    const top = new THREE.Group();
+    top.add(fan(0, t, 0, 180, MAT.plastic(0x16171a, 0.5)), fanGuard(0, -1.2, 0, 180, MAT.powder(st.body)));
+    top.rotation.x = -Math.PI / 2;               // +Y of the group points down: the fan hangs under the roof
+    top.position.set(0, d * 0.5, z1);
+    g.add(top);
   }
-  // rear: I/O shield, PCI slots, rear fan, PSU grille
-  g.add(box(w / 2 - 60, d - 0.5, z1 - ATX.top - 162, 44, 1, 158, MAT.plastic(0x2a2c30, 0.5)));   // I/O shield
+  // rear: I/O shield, PCI slots, the PSU face, the side panels' thumbscrews
+  ioShield(g, w / 2 - 60, d, z1 - ATX.top - 4);
+  psuFace(g, -w / 2 + 8, d, z0 + 6);
+  for (const sx of [-1, 1]) for (const zz of [z0 + 70, z1 - 70]) {
+    g.add(cyl(sx * (w / 2 - 5), d + 3, zz, 4.2, 6, tiled(MAT.brushed(0x7d8288), 6), 'y', 18));     // knurled head
+    g.add(cyl(sx * (w / 2 - 5), d + 6.1, zz, 3.2, 0.4, MAT.zinc()));
+  }
   // expansion slots: horizontal, stacked under the I/O shield (an ATX tower)
   const [px0, pztop, ppitch, pl] = c.pci?.length === 4 ? c.pci : [w / 2 - 18 - 112, z1 - ATX.top - ATX.slot0, ATX.pitch, 112];
   const slotZ = (i) => pztop - i * ppitch;
   for (let i = 0; i < 7; i++) {
     if ((c.rearSlots ?? []).includes(i) || i === c.nic || (st.sleeper && i === 3)) continue;   // printed brackets, cards
-    g.add(box(px0, d - 0.4, slotZ(i) - 8.2, pl, 1, 16.4, tiled(MAT.brushed(0x8d9298), 20)));
+    slotCover(g, px0, pl, d, slotZ(i));
   }
+  // the bar that holds the brackets, with a thumbscrew per slot (the brackets' tabs are away from the board)
+  g.add(box(px0 - 12, d, slotZ(6) - 10, 10, 1.2, slotZ(0) - slotZ(6) + 20, tiled(MAT.brushed(0x8d9298), 20)));
+  for (let i = 0; i < 7; i++) g.add(cyl(px0 - 7, d + 2, slotZ(i), 3.2, 3.4, tiled(MAT.brushed(0x7d8288), 6), 'y', 18));
   if (c.nic >= 0) networkCard(root, c.nicPorts ?? [], px0, pl, slotZ(c.nic), d);
-  g.add(plane(-10, d + 0.6, z1 - 120, 120, 120, MAT.grille(0x0a0a0b), 'y'));
-  g.add(plane(-w / 2 + 83, d + 0.6, z0 + 49, 80, 80, MAT.grille(0x0a0a0b), 'y'));
   // feet
   for (const fx of [-w / 2 + 22, w / 2 - 22]) for (const fy of [24, d - 24]) g.add(cyl(fx, fy, z0 - 4, 14, 8, MAT.rubber(), 'z'));
 
@@ -357,7 +500,7 @@ export function buildCase(c) {
   }
   if (meshArea && meshArea[3] - meshArea[2] > 40) {
     const mw = meshArea[1] - meshArea[0], mh = meshArea[3] - meshArea[2];
-    g.add(plane(0, -fd + 2.5, meshArea[2] + mh / 2, mw, mh, tiled(MAT.mesh(0x1a1b1d), 1), 'y'));
+    g.add(plane(0, -fd + 2.5, meshArea[2] + mh / 2, mw, mh, perforated(0x1a1b1d, mw, mh, 7), 'y'));
     g.add(plane(0, 14, meshArea[2] + mh / 2, mw, mh, MAT.plastic(0x050506, 0.9), 'y'));
     const n = Math.max(1, Math.floor(mh / 130));
     for (let i = 0; i < n; i++) g.add(fan(0, 8, meshArea[2] + mh * (i + 0.5) / n, Math.min(120, mh / n - 6), MAT.plastic(0x141517, 0.5)));
@@ -388,7 +531,8 @@ export function buildCase(c) {
     }
   }
   // a sleeper hides a modern server: draw it even without a window (the video takes the side panel off)
-  if (st.window || st.sleeper) interior(root, c, winSide > 0 ? -w / 2 + t : w / 2 - t);
+  // the motherboard tray is always on +X, like the rear I/O and the slots (bay2rack.scad places them there)
+  if (st.window || st.sleeper) interior(root, c, w / 2 - t);
   if (st.sleeper && c.nic !== 3) lowProfileGPU(root, px0, pl, slotZ(3), d);
   return root;
 }
@@ -409,7 +553,8 @@ export function buildClient(i, cl, bays) {
   const g = new THREE.Group();
   const z0 = bays.z0;
   const body = beige ? tiled(MAT.plastic(col, 0.6), 40) : tiled(MAT.powder(col), 50);
-  g.add(box(x - W / 2, 4, z0, W, D - 4, H, body, 2));
+  const R = D - bays.fd;                         // its back, as in bay2rack.scad (the network cable ends there)
+  g.add(box(x - W / 2, 4, z0, W, R - 4, H, body, 2));
   const bw = bays.bezelW;
   // printed bay2rack bezels (buttons, 80 mm fan) come from OpenSCAD: leave their openings
   const holes = bays.bezels.map(([zb, hh]) => [x - bw / 2, x + bw / 2, zb, zb + hh]);
@@ -427,12 +572,16 @@ export function buildClient(i, cl, bays) {
     g.add(box(x - 45, -bays.fd + 0.2, zDvd - 20, 90, 0.6, 3, MAT.plastic(0x1a1a1a, 0.8)));
     g.add(box(x + 28, -bays.fd + 0.2, zDvd - 30, 12, 0.8, 5, MAT.plastic(0xc4beab, 0.5), 1));
   }
-  g.add(plane(x, -bays.fd + 2, (vent[2] + vent[3]) / 2, vent[1] - vent[0], vent[3] - vent[2], MAT.mesh(beige ? 0x8f8a7c : 0x0c0c0d), 'y'));
+  g.add(plane(x, -bays.fd + 2, (vent[2] + vent[3]) / 2, vent[1] - vent[0], vent[3] - vent[2], perforated(beige ? 0x8f8a7c : 0x0c0c0d, vent[1] - vent[0], vent[3] - vent[2], 6), 'y'));
   g.add(plane(x, 6, (vent[2] + vent[3]) / 2, vent[1] - vent[0], vent[3] - vent[2], MAT.plastic(0x050506, 0.9), 'y'));
+  // the back of a micro-ATX tower: the I/O shield (its LAN port is where the cable ends), a 92 mm fan,
+  // four slot covers under the shield, the PSU at the bottom
   const p = bays.port;
-  // just the network port at the back (its I/O plate would read as a dark slab in the film)
-  g.add(box(p[0] - 9, D - 0.9, p[2] - 7, 18, 1.4, 14, MAT.plastic(0x1a1b1d, 0.6), 0.5));
-  g.add(box(p[0] - 7, D - 1.1, p[2] - 5, 14, 1.2, 11, MAT.gloss(0x050506)));
+  ioShield(g, p[0] - 22.2, R, p[2] + 32);
+  const guard = beige ? MAT.plastic(0xcfc9b8, 0.5) : MAT.powder(col);
+  rearFan(g, p[0] + 78, R, p[2] - 18, 92, guard);
+  for (let i = 0; i < 4; i++) slotCover(g, p[0] - 16, 100, R, p[2] + 32 - 175 - i * 20.32);
+  psuFace(g, x + W / 2 - 158, R, z0 + 6);
   for (const fx of [x - W / 2 + 18, x + W / 2 - 18]) for (const fy of [22, D - 22]) g.add(cyl(fx, fy, z0 - 3, 10, 6, MAT.rubber(), 'z'));
   if (bays.sleeper) retroControls(g, x + W / 2 - 16, -bays.fd, z0 + H - 16, true);
   return g;
@@ -458,7 +607,7 @@ export function buildNAS(cl, bays) {
   }
   g.add(cyl(x + W / 2 - 16, -fd - 1.2, z0 + H - 18, 4.5, 1.6, MAT.steel()));
   g.add(cyl(x + W / 2 - 16, -fd - 1.8, z0 + H - 18, 5.2, 0.6, MAT.led(0x5ac8ff, 2.2)));
-  for (const fz of [z0 + 55, z0 + 145]) g.add(plane(x - 20, D - fd + 0.6, fz, 80, 80, MAT.grille(0x0a0a0b), 'y'));
+  for (const fz of [z0 + 55, z0 + 145]) rearFan(g, x - 20, D - fd, fz, 80, MAT.powder(0x141517));
   const p = bays.port;
   g.add(box(p[0] - 7, D - fd - 0.6, p[2] - 5, 14, 1.2, 11, MAT.gloss(0x050506)));
   for (const fx of [x - W / 2 + 18, x + W / 2 - 18]) for (const fy of [16, D - 26]) g.add(cyl(fx, fy, z0 - 3, 8, 6, MAT.rubber(), 'z'));
