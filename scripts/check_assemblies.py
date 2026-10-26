@@ -15,8 +15,8 @@ ROOT = Path(__file__).resolve().parent.parent
 EXE = next(e for e in (shutil.which("openscad"), r"C:\Program Files\OpenSCAD\openscad.com") if e and Path(e).exists())
 SCAD = ROOT / "src" / "bay2rack.scad"
 
-js = (ROOT / "web" / "src" / "main.js").read_text(encoding="utf-8")
-block = js[js.index("const EXAMPLES = {"):js.index("const EXAMPLE_KEYS")]
+js = (ROOT / "web" / "src" / "examples.js").read_text(encoding="utf-8")
+block = js[js.index("EXAMPLES = {"):]
 cases = []
 for m in re.finditer(r"(\w+): \{(.*?)\},\n", block, re.S):
     d = {k: (v.strip("'") if v.startswith("'") else float(v)) for k, v in re.findall(r"(\w+): ('[^']*'|[\d.]+)", m.group(2))}

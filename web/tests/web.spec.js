@@ -14,7 +14,7 @@ function watchErrors(page) {
 
 test('the page has its words before any script, and the files search engines read', async ({ page, request }) => {
   const html = await (await request.get('/')).text();
-  expect(html).toContain('Your old PC case is already a rack');
+  expect(html).toContain('into a 6" mini rack with 3D-printed parts');
   expect(html).toContain('hreflang="es"');
   expect(html).toContain('"@type": "SoftwareApplication"');
   expect(await (await request.get('/robots.txt')).text()).toContain('Sitemap:');
@@ -23,7 +23,7 @@ test('the page has its words before any script, and the files search engines rea
   expect((await request.get('/sw.js')).ok()).toBeTruthy();
   const errors = watchErrors(page);
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText('Your old PC case is already a rack');
+  await expect(page.locator('h1')).toHaveText('Bay2Rack');
   expect(errors).toEqual([]);
 });
 
@@ -31,7 +31,7 @@ test('/es/ is Spanish, its scripts and images load from one folder up', async ({
   const errors = watchErrors(page);
   await page.goto('/es/');
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-  await expect(page.locator('h1')).toHaveText('Tu caja de PC vieja ya es un rack');
+  await expect(page.locator('.lead')).toHaveText(/Convierte las bahías/);
   await expect(page.locator('#steps .step h3').first()).toHaveText(/¿Qué quieres poner/);
   expect(errors).toEqual([]);
 });
