@@ -6,9 +6,13 @@ on the photos and in the MakerWorld notes.
 ## Unreleased
 
 - Homelab scene: the network, uplink and power cables inside the case run like tidy cable management: straight
-  back out of the keystones, behind the drive cage, up under the roof on the window side, along it to the back
-  and down the back wall to the rear slot, 5 mm apart. They used to cut across the case and through the CPU
-  cooler and the board.
+  back out of the keystones, behind the drive cage, a flat ribbon along the roof on the window side and down the
+  back wall to the rear slot, held by velcro ties on adhesive mounts (under a roof fan it runs below the fan).
+  They used to cut across the case and through the CPU cooler and the board.
+- 3D view, inside the case like a modern build: a black motherboard with real-looking traces and silkscreen
+  (the green Pi and card boards too), DIMMs with heat spreaders, slots and latches, PCIe x16 / x4 / x1 slots
+  (armoured x16), M.2 heatsinks, a PSU shroud, sleeved 24-pin and EPS cables through rubber grommets next to
+  their sockets, SATA cables over the shroud, black drive cage walls with vent and screw holes.
 - 3D view, the PC cases in detail and consistent with bay2rack.scad:
   - Back: the exhaust fan is a real fan (frame, bore, curved blades) behind a wire guard in a round cut-out,
     the I/O shield has its ports (USB, LAN with LEDs, video, audio jacks), the slot covers have vent slots and a

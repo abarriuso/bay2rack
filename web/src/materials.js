@@ -57,20 +57,50 @@ export const TEX = {
       g.fillRect(0, y, n, 1.2);
     }
   }),
-  // PCB: dark green with traces
-  pcb: canvasTexture(256, (g, n) => {
-    g.fillStyle = '#13361f';
-    g.fillRect(0, 0, n, n);
-    g.strokeStyle = 'rgba(160, 200, 120, 0.35)';
-    g.lineWidth = 1;
-    for (let i = 0; i < 70; i++) {
-      let x = Math.random() * n, y = Math.random() * n;
-      g.beginPath(); g.moveTo(x, y);
-      for (let k = 0; k < 4; k++) { if (k % 2) x += (Math.random() - 0.5) * 80; else y += (Math.random() - 0.5) * 80; g.lineTo(x, y); }
-      g.stroke();
-    }
-  }, { color: true }),
+  // PCBs: green (Raspberry Pi, cards) and black (the motherboard)
+  pcb: pcbTexture('#163f26', 'rgba(110, 170, 100, 0.30)', 'rgba(236, 240, 228, 0.55)'),
+  board: pcbTexture('#151719', 'rgba(150, 160, 172, 0.14)', 'rgba(225, 228, 232, 0.40)'),
 };
+
+// A printed circuit board as made: buses of parallel traces with 45 degree corners, vias, the white
+// silkscreen outlines of the parts. 512 px for about 250 mm: one trace is about 0.3 mm.
+function pcbTexture(base, trace, silk) {
+  return canvasTexture(512, (g, n) => {
+    g.fillStyle = base;
+    g.fillRect(0, 0, n, n);
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    g.strokeStyle = trace;
+    g.lineWidth = 1.2;
+    g.lineJoin = 'round';
+    for (let b = 0; b < 46; b++) {                 // buses
+      const lines = Math.round(rnd(3, 9)), gap = 4;
+      let x = rnd(0, n), y = rnd(0, n);
+      const horiz = Math.random() < 0.5, l1 = rnd(30, 150), l2 = rnd(10, 50), l3 = rnd(30, 150), dir = Math.random() < 0.5 ? 1 : -1;
+      for (let k = 0; k < lines; k++) {
+        const o = k * gap;
+        g.beginPath();
+        if (horiz) {
+          g.moveTo(x, y + o); g.lineTo(x + l1 + o * dir, y + o);
+          g.lineTo(x + l1 + o * dir + l2, y + o + l2 * dir); g.lineTo(x + l1 + o * dir + l2 + l3, y + o + l2 * dir);
+        } else {
+          g.moveTo(x + o, y); g.lineTo(x + o, y + l1 + o * dir);
+          g.lineTo(x + o + l2 * dir, y + l1 + o * dir + l2); g.lineTo(x + o + l2 * dir, y + l1 + o * dir + l2 + l3);
+        }
+        g.stroke();
+      }
+    }
+    g.fillStyle = trace;                           // vias
+    for (let i = 0; i < 260; i++) { g.beginPath(); g.arc(rnd(0, n), rnd(0, n), 1.6, 0, Math.PI * 2); g.fill(); }
+    g.strokeStyle = silk;                          // silkscreen: part outlines and pin-1 marks
+    g.lineWidth = 1;
+    for (let i = 0; i < 34; i++) {
+      const w = rnd(6, 26), h = rnd(4, 16), x = rnd(0, n - w), y = rnd(0, n - h);
+      g.strokeRect(x, y, w, h);
+      g.fillStyle = silk;
+      g.fillRect(x - 3, y - 3, 2, 2);
+    }
+  }, { color: true });
+}
 
 const std = (o) => new THREE.MeshStandardMaterial(o);
 // every material carries a name: the Blender video pipeline finds the parts by it
@@ -91,6 +121,7 @@ export const MAT = {
   gold: () => named('gold', std({ color: 0xe6bf55, roughness: 0.25, metalness: 1 })),
   rubber: () => named('rubber', std({ color: 0x111112, roughness: 0.95, metalness: 0 })),
   pcb: () => named('pcb', std({ map: TEX.pcb, roughness: 0.55, metalness: 0.1 })),
+  board: () => named('pcb', std({ map: TEX.board, roughness: 0.62, metalness: 0.05 })),
   led: (color, k = 2.2) => named('led', std({ color, emissive: color, emissiveIntensity: k, roughness: 0.3, toneMapped: false })),
   filament: (color) => named('print', std({ color, roughness: 0.58, metalness: 0, bumpMap: TEX.layers, bumpScale: 0.55 })),
 };

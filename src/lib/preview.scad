@@ -591,13 +591,18 @@ lan_port = nic_on ? nic_port(1) : io_nic;
 wan_port = nic_on ? nic_port(0) : io_nic + [14, 0, 0];
 
 // Inside the case like tidy cable management, from a point a = [x, z] behind the front: straight back past the
-// drive cage, up under the roof on the window side (clear of the board, the CPU cooler and a roof fan), along
-// it to the back, down the back wall in front of the exhaust fan and out through slot zs at xs. Lane k keeps
-// the cables 5 mm apart. Without the printed slot brackets they leave through the back at zs.
+// drive cage, up to the roof on the window side (clear of the board and the CPU cooler), along it to the back,
+// down the back wall beside the exhaust fan and out through slot zs at xs. The cables lie side by side in a
+// flat ribbon (lane k), tied to the roof and the wall; under a roof fan the ribbon runs below the fan.
+// Without the printed slot brackets they leave through the back at zs.
+ROOF_FAN = TC[0] == "antec300" || TC[0] == "haf932";
+TIDY_Z = tc_z1 - (ROOF_FAN ? 50 : 10);                  // the ribbon's height along the roof
+TIDY_Y = TC_D - 9;                                      // and its distance down the back wall
+function tidy_x(k) = -TC_W / 2 + 18 + k * 5.5;
 function tidy_route(a, k, xs, zs) =
-    let(xr = -TC_W / 2 + 18 + k * 5, zt = tc_z1 - 50 - k * 5, yr = TC_D - 36)
-    concat([[a[0], 230, a[1] + 4], [xr, 262, zt], [xr, TC_D - 90, zt], [xr, yr, zt - 40]],
-           rear_slots ? [[xr, yr, zs + 40], [xs, yr - 10, zs], [xs, TC_D + 25, zs]]
+    let(xr = tidy_x(k), zt = TIDY_Z, yr = TIDY_Y)
+    concat([[a[0], 230, a[1] + 4], [xr, 262, zt], [xr, TC_D - 60, zt], [xr, yr, zt - 34]],
+           rear_slots ? [[xr, yr, zs + 40], [xs, yr - 14, zs], [xs, TC_D + 25, zs]]
                       : [[xr, yr, zs + 20], [xr, TC_D + 25, zs]]);
 
 // keystone back -> along the inside of the case -> out through the rear LAN slot (or the back) -> target
@@ -698,7 +703,8 @@ module scene_echo() {
             ",", jstr("rearSlots"), ":", rear_slots ? [pci_lan_slot, pci_power_slot] : [],
             ",", jstr("pci"), ":", [pci_x0, pci_ztop, PCI_PITCH, PCI_L],
             ",", jstr("nic"), ":", nic_on ? router_nic_slot : -1,
-            ",", jstr("nicPorts"), ":", [for (j = [0 : 3]) nic_port(j)], "}}"));
+            ",", jstr("nicPorts"), ":", [for (j = [0 : 3]) nic_port(j)],
+            ",", jstr("tidy"), ":", [TIDY_Z, TIDY_Y, tidy_x(0)], "}}"));
     if (case_view == "tower" && scene == "homelab") {
         echo(str("SCENE ", "{", jstr("homelab"), ":{",
             jstr("clients"), ":", [for (i = [0, 1]) [cl_x[i], CLIENTS[i][0], CLIENTS[i][1], CLIENTS[i][2], CLIENTS[i][3]]],
