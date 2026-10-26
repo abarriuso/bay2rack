@@ -372,7 +372,21 @@ export function buildCase(c) {
   }
   // Define-style cases: the front door comes off to use the rack, only its hinge pins stay
   if (st.front === 'door') for (const zh of [z0 + 60, z1 - 60]) front.add(cyl(-w / 2 + 4, -fd - 2, zh, 2.2, 14, MAT.zinc(), 'z'));
-  if (!st.sleeper) frontIO(front, w / 2 - 34, -fd, z1 - 24, st.body < 0x808080);
+  if (!st.sleeper) {
+    // the front I/O strip (power key, USB, jacks: x from xr - 77 to xr + 8, 15 mm tall) must not sit on the
+    // printed front: above it when there is room, else on the roof, like a top-I/O tower
+    const xr = w / 2 - 34, [ox0, ox1, oz0, oz1] = c.open;
+    const hits = (z) => xr - 77 < ox1 + 4 && xr + 8 > ox0 - 4 && z - 8 < oz1 + 4 && z + 8 > oz0 - 4;
+    let z = z1 - 24;
+    if (hits(z)) z = oz1 + 14;
+    if (!hits(z) && z + 8 <= z1 - 6) frontIO(front, xr, -fd, z, st.body < 0x808080);
+    else {
+      const top = part(root, 'top_io');
+      frontIO(top, xr, 0, 0, st.body < 0x808080);
+      top.rotation.x = -Math.PI / 2;           // the strip faces up, near the front edge of the roof
+      top.position.set(0, 40, z1);
+    }
+  }
   // a sleeper hides a modern server: draw it even without a window (the video takes the side panel off)
   if (st.window || st.sleeper) interior(root, c, winSide > 0 ? -w / 2 + t : w / 2 - t);
   if (st.sleeper && c.nic !== 3) lowProfileGPU(root, px0, pl, slotZ(3), d);

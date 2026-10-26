@@ -5,6 +5,13 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Gallery pictures rendered in Blender (Cycles), each build in its own case and setting: a Define XL R2 on a desk
+  at night, a HAF 932 in a blue homelab, a silver Stacker 830 on a workbench, an Enthoo Pro close up, a beige
+  sleeper in a living room, an Antec Three Hundred backlit, an Obsidian 750D as a white product shot and late sun
+  on a green bezel build. `scripts/blender/gallery.py` renders them from GLBs exported by the web viewer,
+  `gallery_encode.py` makes the site's sizes.
+- 3D view: the case's front I/O (power key, USB) no longer sits on a printed front that reaches it: it moves
+  above the front, or onto the roof when there is no room (a panel-only front, a tall rack in a short case).
 - Web generator code: `main.js` (1,700 lines) split into modules by what they do: `state` (constants, shared state,
   DOM helpers), `model` (what fits, mirrors config.scad), `engine` (OpenSCAD workers, render cache, 3D view), `edit`
   (changes, undo), `widgets`, `steps` and `editors` (the configurator), `tabs`, `hash` (links), `render`, `kit`,
