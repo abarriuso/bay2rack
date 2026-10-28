@@ -590,11 +590,29 @@ io_nic = [TC_W / 2 - 38, TC_D - 3, tc_z1 - 150];       // motherboard LAN when t
 lan_port = nic_on ? nic_port(1) : io_nic;
 wan_port = nic_on ? nic_port(0) : io_nic + [14, 0, 0];
 
+// Inside the case like tidy cable management, from a point a = [x, z] behind the front: straight back past the
+// drive cage, up to the roof on the window side (clear of the board and the CPU cooler), along it to the back,
+// down the back wall beside the exhaust fan and out through slot zs at xs. The cables lie side by side in a
+// flat ribbon (lane k), tied to the roof and the wall; under a roof fan the ribbon runs below the fan.
+// Without the printed slot brackets they leave through the back at zs.
+ROOF_FAN = TC[0] == "antec300" || TC[0] == "haf932";
+TIDY_Z = tc_z1 - (ROOF_FAN ? 50 : 10);                  // the ribbon's height along the roof
+TIDY_Y = TC_D - 15;                                     // and its distance down the back wall
+function tidy_x(k) = -TC_W / 2 + 18 + k * 5.5;
+// (extra points at the bends keep the smooth curve the viewer draws through them off the walls)
+function tidy_route(a, k, xs, zs) =
+    let(xr = tidy_x(k), zt = TIDY_Z, yr = TIDY_Y)
+    concat([[a[0], 230, a[1] + 4], [xr, 262, zt], [xr, TC_D - 70, zt], [xr, TC_D - 40, zt - 4], [xr, yr, zt - 24],
+            [xr, yr, zt - 44]],
+           rear_slots ? [[xr, yr, zs + 50], [xr, yr, zs + 34], [xr + 12, yr - 2, zs + 10], [xs - 12, yr - 6, zs],
+                         [xs, yr - 6, zs], [xs, TC_D - 4, zs], [xs, TC_D + 25, zs]]
+                      : [[xr, yr, zs + 20], [xr, yr, zs + 6], [xr, TC_D - 4, zs], [xr, TC_D + 25, zs]]);
+
 // keystone back -> along the inside of the case -> out through the rear LAN slot (or the back) -> target
 function inner_route(p, i) =
-    let(xr = -TC_W / 2 + 26 + i * 7, zr = tc_z1 - 120 - i * 6, yb = zone_yf + 33,
-        xs = rear_slots ? pci_x(40 + i * 14) : xr, zs = rear_slots ? pci_cz(pci_lan_slot) : zr)
-    [[p[0], yb, p[1]], [p[0], yb + 30, p[1] - 8], [xr, 150, p[1] - 30], [xs, TC_D - 60, zs], [xs, TC_D + 25, zs]];
+    let(yb = zone_yf + 33, xs = rear_slots ? pci_x(40 + i * 14) : 0,
+        zs = rear_slots ? pci_cz(pci_lan_slot) : tc_z1 - 200 - i * 6)
+    concat([[p[0], yb, p[1]], [p[0], yb + 30, p[1]]], tidy_route(p, i, xs, zs));
 
 // The showcase network: this PC is the router (OPNsense / pfSense), the managed switch
 // carries the VLANs, the access point gets a trunk. Cable colour = VLAN.
@@ -622,20 +640,20 @@ function cord_from(i) = sw_second != undef && i == 1 ? sw_ports_of(sw_second)[1]
 function cord_route(i) = cord(cord_from(i), sw_yf, rj_ports[i], zone_yf);
 
 // cable through a pass-through cover, along the inside to a rear expansion slot and out
-function pass_route(a, q, slot, along, tail) =
+function pass_route(a, q, slot, along, tail, k) =
     let(xp = pci_x(along), zp = pci_cz(slot))
     concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 20, a[1]], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
-            [q[0], 60, q[1]], [TC_W / 2 - 30, 160, q[1] - 40]],
-           rear_slots ? concat([[xp, TC_D - 60, zp], [xp, TC_D + 30, zp]], tail) : [[TC_W / 2 - 30, TC_D - 40, tc_z0 + 60]]);
+            [q[0], 60, q[1]]],
+           rear_slots ? concat(tidy_route(q, k, xp, zp), tail) : tidy_route(q, k, 0, tc_z0 + 60));
 function power_route() = pass_route(sw_jack_of(sw_main), pass_ports[len(pass_ports) - 1], pci_power_slot, 80,
-    [[pci_x(80), TC_D + 60, tc_z0 + 8], [pci_x(80) + 160, TC_D + 90, tc_z0 + 4]]);
+    [[pci_x(80), TC_D + 60, tc_z0 + 8], [pci_x(80) + 160, TC_D + 90, tc_z0 + 4]], 4);
 // router LAN (trunk): last switch port -> first pass-through -> inside, out through the LAN slot -> card port 2
 function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4], p = lan_port,
                               xs = pci_x(30), zs = pci_cz(pci_lan_slot) + 3)
     concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], zone_yf - 26, q[1] + 6], [q[0], zone_yf - 18, q[1]],
-            [q[0], zone_yf + 4, q[1]], [q[0], 70, q[1] + 10], [TC_W / 2 - 34, 180, q[1] - 40]],
-           rear_slots ? [[xs, TC_D - 60, zs], [xs, TC_D + 30, zs], [p[0] - 8, TC_D + 44, (zs + p[2]) / 2]]
-                      : [[p[0] - 18, TC_D - 40, p[2] - 20], [p[0] - 18, TC_D + 20, p[2] - 10]],
+            [q[0], zone_yf + 4, q[1]], [q[0], 70, q[1] + 10]],
+           rear_slots ? concat(tidy_route(q, 3, xs, zs), [[p[0] - 8, TC_D + 44, (zs + p[2]) / 2]])
+                      : concat(tidy_route(q, 3, 0, p[2] - 10), [[p[0] - 18, TC_D + 20, p[2] - 10]]),
            [[p[0], TC_D + 32, p[2]], [p[0], TC_D + 4, p[2]]]);
 // WAN: card port 1 to the fibre box on the floor behind the case
 // the fibre box (ONT) on the floor behind the case: 140 x 95 x 28, its LAN port on the side facing
@@ -688,7 +706,8 @@ module scene_echo() {
             ",", jstr("rearSlots"), ":", rear_slots ? [pci_lan_slot, pci_power_slot] : [],
             ",", jstr("pci"), ":", [pci_x0, pci_ztop, PCI_PITCH, PCI_L],
             ",", jstr("nic"), ":", nic_on ? router_nic_slot : -1,
-            ",", jstr("nicPorts"), ":", [for (j = [0 : 3]) nic_port(j)], "}}"));
+            ",", jstr("nicPorts"), ":", [for (j = [0 : 3]) nic_port(j)],
+            ",", jstr("tidy"), ":", [TIDY_Z, TIDY_Y, tidy_x(0)], "}}"));
     if (case_view == "tower" && scene == "homelab") {
         echo(str("SCENE ", "{", jstr("homelab"), ":{",
             jstr("clients"), ":", [for (i = [0, 1]) [cl_x[i], CLIENTS[i][0], CLIENTS[i][1], CLIENTS[i][2], CLIENTS[i][3]]],
