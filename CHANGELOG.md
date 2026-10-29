@@ -5,6 +5,17 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Consistency pass:
+  - Each ready-made build names the case of its gallery picture, so loading it shows the same PC (the configurator
+    used to pick the smallest case that fits: 5 of 8 showed another one). The router and homelab builds show their
+    homelab scene, as their texts say; the router picture now has the PCs next to it, the audio one the black case
+    it loads.
+  - One name per build everywhere (gallery card, share page, load button, README): Router with VLANs, KVM over IP,
+    Proxmox / TrueNAS box, CD-drive front.
+  - The name is written Bay2Rack in every text (title, logo, link previews, README); bay2rack stays in file names
+    and addresses.
+  - Finger-sized "Load" buttons and glossary link on phones (44 px); the configurator's panel title no longer
+    repeats the section title ("Step by step").
 - Homelab scene: the network, uplink and power cables inside the case run like tidy cable management: straight
   back out of the keystones, behind the drive cage, a flat ribbon along the roof on the window side and down the
   back wall to the rear slot, held by velcro ties on adhesive mounts (under a roof fan it runs below the fan).

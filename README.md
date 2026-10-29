@@ -1,9 +1,9 @@
-# bay2rack — old PC case → 6" homelab rack
+# Bay2Rack — old PC case → 6" homelab rack
 
 *[Leer en español](README.es.md)* · [![Model tests](https://github.com/abarriuso/bay2rack/actions/workflows/models.yml/badge.svg)](https://github.com/abarriuso/bay2rack/actions/workflows/models.yml)
 
 Towers used to come with 5.25" bays for CD drives. New cases don't, but ATX hasn't changed: that old case still
-takes a modern motherboard. **bay2rack** is a parametric OpenSCAD adapter that screws into those bays and turns them
+takes a modern motherboard. **Bay2Rack** is a parametric OpenSCAD adapter that screws into those bays and turns them
 into a **6" mini rack**, so an old tower becomes the heart of a cheap homelab: a router with VLANs, switches,
 KVM over IP, Raspberry Pi blades and a patch panel, right in the front of the case.
 
@@ -33,10 +33,10 @@ Evolution of the original
 
 | | |
 |---|---|
-| ![Router + VLANs](docs/gallery/router.webp) **Router + VLANs**: the PC runs OPNsense / pfSense with a 4-port network card; a managed UniFi switch carries the VLANs, a second switch the servers, JetKVM + NanoKVM, patch panel | ![Network rack](docs/gallery/network.webp) **Network rack**: 5 bays, two switches, a UniFi Express and a full patch panel |
-| ![Raspberry Pi cluster](docs/gallery/pi.webp) **Raspberry Pi cluster**: a UniFi switch and four Raspberry Pi 5 standing as 2U blades | ![KVM station](docs/gallery/kvm.webp) **KVM station**: two trays, two JetKVM and two NanoKVM, HDMI and USB keystones |
+| ![Router with VLANs](docs/gallery/router.webp) **Router with VLANs**: the PC runs OPNsense / pfSense with a 4-port network card; a managed UniFi switch carries the VLANs, a second switch the servers, JetKVM + NanoKVM, patch panel | ![Network rack](docs/gallery/network.webp) **Network rack**: 5 bays, two switches, a UniFi Express and a full patch panel |
+| ![Raspberry Pi cluster](docs/gallery/pi.webp) **Raspberry Pi cluster**: a UniFi switch and four Raspberry Pi 5 standing as 2U blades | ![KVM over IP](docs/gallery/kvm.webp) **KVM over IP**: two trays, two JetKVM and two NanoKVM, HDMI and USB keystones |
 | ![Audio](docs/gallery/audio.webp) **Audio**: a Raspberry Pi 4 streamer, three 40 mm fans, RCA, 3.5 mm jack and Toslink keystones | ![Proxmox / TrueNAS box](docs/gallery/client.webp) **Proxmox / TrueNAS box**: no rack, just a front panel with an 80 mm fan and a power / reset button panel |
-| ![UniFi](docs/gallery/unifi.webp) **UniFi**: Flex Mini switch and UniFi Express | ![Flush bezel](docs/gallery/bezel.webp) **Flush bezel**: an exact 5.25" bezel, flush with the case front |
+| ![UniFi](docs/gallery/unifi.webp) **UniFi**: Flex Mini switch and UniFi Express | ![CD-drive front](docs/gallery/bezel.webp) **CD-drive front**: an exact 5.25" bezel, flush with the case front |
 
 ## A homelab from old PCs
 

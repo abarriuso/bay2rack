@@ -68,7 +68,7 @@ writeFileSync(join(pub, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>
   <url><loc>${SITE}es/</loc><lastmod>${day}</lastmod>${alt}</url>
 </urlset>
 `);
-writeFileSync(join(pub, 'llms.txt'), `# bay2rack
+writeFileSync(join(pub, 'llms.txt'), `# Bay2Rack
 
 > Turns the 5.25" drive bays of an old PC case into a 6" mini rack for a homelab, with 3D-printed parts. The web
 > generator at ${SITE} configures the adapter (bays, front, what goes in every rack unit, patch panel ports, screws),
@@ -92,8 +92,8 @@ writeFileSync(join(pub, 'llms.txt'), `# bay2rack
 // the scripts, the OpenSCAD engine once it loaded, the model), so the next visit needs no network and never downloads
 // the 11 MB engine again. Its caches carry the engine's version and the build date: a new deploy replaces them.
 writeFileSync(join(pub, 'manifest.webmanifest'), JSON.stringify({
-  name: 'bay2rack: old PC case to 6" rack',
-  short_name: 'bay2rack',
+  name: 'Bay2Rack: old PC case to 6" rack',
+  short_name: 'Bay2Rack',
   description: 'Configure the 3D-printed adapter that turns the 5.25" bays of a PC case into a 6" mini rack.',
   start_url: './',
   scope: './',

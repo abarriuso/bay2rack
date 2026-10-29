@@ -210,7 +210,7 @@ button:disabled { opacity: .45; cursor: default; }
 .shot p { color: var(--ink-2); font-size: .93rem; max-width: 60ch; }
 .shot .spec { font: 500 11.5px/1.4 var(--f-mono); font-stretch: 87.5%; color: var(--ink-3); }
 .load {
-  justify-self: start; display: inline-flex; gap: 8px; align-items: center; margin-top: 4px; padding: 0; border: 0; background: none;
+  justify-self: start; display: inline-flex; gap: 8px; align-items: center; min-height: 44px; margin-top: -6px; padding: 0; border: 0; background: none;
   color: var(--signal); font-weight: 650; font-size: .93rem; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
 }
 
@@ -320,6 +320,8 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .body { display: grid; gap: 10px; min-width: 0; }
 .hint { color: var(--ink-3); font-size: 12.5px; line-height: 1.4; }
+/* a link inside a hint: a finger-sized target without changing the line */
+.hint a { display: inline-block; padding-block: 12px; margin-block: -12px; }
 .hint.warn { color: var(--warn); }
 .hint.note { color: var(--note); }
 .hint .link { font: inherit; text-decoration: underline; }
