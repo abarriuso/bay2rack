@@ -2,7 +2,7 @@
 
 *[Read in English](CASES.md)*
 
-Cómo encaja bay2rack en cajas de PC reales. Cada caja es un poco distinta (los agujeros de las bahías, las pestañas
+Cómo encaja Bay2Rack en cajas de PC reales. Cada caja es un poco distinta (los agujeros de las bahías, las pestañas
 metálicas entre bahías, cuánto sobresale el frontal de plástico), así que esta lista crece con los informes de quien
 lo imprime.
 

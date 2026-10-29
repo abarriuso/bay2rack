@@ -71,7 +71,7 @@ function sharePage(k) {
   const en = dict.en;
   const hash = '#' + new URLSearchParams(Object.entries(EXAMPLES[k]).map(([a, b]) => [a, String(b)])).toString();
   const img = existsSync(join(repo, 'docs', 'gallery', `${k}-og.jpg`)) ? `img/gallery/${k}-og.jpg` : 'img/og.jpg';
-  const title = `${en['ex_' + k]} · bay2rack`;
+  const title = `${en['ex_' + k]} · Bay2Rack`;
   const to = `../../${hash}`;
   return `<!doctype html>
 <html lang="en">

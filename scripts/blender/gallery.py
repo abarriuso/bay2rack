@@ -1,4 +1,5 @@
-"""The gallery pictures of the site: each ready-made build in its own case and its own setting.
+"""The gallery pictures of the site: each ready-made build in its own case and its own setting (the case the
+example in web/src/examples.js names, so loading it shows the same PC).
 
 One shared language (the same 4:3 frame, a 50-85 mm lens on the rack front, AgX, PLA with layer lines) and one
 look per build: a desk at night, a blue homelab shelf, a workbench, a macro, a warm living room, a backlit gaming
@@ -37,7 +38,7 @@ def srgb(h):
 # per build: the setting, the camera (azimuth from the front, elevation, lens, f-stop, how much of the frame
 # the rack fills), the lights and the floor. Angles in degrees; the rack front faces -Y.
 LOOKS = {
-    "router": dict(world=("#0b0d12", 0.6), floor="wood_dark", az=-28, el=12, lens=70, fstop=2.8, fill=0.62,
+    "router": dict(world=("#0b0d12", 0.6), floor="wood_dark", az=-24, el=12, lens=60, fstop=4, fill=0.36, shift=0.17,
                    lights=[("key", -1.0, -0.9, 0.7, 0.5, 40, "#ffe4c8"), ("rim", 0.9, 0.9, 0.6, 0.6, 160, "#6d8cff"),
                            ("fill", 1.2, -1.0, 0.3, 1.2, 14, "#c9d6ff")]),
     "network": dict(world=("#05080f", 0.4), floor="slate", az=24, el=8, lens=60, fstop=4, fill=0.66,
@@ -279,6 +280,8 @@ def camera(look, rack_lo, rack_hi):
     c.lens, c.sensor_width = look["lens"], 36
     aim = (rack_lo + rack_hi) / 2
     aim.y = rack_lo.y                                        # the front face
+    rack = aim.copy()                                        # the focus stays on the rack
+    aim.x += look.get("shift", 0)                            # towards the PCs next to it (homelab scene), metres
     h = max(rack_hi.z - rack_lo.z, (rack_hi.x - rack_lo.x) * 0.75)
     vfov = 2 * math.atan(36 * 0.75 / 2 / c.lens)
     dist = h / look["fill"] / 2 / math.tan(vfov / 2)
@@ -287,7 +290,7 @@ def camera(look, rack_lo, rack_hi):
     cam.rotation_euler = (aim - cam.location).to_track_quat("-Z", "Y").to_euler()
     c.dof.use_dof = True
     c.dof.aperture_fstop = look["fstop"]
-    c.dof.focus_distance = (aim - cam.location).length
+    c.dof.focus_distance = (rack - cam.location).length
     return aim, dist
 
 

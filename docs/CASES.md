@@ -2,7 +2,7 @@
 
 *[Leer en español](CASES.es.md)*
 
-How bay2rack fits in real PC cases. Every case is a little different (bay screw holes, metal tabs between the
+How Bay2Rack fits in real PC cases. Every case is a little different (bay screw holes, metal tabs between the
 bays, how far the plastic front stands out), so this list grows with the reports of the people who print it.
 
 **Add yours:** [open a case report](https://github.com/abarriuso/bay2rack/issues/new?template=case-report.yml),
