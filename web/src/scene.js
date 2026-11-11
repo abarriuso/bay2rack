@@ -233,28 +233,33 @@ function part(parent, name) {
 }
 
 // 90s tower controls: keylock, LEDs, MHz display, turbo / reset and the big power key
-function retroControls(g, x, y, zTop, small = false) {
+// where each control sits from (x, zTop), as [dx, dz]: in a column (a small case, beside its bays) or in a row (a
+// tower: under its drive bays, where the towers of the 90s had them - the bays take the whole width up there)
+const RETRO_COLUMN = { lock: [0, -12], leds: [-9, -30], disp: [-13, -54], turbo: [-8, -70], reset: [-4, -84] };
+const RETRO_ROW = { lock: [-62, -8], leds: [-46, -9.2], disp: [-13, -16], turbo: [24, -12], reset: [46, -11.5] };
+function retroControls(g, x, y, zTop, small = false, at = RETRO_COLUMN) {
   const steel = MAT.steel();
   const key = MAT.plastic(0xcfc6ad, 0.5);
   key.name = 'case_front';
-  g.add(cyl(x, y - 1, zTop - 12, 7, 3, steel));                                   // keylock
-  g.add(box(x - 0.8, y - 2.8, zTop - 16, 1.6, 0.6, 8, MAT.plastic(0x101010, 0.8)));
+  g.add(cyl(x + at.lock[0], y - 1, zTop + at.lock[1], 7, 3, steel));              // keylock
+  g.add(box(x + at.lock[0] - 0.8, y - 2.8, zTop + at.lock[1] - 4, 1.6, 0.6, 8, MAT.plastic(0x101010, 0.8)));
   [0x3ddc84, 0xf5d142, 0xff4d4d].forEach((c, i) =>                                  // POWER, TURBO, HDD
-    g.add(box(x - 9 + i * 7, y - 1.2, zTop - 30, 4, 1.4, 2.4, MAT.led(c, i === 1 ? 2.4 : 2.8))));
+    g.add(box(x + at.leds[0] + i * 7, y - 1.2, zTop + at.leds[1], 4, 1.4, 2.4, MAT.led(c, i === 1 ? 2.4 : 2.8))));
   if (!small) {
     // the turbo MHz display: smoked window and three red seven-segment digits
-    g.add(box(x - 13, y - 1.4, zTop - 54, 26, 1.4, 16, MAT.gloss(0x1a0d0d)));
+    const dx0 = x + at.disp[0], dz0 = zTop + at.disp[1];
+    g.add(box(dx0, y - 1.4, dz0, 26, 1.4, 16, MAT.gloss(0x1a0d0d)));
     const seg = MAT.led(0xff3b30, 3.2);
     const digit = (dx, on) => {
       const S = [[1, 12, 6, 1.4], [0, 6.6, 1.4, 5.4], [7, 6.6, 1.4, 5.4], [1, 6, 6, 1.4], [0, 0.6, 1.4, 5.4], [7, 0.6, 1.4, 5.4], [1, 0, 6, 1.4]];
-      on.forEach((k) => g.add(box(x - 11 + dx + S[k][0], y - 1.8, zTop - 52 + S[k][1], S[k][2], 0.4, S[k][3], seg)));
+      on.forEach((k) => g.add(box(dx0 + 2 + dx + S[k][0], y - 1.8, dz0 + 2 + S[k][1], S[k][2], 0.4, S[k][3], seg)));
     };
     // segments: 0 top, 1 upper left, 2 upper right, 3 middle, 4 lower left, 5 lower right, 6 bottom -> "133"
     digit(0, [2, 5]);
     digit(8, [0, 2, 3, 5, 6]);
     digit(16, [0, 2, 3, 5, 6]);
-    g.add(box(x - 8, y - 1.8, zTop - 70, 16, 3, 8, key, 1.2));                  // turbo
-    g.add(box(x - 4, y - 1.8, zTop - 84, 8, 3, 7, key, 1.2));                   // reset
+    g.add(box(x + at.turbo[0], y - 1.8, zTop + at.turbo[1], 16, 3, 8, key, 1.2));   // turbo
+    g.add(box(x + at.reset[0], y - 1.8, zTop + at.reset[1], 8, 3, 7, key, 1.2));    // reset
   }
 }
 
@@ -561,11 +566,11 @@ export function buildCase(c) {
   if (st.sleeper) {
     floppy(front, 0, -fd + 0.8, floppyZ);
     front.add(box(-w / 2 + 34, 2, z0 + 28, w - 68, 2, 84, MAT.plastic(0x0a0a0a, 0.9)));
-    retroControls(front, w / 2 - 21, -fd, z1 - 20);
-    // the big power key and the maker badge plate
+    // the controls in a row under the floppy drive, the big power key at its right end; the maker badge plate
+    retroControls(front, 0, -fd, floppyZ - 22, false, RETRO_ROW);
     const key = MAT.plastic(0xcfc6ad, 0.5);
     key.name = 'case_front';
-    front.add(box(w / 2 - 36, -fd - 3, z0 + 140, 26, 4, 20, key, 2));
+    front.add(box(66, -fd - 3, floppyZ - 40, 26, 4, 20, key, 2));
     front.add(box(-w / 2 + 14, -fd - 0.8, z1 - 30, 46, 1, 12, MAT.steel(), 1));
   }
   if (meshArea && meshArea[3] - meshArea[2] > 40) {

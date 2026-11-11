@@ -259,6 +259,18 @@ module nkvm_model(lay)
     if (lay == "side")
         multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, -1, -panel_t - nk_c], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
     else nk_front_frame(lay) translate([0, 0, nk_zf + nk_fl]) nkvm_board();
+// the bay's own screws, where they go (the bill of materials lists them): four M3 x 8 countersunk through the lid
+// into the posts and, when the plate and the mountain are two pieces, four more from the back of the plate
+module nk_lid_screws(lay) for (q = nk_posts(lay)) translate([q[0], q[1], nk_lid_t]) rotate([180, 0, 0]) v_screw(3, 8, "countersunk");
+module nkvm_hw(items) {
+    lay = nk_layout(items);
+    translate(lay == "side" ? [0, -explode, 0] : [0, 0, explode]) {
+        if (lay == "side") multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, -1, nk_r_lb], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nk_lid_screws(lay);
+        else nk_front_frame(lay) translate([0, 0, nk_zf + nk_top]) nk_lid_screws(lay);
+    }
+    if (lay == "side" && nkvm_split) for (q = nk_posts("side"))
+        translate([nk_r_x0() + q[0], explode, nk_zv0 + q[1]]) rotate([90, 0, 0]) v_screw(3, 8, "countersunk");
+}
 
 // Raspberry Pi boards, port edge at y = y0, underside at z = zb
 PI_PCB = [18, 77, 41] / 255;                           // the web viewer gives this green a PCB texture
@@ -429,6 +441,7 @@ module rack_contents() for (k = [0 : 1 : len(placed_mods) - 1]) if (preview_item
         rack_module(m);
         if (mod_kind(m) == "nkvm") translate(nk_layout(mod_items(m)) == "side" ? [0, -explode, 0] : [0, 0, explode]) nkvm_lid(mod_items(m));
     }
+    if (mod_kind(m) == "nkvm" && show_hardware) translate([0, yb, z]) nkvm_hw(mod_items(m));
     if (demo_devices == "homelab") {
         if (m == "ms105g") ms105g_model(yb + 0.2, z + ms_z0 + ms_ch / 2);
         else if (m == "uswflex") uswflex_model(yb + 0.2, z + tunnel_z0(dev_c(usw_dims)[1]) + dev_c(usw_dims)[1] / 2);

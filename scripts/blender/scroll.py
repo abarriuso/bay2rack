@@ -16,7 +16,7 @@ Input: docs/blender/film.glb (+ .json), exported from the web viewer in dev mode
 Run (Blender 5.2):
   blender -b -P scripts/blender/scroll.py -- --preview            640x360, every 2nd frame -> docs/blender/scroll/preview/
   blender -b -P scripts/blender/scroll.py -- --still 60,150       frames -> docs/blender/scroll/still_####.png
-  blender -b -P scripts/blender/scroll.py -- --render [--frames A-B] [--lowres]   final frames -> docs/blender/scroll/frames/
+  blender -b -P scripts/blender/scroll.py -- --render [--frames A-B] [--step 2] [--lowres]   final frames -> docs/blender/scroll/frames/
   add --light for the light theme's version (its files get _light), --save to keep docs/blender/scroll/scroll.blend
 """
 import json
@@ -43,10 +43,12 @@ BEATS = [
     (55, 88, "screws", "left", "Se atornilla como un lector de CD: nada se corta, nada se pega"),
     (89, 134, "modules", "left", "Cada U es un modulo impreso: tu eliges que va en cada una"),
     (135, 164, "frozen", "left", "Una pieza por aparato. Todas se imprimen sin soportes"),
-    (165, 206, "adapter", "right", "Y una sola pieza convierte las bahias en rack"),
-    (207, 232, "kit", "left", "Esto imprimes, esto compras"),
-    (233, 240, "build", "left", "Configura el tuyo"),
+    (165, 206, "adapter", "left", "Y una sola pieza convierte las bahias en rack"),
+    (207, 228, "kit", "left", "Esto imprimes, esto compras"),
+    (229, 240, "build", "left", "Configura el tuyo"),
 ]
+# where the subject sits for a text on that side: the camera's lens shift (a fraction of the picture's width)
+SHIFT = {"left": -0.13, "right": 0.13}
 random.seed(11)
 
 
@@ -136,6 +138,28 @@ def hinged(angle, hinge):
     return Vector((hx - (hx * ca - hy * sa), hy - (hx * sa + hy * ca), 0.0)), (0.0, 0.0, angle)
 
 
+def blacken(group):
+    """The pale parts of a device go black (its ports and lights stay): a white switch is lost in its pale tray."""
+    for o in [x for x in h.descendants(group) if x.type == "MESH"]:
+        for slot in o.material_slots:
+            b = h.principled(slot.material)
+            name = h.base(slot.material.name) if slot.material else ""
+            if not b or name.startswith("print") or name == "led":
+                continue
+            col = b.inputs["Base Color"].default_value
+            if (col[0] + col[1] + col[2]) / 3 < 0.35:
+                continue
+            dark = slot.material.copy()
+            db = h.principled(dark)
+            for link in list(db.inputs["Base Color"].links):
+                dark.node_tree.links.remove(link)
+            db.inputs["Base Color"].default_value = (0.012, 0.012, 0.014, 1)
+            db.inputs["Roughness"].default_value = 0.75                   # matt: no glare from the key light
+            h.set_input(db, ["Specular IOR Level"], 0.2)
+            h.set_input(db, ["Coat Weight"], 0.0)
+            slot.material = dark
+
+
 def light_theme(sc):
     """The light theme's version: a pale studio instead of the dark one."""
     sc.world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.62, 0.63, 0.65, 1)
@@ -156,6 +180,7 @@ def build_film(sc, root, info):
     groups = {h.base(o.name): o for o in h.descendants(root) if o.type == "EMPTY"}
     Z = (0.0, 0.0, 0.0)
     FLAT = (math.pi / 2, 0.0, 0.0)                                         # front face down: how it is printed
+    blacken(groups["module0"])                                             # the switch
 
     # 60-88: the cables plugged into the front of the rack come off; the rest of the homelab keeps its own
     front = [o for n, o in sorted(groups.items()) if n.startswith("cable_") and world_box(o)[0].y < -0.01]
@@ -197,7 +222,7 @@ def build_film(sc, root, info):
         cloud = d * random.uniform(0.07, 0.13) + Vector((0 if side else random.uniform(-0.02, 0.02), 0, random.uniform(-0.015, 0.03)))
         spot = Vector((0.165 + (k % 8) * 0.014, -0.47 - (k // 8) * 0.035, floor + min(size.x, size.y, size.z) / 2 + 0.0005))
         lay = (spin[0], spin[1], math.pi / 2) if side else spin
-        fk = 210 + round(k * 8 / n)
+        fk = 206 + round(k * 6 / n)
         k += 1
         move(p, [(1, Z, Z, "move"), (f0, Z, Z, "move"), (f0 + 12, d * 0.03, spin, "move"), (f0 + 26, cloud, spin, "move"),
                  (fk, cloud * 1.08, spin, "snap"), (fk + 14, spot - mid, lay, "move")])
@@ -223,7 +248,7 @@ def build_film(sc, root, info):
         euler(o)
         out = posed(o, Z, center=center)
         dur = 20 if name == "adapter" else 12
-        fk = 208 + i * 2
+        fk = 204 + i * 2
         move(o, [(1, Z, Z, "move"), (f0, Z, Z, "snap"), (f0 + dur, out, Z, "move"), (fk, out * 1.04, Z, "snap"),
                  (fk + 16, posed(o, FLAT, xy=table[name], floor=floor), FLAT, "move")])
 
@@ -240,23 +265,29 @@ def build_film(sc, root, info):
     cam, aim, focus = h.camera(sc)
     lab = (0.1, 0.12, -0.1)
     rack = (0.0, -0.01, 0.09)
-    hang = (0.0, -0.17, 0.09)
+    hang = (0.0, -0.17, 0.065)
     kit = (0.0, -0.58, floor)
     S = h.shot
-    S(cam, aim, focus, 1, (-0.72, -1.62, -0.2), (-0.12, 0.15, -0.1), lab, lens=32, fstop=4.0)             # the homelab, low
-    S(cam, aim, focus, 24, (-0.55, -1.3, -0.1), (-0.1, 0.1, -0.03), rack, lens=38, fstop=4.0)
-    S(cam, aim, focus, 54, (-0.13, -0.5, 0.115), (-0.045, 0.0, 0.088), rack, lens=70, fstop=2.8)          # macro on the rack
-    S(cam, aim, focus, 70, (0.03, -0.56, 0.12), (-0.02, -0.02, 0.088), (0.0, -0.03, 0.09), lens=62, fstop=2.8)
-    S(cam, aim, focus, 88, (0.25, -0.63, 0.15), (0.02, -0.06, 0.09), (0.0, -0.04, 0.09), lens=55, fstop=3.2)   # round to the right
-    S(cam, aim, focus, 112, (0.47, -0.74, 0.2), (0.03, -0.17, 0.09), (0.0, -0.31, 0.075), lens=48, fstop=3.5)
+    S(cam, aim, focus, 1, (-0.72, -1.62, -0.2), (0.2, 0.15, -0.1), lab, lens=32, fstop=4.0)               # the homelab, low
+    S(cam, aim, focus, 24, (-0.55, -1.3, -0.1), (0.12, 0.1, -0.03), rack, lens=38, fstop=4.0)
+    S(cam, aim, focus, 54, (-0.13, -0.5, 0.115), (0.0, 0.0, 0.088), rack, lens=70, fstop=2.8)             # macro on the rack
+    S(cam, aim, focus, 70, (0.03, -0.56, 0.12), (0.0, -0.02, 0.088), (0.0, -0.03, 0.09), lens=62, fstop=2.8)
+    S(cam, aim, focus, 88, (0.25, -0.63, 0.15), (0.0, -0.06, 0.09), (0.0, -0.04, 0.09), lens=55, fstop=3.2)    # round to the right
+    S(cam, aim, focus, 112, (0.47, -0.74, 0.2), hang, (0.0, -0.31, 0.075), lens=48, fstop=3.5)
     S(cam, aim, focus, 134, (0.58, -0.79, 0.22), hang, (0.0, -0.31, 0.075), lens=45, fstop=4.0)
     for f, a, z in ((144, 15, 0.2), (154, -15, 0.17), (164, -42, 0.14)):                                   # the frozen orbit
         r = math.radians(a)
         S(cam, aim, focus, f, (0.9 * math.sin(r), -0.9 * math.cos(r) - 0.1, z), hang, (0.0, -0.2, 0.12), lens=45, fstop=4.0)
-    S(cam, aim, focus, 186, (-0.68, -0.6, 0.13), (-0.03, -0.02, 0.07), (0.0, -0.02, 0.085), lens=42, fstop=4.0)   # the open side
+    S(cam, aim, focus, 186, (-0.68, -0.6, 0.13), (0.0, -0.04, 0.075), (0.0, -0.02, 0.085), lens=42, fstop=4.0)    # the open side
     S(cam, aim, focus, 206, (-0.6, -0.74, 0.1), (0.0, -0.1, 0.08), (0.0, -0.09, 0.085), lens=45, fstop=4.0)
-    S(cam, aim, focus, 232, (0.0, -0.84, floor + 1.15), (-0.04, -0.58, floor), kit, lens=60, fstop=5.6)   # over the table
-    S(cam, aim, focus, END, (0.03, -0.8, floor + 1.02), (-0.04, -0.58, floor), kit, lens=60, fstop=5.6)
+    S(cam, aim, focus, 228, (0.0, -0.86, floor + 1.2), kit, kit, lens=45, fstop=5.6)                       # over the table
+    S(cam, aim, focus, END, (0.02, -0.82, floor + 1.08), kit, kit, lens=45, fstop=5.6)
+    # the picture slides sideways under the camera (lens shift: the perspective stays) so the subject sits on the
+    # side the text of that stretch leaves free
+    for a, b, _, side, _ in BEATS:
+        cam.data.shift_x = SHIFT[side]
+        for f in sorted({a + 4, max(a + 4, b - 4)}):
+            cam.data.keyframe_insert("shift_x", frame=f)
     for o in (cam, aim, focus, cam.data):
         for fc in h.fcurves_of(o):
             for kp in fc.keyframe_points:
@@ -278,7 +309,8 @@ def main():
     sc.render.use_motion_blur = False                       # a scroll stops on any frame: each one must be sharp
     os.makedirs(OUT, exist_ok=True)
     with open(os.path.join(OUT, "beats.json"), "w", encoding="utf-8") as f:
-        json.dump({"frames": END, "beats": [{"from": a, "to": b, "key": k, "side": s, "text": t} for a, b, k, s, t in BEATS]}, f, indent=1)
+        json.dump({"frames": END, "beats": [{"from": a, "to": b, "key": k, "side": s, "subject": round(0.5 - SHIFT[s], 2), "text": t}
+                                              for a, b, k, s, t in BEATS]}, f, indent=1)
     if h.arg("--save"):
         bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, f"scroll{TAG}.blend"))
     still = h.arg("--still")
@@ -293,8 +325,7 @@ def main():
         if fr and fr is not True:
             a, b = fr.split("-")
             sc.frame_start, sc.frame_end = int(a), int(b)
-        if preview:
-            sc.frame_step = 2
+        sc.frame_step = int(h.arg("--step", 2 if preview else 1))     # --step 2: every other frame
         sc.render.filepath = os.path.join(OUT, ("preview" if preview else "frames") + TAG, "f_")
         bpy.ops.render.render(animation=True)
 

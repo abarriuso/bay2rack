@@ -490,7 +490,7 @@ def build_film(sc, builds):
 
     # --- camera
     B3, B5 = SETS["homelab3"], SETS["network5"]
-    ctl = (X + c["w"] * 0.001 / 2 - 0.021, -0.006, Z1 - 0.07)                                            # turbo display
+    ctl = (X, -0.006, c["cz0"] * 0.001 - 0.064)                                    # turbo display (under the bays)
     shot(cam, aim, focus, 1, (X + 0.3, -0.26, Z1 - 0.02), ctl, ctl, lens=85, fstop=2.0)                   # macro sweep
     shot(cam, aim, focus, 24, (X + 0.16, -0.32, Z1 - 0.06), (X + 0.06, -0.01, Z1 - 0.1), lens=75, fstop=2.0)
     shot(cam, aim, focus, 42, (X - 0.14, -0.44, 0.17), (X, -0.02, 0.06), lens=60, fstop=2.2)
