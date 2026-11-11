@@ -604,4 +604,5 @@ def main():
         bpy.ops.render.render(animation=True)
 
 
-main()
+if __name__ == "__main__":                                 # scroll.py borrows the studio, the materials and the tools
+    main()
