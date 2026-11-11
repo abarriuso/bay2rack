@@ -17,7 +17,7 @@ import { buildAdvanced } from './tabs.js';
 import { hashString, shortHash, readHash } from './hash.js';
 import { schedule, render, showEchoes } from './render.js';
 import { downloadKit } from './kit.js';
-import { wireGallery, renderGallery, renderBayTable } from './gallery.js';
+import { wireGallery, renderGallery } from './gallery.js';
 import { startFilm } from './film.js';
 
 // ---------------------------------------------------------------- chrome
@@ -44,7 +44,6 @@ function wire() {
     if (adv.checked) buildAdvanced(); else $('#form').replaceChildren();
     refresh();
     renderGallery();
-    renderBayTable();
     if (S.lastEcho) showEchoes(...S.lastEcho);
     renderLegend($('#legend'), S.lastScene ?? null);
   };
@@ -152,7 +151,6 @@ async function boot() {
   refresh();
   renderGallery();
   wireGallery();
-  renderBayTable();
   startFilm();
   // installable, and offline after the first visit (the service worker is only in the built site)
   if ('serviceWorker' in navigator && !import.meta.env.DEV)

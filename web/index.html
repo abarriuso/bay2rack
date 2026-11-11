@@ -48,9 +48,7 @@
       <span class="wordmark">Bay2Rack</span>
     </a>
     <nav class="nav" aria-label="Sections" data-i18n-aria="aria_sections">
-      <a class="nav-link" href="#why" data-i18n="nav_why"></a>
       <a class="nav-link" href="#gallery" data-i18n="nav_gallery"></a>
-      <a class="nav-link" href="#how" data-i18n="how_title"></a>
     </nav>
     <div class="top-actions">
       <a class="btn small" href="#configurator" data-i18n="nav_build"></a>
@@ -112,30 +110,9 @@
       </div>
     </section>
 
-    <section class="band" id="why">
-      <div class="wrap why">
-        <div class="why-head">
-          <span class="tape" data-i18n="why_tape"></span>
-          <h2 data-i18n="why_title"></h2>
-          <p class="statement" data-i18n="why_statement"></p>
-        </div>
-        <div class="why-text">
-          <p data-i18n="why_p1"></p>
-          <p data-i18n="why_p2"></p>
-          <p data-i18n="why_p3"></p>
-        </div>
-        <div class="bay-table-wrap">
-          <table class="bay-table" id="bayTable"></table>
-          <p class="table-note" data-i18n="table_note"></p>
-        </div>
-      </div>
-    </section>
-
-
     <section class="band" id="gallery">
       <div class="wrap">
         <div class="section-head">
-          <span class="tape" data-i18n="gallery_tape"></span>
           <h2 data-i18n="gallery_title"></h2>
           <p class="section-lead" data-i18n="gallery_lead"></p>
         </div>
@@ -148,25 +125,10 @@
     </section>
 
     <section class="build" id="build">
-      <div class="wrap section-head build-head" id="how">
-        <span class="tape" data-i18n="build_tape"></span>
+      <div class="wrap section-head build-head">
         <h2 data-i18n="build_title"></h2>
-        <ol class="how">
-          <li><b>1</b><h3 data-i18n="how_1_t"></h3><p data-i18n="how_1"></p></li>
-          <li><b>2</b><h3 data-i18n="how_2_t"></h3><p data-i18n="how_2"></p></li>
-          <li><b>3</b><h3 data-i18n="how_3_t"></h3><p data-i18n="how_3"></p></li>
-        </ol>
-        <p class="how-guide"><a href="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-en="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-es="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md"><span data-i18n="how_guide"></span> <span aria-hidden="true">→</span></a></p>
-        <details class="glossary" id="glossary">
-          <summary data-i18n="gloss_title"></summary>
-          <ul>
-            <li data-i18n="gloss_rack"></li><li data-i18n="gloss_u"></li><li data-i18n="gloss_bay"></li>
-            <li data-i18n="gloss_keystone"></li><li data-i18n="gloss_patch"></li><li data-i18n="gloss_insert"></li>
-            <li data-i18n="gloss_bezel"></li><li data-i18n="gloss_kvm"></li><li data-i18n="gloss_homelab"></li>
-            <li data-i18n="gloss_strip"></li><li data-i18n="gloss_module"></li><li data-i18n="gloss_pci"></li>
-            <li data-i18n="gloss_screw"></li><li data-i18n="gloss_stl"></li>
-          </ul>
-        </details>
+        <p class="section-lead"><span data-i18n="build_lead"></span>
+          <a href="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-en="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-es="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md" data-i18n="how_guide"></a></p>
       </div>
       <details class="wrap examples" id="examples">
         <summary><span data-i18n="step_example"></span> <small data-i18n="ex_hint"></small></summary>
@@ -227,32 +189,29 @@
             <a class="more-link" href="#credits" data-i18n="toFooter"></a>
           </div>
       </div>
+      <div class="wrap">
+        <details class="glossary" id="glossary">
+          <summary data-i18n="gloss_title"></summary>
+          <ul>
+            <li data-i18n="gloss_rack"></li><li data-i18n="gloss_u"></li><li data-i18n="gloss_bay"></li>
+            <li data-i18n="gloss_keystone"></li><li data-i18n="gloss_patch"></li><li data-i18n="gloss_insert"></li>
+            <li data-i18n="gloss_bezel"></li><li data-i18n="gloss_kvm"></li><li data-i18n="gloss_homelab"></li>
+            <li data-i18n="gloss_strip"></li><li data-i18n="gloss_module"></li><li data-i18n="gloss_pci"></li>
+            <li data-i18n="gloss_screw"></li><li data-i18n="gloss_stl"></li>
+          </ul>
+        </details>
+      </div>
     </section>
   </main>
 
   <footer class="foot" id="credits">
-    <div class="wrap foot-main">
-      <div class="foot-brand">
-        <span class="wordmark">Bay2Rack</span>
-        <p data-i18n="foot_tagline"></p>
-      </div>
-      <div class="foot-wip">
-        <p data-i18n="foot_wip"></p>
-        <a class="pill" href="https://github.com/abarriuso/bay2rack/issues"><span data-i18n="foot_issue"></span><span aria-hidden="true">→</span></a>
-      </div>
-    </div>
-    <div class="wrap foot-bottom">
-      <p class="foot-made"><span data-i18n="foot_made"></span> <a href="https://github.com/abarriuso">Adrián Barriuso Pizarro</a></p>
-      <div class="foot-legal">
-        <p class="foot-tech">
-          <span data-i18n="footer"></span> <a href="https://github.com/openscad/openscad">OpenSCAD</a>
-          <span data-i18n="foot_compiled"></span> <a href="https://www.npmjs.com/package/@kreijstal/openscad-wasm">WebAssembly</a>.
-        </p>
-        <p class="foot-tech">
-          <span data-i18n="foot_licence"></span> <a href="https://github.com/abarriuso/bay2rack/blob/main/LICENSE">CC BY-NC-SA 4.0</a> ·
-          <a href="https://github.com/abarriuso/bay2rack" data-i18n="foot_source"></a>
-        </p>
-      </div>
+    <div class="wrap foot-row">
+      <p><span class="wordmark">Bay2Rack</span><span data-i18n="foot_made"></span> <a href="https://github.com/abarriuso">Adrián Barriuso Pizarro</a> · <span data-i18n="footer"></span></p>
+      <p class="foot-links">
+        <a href="https://github.com/abarriuso/bay2rack/issues" data-i18n="foot_issue"></a>
+        <a href="https://github.com/abarriuso/bay2rack" data-i18n="foot_source"></a>
+        <a href="https://github.com/abarriuso/bay2rack/blob/main/LICENSE">CC BY-NC-SA 4.0</a>
+      </p>
     </div>
   </footer>
 

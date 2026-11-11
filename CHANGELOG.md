@@ -20,6 +20,11 @@ on the photos and in the MakerWorld notes.
   settles into place, the steps glide to their new places and come in one after another, pressed controls give,
   a folded step unfolds, a line runs along the 3D view while it works, the kit button nudges when its count changes.
 - Web, wording: "front bays" instead of 5.25" bays (the measure stays in the glossary and in what search engines read).
+- A simpler page with the colours of its film: the cream plastic of a 90s tower (light theme) and the black of its
+  inside (dark theme), flat, with the red of its display as the only accent (links, focus, the numbers of the
+  steps); what is on or pressed is the dark key, not a colour. Four blocks: film, builds, configurator, foot.
+  Gone: the "Why" section and its table of bays (the film says it), the tags over the titles, the three
+  how-it-works steps (one line now) and half of the footer; the glossary sits under the configurator.
 - The page opens with a film you play with the scroll (it replaces the hero video): a retro homelab, the rack in
   close-up, its screws and cables coming off, the modules shooting out and hanging in the air while the camera
   goes round them, the side of the tower opening for the bay screws, the adapter, the kit on the table. Each

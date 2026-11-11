@@ -1,6 +1,6 @@
 // The landing page: the hero film, the ready-made builds and the bay table.
 import { EXAMPLES } from './examples.js';
-import { t, lang } from './i18n.js';
+import { t } from './i18n.js';
 import { BASE, GALLERY, USES, $, h, S } from './state.js';
 import { calc, usedMods } from './model.js';
 import { applyExample } from './steps.js';
@@ -78,27 +78,3 @@ export function renderGallery() {
   }));
 }
 
-// bays -> rack units, computed with the same rules as the configurator (and config.scad). The bar is to scale:
-// one blue block per rack unit, grey for the strip left over, against the tallest stack (6 bays).
-export function renderBayTable() {
-  const mm = (x) => Number(x).toLocaleString(lang, { minimumFractionDigits: 1, maximumFractionDigits: 1 });   // columns line up
-  const U = S.defaults.rack_u_h;
-  const stack = (c) => c.flushUnits * U + c.flushSpare;
-  const tallest = stack(calc({ ...S.defaults, bays: 6 }));
-  const rows = [1, 2, 3, 4, 5, 6].map((n) => {
-    const c = calc({ ...S.defaults, bays: n });
-    const h0 = stack(c);
-    const bar = h('span', { className: 'u-scale', style: `width:${(100 * h0 / tallest).toFixed(1)}%`, 'aria-hidden': 'true' },
-      Array.from({ length: c.flushUnits }, () => h('i', { style: `flex-grow:${U}` })),
-      h('i', { className: 'spare', style: `flex-grow:${c.flushSpare.toFixed(2)}` }));
-    return h('tr', {},
-      h('td', { textContent: String(n) }),
-      h('td', { textContent: `${mm(h0)} mm` }),
-      h('td', { className: 'scale' }, bar),
-      h('td', { textContent: t('inside_v', { u: c.flushUnits, s: mm(c.flushSpare) }) }),
-      h('td', { textContent: t('out_v', { n, s: mm(c.over) }) }));
-  });
-  $('#bayTable').replaceChildren(
-    h('thead', {}, h('tr', {}, ['th_bays', 'th_height', 'th_scale', 'th_inside', 'th_out'].map((k) => h('th', { scope: 'col', textContent: t(k) })))),
-    h('tbody', {}, rows));
-}
