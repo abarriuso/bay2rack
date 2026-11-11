@@ -128,7 +128,7 @@ export async function downloadKit(testsOnly = false) {
     const url = URL.createObjectURL(blob);
     h('a', { href: url, download: testsOnly ? 'bay2rack-tests.zip' : `bay2rack-kit-${v.bays}bay.zip` }).click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
-    setStatus(t('kitDone', { n: files.length + 2 }), 'ok');
+    setStatus(t('kitDone', { n: files.length + 2 }), 'ok', true);
     $('#nextStep').hidden = false;
   } finally {
     S.kitBusy = false;

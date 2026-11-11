@@ -34,7 +34,7 @@ export let nextJob = 1;
 export function onEngine({ data: m }) {
   if (m.type === 'ready') {
     S.engine = 'ready';
-    setStatus(t('ready'), 'ok');
+    setStatus(t('ready'), 'ok', true);
     if (S.wantRender) render();
   } else if (m.type === 'error') {
     S.engine = 'error';
@@ -92,9 +92,12 @@ export const definesFor = (v) => Object.entries(v)
   .filter(([k, x]) => S.params[k] && (!same(x, S.defaults[k]) || k === 'part'))
   .map(([k, x]) => `${k}=${scadLiteral(S.params[k], x)}`);
 
-export function setStatus(text, kind = '') {
+// the status line is not read out at every render ("Rendering...", "Rendered in 1.3 s" on every click): only what
+// matters (errors, the engine ready, a link copied, the kit done) goes to the screen reader, through #announce
+export function setStatus(text, kind = '', say = kind === 'error') {
   const s = $('#status');
   s.textContent = text;
+  if (say) announce(text);
   s.className = 'status ' + kind;
   $('.viewer')?.classList.toggle('busy', kind === 'busy');      // a line runs along the view while it works
 }
@@ -105,4 +108,12 @@ export function setColour(name, hex) {
   if (hex) UI.custom = hex;
   saveUI();
   viewer?.setFilament(filamentHexes());
+}
+
+// a polite message for screen readers (the same text twice in a row is said again)
+export function announce(text) {
+  const a = $('#announce');
+  if (!a) return;
+  a.textContent = '';
+  requestAnimationFrame(() => { a.textContent = text; });
 }

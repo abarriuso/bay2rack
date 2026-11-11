@@ -695,7 +695,27 @@ module homelab_scene() {
 
 // --- scene as data for the web viewer (it draws these with real materials) ----
 function jstr(x) = str("\"", x, "\"");
+// the boxes the page outlines while a step is edited, [[x0, y0, z0], [x1, y1, z1]] in mm, as the parts are drawn
+// above: the whole front, the two rack-post columns, every rack unit ([units it takes, box], in the order of
+// placed_mods: top first) and every strip zone (bottom first, as zones)
+pt_mod_y = -ft - explode;                              // back face of the module plates
+pt_fil_y = -ft - 2 * explode;                          // back face of the separate fillers
+pt_y0 = min(-ft, units > 0 ? pt_mod_y - panel_t : -ft, zn_sep && len(zones) > 0 ? pt_fil_y - filler_t : -ft);
+pt_z0 = units > 0 ? min(frame_z0, units_z0) : frame_z0;
+pt_z1 = units > 0 ? max(frame_z1, units_z0 + units * U) : frame_z1;
+pt_x1 = max(fw, units > 0 || (zn_sep && len(zones) > 0) ? panel_w : 0) / 2;
+function pt_unit(p) = let(z = units_z0 + p[1] * U + 0.395)
+    [mod_u(p[0]), [[-panel_w / 2, pt_mod_y - panel_t, z], [panel_w / 2, pt_mod_y, z + mod_u(p[0]) * U - 0.79]]];
+function pt_zone(zn) = zn_sep ? [[-panel_w / 2, pt_fil_y - filler_t, zn[0] + 0.4], [panel_w / 2, pt_fil_y, zn[0] + zn[1] - 0.4]]
+                              : [[-fw / 2, -ft, zn[0]], [fw / 2, 0, zn[0] + zn[1]]];
+module parts_echo()
+    echo(str("SCENE ", "{", jstr("parts"), ":{",
+        jstr("front"), ":", [[-pt_x1, pt_y0, pt_z0], [pt_x1, 0, pt_z1]],
+        ",", jstr("posts"), ":", [for (s = [-1, 1]) [[s > 0 ? x_in : -fw / 2, pt_y0, pt_z0], [s > 0 ? fw / 2 : -x_in, post_d, pt_z1]]],
+        ",", jstr("units"), ":", [for (p = placed_mods) pt_unit(p)],
+        ",", jstr("zones"), ":", [for (zn = zones) pt_zone(zn)], "}}"));
 module scene_echo() {
+    parts_echo();
     if (case_view == "tower")
         echo(str("SCENE ", "{", jstr("case"), ":{",
             jstr("id"), ":", jstr(TC[0]), ",", jstr("name"), ":", jstr(TC[1]),

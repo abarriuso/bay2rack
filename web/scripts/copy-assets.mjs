@@ -91,8 +91,8 @@ writeFileSync(join(pub, 'manifest.webmanifest'), JSON.stringify({
   start_url: './',
   scope: './',
   display: 'standalone',
-  background_color: '#14171a',
-  theme_color: '#14171a',
+  background_color: '#000000',
+  theme_color: '#000000',
   icons: [192, 512].map((n) => ({ src: `img/icon-${n}.png`, sizes: `${n}x${n}`, type: 'image/png', purpose: 'any maskable' })),
 }, null, 2));
 const engine = JSON.parse(readFileSync(join(wasm, 'package.json'), 'utf8')).version;

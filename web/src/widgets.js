@@ -47,9 +47,9 @@ export function step(n, key, ...body) {
   const help = stepHelp(key);
   return h('section', { className: 'step', dataset: { key } },
     h('header', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
-      h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
+      h('span', { className: 'step-num', textContent: n }), h('h4', { id: 'q-' + key, textContent: t('step_' + key) }),
       help ? h('button', { type: 'button', className: 'info', 'aria-label': `${t('aria_info')}: ${t('step_' + key)}`, textContent: 'i' }) : null),
-    h('div', { className: 'body' }, body));
+    h('div', { className: 'body', role: 'group', 'aria-labelledby': 'q-' + key }, body));
 }
 
 // a step most people can leave as it is: closed, what it is set to on its title line, open when you want it
@@ -59,9 +59,9 @@ export function foldStep(n, key, summary, ...body) {
   const help = stepHelp(key);
   const d = h('details', { className: 'step fold', dataset: { key }, open: openSteps.has(key) },
     h('summary', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
-      h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
+      h('span', { className: 'step-num', textContent: n }), h('h4', { id: 'q-' + key, textContent: t('step_' + key) }),
       h('span', { className: 'fold-sum', textContent: summary })),
-    h('div', { className: 'body' }, body));
+    h('div', { className: 'body', role: 'group', 'aria-labelledby': 'q-' + key }, body));
   d.addEventListener('toggle', () => {
     if (d.open) openSteps.add(key); else openSteps.delete(key);
     UI.open = [...openSteps];
@@ -79,7 +79,8 @@ export const rowTitle = (key) => h('small', { className: 'row-title', textConten
 export function sliderRow(name, label) {
   const p = S.params[name];
   const v = S.values[name];
-  const box = h('input', { type: 'number', className: 'num', min: p.min, max: p.max, step: p.step ?? 1, value: v,
+  // (the wrapping label names the range only: the box gets its own name)
+  const box = h('input', { type: 'number', className: 'num', min: p.min, max: p.max, step: p.step ?? 1, value: v, 'aria-label': label,
     onchange: () => update({ [name]: Number(box.value) }) });
   const range = h('input', { type: 'range', min: p.min, max: p.max, step: p.step ?? 1, value: v,
     oninput: () => { box.value = range.value; },

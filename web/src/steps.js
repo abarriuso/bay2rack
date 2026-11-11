@@ -3,8 +3,9 @@ import { same } from './customizer.js';
 import { t, lang } from './i18n.js';
 import { ICONS } from './icons.js';
 import { EXAMPLES } from './examples.js';
-import { EXAMPLE_KEYS, SCREWS, FIXINGS, BAY_FIXINGS, UI, $, NARROW, CALM, h, svgEl, num, S } from './state.js';
-import { calc, modKind, placeMods, sideWall, fixingFits, fanPlaces } from './model.js';
+import { EXAMPLE_KEYS, SCREWS, FIXINGS, BAY_FIXINGS, DEVICE_DIMS, UI, $, NARROW, CALM, h, svgEl, num, S } from './state.js';
+import { calc, modKind, placeMods, sideWall, fixingFits, fanPlaces, zoneList, isFan } from './model.js';
+import { viewer } from './engine.js';
 import { update } from './edit.js';
 import { tipOf, choice, chips, segmented, cards, toggle, step, foldStep, TOL_KEYS, rowTitle, sliderRow } from './widgets.js';
 import { labelEditor, colourEditor, multicolourEditor, tolerancesEditor, contentsEditor, fillEditor, deviceEntries, devicesEditor, portsEditor, buttonsEditor, previewEditor } from './editors.js';
@@ -35,8 +36,73 @@ function glide(box, draw) {
   });
 }
 
+// ---------------------------------------------------------------- the part a step edits
+// What a step changes in the assembly, for the outline in the 3D view (viewer.partBoxes): a list of 'front',
+// 'posts', 'units', 'unit:k' (k as in placeMods, top first), 'zones', 'zone:i' (bottom first), or null
+export function stepTarget(key, v = S.values) {
+  const c = calc(v);
+  const placed = placeMods(v, c.units);
+  const zones = zoneList(v, c).map(([f]) => f);
+  const where = (zoneOk, modOk) => [...zones.flatMap((f, i) => (zoneOk(f) ? ['zone:' + i] : [])),
+    ...placed.flatMap((p, k) => (modOk(p.m) ? ['unit:' + k] : []))];
+  switch (key) {
+    case 'intent': case 'bays': case 'front': case 'fit': return ['front'];
+    case 'contents': return ['units'];
+    case 'devices': return where(() => false, (m) => modKind(m) === 'kvm' || !!DEVICE_DIMS[modKind(m)]);
+    case 'fill': case 'fill_panel': return ['zones'];
+    case 'fans': return where(isFan, isFan);
+    case 'ports': return where((f) => f === 'keystone', (m) => m === 'patch');
+    case 'buttons': return where((f) => f === 'buttons', (m) => m === 'buttons');
+    case 'label': return where((f) => f === 'label', (m) => modKind(m) === 'label');
+    case 'vent': return where((f) => f === 'vent', (m) => m === 'vent');
+    case 'screw': return ['posts'];
+    default: return null;                                // the fits, multicolour, colour, the view: nothing to point at
+  }
+}
+
+// a row with its own part (data-hl, set by the editors: a rack unit, a strip zone; empty = none), else its step
+function targetOf(el) {
+  const own = el?.closest?.('[data-hl]');
+  if (own) return own.dataset.hl ? own.dataset.hl.split(' ') : null;
+  const key = el?.closest?.('#steps > [data-key]')?.dataset.key;
+  return key ? stepTarget(key) : null;
+}
+
+// The pointer over a step (or the keyboard focus in it) outlines its part in the 3D view; a tap shows it for a
+// moment. The steps are drawn again on every change, so this listens on the box that holds them.
+let pointing = false;
+function wirePointing(box) {
+  pointing = true;
+  let hover = null, focus = null, touch = null, touchTimer = 0, touchAt = -1e9, timer = 0;
+  // (a focus that moves, or a redraw that puts it back, sends out + in: show only where it ends up)
+  const apply = () => { clearTimeout(timer); timer = setTimeout(() => viewer?.point(touch ?? hover ?? focus), 0); };
+  box.addEventListener('pointerover', (e) => { if (e.pointerType !== 'touch') { hover = targetOf(e.target); apply(); } });
+  box.addEventListener('pointerout', (e) => {
+    if (e.pointerType !== 'touch' && !box.contains(e.relatedTarget)) { hover = null; apply(); }
+  });
+  // a tap (not a scroll: that ends in pointercancel): about a second, then it fades
+  box.addEventListener('pointerup', (e) => {
+    if (e.pointerType !== 'touch') return;
+    touchAt = performance.now();
+    touch = targetOf(e.target);
+    clearTimeout(touchTimer);
+    touchTimer = setTimeout(() => { touch = null; apply(); }, 1000);
+    apply();
+  });
+  // the keyboard's focus (a click focuses a button too, and a tap: the pointer already says where it is)
+  box.addEventListener('focusin', (e) => {
+    focus = e.target.matches(':focus-visible') && performance.now() - touchAt > 800 ? targetOf(e.target) : null;
+    apply();
+  });
+  box.addEventListener('focusout', () => { focus = null; apply(); });
+  // where the last change was made, for the flare when its result lands (edit.js, render.js)
+  const from = (e) => { S.editFrom = { target: targetOf(e.target), at: performance.now() }; };
+  for (const ev of ['pointerdown', 'keydown', 'click', 'input', 'change']) box.addEventListener(ev, from, true);
+}
+
 // ---------------------------------------------------------------- simple mode
 export function renderSteps() {
+  if (!pointing) wirePointing($('#steps'));
   S.leftOut = '';
   const v = S.values;
   const c = calc(v);
@@ -44,7 +110,7 @@ export function renderSteps() {
   let n = 0;
   const add = (key, ...body) => list.push(step(++n, key, ...body));
   const fold = (key, summary, ...body) => list.push(foldStep(++n, key, summary, ...body));
-  const group = (key) => list.push(h('h4', { className: 'step-group', dataset: { key: 'grp-' + key }, textContent: t('grp_' + key) }));
+  const group = (key) => list.push(h('h3', { className: 'step-group', dataset: { key: 'grp-' + key }, textContent: t('grp_' + key) }));
   const placed = placeMods(v, c.units);
   const mods = placed.map((p) => p.m);
 
@@ -58,7 +124,7 @@ export function renderSteps() {
     { value: 'plate', icon: ICONS.plate, label: t('opt_plate'), sub: t('opt_plate_sub') },
     { value: 'bezel', icon: ICONS.bezel, label: t('opt_bezel'), sub: t('opt_bezel_sub') },
   ], (x) => ({ filler_mode: x === 'bezel' ? 'integral' : 'separate' })),
-    v.front_style === 'bezel' ? sliderRow('bezel_depth', t('bezel_depth_l')) : h('small', { className: 'hint', textContent: t('front_hint') }));
+    v.front_style === 'bezel' ? sliderRow('bezel_depth', t('bezel_depth_l') + ' (mm)') : h('small', { className: 'hint', textContent: t('front_hint') }));
   add('fit', cards('fit', [
     { value: 'flush', icon: ICONS.flush, label: t('opt_flush'), sub: t(c.flushUnits ? 'inside_v' : 'inside_v0', { u: c.flushUnits, s: num(c.flushSpare) }) },
     { value: 'overhang', icon: ICONS.overhang, label: t('opt_overhang'), sub: `${v.bays}U · ${t('sticksOut')} ${num(c.over)}\u00a0mm` },
@@ -68,6 +134,7 @@ export function renderSteps() {
   group('contents');
   // the PCI brackets go in the kit whatever is in front: the switch sits in the first step of this group
   const rear = toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on }));
+  rear.dataset.hl = '';                                  // (the brackets are at the back: nothing in front to point at)
   if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }), rear);
   const devs = deviceEntries(mods);
   if (devs.length) fold('devices', devs.map((e) => e.title).join(', '), devicesEditor(devs));
@@ -138,7 +205,7 @@ export function applyExample(k) {
   const reset = Object.fromEntries(EXAMPLE_KEYS.filter((x) => x in S.defaults).map((x) => [x, S.defaults[x]]));
   update({ ...reset, ...EXAMPLES[k], part: 'assembly' });
   // on a phone the examples sit above the configurator: bring it into view
-  if (matchMedia(NARROW).matches) { $('#examples').open = false; $('.workbench').scrollIntoView({ behavior: 'smooth' }); }
+  if (matchMedia(NARROW).matches) { $('#examples').open = false; $('.workbench').scrollIntoView({ behavior: CALM.matches ? 'auto' : 'smooth' }); }
 }
 
 // the first question: a front with a fan or buttons (no rack), sockets on the front, or a rack for devices. It keeps
@@ -172,6 +239,7 @@ export const exampleActive = (k, v = S.values) => Object.entries(EXAMPLES[k]).ev
 export function examplesEditor() {
   return [h('div', { className: 'chips' }, Object.keys(EXAMPLES).map((k) => h('button', {
     type: 'button', className: `chip${exampleActive(k) ? ' active' : ''}`, dataset: { tip: t('ex_' + k + '_tip') },
+    'aria-pressed': String(exampleActive(k)),
     onclick: () => applyExample(k),
   }, t('ex_' + k)))), savedEditor()];
 }
@@ -195,6 +263,7 @@ export function savedEditor() {
     h('small', { className: 'row-title', textContent: t('savedTitle') }),
     list.length ? h('div', { className: 'chips' }, list.map((x) => h('span', { className: `chip saved-chip${x.hash === here ? ' active' : ''}` },
       h('button', { type: 'button', className: 'link', textContent: x.name, dataset: { tip: x.at },
+        ...(x.hash === here ? { 'aria-current': 'true' } : {}),
         onclick: () => { location.hash = x.hash; } }),
       h('button', { type: 'button', className: 'link saved-del', textContent: '×', 'aria-label': `${t('savedDelete')}: ${x.name}`,
         onclick: () => { storeSaved(list.filter((y) => y !== x)); $('#examplesList').replaceChildren(...examplesEditor()); } }))))

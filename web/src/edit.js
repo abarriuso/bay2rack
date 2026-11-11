@@ -27,6 +27,10 @@ export function update(patch) {
   past.push(snapshot());
   if (past.length > 60) past.shift();
   future.length = 0;
+  // a change made in a step (just now, in the same event): its part flares in the 3D view when the result lands
+  const from = S.editFrom;
+  S.pulse = from && performance.now() - from.at < 1000 ? from.target : null;
+  S.editFrom = null;
   Object.assign(S.values, clamped(patch));
   normalize(S.values);
   refresh();
@@ -47,6 +51,10 @@ export function refresh() {
     try { f(); } catch (e) { console.error(e); }
   }
   restoreFocus(focus);
+  // undo / redo look (and are) off with nothing to undo or redo
+  const u = $('#undo'), r = $('#redo');
+  if (u) u.disabled = !past.length;
+  if (r) r.disabled = !future.length;
 }
 // where the focus is inside the steps or the tabs, as child indexes, to put it back after they are drawn again
 export function focusPath() {

@@ -20,10 +20,10 @@ export function labelEditor(withText = true) {
     withText ? h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text) : null,
     segmented('label_relief', ['engraved', 'raised'], (x) => t('relief_' + x)),
     segmented('label_align', ['left', 'center', 'right'], (x) => t('align_' + x)),
-    sliderRow('label_size', t('lab_size')),
-    sliderRow('label_dx', t('lab_dx')),
-    sliderRow('label_dz', t('lab_dz')),
-    sliderRow('label_depth', t('lab_depth')),
+    sliderRow('label_size', t('lab_size') + ' (mm)'),
+    sliderRow('label_dx', t('lab_dx') + ' (mm)'),
+    sliderRow('label_dz', t('lab_dz') + ' (mm)'),
+    sliderRow('label_depth', t('lab_depth') + ' (mm)'),
     toggle(t('lab_bold'), v.label_bold, (on) => update({ label_bold: on })),
   ];
 }
@@ -38,6 +38,7 @@ export function colourEditor() {
   const swatches = h('div', { className: 'swatches', dataset: { tip: t('filamentTip') } },
     Object.entries(FILAMENTS).map(([name, hex]) => h('button', {
       type: 'button', className: `swatch${UI.filament === name ? ' active' : ''}`, title: t('fil_' + name),
+      'aria-label': t('fil_' + name), 'aria-pressed': String(UI.filament === name),
       style: `--c:#${hex[0].toString(16).padStart(6, '0')}`,
       onclick: () => { setColour(name); renderSteps(); },
     })), label);
@@ -104,7 +105,9 @@ export function contentsEditor(placed) {
   const rows = placed.map((p, k) => {
     const kind = modKind(p.m);
     const u = p.u > 1 ? `U${p.top + 1}–${p.top + p.u}` : `U${p.top + 1}`;
-    const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind) } },
+    // (the row and what opens under it point at this unit in the 3D view: steps.js)
+    const hl = 'unit:' + k;
+    const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind), hl } },
       h('span', { className: 'u', textContent: p.top === 0 ? `${u}\u00a0·\u00a0${t('top')}` : u }),
       // a 2U / 3U module is only offered where its units are left
       select(null, MODULES.map((x) => [x, modU(x) > units - p.top ? `${t('mod_' + x)} ${t('needsU', { n: modU(x) })}` : t('mod_' + x), modU(x) > units - p.top]),
@@ -114,7 +117,7 @@ export function contentsEditor(placed) {
     if (kind === 'patch') {
       const own = patchOf(p.m);
       const names = own.names.filter(Boolean);
-      const d = h('details', { className: 'tray tray-ports', open: openPorts.has(k) },
+      const d = h('details', { className: 'tray tray-ports', open: openPorts.has(k), dataset: { hl } },
         h('summary', { textContent: `${t('nPorts', { n: own.types.length })}${names.length ? ' · ' + names.join(', ') : ''} · ${t('portsEdit')}` }),
         portsEditor(6, { ...own, set: (types, nm) => set(k, patchSpec(types, nm)) }));
       d.addEventListener('toggle', () => { if (d.open) openPorts.add(k); else openPorts.delete(k); });
@@ -123,10 +126,13 @@ export function contentsEditor(placed) {
     if (kind === 'label') {
       const text = h('input', { type: 'text', className: 'text label-text', value: labelOf(p.m), maxLength: 40, placeholder: 'HOMELAB',
         'aria-label': `${t('lab_text')} · ${u}`, onchange: () => set(k, labelSpec(text.value)) });
-      return [row, h('div', { className: 'tray' }, h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text))];
+      return [row, h('div', { className: 'tray', dataset: { hl } }, h('label', { className: 'param' }, h('span', { className: 'name', textContent: t('lab_text') }), text))];
     }
     // the NanoKVM bays share their settings: the first one shows them, the others say so
-    return TRAYS[kind] ? [row, trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`), kind === 'nkvm' && k !== firstNkvm)] : row;
+    if (!TRAYS[kind]) return row;
+    const tray = trayEditor(kind, modItems(p.m), (items) => set(k, `${kind}:${items.join('+')}`), kind === 'nkvm' && k !== firstNkvm);
+    tray.dataset.hl = hl;
+    return [row, tray];
   });
   S.leftOut = left.length ? t('modsLeftOut', { s: left.map(modLabel).join(', '), n: S.values.bays }) : '';
   return [h('div', { className: 'rows' }, rows), S.leftOut ? h('small', { className: 'hint warn', textContent: S.leftOut }) : null];
@@ -190,7 +196,8 @@ export function fillEditor() {
   const v = S.values;
   const c = calc(v);
   const split = v.spare_pos === 'split';
-  const zone = (param, other, height, label, setShare) => h('div', { className: 'zone' },
+  // (each zone points at its own part of the strip in the 3D view: zones are bottom first, as in config.scad)
+  const zone = (param, other, height, label, setShare) => h('div', { className: 'zone', dataset: { hl: param === 'spare_fill_2' ? 'zone:1' : 'zone:0' } },
     h('div', { className: 'zone-head' }, h('b', { textContent: label }), h('span', { className: 'zone-size', dataset: { zone: param }, textContent: `${num(height)} mm` })),
     h('div', { className: 'chips' }, FILLS.map((f) => {
       const need = fillMin(f);
@@ -302,10 +309,10 @@ export function portsEditor(most, own = null) {
           onchange: (e) => { const list = [...types]; list[i] = e.target.value; setTypes(list); } },
           PORTS.map((x) => h('option', { value: x, textContent: t('port_' + x), selected: x === tp }))))),
       h('span', { className: 'port-ctl' },
-        h('button', { type: 'button', className: `mini${types.length >= max ? ' off' : ''}`, textContent: '+', 'aria-disabled': String(types.length >= max),
+        h('button', { type: 'button', className: `mini${types.length >= max ? ' off' : ''}`, textContent: '+', 'aria-label': t('portAdd'), 'aria-disabled': String(types.length >= max),
           dataset: { tip: types.length >= max ? t('portMax', { n: max }) : t('portAdd') },
           onclick: () => { if (types.length < max) setTypes([...types, v.ks_style === 'metal' ? 'rj45m' : 'rj45']); } }),
-        h('button', { type: 'button', className: 'mini', textContent: '−', disabled: types.length <= 1,
+        h('button', { type: 'button', className: 'mini', textContent: '−', 'aria-label': t('portRemove'), disabled: types.length <= 1,
           dataset: { tip: t('portRemove') }, onclick: () => setTypes(types.slice(0, -1)) }))),
     cap >= 1 && types.length > cap ? h('small', { className: 'hint warn', textContent: t('portsTooMany', { n: types.length, m: cap }) })
       : h('small', { className: 'hint', textContent: t('portHint') }),

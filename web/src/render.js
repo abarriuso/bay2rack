@@ -4,7 +4,7 @@ import { bomText, warnText } from './help.js';
 import { renderLegend } from './legend.js';
 import { UI, $, CALM, h, num, S } from './state.js';
 import { calc, modLabel, usedMods } from './model.js';
-import { viewer, engineStarted, runJob, cachedJob, definesFor, setStatus } from './engine.js';
+import { viewer, engineStarted, runJob, cachedJob, definesFor, setStatus, announce } from './engine.js';
 import { renderSteps } from './steps.js';
 import { pieceLabel } from './tabs.js';
 import { kitList } from './kit.js';
@@ -58,6 +58,11 @@ export function showResult(res, ext, values) {
   }
   if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
   viewer?.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
+  // the edit made in a step has landed: its part flares once (the assembly only; a newer edit waits for its own result)
+  if (S.pulse && !S.dirty) {
+    if (ext === '3mf') viewer?.pulse(S.pulse);
+    S.pulse = null;
+  }
   viewer?.setLabel(`${t('aria_view')} ${describeView(values)}`);
   S.lastScene = ext === '3mf' && UI.cables ? scene : null;
   renderLegend($('#legend'), S.lastScene);
@@ -92,6 +97,8 @@ export function showEchoes(echoes, errors) {
   const bad = warn.filter((w) => /^(WARNING|ERROR)/.test(w));
   const badge = $('#warnBadge');
   badge.hidden = !bad.length;
+  // the count changed: said to a screen reader too (the badge itself is not a live region)
+  if (bad.length !== (S.badCount ?? 0)) announce(bad.length ? t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length }) : t('allGood'));
   // one more thing does not fit than a moment ago: the badge shakes its head
   if (bad.length > (S.badCount ?? 0) && !CALM.matches && badge.animate)
     badge.animate([0, -4, 4, -3, 3, 0].map((x) => ({ transform: `translateX(${x}px)` })), { duration: 420 });

@@ -1,7 +1,7 @@
 // The landing page: the hero film, the ready-made builds and the bay table.
 import { EXAMPLES } from './examples.js';
 import { t } from './i18n.js';
-import { BASE, GALLERY, USES, $, h, S } from './state.js';
+import { BASE, GALLERY, USES, $, h, S, CALM } from './state.js';
 import { calc, usedMods } from './model.js';
 import { applyExample } from './steps.js';
 
@@ -22,7 +22,7 @@ export function buildSpec(k) {
 // the gallery is one row that scrolls sideways: the arrows move it by a card
 export const galleryStep = (dir) => {
   const g = $('#galleryGrid');
-  g.scrollBy({ left: dir * (g.firstElementChild?.offsetWidth ?? 300), behavior: 'smooth' });
+  g.scrollBy({ left: dir * (g.firstElementChild?.offsetWidth ?? 300), behavior: CALM.matches ? 'auto' : 'smooth' });
 };
 // the arrows move the row by a card; the mouse drags it like a swipe (touch already swipes): it follows the pointer,
 // then settles on a card, and a drag is not a click on the card under it
@@ -51,7 +51,7 @@ export function wireGallery() {
     // settle on the nearest card (the snapping was off while dragging)
     const w = row.querySelector('.shot')?.getBoundingClientRect().width ?? 1;
     const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
-    row.scrollTo({ left: Math.round(row.scrollLeft / (w + gap)) * (w + gap), behavior: 'smooth' });
+    row.scrollTo({ left: Math.round(row.scrollLeft / (w + gap)) * (w + gap), behavior: CALM.matches ? 'auto' : 'smooth' });
     row.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
   });
 }
@@ -64,7 +64,7 @@ export function renderGallery() {
       h('span', { className: 'shot-img' },
         // (a 640 px copy for the card size; the big one for sharp screens)
         h('img', { src: `${BASE}img/gallery/${k}.webp`, srcset: `${BASE}img/gallery/${k}-640.webp 640w, ${BASE}img/gallery/${k}.webp 1200w`,
-          sizes: '(max-width: 600px) 82vw, 420px', alt: t('ex_' + k), loading: 'lazy', decoding: 'async', width: 1200, height: 900,
+          sizes: '(max-width: 600px) 82vw, 420px', alt: '', loading: 'lazy', decoding: 'async', width: 1200, height: 900,
           onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
         h('span', { className: 'tape', textContent: units > 0 ? `${units}U` : t('opt_panel') })),
       h('figcaption', {},

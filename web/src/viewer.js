@@ -6,6 +6,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MAT, boxUV, materialFor } from './materials.js';
 import { buildScene } from './scene.js';
 
@@ -15,6 +18,9 @@ const VIEW_DIR = new THREE.Vector3(-0.55, -1, 0.6).normalize();   // front-left,
 const CALM = matchMedia('(prefers-reduced-motion: reduce)');
 const easeOut = (t) => 1 - (1 - t) ** 3;
 const easeBack = (t) => 1 + 2.6 * (t - 1) ** 3 + 1.6 * (t - 1) ** 2;      // past the end and back: it settles
+// the outline of the part a step edits: a little off the surfaces (no z-fighting), a thin line, a faint fill
+const MARK_PAD = 1.2, MARK_FILL = 0.05, MARK_LINE = 1.6;
+const signal = () => getComputedStyle(document.documentElement).getPropertyValue('--signal').trim() || '#d81f12';
 
 function gradient(top, bottom) {
   const c = document.createElement('canvas');
@@ -82,6 +88,11 @@ export class Viewer {
     this.printMats = [];
     this.filament = [0x26282c, 0x2e3035, 0x36383d];
     this.show = { cables: true, side: true };
+    this.parts = null;        // the boxes of the assembly's parts (SCENE parts), what a step can point at
+    this.marks = new Set();   // outlines on screen (the one pointed at, and pulses)
+    this.mark = null;         // the outline of what the steps point at, and that target
+    this.pointKey = '';
+    this.pointTarget = null;
     this.setTheme('light');
     new ResizeObserver(() => this.resize()).observe(el);
     this.resize();
@@ -134,6 +145,9 @@ export class Viewer {
   setTheme(theme) {
     this.dirty = true;
     this.scene.background = theme === 'dark' ? gradient('#232a2e', '#0f1214') : gradient('#f1f3f2', '#d6dbd8');
+    // the outlines take the accent of the theme (the page has switched it already)
+    const c = signal();
+    for (const m of this.marks) for (const mat of m.userData.mats) mat.color.set(c);
   }
 
   resize() {
@@ -156,6 +170,10 @@ export class Viewer {
     }
     this.model = this.extras = null;
     this.printMats = [];
+    // the outlines belong to this model: they go with it (the one pointed at comes back with the next one)
+    for (const m of [...this.marks]) this.dropMark(m);
+    this.mark = null;
+    this.parts = null;
   }
 
   // filament colours for [adapter, fillers, modules]
@@ -280,6 +298,13 @@ export class Viewer {
     if (this.focus?.isEmpty()) this.focus = null;
     this.whole = box;
     if (!keepView) this.fit();
+    // a step still pointed at: its outline is there at once on the new result (it was on screen already)
+    this.parts = scene?.parts ?? null;
+    const boxes = this.partBoxes(this.pointTarget);
+    if (boxes.length) {
+      this.mark = this.makeMark(boxes);
+      this.setMark(this.mark, 1);
+    }
   }
 
   fit(box = this.focus ?? this.whole) {
@@ -323,4 +348,114 @@ export class Viewer {
     this.controls.update();
   }
 
+  // ---------------------------------------------------------------- what a step edits
+  // target: a list of 'front', 'posts', 'units', 'unit:k', 'zones', 'zone:i' -> boxes [[x0, y0, z0], [x1, y1, z1]]
+  // from the SCENE parts of the assembly (none for a single piece)
+  partBoxes(target) {
+    const p = this.parts;
+    if (!p || !target?.length) return [];
+    const out = [];
+    for (const t of target) {
+      const [what, i] = t.split(':');
+      if (what === 'front' && p.front) out.push(p.front);
+      else if (what === 'posts') out.push(...(p.posts ?? []));
+      else if (what === 'units' && p.units?.length) {
+        // all of them: one box round the stack (they touch)
+        const bs = p.units.map(([, b]) => b);
+        out.push([[0, 1, 2].map((a) => Math.min(...bs.map((b) => b[0][a]))), [0, 1, 2].map((a) => Math.max(...bs.map((b) => b[1][a])))]);
+      } else if (what === 'unit' && p.units?.[i]) out.push(p.units[i][1]);
+      else if (what === 'zones') out.push(...(p.zones ?? []));
+      else if (what === 'zone' && p.zones?.[i]) out.push(p.zones[i]);
+    }
+    return out;
+  }
+
+  // a thin outline and a faint fill round each box, in the accent colour, starting invisible
+  makeMark(boxes) {
+    const c = signal();
+    const fill = new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0, depthWrite: false });
+    const line = new LineMaterial({ color: c, linewidth: MARK_LINE, transparent: true, opacity: 0, depthWrite: false });
+    const g = new THREE.Group();
+    for (const [a, b] of boxes) {
+      const min = new THREE.Vector3(...a).subScalar(MARK_PAD);
+      const max = new THREE.Vector3(...b).addScalar(MARK_PAD);
+      const size = max.clone().sub(min);
+      const geo = new THREE.BoxGeometry(size.x, size.y, size.z);
+      const edges = new THREE.EdgesGeometry(geo);
+      const segs = new LineSegmentsGeometry().fromEdgesGeometry(edges);
+      edges.dispose();
+      for (const o of [new THREE.Mesh(geo, fill), new LineSegments2(segs, line)]) {
+        o.position.copy(min).add(max).multiplyScalar(0.5);
+        o.renderOrder = 2;                                 // over the model's transparent bits (window, glass)
+        g.add(o);
+      }
+    }
+    g.userData.mats = [fill, line];
+    g.userData.k = 0;
+    this.marks.add(g);
+    this.scene.add(g);
+    return g;
+  }
+
+  // k = 0..1: how much it shows; it grows a hair as it fades in (transform + opacity, nothing else changes)
+  setMark(mark, k) {
+    const [fill, line] = mark.userData.mats;
+    mark.userData.k = k;
+    fill.opacity = MARK_FILL * Math.min(k, 1.6);
+    line.opacity = Math.min(1, k);
+    const s = 1 + 0.012 * (1 - Math.min(k, 1));
+    for (const o of mark.children) o.scale.setScalar(s);
+    mark.visible = k > 0.001;
+    this.dirty = true;
+  }
+
+  fadeMark(mark, to, ms, done) {
+    mark.userData.stop?.();
+    // (out of view the frame hooks wait: no fade to leave pending, it just is so)
+    if (!this.active) { this.setMark(mark, to); done?.(); return; }
+    const from = mark.userData.k;
+    mark.userData.stop = this.run(ms, (t) => this.setMark(mark, from + (to - from) * easeOut(t)),
+      () => { mark.userData.stop = null; done?.(); });
+  }
+
+  dropMark(mark) {
+    mark.userData.stop?.();
+    clearTimeout(mark.userData.timer);
+    this.marks.delete(mark);
+    this.scene.remove(mark);
+    for (const o of mark.children) o.geometry.dispose();
+    for (const m of mark.userData.mats) m.dispose();
+    this.dirty = true;
+  }
+
+  // what the steps point at now (null: nothing): the old outline fades out, the new one in
+  point(target) {
+    const key = target?.join(' ') ?? '';
+    if (key === this.pointKey) return;
+    this.pointKey = key;
+    this.pointTarget = target?.length ? target : null;
+    const old = this.mark;
+    if (old) this.fadeMark(old, 0, 140, () => this.dropMark(old));
+    const boxes = this.partBoxes(this.pointTarget);
+    this.mark = boxes.length ? this.makeMark(boxes) : null;
+    if (this.mark) this.fadeMark(this.mark, 1, 180);
+  }
+
+  // a change landed here: the outline flares once (on its own, or over the one pointed at), so the eye goes there
+  pulse(target) {
+    const boxes = this.partBoxes(target);
+    if (!boxes.length || !this.active) return;           // (nobody would see it)
+    if (this.mark && target.join(' ') === this.pointKey) {
+      const m = this.mark;
+      if (CALM.matches) return;                           // (it is on screen already)
+      m.userData.stop?.();
+      m.userData.stop = this.run(520, (t) => this.setMark(m, 1 + 0.9 * Math.sin(Math.PI * t)), () => { m.userData.stop = null; });
+      return;
+    }
+    const m = this.makeMark(boxes);
+    // without motion it shows for a moment and goes, with no animation (and no frame hook)
+    if (CALM.matches) { this.setMark(m, 1); m.userData.timer = setTimeout(() => this.dropMark(m), 900); return; }
+    m.userData.stop = this.run(900, (t) => this.setMark(m, t < 0.2 ? easeOut(t / 0.2) * 1.5 : 1.5 * (1 - easeOut((t - 0.2) / 0.8))),
+      () => { m.userData.stop = null; this.dropMark(m); });
+  }
 }

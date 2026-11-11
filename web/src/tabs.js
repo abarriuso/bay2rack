@@ -49,7 +49,7 @@ export function renderTabs() {
   const isPiece = (f) => Object.entries(f.part).every(([k, x]) => v[k] === x);
   const current = pieces.findIndex(isPiece);
   const tab = (label, active, onclick, tip) => h('button', {
-    type: 'button', className: `tab${active ? ' active' : ''}`, onclick, dataset: { tip }, role: 'tab', 'aria-selected': String(active),
+    type: 'button', className: `tab${active ? ' active' : ''}`, onclick, dataset: { tip }, 'aria-pressed': String(active),
   }, t(label));
   const mounted = v.part === 'assembly';
   if (!mounted && current < 0 && pieces.length) {

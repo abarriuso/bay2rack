@@ -60,8 +60,8 @@ export const $ = (s) => document.querySelector(s);
 export const CALM = matchMedia('(prefers-reduced-motion: reduce)');       // motion off, if the system asks
 export const NARROW = '(max-width: 900px) and (max-aspect-ratio: 5/4)';
 export const h = (tag, { dataset, ...props } = {}, ...kids) => {
-  // aria-* are attributes, not properties
-  const aria = Object.entries(props).filter(([k]) => k.startsWith('aria-'));
+  // aria-* (and role) are attributes, not properties (everywhere)
+  const aria = Object.entries(props).filter(([k]) => k.startsWith('aria-') || k === 'role');
   for (const [k] of aria) delete props[k];
   const e = Object.assign(document.createElement(tag), props);
   for (const [k, x] of aria) e.setAttribute(k, x);
@@ -81,4 +81,6 @@ export const S = {
   notes: { insert: '' },    // notes shown in their step instead of the list
   leftOut: '',              // modules that do not fit in the rack (a note in the list too)
   lastEcho: null,           // the last render's messages, shown again in the other language
+  editFrom: null,           // where in the steps the last interaction was ({ target, at }), and
+  pulse: null,              // the part of the edit waiting for its result (it flares in the 3D view)
 };

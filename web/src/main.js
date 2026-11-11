@@ -21,10 +21,24 @@ import { wireGallery, renderGallery } from './gallery.js';
 import { startFilm } from './film.js';
 
 // ---------------------------------------------------------------- chrome
+// moves the keyboard focus to a section (one that takes no focus of its own takes it from the script only)
+function focusOn(el) {
+  if (!el.matches('a, button, input, select, textarea, summary, [tabindex]')) el.setAttribute('tabindex', '-1');
+  el.focus({ preventScroll: true });
+}
+// the language key names the other language, in that language (a screen reader says "Español", not "E S")
+function langKey() {
+  const b = $('#lang');
+  const other = lang === 'es' ? 'en' : 'es';
+  b.textContent = other.toUpperCase();
+  b.lang = other;
+  b.setAttribute('aria-label', other === 'es' ? 'Español' : 'English');
+}
 function applyTheme(th) {
   document.documentElement.dataset.theme = th;
   viewer?.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
+  $('#theme').setAttribute('aria-pressed', String(th === 'dark'));
   // the browser's own bars (Safari on iPhone) take the colour of the page
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
@@ -40,7 +54,7 @@ function wire() {
   $('#theme').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
   $('#lang').onclick = () => {
     setLang(lang === 'es' ? 'en' : 'es');
-    $('#lang').textContent = lang === 'es' ? 'EN' : 'ES';
+    langKey();
     if (adv.checked) buildAdvanced(); else $('#form').replaceChildren();
     refresh();
     renderGallery();
@@ -62,11 +76,13 @@ function wire() {
     if (!id || /=/.test(id) || !document.getElementById(id)) return;
     e.preventDefault();
     const el = document.getElementById(id);
-    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    el.scrollIntoView({ behavior: CALM.matches ? 'auto' : 'smooth' });
     if (el.tagName === 'DETAILS') el.open = true;
+    // the focus goes along (the skip link, the menu): the next Tab carries on from there, not from the top
+    focusOn(el);
   });
   $('#fit').onclick = () => viewer?.fit();
-  $('#warnBadge').onclick = () => $('#warningsCard').scrollIntoView({ block: 'center' });
+  $('#warnBadge').onclick = () => { const c = $('#warningsCard'); c.scrollIntoView({ block: 'center' }); focusOn(c); };
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
   const narrow = matchMedia(NARROW);
   const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.workbench').after($('.results')));
@@ -76,11 +92,12 @@ function wire() {
   let lastY = scrollY;
   const head = () => {
     const y = scrollY;
+    const root = document.documentElement.classList;
+    // (wide screens never measure anything here: no layout read per scroll)
+    if (!narrow.matches || y < 80) { root.remove('head-off'); lastY = y; return; }
     const r = $('.workbench').getBoundingClientRect();
     const inApp = r.top <= 1 && r.bottom >= innerHeight - 1;
-    const root = document.documentElement.classList;
-    if (!narrow.matches || y < 80) root.remove('head-off');
-    else if (inApp || y > lastY + 6) root.add('head-off');
+    if (inApp || y > lastY + 6) root.add('head-off');
     else if (y < lastY - 6) root.remove('head-off');
     if (Math.abs(y - lastY) > 6) lastY = y;
   };
@@ -93,7 +110,7 @@ function wire() {
   $('#share').onclick = async () => {
     const ex = Object.keys(EXAMPLES).find((k) => hashString({ ...S.defaults, ...EXAMPLES[k] }) === hashString());
     const url = ex ? `${BASE}m/${ex}/` : location.href.split('#')[0] + shortHash();
-    try { await navigator.clipboard.writeText(url); setStatus(t('copied'), 'ok'); } catch { prompt('URL', url); }
+    try { await navigator.clipboard.writeText(url); setStatus(t('copied'), 'ok', true); } catch { prompt('URL', url); }
   };
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey)) return;
@@ -133,7 +150,7 @@ async function boot() {
     };
   }
   document.documentElement.lang = lang;
-  $('#lang').textContent = lang === 'es' ? 'EN' : 'ES';
+  langKey();
   applyI18n();
   const [src, presets, catalog] = await Promise.all([
     fetch(BASE + 'scad/bay2rack.scad').then((r) => r.text()),
