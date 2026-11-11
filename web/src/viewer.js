@@ -312,7 +312,11 @@ export class Viewer {
     if (!box) return;
     const center = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
-    const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2)) * (box === this.focus ? 0.85 : 0.8);
+    // the narrower of the two angles of view: a view taller than wide (a portrait window, a zoomed-out page) frames
+    // by its width, else the sides of the model are cut
+    const vHalf = THREE.MathUtils.degToRad(this.camera.fov / 2);
+    const half = Math.min(vHalf, Math.atan(Math.tan(vHalf) * (this.camera.aspect || 1)));
+    const dist = radius / Math.sin(half) * (box === this.focus ? 0.85 : 0.8);
     this.camera.near = dist / 100;
     this.camera.far = dist * 30;
     this.camera.updateProjectionMatrix();

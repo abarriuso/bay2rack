@@ -662,7 +662,7 @@ export function buildClient(i, cl, bays) {
   return g;
 }
 
-// 4-bay NAS (Synology DS920+ size): matte black, four drive trays, status LEDs, two rear fans
+// 4-bay NAS (the size of a common 4-bay NAS): matte black, four drive trays, status LEDs, two rear fans
 export function buildNAS(cl, bays) {
   const [x, W, H, D] = cl;
   const z0 = bays.z0;

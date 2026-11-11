@@ -36,6 +36,5 @@ son dos minutos. Si puedes, imprime antes la pieza de prueba de la bahía (`test
 
 **Resultado:** ✅ encaja tal cual · 🔧 encaja cambiando parámetros (en Notas) · ❌ no encaja
 
-Las cajas de la vista 3D del configurador (Fractal Define R5, Corsair Obsidian 750D, Antec Three Hundred, Phanteks
-Enthoo Pro, Define XL R2, Cooler Master HAF 932 y Stacker 830) son medidas exteriores aproximadas para el dibujo, no
-encajes probados.
+Las cajas de la vista 3D del configurador (torres genéricas de 2 a 11 bahías frontales) son medidas exteriores
+aproximadas para el dibujo, no encajes probados.

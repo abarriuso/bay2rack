@@ -105,13 +105,13 @@ module section_cut() {
 // Outer size from the makers' spec sheets (approximate, preview only).
 // [id, name, width, height, depth, 5.25in bays, case top to the first bay, front, body colour, front colour]
 CASES = [
-    ["definer5",     "Fractal Design Define R5",    232, 451, 521,  2, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
-    ["obsidian750d", "Corsair Obsidian 750D",       230, 560, 545,  3, 34, "solid", [0.14, 0.14, 0.15], [0.22, 0.22, 0.24]],
-    ["antec300",     "Antec Three Hundred",         205, 470, 465,  3, 22, "mesh",  [0.10, 0.10, 0.11], [0.06, 0.06, 0.07]],
-    ["enthoopro",    "Phanteks Enthoo Pro",         235, 535, 550,  3, 36, "solid", [0.11, 0.11, 0.12], [0.08, 0.08, 0.09]],
-    ["definexlr2",   "Fractal Design Define XL R2", 232, 560, 560,  4, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
-    ["haf932",       "Cooler Master HAF 932",       230, 605, 548,  5, 40, "mesh",  [0.09, 0.09, 0.10], [0.05, 0.05, 0.06]],
-    ["stacker830",   "Cooler Master Stacker 830",   220, 547, 598, 11, 24, "mesh",  [0.70, 0.71, 0.73], [0.60, 0.61, 0.64]]
+    ["definer5",     "Quiet mid tower",    232, 451, 521,  2, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
+    ["obsidian750d", "Windowed full tower",       230, 560, 545,  3, 34, "solid", [0.14, 0.14, 0.15], [0.22, 0.22, 0.24]],
+    ["antec300",     "Compact mesh tower",         205, 470, 465,  3, 22, "mesh",  [0.10, 0.10, 0.11], [0.06, 0.06, 0.07]],
+    ["enthoopro",    "Large mid tower",         235, 535, 550,  3, 36, "solid", [0.11, 0.11, 0.12], [0.08, 0.08, 0.09]],
+    ["definexlr2",   "Quiet full tower", 232, 560, 560,  4, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
+    ["haf932",       "Mesh full tower",       230, 605, 548,  5, 40, "mesh",  [0.09, 0.09, 0.10], [0.05, 0.05, 0.06]],
+    ["stacker830",   "All-bays tower",   220, 547, 598, 11, 24, "mesh",  [0.70, 0.71, 0.73], [0.60, 0.61, 0.64]]
 ];
 tc_fit = [for (c = CASES) if (c[5] >= bays) c];
 tc_sel = [for (c = CASES) if (c[0] == case_model) c];

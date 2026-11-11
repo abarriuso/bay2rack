@@ -66,7 +66,7 @@ export function showResult(res, ext, values) {
   viewer?.setLabel(`${t('aria_view')} ${describeView(values)}`);
   S.lastScene = ext === '3mf' && UI.cables ? scene : null;
   renderLegend($('#legend'), S.lastScene);
-  $('#caseName').textContent = ext === '3mf' && scene.case ? (UI.sleeper ? t('sleeperName') : scene.case.name) : '';
+  $('#caseName').textContent = ext === '3mf' && scene.case ? (UI.sleeper ? t('sleeperName') : t('case_m_' + scene.case.id)) : '';
   S.lastKey = key;
   if (S.result) URL.revokeObjectURL(S.result.url);
   S.result = { url: URL.createObjectURL(new Blob([res.data])), name: `bay2rack-${values.part}.${ext}` };

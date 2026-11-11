@@ -364,7 +364,8 @@ export function buttonsEditor() {
 export function previewEditor() {
   const v = S.values;
   const caseOpts = [...S.params.case_model.options.map((o) => [o.value,
-    o.value === 'auto' ? t('case_auto') : o.label.replace(/ - (\d+) bays$/, ` · $1 × ${num(5.25, 2)}"`)]), ['none', t('case_none')]];
+    o.value === 'auto' ? t('case_auto') : `${t('case_m_' + o.value)} · ${t('case_bays', { n: o.label.match(/(\d+) bays$/)?.[1] ?? '' })}`]),
+    ['none', t('case_none')]];
   return [
     segmented('scene', ['homelab', 'single'], (x) => t('scene_' + x), stepHelp('scene')),
     select(null, caseOpts, v.case_view === 'none' ? 'none' : v.case_model,

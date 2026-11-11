@@ -335,7 +335,7 @@ explode = 0; // [0:1:60]
 // Show the adapter mounted in a PC case
 case_view = "tower"; // [none:No case, ghost:Transparent bay sheets only, tower:PC tower case]
 // Real PC case for the preview (approximate outer size). auto = the smallest one with enough 5.25in bays
-case_model = "auto"; // [auto:Auto - smallest case that fits, definer5:Fractal Design Define R5 - 2 bays, obsidian750d:Corsair Obsidian 750D - 3 bays, antec300:Antec Three Hundred - 3 bays, enthoopro:Phanteks Enthoo Pro - 3 bays, definexlr2:Fractal Design Define XL R2 - 4 bays, haf932:Cooler Master HAF 932 - 5 bays, stacker830:Cooler Master Stacker 830 - 11 bays]
+case_model = "auto"; // [auto:Auto - smallest case that fits, definer5:Quiet mid tower - 2 bays, obsidian750d:Windowed full tower - 3 bays, antec300:Compact mesh tower - 3 bays, enthoopro:Large mid tower - 3 bays, definexlr2:Quiet full tower - 4 bays, haf932:Mesh full tower - 5 bays, stacker830:All-bays tower - 11 bays]
 // Transparent side panel of the preview tower
 case_window = "left"; // [left, right, none]
 show_devices = true;

@@ -34,6 +34,5 @@ for a plate front, `stl/tests/bay-bezel.stl` for a bezel front).
 
 **Result:** ✅ fits as it is · 🔧 fits after changing parameters (in Notes) · ❌ doesn't fit
 
-The cases in the configurator's 3D preview (Fractal Define R5, Corsair Obsidian 750D, Antec Three Hundred, Phanteks
-Enthoo Pro, Define XL R2, Cooler Master HAF 932 and Stacker 830) are approximate outer sizes for the picture, not
-tested fits.
+The cases in the configurator's 3D preview (generic towers with 2 to 11 front bays) are approximate outer sizes for the
+picture, not tested fits.
