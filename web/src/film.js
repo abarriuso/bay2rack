@@ -3,7 +3,7 @@
 // frames) the section is a plain page: a still and the same texts, one after another.
 import { $, BASE, CALM } from './state.js';
 
-const pad = (n) => String(n).padStart(3, '0');
+const pad = (n) => String(n).padStart(4, '0');
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 export async function startFilm() {
@@ -19,13 +19,16 @@ export async function startFilm() {
   // the frames: the big set on wide screens, every second frame at 960 px on phones
   const size = innerWidth * Math.min(devicePixelRatio, 2) > 1100 ? meta.sizes[0] : meta.sizes.at(-1);
   const count = Math.floor((meta.frames - 1) / size.step) + 1;
-  // coarse first (every 16th, 8th...), so the whole film can be scrubbed after the first pass and sharpens after
+  // coarse first (every 64th, 32nd...), so the whole film can be scrubbed after the first pass and gets finer after
   const order = [];
-  for (const step of [16, 8, 4, 2, 1]) for (let i = 0; i < count; i += step) if (!order.includes(i)) order.push(i);
+  const queued = new Set();
+  for (let step = 64; step >= 1; step /= 2)
+    for (let i = 0; i < count; i += step) if (!queued.has(i)) { queued.add(i); order.push(i); }
   const sets = {};
   let theme = themeNow();
   let shown = -1, cur = 0, target = 0, dirty = true, running = false;
-  const beats = [...root.querySelectorAll('.beat')].map((el) => ({ el, from: Number(el.dataset.from), to: Number(el.dataset.to) }));
+  // each text of the page and the frames it belongs to (film.json has them, in the order of the page)
+  const beats = [...root.querySelectorAll('.beat')].map((el, i) => ({ el, from: meta.beats[i]?.from ?? 0, to: meta.beats[i]?.to ?? 0 }));
   const bar = $('#filmBar');
 
   function load(th) {
