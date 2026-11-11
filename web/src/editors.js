@@ -3,7 +3,7 @@ import { same } from './customizer.js';
 import { t } from './i18n.js';
 import { stepHelp, paramHelp } from './help.js';
 import { FILLS, MODULES, TRAYS, KVM_DIMS, DEVICE_DIMS, PORTS, FILAMENTS, UI, saveUI, filamentHexes, $, h, num, S } from './state.js';
-import { calc, splitList, ksTypes, modKind, modItems, modU, modLabel, trayFits, zoneBox, moduleBox, ksCapacity, ksPlaces, patchSets, fanMax, portLabels, patchOf, patchSpec, labelOf, labelSpec } from './model.js';
+import { calc, splitList, ksTypes, modKind, modItems, modU, modLabel, trayFits, zoneBox, moduleBox, ksCapacity, ksPlaces, patchSets, fanMax, isFan, portLabels, patchOf, patchSpec, labelOf, labelSpec } from './model.js';
 import { viewer, setColour } from './engine.js';
 import { update } from './edit.js';
 import { tipOf, choice, segmented, cards, select, toggle, rowTitle, sliderRow, withTitle } from './widgets.js';
@@ -106,8 +106,8 @@ export function contentsEditor(placed) {
     const u = p.u > 1 ? `U${p.top + 1}–${p.top + p.u}` : `U${p.top + 1}`;
     const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind) } },
       h('span', { className: 'u', textContent: p.top === 0 ? `${u}\u00a0·\u00a0${t('top')}` : u }),
-      // a 2U module is only offered where two units are left
-      select(null, MODULES.map((x) => [x, modU(x) > units - p.top ? `${t('mod_' + x)} ${t('needs2U')}` : t('mod_' + x), modU(x) > units - p.top]),
+      // a 2U / 3U module is only offered where its units are left
+      select(null, MODULES.map((x) => [x, modU(x) > units - p.top ? `${t('mod_' + x)} ${t('needsU', { n: modU(x) })}` : t('mod_' + x), modU(x) > units - p.top]),
         kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}`
           // a new patch panel / label starts as a copy of the strip's, then it is its own
           : val === 'patch' ? patchSpec(ksTypes(S.values), patchOf('patch').names) : val === 'label' ? labelSpec(S.values.label_text) : val)));
@@ -147,25 +147,15 @@ export function trayEditor(kind, items, onChange, shared = false) {
     sel.setAttribute('aria-label', `${t('mod_' + kind)} · ${i + 1}`);
     slots.push(sel);
   }
-  // the NanoKVM bay can also take one or two keystones on its plate
+  // the NanoKVM bay: behind a keystone (inside the case) it can take a second keystone beside it; standing outside
+  // the case, the plate and the mountain can be printed apart (three pieces)
   if (kind === 'nkvm' && !shared) {
-    // keystones beside it (none standing in front: its plugs take the width; ks always has its own)
-    if (items[0] !== 'side')
-      slots.push(withTitle(select(null, (items[0] === 'ks' ? [1, 2] : [0, 1, 2]).map((n) => [n, t('nkvm_ks' + n)]),
-        String(Math.max(items[0] === 'ks' ? 1 : 0, S.values.nkvm_keystones)), (val) => update({ nkvm_keystones: Number(val) })), 'nkvmKeystones'));
-    // standing in front: a frame or a long lid, and the plate printed apart (three pieces)
-    // three pieces (plate apart) for the standing one and the drawer
-    if (items[0] === 'front') slots.push(withTitle(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
-      (val) => update({ nkvm_split: val === '1' })), 'nkvmPieces'));
-    if (items[0] === 'side') {
-      // out of the case in a little mountain (plug in from outside), or in a pocket of the plate
-      slots.push(withTitle(select(null, [['1', t('nkvm_raised1')], ['0', t('nkvm_raised0')]], S.values.nkvm_raised ? '1' : '0',
-        (val) => update({ nkvm_raised: val === '1' })), 'nkvmShape'));
-      if (!S.values.nkvm_raised) slots.push(withTitle(select(null, [['1', t('nkvm_cover1')], ['0', t('nkvm_cover0')]], S.values.nkvm_cover ? '1' : '0',
-        (val) => update({ nkvm_cover: val === '1' })), 'nkvmSides'));
+    if (items[0] === 'ks')
+      slots.push(withTitle(select(null, [1, 2].map((n) => [n, t('nkvm_ks' + n)]),
+        String(Math.max(1, S.values.nkvm_keystones)), (val) => update({ nkvm_keystones: Number(val) })), 'nkvmKeystones'));
+    if (items[0] === 'side')
       slots.push(withTitle(select(null, [['0', t('nkvm_pieces2')], ['1', t('nkvm_pieces3')]], S.values.nkvm_split ? '1' : '0',
         (val) => update({ nkvm_split: val === '1' })), 'nkvmPieces'));
-    }
   }
   const fits = trayFits(kind, items, S.values);
   // (the NanoKVM bay's choices each get a small title over them)
@@ -181,7 +171,7 @@ export function trayEditor(kind, items, onChange, shared = false) {
 
 // smallest zone height (mm) each fill needs; the model warns too, the editor just won't offer what can't fit
 // the height a fill needs, as the model checks it (a separate filler loses 0.8 mm to its clearance)
-export const FILL_MIN = { fan80: 82, fan40: 41 };
+export const FILL_MIN = { fan40: 41, fan60: 62, fan80: 82, fan92: 94, fan120: 121.5 };
 
 export function fillMin(f) {
   const v = S.values;
@@ -205,19 +195,18 @@ export function fillEditor() {
     h('div', { className: 'chips' }, FILLS.map((f) => {
       const need = fillMin(f);
       const share = split ? setShare(need, fillMin(v[other])) : null;
-      // the width too: not one keystone across, or not one 40 mm fan
+      // the width too: not one keystone across, or not one fan of that size
       const box = zoneBox(v, height);
-      const wide = f === 'keystone' ? ksCapacity([box[0], 1e3], v) > 0 : f === 'fan40' ? fanMax([box[0], 1e3]) > 0 : true;
+      const wide = f === 'keystone' ? ksCapacity([box[0], 1e3], v) > 0 : isFan(f) ? fanMax(f, [box[0], 1e3]) > 0 : true;
       const fits = wide && (height >= need - 0.01 || share != null);
       const misfit = v[param] === f && (height < need - 0.01 || !wide);
-      // picking the fans: as many as fit side by side
-      const fans = f === 'fan40' ? fanMax([box[0], 1e3]) : 3;
+      // the bigger fans only show where they can fit (a 1U strip would list four greyed-out sizes)
+      if (isFan(f) && f !== 'fan40' && !fits && !misfit) return null;
       return choice(param, f, [misfit ? '⚠ ' : '', t('fill_' + f)], {
         disabled: !fits, flag: misfit ? 'misfit' : '',
         tip: height >= need - 0.01 && wide ? tipOf('fill:' + f) : !wide ? t('fillTooNarrow', { w: num(box[0]) })
           : fits ? t('fillMoves', { n: num(need) }) : t('fillTooSmall', { n: num(need), h: num(height) }),
-        extra: () => ({ ...(height < need - 0.01 && share != null ? { spare_split: share } : {}),
-          ...(f === 'fan40' && v.fan40_count > fans ? { fan40_count: Math.max(1, fans) } : {}) }),
+        extra: () => ({ ...(height < need - 0.01 && share != null ? { spare_split: share } : {}) }),
       });
     })));
   // splitting the strip: the fill you had keeps the height it needs (bottom zone), the new top zone gets the rest

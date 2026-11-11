@@ -3,14 +3,37 @@ import { same } from './customizer.js';
 import { t, lang } from './i18n.js';
 import { ICONS } from './icons.js';
 import { EXAMPLES } from './examples.js';
-import { EXAMPLE_KEYS, SCREWS, FIXINGS, BAY_FIXINGS, UI, $, NARROW, h, svgEl, num, S } from './state.js';
-import { calc, modKind, placeMods, sideWall, fixingFits, zoneList, zoneBox, moduleBox, fanMax } from './model.js';
+import { EXAMPLE_KEYS, SCREWS, FIXINGS, BAY_FIXINGS, UI, $, NARROW, CALM, h, svgEl, num, S } from './state.js';
+import { calc, modKind, placeMods, sideWall, fixingFits, fanPlaces } from './model.js';
 import { update } from './edit.js';
 import { tipOf, choice, chips, segmented, cards, toggle, step, foldStep, TOL_KEYS, rowTitle, sliderRow } from './widgets.js';
 import { labelEditor, colourEditor, multicolourEditor, tolerancesEditor, contentsEditor, fillEditor, deviceEntries, devicesEditor, portsEditor, buttonsEditor, previewEditor } from './editors.js';
 import { hashString } from './hash.js';
 import { describeView } from './render.js';
 import { kitList } from './kit.js';
+
+// ---------------------------------------------------------------- motion
+const EASE = 'cubic-bezier(.2, .8, .2, 1)';
+// The steps glide to their new places and the new ones fade in, instead of the whole list jumping; the first time
+// they come in one after another. Only transform and opacity move, so the compositor does it (no layout per frame).
+function glide(box, draw) {
+  if (CALM.matches || document.hidden || !box.animate) { draw(); return; }
+  const first = !box.children.length;
+  const before = new Map([...box.children].filter((el) => el.dataset.key).map((el) => [el.dataset.key, el.getBoundingClientRect().top]));
+  draw();
+  [...box.children].forEach((el, i) => {
+    const key = el.dataset.key;
+    if (!key) return;
+    const was = before.get(key);
+    if (was == null) {
+      el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+        { duration: 320, delay: first ? Math.min(i, 12) * 35 : 0, easing: EASE, fill: 'backwards' });
+    } else {
+      const dy = was - el.getBoundingClientRect().top;
+      if (Math.abs(dy) > 1) el.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 280, easing: EASE });
+    }
+  });
+}
 
 // ---------------------------------------------------------------- simple mode
 export function renderSteps() {
@@ -21,7 +44,7 @@ export function renderSteps() {
   let n = 0;
   const add = (key, ...body) => list.push(step(++n, key, ...body));
   const fold = (key, summary, ...body) => list.push(foldStep(++n, key, summary, ...body));
-  const group = (key) => list.push(h('h4', { className: 'step-group', textContent: t('grp_' + key) }));
+  const group = (key) => list.push(h('h4', { className: 'step-group', dataset: { key: 'grp-' + key }, textContent: t('grp_' + key) }));
   const placed = placeMods(v, c.units);
   const mods = placed.map((p) => p.m);
 
@@ -50,13 +73,15 @@ export function renderSteps() {
   if (devs.length) fold('devices', devs.map((e) => e.title).join(', '), devicesEditor(devs));
   if (c.hasSpare) add(c.units > 0 ? 'fill' : 'fill_panel', fillEditor(), c.units > 0 ? null : rear);
   const fills = c.zones;
-  if (fills.includes('fan40') || mods.includes('fan40')) {
-    // as many fans as the narrowest place with fans takes
-    const max = Math.max(1, Math.min(...[...zoneList(v, c).filter(([f]) => f === 'fan40').map(([, hh]) => fanMax(zoneBox(v, hh))),
-      ...(mods.includes('fan40') ? [fanMax(moduleBox(v))] : [])]));
-    add('fans', rowTitle('fans_count'), h('div', { className: 'seg' }, [1, 2, 3].map((x) => choice('fan40_count', x, `${x} × 40\u00a0mm`,
-      { cls: 'seg-btn', disabled: x > max, tip: x > max ? t('fansMax', { n: max }) : undefined }))),
-      rowTitle('fans_thick'), segmented('fan40_t', [10, 20], (x) => `${x}\u00a0mm`));
+  // fans: how many side by side (only where more than one fits: each place takes as many as fit, up to this), and
+  // the thickness of the 40 mm ones (their screws); a single big fan has nothing to choose
+  const fans = fanPlaces(v, c);
+  const fanMaxN = Math.min(3, Math.max(0, ...fans.map(([, n]) => n)));
+  const has40 = fans.some(([f]) => f === 'fan40');
+  if (fanMaxN > 1 || has40) {
+    add('fans', ...(fanMaxN > 1 ? [rowTitle('fans_count'), h('div', { className: 'seg' }, [1, 2, 3].map((x) => choice('fan_count', x, String(x),
+      { cls: 'seg-btn', disabled: x > fanMaxN, tip: x > fanMaxN ? t('fansMax', { n: fanMaxN }) : undefined })))] : []),
+      ...(has40 ? [rowTitle('fans_thick'), segmented('fan40_t', [10, 20], (x) => `${x}\u00a0mm`)] : []));
   }
   // the strip's patch panel (and a bare patch module); a patch module with its own ports edits them in its row
   if (fills.includes('keystone') || mods.includes('patch')) add('ports', portsEditor(6));
@@ -96,10 +121,15 @@ export function renderSteps() {
   group('view');
   fold('colour', t('fil_' + UI.filament), colourEditor());
   if (v.part === 'assembly') fold('preview', t('scene_' + v.scene), previewEditor());
-  $('#steps').replaceChildren(...list);
+  glide($('#steps'), () => $('#steps').replaceChildren(...list));
   // the kit can be downloaded from the first step on: the bar at the foot of the steps says so
   const pieces = kitList(v).reduce((a, f) => a + f.qty, 0);
-  $('#kitBar').textContent = t('kitBar', { n: pieces });
+  const bar = $('#kitBar');
+  const label = t('kitBar', { n: pieces });
+  // the number of pieces changed: the button says so with a nudge
+  if (bar.textContent && bar.textContent !== label && !CALM.matches && bar.animate)
+    bar.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.04)' }, { transform: 'scale(1)' }], { duration: 360, easing: EASE });
+  bar.textContent = label;
   $('#examplesList').replaceChildren(...examplesEditor());
 }
 

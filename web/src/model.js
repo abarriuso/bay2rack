@@ -32,7 +32,12 @@ export function modItems(m, v = S.values) {
   return [];
 }
 export const DEVICE_MODS = ['ms105g', 'uswflex', 'ux', 'dev1', 'dev2'];
-export const modU = (m) => (modKind(m) === 'piblade' ? 2 : 1);
+// fans: [size, smallest zone] (FANS in config.scad); a fan module takes the units its fan needs: 40 mm 1U, 60 / 80 mm 2U,
+// 92 / 120 mm 3U
+export const FAN_SPECS = { fan40: [40, 41], fan60: [60, 62], fan80: [80, 82], fan92: [92, 94], fan120: [120, 121.5] };
+export const isFan = (x) => Object.hasOwn(FAN_SPECS, String(x));
+export const fanU = (m, U = 44.45) => Math.max(1, Math.ceil((FAN_SPECS[m][1] + 0.79) / U - 0.001));
+export const modU = (m) => (modKind(m) === 'piblade' ? 2 : isFan(m) ? fanU(m, S.values?.rack_u_h ?? 44.45) : 1);
 export const modLabel = (m) => {
   const items = TRAYS[modKind(m)] ? modItems(m) : [];
   if (!MODULES.includes(modKind(m))) return String(m);
@@ -89,7 +94,7 @@ export function zoneList(v, c = calc(v)) {
 export const HW_CLEAR = { M3: 3.4, M4: 4.5, M5: 5.5, M6: 6.6, '6-32': 3.7, '10-32': 5.1, '12-24': 5.8 };
 export const panelW = (v) => 134.925 - (HW_CLEAR[v.rack_screw] ?? 6.6) - 6;
 export const zoneBox = (v, height) => (v.filler_mode === 'separate' ? [panelW(v), height - 0.8] : [S.opening - 2, height]);
-export const moduleBox = (v) => [panelW(v), v.rack_u_h - 0.79];
+export const moduleBox = (v, m = null) => [panelW(v), (m ? modU(m) : 1) * v.rack_u_h - 0.79];
 // how many keystones fit in w x h (ks_layout in fills.scad)
 export const isMetalPort = (x, v) => x === 'rj45m' || ((x === 'cover' || x === 'pass') && v.ks_style === 'metal');
 export function ksCapacity([w, h], v = S.values, types = ksTypes(v)) {
@@ -110,12 +115,17 @@ export function patchSets(v, c = calc(v)) {
   return [...ksPlaces(v, c).map((box) => [box, ksTypes(v), names]),
     ...usedMods(v, c.units).filter((m) => modKind(m) === 'patch' && m !== 'patch').map((m) => [moduleBox(v), patchOf(m).types, patchOf(m).names])];
 }
-// how many 40 mm fans fit side by side in w x h (fan40_pitch in fills.scad)
-export function fanMax([w, h]) {
-  if (h < 41) return 0;
-  const room = Math.min(w, S.opening - 1) - 40;
-  return [3, 2, 1].find((n) => n === 1 || room / (n - 1) >= 40.3);
+// how many fans of this size fit side by side in w x h (fan_max in config.scad; each place takes as many as fit, up to
+// fan_count)
+export function fanMax(f, [w, h]) {
+  const [s, need] = FAN_SPECS[f] ?? FAN_SPECS.fan40;
+  const room = Math.min(w, (S.opening ?? 123.7) - 1);
+  return h < need || room < need ? 0 : Math.floor((room - s) / (s + 0.3) + 1e-4) + 1;
 }
+// every place with fans in the build: [fill or module, how many fit there]
+export const fanPlaces = (v, c = calc(v)) => [
+  ...zoneList(v, c).filter(([f]) => isFan(f)).map(([f, hh]) => [f, fanMax(f, zoneBox(v, hh))]),
+  ...usedMods(v, c.units).filter(isFan).map((m) => [m, fanMax(m, moduleBox(v, m))])];
 // what is written over each port (ks_label in fills.scad): its name, else HDMI / USB…, else the number of its place
 export const TYPE_NAMES = { hdmi: 'HDMI', usb: 'USB', rca: 'RCA', jack: 'AUDIO', toslink: 'OPTICAL' };
 export const isJack = (tp) => tp !== 'cover' && tp !== 'pass' && tp !== 'none';

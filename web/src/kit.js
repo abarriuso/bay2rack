@@ -45,12 +45,12 @@ export function kitList(v, withTests = $('#withTests').checked) {
       ? portsLettered(moduleBox(v), patchOf(m, v).types, patchOf(m, v).names) : lettered(m, moduleBox(v));
     files.push({ name: `module-${fileOf(m)}.stl`, qty, part: { part: 'rack_module', module_type: m } });
     if (v.labels_multicolour && (modLettered
-        || (v.ks_labels && modKind(m) === 'nkvm' && (modItems(m)[0] === 'side' ? v.nkvm_cover : modItems(m)[0] === 'ks' || v.nkvm_keystones > 0))))
+        || (v.ks_labels && modKind(m) === 'nkvm' && modItems(m)[0] === 'ks')))
       files.push({ name: `module-${fileOf(m)}-labels.stl`, qty, part: { part: 'rack_module_labels', module_type: m } });
     if (modKind(m) === 'nkvm') {
       files.push({ name: `module-${modFile(m)}-lid.stl`, qty, part: { part: 'rack_module_lid', module_type: m } });
-      if (v.nkvm_split && ['side', 'front'].includes(modItems(m)[0]))
-        files.push({ name: `module-${modFile(m)}-${modItems(m)[0] === 'front' ? 'drawer' : v.nkvm_raised ? 'mountain' : 'pocket'}.stl`, qty,
+      if (v.nkvm_split && modItems(m)[0] !== 'ks')
+        files.push({ name: `module-${modFile(m)}-mountain.stl`, qty,
           part: { part: 'rack_module_bay', module_type: m } });
     }
   }

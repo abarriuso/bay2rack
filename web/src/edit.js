@@ -1,7 +1,7 @@
 // Changing the settings: every change, undo / redo, and the fixes a change makes necessary.
 import { clampValue } from './customizer.js';
 import { $, S } from './state.js';
-import { calc, usedMods, fixingFits, zoneList, zoneBox, moduleBox, fanMax } from './model.js';
+import { calc, fixingFits, fanPlaces } from './model.js';
 import { startEngine } from './engine.js';
 import { renderSteps } from './steps.js';
 import { renderTabs, syncAdvanced, showPrebuilt } from './tabs.js';
@@ -36,9 +36,9 @@ export function update(patch) {
 export function normalize(v) {
   if (!fixingFits(v, v.rack_fixing, v.rack_screw)) v.rack_fixing = ['square_nut', 'heatset'].find((f) => fixingFits(v, f, v.rack_screw)) ?? 'heatset';
   const c = calc(v);
-  const fanPlaces = [...zoneList(v, c).filter(([f]) => f === 'fan40').map(([, hh]) => fanMax(zoneBox(v, hh))),
-    ...(usedMods(v, c.units).includes('fan40') ? [fanMax(moduleBox(v))] : [])];
-  if (fanPlaces.length) v.fan40_count = Math.max(1, Math.min(v.fan40_count, ...fanPlaces.map((n) => Math.max(1, n))));
+  // fans side by side: each place takes as many as fit, up to fan_count; no more than the roomiest place takes
+  const fans = fanPlaces(v, c);
+  if (fans.length) v.fan_count = Math.max(1, Math.min(v.fan_count, 3, Math.max(...fans.map(([, n]) => n))));
 }
 export function refresh() {
   const focus = focusPath();

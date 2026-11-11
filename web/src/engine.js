@@ -96,6 +96,7 @@ export function setStatus(text, kind = '') {
   const s = $('#status');
   s.textContent = text;
   s.className = 'status ' + kind;
+  $('.viewer')?.classList.toggle('busy', kind === 'busy');      // a line runs along the view while it works
 }
 
 // the colour of the printed parts in the view: a preset, or your own

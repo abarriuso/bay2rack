@@ -11,6 +11,10 @@ import { buildScene } from './scene.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
 const VIEW_DIR = new THREE.Vector3(-0.55, -1, 0.6).normalize();   // front-left, from above
+// motion: off for those who ask the system for less of it
+const CALM = matchMedia('(prefers-reduced-motion: reduce)');
+const easeOut = (t) => 1 - (1 - t) ** 3;
+const easeBack = (t) => 1 + 2.6 * (t - 1) ** 3 + 1.6 * (t - 1) ** 2;      // past the end and back: it settles
 
 function gradient(top, bottom) {
   const c = document.createElement('canvas');
@@ -51,6 +55,7 @@ export class Viewer {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
     this.controls.addEventListener('change', () => { this.dirty = true; });
+    this.controls.addEventListener('start', () => this.stopFly?.());      // a drag takes the camera from a glide
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8b8f99, 0.6));
     this.key = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -106,6 +111,7 @@ export class Viewer {
   }
 
   onKey(e) {
+    this.stopFly?.();
     const step = Math.PI / 18;
     const up = THREE.Object3D.DEFAULT_UP;                  // Z
     const off = this.camera.position.clone().sub(this.controls.target);
@@ -142,6 +148,7 @@ export class Viewer {
 
   clear() {
     this.dirty = true;
+    this.stopArrive?.();
     for (const o of [this.model, this.extras]) {
       if (!o) continue;
       this.scene.remove(o);
@@ -202,7 +209,31 @@ export class Viewer {
   // buffer: STL (one printed part) or 3MF (coloured assembly). scene: parsed SCENE data
   load(buffer, ext, opts = {}) {
     this.clear();
-    this.show3d(this.parse(buffer, ext), opts);
+    const obj = this.parse(buffer, ext);
+    this.show3d(obj, opts);
+    this.arrive(obj, opts.keepView);
+  }
+
+  // an animation of the view: f(0..1) on every frame for `ms`, then it is gone (the view only draws while
+  // something moves). Returns how to stop it.
+  run(ms, f, done) {
+    if (CALM.matches) { f(1); done?.(); this.dirty = true; return () => {}; }
+    let t = 0;
+    const stop = () => { const i = this.hooks.indexOf(hook); if (i >= 0) this.hooks.splice(i, 1); this.dirty = true; };
+    const hook = (dt) => { t = Math.min(1, t + dt * 1000 / ms); f(t); if (t >= 1) { stop(); done?.(); } };
+    this.hooks.push(hook);
+    return stop;
+  }
+
+  // a new result settles into place (a little for an edit, more for another piece): the eye catches the change
+  arrive(obj, edit) {
+    const from = edit ? 0.985 : 0.93;
+    const c = (this.focus ?? this.whole).getCenter(new THREE.Vector3());
+    this.stopArrive = this.run(edit ? 240 : 420, (t) => {
+      const s = from + (1 - from) * easeBack(t);
+      obj.scale.setScalar(s);
+      obj.position.copy(c).multiplyScalar(1 - s);          // (about the middle of what is on screen)
+    }, () => { this.stopArrive = null; });
   }
 
   // several named pieces (the animated hero): items = [{ name, buffer, ext }]
@@ -257,12 +288,27 @@ export class Viewer {
     const center = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
     const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.camera.fov / 2)) * (box === this.focus ? 0.85 : 0.8);
-    this.camera.position.copy(center).addScaledVector(VIEW_DIR, dist);
     this.camera.near = dist / 100;
-    this.camera.far = dist * 20;
+    this.camera.far = dist * 30;
     this.camera.updateProjectionMatrix();
-    this.controls.target.copy(center);
-    this.controls.update();
+    this.flyTo(center.clone().addScaledVector(VIEW_DIR, dist), center);
+  }
+
+  // the camera glides to a view instead of jumping; the first time it comes in from further out, turning.
+  // A drag or a key takes over at once.
+  flyTo(eye, target) {
+    this.stopFly?.();
+    const first = !this.flown;
+    this.flown = true;
+    const from = first ? target.clone().add(eye.clone().sub(target).multiplyScalar(1.3).applyAxisAngle(THREE.Object3D.DEFAULT_UP, -0.45))
+      : this.camera.position.clone();
+    const fromT = first ? target.clone() : this.controls.target.clone();
+    this.stopFly = this.run(first ? 1100 : 480, (t) => {
+      const k = easeOut(t);
+      this.camera.position.lerpVectors(from, eye, k);
+      this.controls.target.lerpVectors(fromT, target, k);
+      this.controls.update();
+    }, () => { this.stopFly = null; });
   }
 
   // camera from eye + target (README captures)

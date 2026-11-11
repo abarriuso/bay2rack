@@ -45,7 +45,7 @@ export function toggle(label, on, set) {
 
 export function step(n, key, ...body) {
   const help = stepHelp(key);
-  return h('section', { className: 'step' },
+  return h('section', { className: 'step', dataset: { key } },
     h('header', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
       h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
       help ? h('button', { type: 'button', className: 'info', 'aria-label': `${t('aria_info')}: ${t('step_' + key)}`, textContent: 'i' }) : null),
@@ -57,7 +57,7 @@ export function step(n, key, ...body) {
 export const openSteps = new Set(Array.isArray(UI.open) ? UI.open : []);
 export function foldStep(n, key, summary, ...body) {
   const help = stepHelp(key);
-  const d = h('details', { className: 'step fold', open: openSteps.has(key) },
+  const d = h('details', { className: 'step fold', dataset: { key }, open: openSteps.has(key) },
     h('summary', { dataset: { tip: help || undefined, tipTitle: t('step_' + key) } },
       h('span', { className: 'step-num', textContent: n }), h('h3', { textContent: t('step_' + key) }),
       h('span', { className: 'fold-sum', textContent: summary })),

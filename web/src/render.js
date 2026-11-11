@@ -2,7 +2,7 @@
 import { t } from './i18n.js';
 import { bomText, warnText } from './help.js';
 import { renderLegend } from './legend.js';
-import { UI, $, h, num, S } from './state.js';
+import { UI, $, CALM, h, num, S } from './state.js';
 import { calc, modLabel, usedMods } from './model.js';
 import { viewer, engineStarted, runJob, cachedJob, definesFor, setStatus } from './engine.js';
 import { renderSteps } from './steps.js';
@@ -92,6 +92,10 @@ export function showEchoes(echoes, errors) {
   const bad = warn.filter((w) => /^(WARNING|ERROR)/.test(w));
   const badge = $('#warnBadge');
   badge.hidden = !bad.length;
+  // one more thing does not fit than a moment ago: the badge shakes its head
+  if (bad.length > (S.badCount ?? 0) && !CALM.matches && badge.animate)
+    badge.animate([0, -4, 4, -3, 3, 0].map((x) => ({ transform: `translateX(${x}px)` })), { duration: 420 });
+  S.badCount = bad.length;
   // (on a phone only the count, so the viewer's bar stays one row)
   badge.replaceChildren(`⚠ `, h('span', { className: 'badge-n', textContent: bad.length }),
     h('span', { className: 'badge-words', textContent: t(bad.length === 1 ? 'warnOne' : 'warnMany', { n: bad.length }) }));

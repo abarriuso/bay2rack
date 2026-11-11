@@ -27,15 +27,14 @@ export function pieceLabel(f, v) {
   }
   // a device's tray reads "Mount for…", so it is clear the device itself is not printed
   if (p.part === 'rack_module') return (DEVICE_MODS.includes(modKind(p.module_type)) ? t('piece_mount', { x: modLabel(p.module_type) })
-    : modKind(p.module_type) === 'nkvm' && v.nkvm_split && ['side', 'front'].includes(modItems(p.module_type)[0])
+    : modKind(p.module_type) === 'nkvm' && v.nkvm_split && modItems(p.module_type)[0] !== 'ks'
       ? `${modLabel(p.module_type)} · ${t('piece_plate')}` : ownIndex(p.module_type, v)
         ? numbered(modLabel(p.module_type), ownIndex(p.module_type, v)) : modLabel(p.module_type)) + qty;
   if (p.part.endsWith('_labels')) return `${t('piece_labels')} · ${p.part === 'filler_labels' ? t('piece_filler')
     : p.part === 'filler_2_labels' ? t('piece_filler2') : ownIndex(p.module_type, v)
       ? numbered(modLabel(p.module_type), ownIndex(p.module_type, v)) : modLabel(p.module_type)}`;
   if (p.part === 'rack_module_lid') return `${modLabel(p.module_type)} · ${t('piece_lid')}${qty}`;
-  if (p.part === 'rack_module_bay') return `${modLabel(p.module_type)} · ${t(modItems(p.module_type)[0] === 'front' ? 'piece_drawer'
-    : v.nkvm_raised ? 'piece_mountain' : 'piece_pocket')}${qty}`;
+  if (p.part === 'rack_module_bay') return `${modLabel(p.module_type)} · ${t('piece_mountain')}${qty}`;
   if (p.part === 'pci_bracket') return t('piece_pci_' + p.pci_kind);
   if (p.part === 'button_cap') return `${t('piece_button')} · ${t('cap_' + p.btn_cap)}${qty}`;
   if (p.part === 'button_carrier') return `${t('piece_carrier')}${qty}`;

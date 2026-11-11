@@ -42,7 +42,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='4' width='26' height='24' rx='3' fill='%2314171a'/%3E%3Crect x='7' y='9' width='18' height='5' rx='1' fill='%231f63d8'/%3E%3Crect x='7' y='17' width='18' height='5' rx='1' fill='%23f7f8f6'/%3E%3C/svg%3E">
 </head>
 <body>
-  <a class="skip" href="#build" data-i18n="nav_build"></a>
+  <a class="skip" href="#configurator" data-i18n="nav_build"></a>
   <header class="top">
     <a class="brand" href="#top" aria-label="Bay2Rack">
       <span class="wordmark">Bay2Rack</span>
@@ -50,10 +50,10 @@
     <nav class="nav" aria-label="Sections" data-i18n-aria="aria_sections">
       <a class="nav-link" href="#why" data-i18n="nav_why"></a>
       <a class="nav-link" href="#gallery" data-i18n="nav_gallery"></a>
-      <a class="nav-link" href="#build" data-i18n="how_title"></a>
+      <a class="nav-link" href="#how" data-i18n="how_title"></a>
     </nav>
     <div class="top-actions">
-      <a class="btn small" href="#build" data-i18n="nav_build"></a>
+      <a class="btn small" href="#configurator" data-i18n="nav_build"></a>
       <button id="theme" class="icon-btn" type="button" data-i18n-tip="theme" data-i18n-aria="aria_theme" aria-label="Theme"></button>
       <button id="lang" class="icon-btn text" type="button">ES</button>
       <a class="icon-btn" href="https://github.com/abarriuso/bay2rack" aria-label="GitHub" data-icon="github"></a>
@@ -146,7 +146,7 @@
       </details>
       <div class="layout">
         <!-- the steps and the 3D view in one frame, one screen tall; the downloads and the lists go under it -->
-        <div class="workbench">
+        <div class="workbench" id="configurator">
         <aside class="panel">
           <div class="panel-head">
             <h3 class="panel-title" data-i18n="steps"></h3>
@@ -215,12 +215,16 @@
     </div>
     <div class="wrap foot-bottom">
       <p class="foot-made"><span data-i18n="foot_made"></span> <a href="https://github.com/abarriuso">Adrián Barriuso Pizarro</a></p>
-      <p class="foot-tech">
-        <span data-i18n="footer"></span>
-        <a href="https://github.com/openscad/openscad">OpenSCAD</a> ·
-        <a href="https://www.npmjs.com/package/@kreijstal/openscad-wasm" data-i18n="foot_wasm">WebAssembly build</a> ·
-        <a href="https://github.com/abarriuso/bay2rack/blob/main/LICENSE">CC BY-NC-SA 4.0</a>
-      </p>
+      <div class="foot-legal">
+        <p class="foot-tech">
+          <span data-i18n="footer"></span> <a href="https://github.com/openscad/openscad">OpenSCAD</a>
+          <span data-i18n="foot_compiled"></span> <a href="https://www.npmjs.com/package/@kreijstal/openscad-wasm">WebAssembly</a>.
+        </p>
+        <p class="foot-tech">
+          <span data-i18n="foot_licence"></span> <a href="https://github.com/abarriuso/bay2rack/blob/main/LICENSE">CC BY-NC-SA 4.0</a> ·
+          <a href="https://github.com/abarriuso/bay2rack" data-i18n="foot_source"></a>
+        </p>
+      </div>
     </div>
   </footer>
 

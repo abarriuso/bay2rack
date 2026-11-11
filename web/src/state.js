@@ -7,28 +7,28 @@ export const BASE = new URL(/* @vite-ignore */ '../', import.meta.url).href;
 export const SITE = 'https://bay2rack.pages.dev/';                      // the links in the kit README
 export const VIEW_ONLY = new Set(['part', 'print_orientation', 'explode', 'case_view', 'case_model', 'case_window', 'show_devices',
   'demo_devices', 'show_hardware', 'section', 'scene', 'module_type', 'cover_type']);
-export const FILLS = ['keystone', 'buttons', 'fan80', 'fan40', 'vent', 'cable', 'label', 'blank'];
-export const MODULES = ['ms105g', 'uswflex', 'ux', 'kvm', 'nkvm', 'pi', 'piblade', 'dev1', 'dev2', 'shelf', 'patch', 'fan40', 'buttons',
+export const FILLS = ['keystone', 'buttons', 'fan40', 'fan60', 'fan80', 'fan92', 'fan120', 'vent', 'cable', 'label', 'blank'];
+export const MODULES = ['ms105g', 'uswflex', 'ux', 'kvm', 'nkvm', 'pi', 'piblade', 'dev1', 'dev2', 'patch', 'fan40', 'fan60', 'fan80', 'fan92', 'fan120', 'buttons',
   'vent', 'blank', 'cable', 'label'];
 // trays that hold a list of boxes, written "kvm:jet+nano": choices, how many, default
 export const TRAYS = {
   kvm: { items: ['jet', 'nano', 'custom'], max: 3, def: 'jet+nano' },
   pi: { items: ['pi5', 'pi4', 'pi3', 'zero'], max: 2, def: 'pi5' },
   piblade: { items: ['pi5', 'pi4', 'pi3'], max: 4, def: 'pi5+pi5+pi5' },
-  nkvm: { items: ['side', 'front', 'ks'], max: 1, def: 'side' },        // NanoKVM bay: which way the ports go
+  nkvm: { items: ['side', 'ks'], max: 1, def: 'side' },                 // NanoKVM bay: standing outside, or behind a keystone
 };
 export const KVM_DIMS = { jet: 'jetkvm_dims', nano: 'nanokvm_dims', custom: 'kvm_custom' };
 // device modules -> the parameters holding their size (W, H, D)
 export const DEVICE_DIMS = {
   ms105g: ['ms_w', 'ms_h', 'ms_d'], uswflex: ['usw_dims'], ux: ['ux_dims'],
-  dev1: ['dev1_dims'], dev2: ['dev2_dims'], shelf: ['shelf_depth'], piblade: ['pi_blade_pitch'], nkvm: ['nkvm_dims', 'nkvm_headroom'],
+  dev1: ['dev1_dims'], dev2: ['dev2_dims'], piblade: ['pi_blade_pitch'], nkvm: ['nkvm_dims', 'nkvm_headroom'],
 };
 // an example also clears what you set inside the build (port names, buttons, label, NanoKVM bay…); your case,
 // screws, fits, device sizes and the view stay
 export const CONTENT_KEYS = ['ks_ports', 'ks_names', 'ks_style', 'ks_labels', 'ks_label_start', 'label_text', 'label_size', 'label_align',
   'label_dx', 'label_dz', 'label_relief', 'label_depth', 'label_bold', 'vent_style', 'vent_margin', 'btn_type', 'btn_count',
-  'btn_metal_d', 'btn_turbo', 'led_style', 'led_d', 'fan40_count', 'fan40_t', 'fan_guard', 'nkvm_keystones', 'nkvm_raised',
-  'nkvm_cover', 'nkvm_split', 'kvm_boxes', 'pi_boards', 'units_override', 'bezel_depth', 'labels_multicolour'];
+  'btn_metal_d', 'btn_turbo', 'led_style', 'led_d', 'fan_count', 'fan40_t', 'fan_guard', 'nkvm_keystones',
+  'nkvm_split', 'kvm_boxes', 'pi_boards', 'units_override', 'bezel_depth', 'labels_multicolour'];
 export const EXAMPLE_KEYS = [...new Set([...Object.values(EXAMPLES).flatMap(Object.keys), ...CONTENT_KEYS])];
 export const GALLERY = ['router', 'kvm', 'pi', 'audio', 'client', 'network', 'unifi', 'bezel'];
 // the builds that show a use of the project: its title, what it is for and what to buy
@@ -57,6 +57,7 @@ export function filamentHexes() {
 
 export const $ = (s) => document.querySelector(s);
 // phones and narrow windows: the one-screen configurator (the same query as in style.css)
+export const CALM = matchMedia('(prefers-reduced-motion: reduce)');       // motion off, if the system asks
 export const NARROW = '(max-width: 900px) and (max-aspect-ratio: 5/4)';
 export const h = (tag, { dataset, ...props } = {}, ...kids) => {
   // aria-* are attributes, not properties
