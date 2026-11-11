@@ -60,7 +60,7 @@ Standalone 6in rack panels for any 6in rack.
 
 ## modules
 
-Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, 40 mm fans, patch and button panels.
+Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, fans (40 mm 1U, 60 / 80 mm 2U, 92 / 120 mm 3U), patch and button panels.
 
 | Variant | Files | Hardware |
 |---|---|---|
@@ -75,20 +75,24 @@ Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, 40 mm fans
 | **pi-zero**<br>Raspberry Pi Zero tray (1U) | [`pi-zero.stl`](modules/pi-zero.stl) | rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>Raspberry Pi: 4 x M2.5 x 6 screw (self-tapping into the standoffs)<br>devices (not included): 1 x Raspberry Pi Zero |
 | **piblade-x4**<br>Raspberry Pi blades, four boards on edge (2U) | [`piblade-x4.stl`](modules/piblade-x4.stl) | rack module: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>Raspberry Pi: 16 x M2.5 x 6 screw (self-tapping into the standoffs)<br>devices (not included): 4 x Raspberry Pi 5 |
 | **fan40**<br>Three 40 mm fans (1U) | [`fan40.stl`](modules/fan40.stl) | rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>fans: 3 x 40 mm fan (40 x 40 x 10) + 12 x M3 x 16 screw + nut (5 or 12 V, to a fan header) |
-| **shelf**<br>Shelf for small devices (1U) | [`shelf.stl`](modules/shelf.stl) | rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>zip ties: 2 x 2.5-3.6 mm cable tie (holds the device) |
+| **fan60**<br>Two 60 mm fans (2U) | [`fan60.stl`](modules/fan60.stl) | rack module: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>fans: 2 x 60 mm fan (60 x 60 x 25) + 8 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
+| **fan80**<br>One 80 mm fan (2U) | [`fan80.stl`](modules/fan80.stl) | rack module: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>fans: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
+| **fan92**<br>One 92 mm fan (3U) | [`fan92.stl`](modules/fan92.stl) | rack module: 18 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>fans: 1 x 92 mm fan (92 x 92 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
+| **fan120**<br>One 120 mm fan (3U) | [`fan120.stl`](modules/fan120.stl) | rack module: 18 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>fans: 1 x 120 mm fan (120 x 120 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
 | **buttons**<br>Button panel: MX keys + power / HDD LEDs (1U) | [`buttons.stl`](modules/buttons.stl) | rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires |
 | **patch6**<br>Patch panel, 6 keystone ports (1U) | [`patch6.stl`](modules/patch6.stl) | rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)<br>keystones: 3 x metal / shielded RJ45 keystone<br>keystones: 2 x printed keystone cover<br>keystones: 1 x printed cable pass-through cover |
 
 ## bezels
 
-Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 mm fan.
+Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 or 120 mm fan.
 
 | Variant | Files | Hardware |
 |---|---|---|
 | **1bay-buttons**<br>1 bay: power key (MX) + LEDs | [`adapter.stl`](bezels/1bay-buttons/adapter.stl) | drive bay: 2 x M3 x 5 pan head + 2 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>buttons: 1 x Cherry MX compatible keyboard switch + 1u keycap (power)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires |
 | **1bay-vent**<br>1 bay with vents | [`adapter.stl`](bezels/1bay-vent/adapter.stl) | drive bay: 2 x M3 x 5 pan head + 2 x M3 heat-set insert (hole 4.2 x 5.7 mm) |
-| **2bay-fan80**<br>2 bays: 80 mm fan | [`adapter.stl`](bezels/2bay-fan80/adapter.stl) | drive bay: 4 x M3 x 5 pan head + 4 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws |
-| **3bay-buttons-fan80**<br>3 bays: 80 mm fan + power / reset keys | [`adapter.stl`](bezels/3bay-buttons-fan80/adapter.stl) | drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires<br>fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws |
+| **2bay-fan80**<br>2 bays: 80 mm fan | [`adapter.stl`](bezels/2bay-fan80/adapter.stl) | drive bay: 4 x M3 x 5 pan head + 4 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>fans: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
+| **3bay-buttons-fan80**<br>3 bays: 80 mm fan + power / reset keys | [`adapter.stl`](bezels/3bay-buttons-fan80/adapter.stl) | drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)<br>buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires<br>fans: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
+| **3bay-fan120**<br>3 bays: 120 mm fan | [`adapter.stl`](bezels/3bay-fan120/adapter.stl) | drive bay: 6 x M3 x 5 pan head + 6 x M3 heat-set insert (hole 4.2 x 5.7 mm)<br>fans: 1 x 120 mm fan (120 x 120 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header) |
 
 ## rear
 

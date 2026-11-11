@@ -5,8 +5,8 @@
   "bezel-flush": "Exact 5.25in drive bezel, flush with the case front, patch panel cut into the bezel.",
   "bezel-overhang": "Exact 5.25in drive bezel, N U of rack panels overlapping the case front.",
   "panels": "Standalone 6in rack panels for any 6in rack.",
-  "modules": "Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, 40 mm fans, patch and button panels.",
-  "bezels": "Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 mm fan.",
+  "modules": "Rack modules: switch and KVM trays, Raspberry Pi trays and 2U blades, fans (40 mm 1U, 60 / 80 mm 2U, 92 / 120 mm 3U), patch and button panels.",
+  "bezels": "Bezels for the other PCs, no rack (fit = panel): button panel, vents, 80 or 120 mm fan.",
   "rear": "Printed brackets for two PCI slots: the network cables and the power cable leave the case through them.",
   "covers": "Keystone covers for unused ports, pushed in from the front.",
   "tests": "Small test prints: check them before printing a full adapter."
@@ -339,7 +339,7 @@
    ],
    "bom": [
     "drive bay: 4 x M3 x 5 pan head  +  4 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
-    "fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws"
+    "fans: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
    ]
   },
   {
@@ -363,7 +363,26 @@
     "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
     "buttons: 2 x Cherry MX compatible keyboard switch + 1u keycap (power, reset)",
     "buttons: 2 x 3 mm dome LED (power, disk activity) + front-panel header wires",
-    "fan: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screws"
+    "fans: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
+   ]
+  },
+  {
+   "path": "bezels/3bay-fan120",
+   "family": "bezels",
+   "title": "3 bays: 120 mm fan",
+   "params": {
+    "bays": 3,
+    "fit": "panel",
+    "front_style": "plate",
+    "filler_mode": "integral",
+    "spare_fill": "fan120"
+   },
+   "files": [
+    "bezels/3bay-fan120/adapter.stl"
+   ],
+   "bom": [
+    "drive bay: 6 x M3 x 5 pan head  +  6 x M3 heat-set insert (hole 4.2 x 5.7 mm)",
+    "fans: 1 x 120 mm fan (120 x 120 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
    ]
   },
   {
@@ -640,19 +659,67 @@
    ]
   },
   {
-   "path": "modules/shelf",
+   "path": "modules/fan60",
    "family": "modules",
-   "title": "Shelf for small devices (1U)",
+   "title": "Two 60 mm fans (2U)",
    "params": {
     "part": "rack_module",
-    "module_type": "shelf"
+    "module_type": "fan60"
    },
    "files": [
-    "modules/shelf.stl"
+    "modules/fan60.stl"
    ],
    "bom": [
-    "rack module: 6 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
-    "zip ties: 2 x 2.5-3.6 mm cable tie (holds the device)"
+    "rack module: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
+    "fans: 2 x 60 mm fan (60 x 60 x 25) + 8 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
+   ]
+  },
+  {
+   "path": "modules/fan80",
+   "family": "modules",
+   "title": "One 80 mm fan (2U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "fan80"
+   },
+   "files": [
+    "modules/fan80.stl"
+   ],
+   "bom": [
+    "rack module: 12 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
+    "fans: 1 x 80 mm fan (80 x 80 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
+   ]
+  },
+  {
+   "path": "modules/fan92",
+   "family": "modules",
+   "title": "One 92 mm fan (3U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "fan92"
+   },
+   "files": [
+    "modules/fan92.stl"
+   ],
+   "bom": [
+    "rack module: 18 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
+    "fans: 1 x 92 mm fan (92 x 92 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
+   ]
+  },
+  {
+   "path": "modules/fan120",
+   "family": "modules",
+   "title": "One 120 mm fan (3U)",
+   "params": {
+    "part": "rack_module",
+    "module_type": "fan120"
+   },
+   "files": [
+    "modules/fan120.stl"
+   ],
+   "bom": [
+    "rack module: 18 x M5 x 10 button head  (into the adapter's fixings - nothing else to buy)",
+    "fans: 1 x 120 mm fan (120 x 120 x 25) + 4 x fan screw (self-tapping, they come with the fan) (5 or 12 V, to a fan header)"
    ]
   },
   {

@@ -211,14 +211,6 @@ module ms105g_model(yf, zc) {     // yf = front face, zc = body centre height
     color([0.7, 0.7, 0.7]) translate([ms_w / 2 - 10, yf - 0.2, zc - 1]) rotate([-90, 0, 0]) cylinder(d = 2.2, h = 0.3);
 }
 
-// NanoKVM-style KVM over IP box (about 40 x 28 x 40 mm) standing on the shelf
-module nanokvm_model(yf, zb, x = -34) {
-    color([0.94, 0.94, 0.93]) translate([x - 20, yf, zb]) cube([40, 40, 28]);
-    color([0.03, 0.03, 0.04]) translate([x - 16, yf - 0.1, zb + 15]) cube([20, 0.2, 9]);      // OLED
-    color([0.35, 0.85, 1]) for (r = [0 : 2]) translate([x - 14, yf - 0.2, zb + 17 + r * 2.4]) cube([10 + (r % 2) * 5, 0.1, 0.9]);
-    rj45_port(x + 10, zb + 9, yf - 0.1);
-    color([0.1, 0.1, 0.1]) for (dx = [-17, -6]) translate([x + dx, yf - 0.1, zb + 4]) cube([9, 0.2, 3.2]);   // USB-C
-}
 
 // JetKVM: black aluminium box with a 1.69in colour touch screen on the front
 module jetkvm_model(x, yf, zc) {
@@ -262,11 +254,10 @@ module nkvm_board() {
     color([0.75, 0.77, 0.8]) translate([L - 8, W / 2 - 7.5, H - 6.5]) cube([8.6, 15, 5.6]);                                     // HDMI
     color([0.75, 0.77, 0.8]) translate([L - 6, W / 2 - 4.5, 2.4]) cube([6.6, 9, 3.2]);                                           // USB-C
 }
-// side: standing, the heatsink to the front; front: lying flat
+// side: standing on the plate, the heatsink up at the lid; ks: lying flat behind keystone 1
 module nkvm_model(lay)
-    if (lay == "side" && nkvm_raised)       // standing on the plate, the heatsink up at the lid
+    if (lay == "side")
         multmatrix([[1, 0, 0, nk_r_x0()], [0, 0, -1, -panel_t - nk_c], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
-    else if (lay == "side") multmatrix([[1, 0, 0, nk_x0()], [0, 0, -1, nk_yb0 - nk_c], [0, 1, 0, nk_zv0], [0, 0, 0, 1]]) nkvm_board();
     else nk_front_frame(lay) translate([0, 0, nk_zf + nk_fl]) nkvm_board();
 
 // Raspberry Pi boards, port edge at y = y0, underside at z = zb
@@ -423,8 +414,8 @@ module fill_devices(type, w, h, z0, yf, t = 3, types = ks_types) {
     if (type == "keystone")
         for (p = ks_layout_of(min(w, 2 * x_in - 1), h, types)) translate([p[0], 0, z0 + p[1]]) jack_model(types[p[3]], yf);
     else if (type == "buttons") buttons_models(w, h, z0, yf);
-    else if (type == "fan40" && h >= 41) for (x = fan40_xs(w)) fan_model(40, fan40_t, x, yf + t + 0.2, z0 + h / 2);
-    else if (type == "fan80" && h >= 82) fan_model(80, 25, 0, yf + t + 0.2, z0 + h / 2);
+    else if (is_fan(type) && fan_fits(type, w, h)) let(s = fan_spec(type)[0])
+        for (x = fan_xs(type, w)) fan_model(s, s == 40 ? fan40_t : 25, x, yf + t + 0.2, z0 + h / 2);
 }
 
 // the printed rack modules, with their devices
@@ -452,8 +443,7 @@ module rack_contents() for (k = [0 : 1 : len(placed_mods) - 1]) if (preview_item
         }
         else if (mod_kind(m) == "pi") pi_models(mod_items(m), yb, z);
         else if (mod_kind(m) == "piblade") pi_blade_models(mod_items(m), yb, z);
-        else if (m == "fan40") fill_devices("fan40", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t, panel_t);
-        else if (m == "shelf") nanokvm_model(yb + 6, z + shelf_z + 2);
+        else if (is_fan(m)) fill_devices(m, hole_s - R[0] - 6, mod_u(m) * U - 0.79, z, yb - panel_t, panel_t);
         else if (mod_kind(m) == "nkvm") translate([0, yb, z]) nkvm_model(nk_layout(mod_items(m)));
         else if (mod_kind(m) == "patch") fill_devices("keystone", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t, types = patch_types(m));
         else if (m == "buttons") fill_devices("buttons", hole_s - R[0] - 6, U - 0.79, z, yb - panel_t);

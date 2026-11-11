@@ -72,34 +72,27 @@ CASES = (
     + [adapter(f"bay-{f}", bay_fixing=f) for f in ("tap", "nut", "clearance")]
     + [adapter("bay-6-32", bay_screw="6-32"), adapter("head-countersunk", rack_screw_head="countersunk")]
     # rack modules, including the 2U blades and the trays with several boxes
-    + [module(k) for k in ("ms105g", "uswflex", "ux", "shelf", "patch", "fan40", "buttons", "dev1",
+    + [module(k) for k in ("ms105g", "uswflex", "ux", "patch", "fan40", "fan60", "fan80", "fan92", "fan120", "buttons", "dev1",
                            "vent", "blank", "cable", "label")]
+    + [(f"module/fan{s}-hex", {"part": "rack_module", "module_type": f"fan{s}", "fan_guard": "hex"}, None) for s in (40, 60, 120)]
+    + [("module/fan60-one", {"part": "rack_module", "module_type": "fan60", "fan_count": 1}, None)]
     + [module("kvm:jet"), module("kvm:jet+nano"), module("kvm:nano+nano"), module("kvm:jet+jet"),
        module("pi:pi5"), module("pi:pi5+pi5"), module("pi:zero"), module("pi:pi4+pi3"),
        module("piblade:pi5+pi5"), module("piblade:pi5+pi5+pi5+pi5"),
-       module("nkvm:side"), module("nkvm:front"),
-       ("module/nkvm:front-2ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 2}, None),
-       ("module/nkvm:front-1ks", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 1}, None),
+       module("nkvm:side"),
        ("lid/nkvm:side", {"part": "rack_module_lid", "module_type": "nkvm:side"}, None),
-       ("lid/nkvm:front", {"part": "rack_module_lid", "module_type": "nkvm:front"}, None),
        module("nkvm:ks"),
        ("module/nkvm:ks-2ks", {"part": "rack_module", "module_type": "nkvm:ks", "nkvm_keystones": 2}, None),
        ("lid/nkvm:ks", {"part": "rack_module_lid", "module_type": "nkvm:ks"}, None),
-       ("drawer/nkvm:front", {"part": "rack_module_bay", "module_type": "nkvm:front"}, None),
-       ("module/nkvm:front-1piece", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_split": False, "nkvm_keystones": 1}, None),
-       ("module/nkvm:side-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_cover": False, "nkvm_raised": False}, None),
-       ("module/nkvm:side-pocket-1piece", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_raised": False, "nkvm_split": False}, None),
        ("module/nkvm:side-raised-1piece", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": False}, None),
-       ("pocket/nkvm:side-pocket", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_raised": False}, None),
        ("module/nkvm:side-split-plate", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True}, None),
-       ("module/nkvm:side-split-open", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_split": True, "nkvm_cover": False}, None),
-       ("pocket/nkvm:side-split", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_split": True}, None),
+       ("mountain/nkvm:side-split", {"part": "rack_module_bay", "module_type": "nkvm:side", "nkvm_split": True}, None),
        ("labels/patch-names", {"part": "rack_module_labels", "module_type": "patch", "labels_multicolour": True,
                                "ks_ports_list": "rj45m,hdmi,usb,rj45m,cover,pass", "ks_names": "WAN,,,NAS"}, None),
        ("labels/filler-keystone", {"part": "filler_labels", "labels_multicolour": True}, None),
        ("labels/label-raised", {"part": "rack_module_labels", "module_type": "label", "labels_multicolour": True,
                                 "label_relief": "raised", "label_text": "PROXMOX", "label_align": "left"}, None),
-       ("labels/nkvm-side", {"part": "rack_module_labels", "module_type": "nkvm:side", "labels_multicolour": True}, None),
+       ("labels/nkvm-ks", {"part": "rack_module_labels", "module_type": "nkvm:ks", "labels_multicolour": True}, None),
        ("module/label-raised", {"part": "rack_module", "module_type": "label", "label_relief": "raised"}, None)]
     + [(f"panel/vent-{st}", {"part": "rack_panel", "panel_fill": "vent", "vent_style": st}, None) for st in ("slots", "louvres", "hex", "dots")]
     + [(f"module/buttons-{bt}", {"part": "rack_module", "module_type": "buttons", "btn_type": bt, "btn_turbo": True}, None)
@@ -114,6 +107,13 @@ CASES = (
        ("panel/2U-patch12", {"part": "rack_panel", "panel_u": 2, "panel_fill": "keystone", "ks_ports": 12}, None),
        ("panel/1U-fan40", {"part": "rack_panel", "panel_u": 1, "panel_fill": "fan40"}, None),
        ("panel/2U-fan80", {"part": "rack_panel", "panel_u": 2, "panel_fill": "fan80"}, None),
+       ("panel/2U-fan60", {"part": "rack_panel", "panel_u": 2, "panel_fill": "fan60"}, None),
+       ("panel/3U-fan92", {"part": "rack_panel", "panel_u": 3, "panel_fill": "fan92"}, None),
+       ("panel/3U-fan120-hex", {"part": "rack_panel", "panel_u": 3, "panel_fill": "fan120", "fan_guard": "hex"}, None),
+       adapter("panel-only-fan120", bays=3, fit="panel", filler_mode="integral", spare_fill="fan120"),
+       adapter("panel-only-fan92-bezel", bays=3, fit="panel", front_style="bezel", filler_mode="integral", spare_fill="fan92"),
+       adapter("panel-only-fan60", bays=2, fit="panel", filler_mode="integral", spare_fill="fan60"),
+       ("filler/fan80-separate", {"part": "filler", "bays": 3, "fit": "panel", "spare_fill": "fan80"}, None),
        ("filler/keystone", {"part": "filler"}, None),
        ("filler/split-2", {"part": "filler_2", "spare_pos": "split"}, None),
        ("cover/blank", {"part": "keystone_cover", "cover_type": "blank"}, None),
@@ -125,6 +125,11 @@ CASES = (
     # the model must still warn when something does not fit
     + [module("kvm:jet+jet+jet", warn="do not fit"),
        adapter("fan80-in-a-1U-strip", warn="80 mm fan", spare_fill="fan80", filler_mode="integral"),
+       adapter("fan120-in-2-bays", warn="120 mm fans need a zone", bays=2, fit="panel", filler_mode="integral", spare_fill="fan120"),
+       ("panel/2U-fan92", {"part": "rack_panel", "panel_u": 2, "panel_fill": "fan92"}, "92 mm fans need a zone"),
+       # the drawer and the pocket of the NanoKVM bay are gone: an old link says so
+       ("module/nkvm:front-gone", {"part": "rack_module", "module_type": "nkvm:front"}, "'front' is not a box of the nkvm module"),
+       ("module/shelf-gone", {"part": "rack_module", "module_type": "shelf"}, "unknown rack module 'shelf'"),
        adapter("fixing-nut_trap-M6", warn="too close to the frame edge", rack_fixing="nut_trap", rack_screw="M6"),
        adapter("fixing-square_nut-M6", warn="nut pockets leave only", rack_fixing="square_nut", rack_screw="M6"),
        adapter("fixing-channel-M6", warn="nut channels leave only", rack_fixing="channel", rack_screw="M6"),
@@ -145,14 +150,21 @@ CASES = (
        ("labels/label-own", {"part": "rack_module_labels", "module_type": "label:RACK_2", "labels_multicolour": True}, None),
        ("bom/patch12", {"part": "rack_panel", "panel_u": 2, "panel_fill": "keystone", "ks_ports": 12, "ks_ports_list": ""}, None,
         ["keystones: 12 x metal"]),
-       ("bom/nkvm-drawer", {"part": "rack_module", "module_type": "nkvm:front", "nkvm_keystones": 1}, None,
-        ["NanoKVM drawer: 2 x M3 x 12 countersunk", "NanoKVM bay lid: 4 x", "keystones: 1 x metal", "devices (not included): 1 x NanoKVM"]),
+       ("bom/nkvm-ks-module", {"part": "rack_module", "module_type": "nkvm:ks", "nkvm_keystones": 2}, None,
+        ["NanoKVM bay lid: 4 x", "keystones: 1 x metal", "devices (not included): 1 x NanoKVM"]),
        ("bom/nkvm-ks", {"part": "rack_module_lid", "module_type": "nkvm:ks"}, None,
         ["RJ45 keystone coupler (female-female)", "NanoKVM bay lid: 4 x"]),
        ("bom/nkvm-mountain", {"part": "rack_module_bay", "module_type": "nkvm:side"}, None,
         ["NanoKVM mountain to plate: 4 x M3 x 8 countersunk", "(in the mountain posts)"]),
        ("bom/carrier", {"part": "button_carrier", "btn_type": "retro"}, None, ["2 x M3 x 8 screw"]),
-       ("bom/fan40-20", {"part": "rack_panel", "panel_fill": "fan40", "fan40_t": 20}, None, ["x M3 x 30 screw"])]
+       ("bom/fan40-20", {"part": "rack_panel", "panel_fill": "fan40", "fan40_t": 20}, None, ["x M3 x 30 screw"]),
+       ("bom/fan40-two", {"part": "rack_module", "module_type": "fan40", "fan_count": 2}, None, ["fans: 2 x 40 mm fan"]),
+       ("bom/fan60", {"part": "rack_module", "module_type": "fan60"}, None,
+        ["fans: 2 x 60 mm fan (60 x 60 x 25) + 8 x fan screw", "rack module: 12 x"]),
+       ("bom/fan120", {"part": "rack_module", "module_type": "fan120"}, None,
+        ["fans: 1 x 120 mm fan (120 x 120 x 25)", "rack module: 18 x"]),
+       ("bom/fan80-bezel", {"part": "adapter", "bays": 2, "fit": "panel", "filler_mode": "integral", "spare_fill": "fan80"}, None,
+        ["fans: 1 x 80 mm fan"])]
 )
 
 
@@ -239,4 +251,5 @@ def main():
     sys.exit(1 if failed else 0)
 
 
-main()
+if __name__ == "__main__":
+    main()

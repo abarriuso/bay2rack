@@ -186,7 +186,7 @@ module adapter() {
         if (units > 0) opening(units_z0, units * U);
         for (zn = zones) {
             if (filler_mode == "separate") {
-                opening(zn[0], zn[1], zn[2] == "fan80" ? 80.8 : zn[2] == "fan40" ? 40.8 : 0);
+                opening(zn[0], zn[1], is_fan(zn[2]) ? fan_spec(zn[2])[0] + 0.8 : 0);
                 if (rack_fixing != "channel")
                     for (s = [-1, 1]) rack_cut(s * hole_s / 2, zn[0] + zn[1] / 2, s);
             } else {

@@ -70,7 +70,21 @@ function patch_types(m) = let(it = mod_items(m)) len(it) == 0 ? ks_types : [for 
 function patch_names(m) = let(it = mod_items(m)) len(it) == 0 ? PORT_NAMES
     : [for (x = it) let(p = str_split(x, "=")) len(p) > 1 ? unscore(p[1]) : ""];
 function label_of(m) = let(a = str_after(m, ":")) a == "" ? label_text : unscore(a);
-function mod_u(m) = mod_kind(m) == "piblade" ? 2 : 1;                 // rack units taken by a module
+// fans (fills and modules fan40 ... fan120): [size, screw spacing, opening, screw hole, smallest zone (width and height)]
+FANS = [[40, 32, 38, 3.4, 41], [60, 50, 57, 4.4, 62], [80, 71.5, 77, 4.4, 82], [92, 82.5, 89, 4.4, 94], [120, 105, 116, 4.4, 121.5]];
+function fan_spec(type) = let(l = [for (f = FANS) if (str("fan", f[0]) == type) f]) len(l) > 0 ? l[0] : undef;
+function is_fan(type) = fan_spec(type) != undef;
+// a fan module takes the rack units its fan needs: 40 mm 1U, 60 / 80 mm 2U, 92 / 120 mm 3U
+function fan_u(type) = max(1, ceil((fan_spec(type)[4] + 0.79) / U - 0.001));
+function mod_u(m) = mod_kind(m) == "piblade" ? 2 : is_fan(m) ? fan_u(m) : 1;   // rack units taken by a module
+// fans side by side in a zone w wide (they sit between the rack posts): as many as fit, up to fan_count
+function fan_room(w) = min(w, 2 * x_in - 1);
+function fan_max(type, w) = let(f = fan_spec(type))
+    fan_room(w) < f[4] ? 0 : floor((fan_room(w) - f[0]) / (f[0] + 0.3) + 0.0001) + 1;
+function fan_n(type, w) = min(fan_count, fan_max(type, w));
+function fan_fits(type, w, h) = h >= fan_spec(type)[4] && fan_max(type, w) >= 1;
+function fan_pitch(type, w) = let(s = fan_spec(type)[0], n = fan_n(type, w)) n < 2 ? 0 : min(s + 6, (fan_room(w) - s) / (n - 1));
+function fan_xs(type, w) = let(n = max(1, fan_n(type, w))) [for (i = [0 : n - 1]) (i - (n - 1) / 2) * fan_pitch(type, w)];
 // modules placed from the top: [module, bottom unit (0 = bottom)]; one that no longer fits becomes a blank
 function place_mods(i, top) =
     top <= 0 ? []
@@ -185,7 +199,7 @@ KS_NAMES = [["rj45m", "metal / shielded RJ45 keystone"], ["rj45", "RJ45 keystone
             ["cover", "printed keystone cover"], ["pass", "printed cable pass-through cover"]];
 for (k = KS_NAMES) if (ks_count(k[0]) > 0) echo(str("BOM | keystones: ", ks_count(k[0]), " x ", k[1]));
 function ties_of(m) = mod_kind(m) == "kvm" ? len(mod_items(m))
-    : (m == "ms105g" || m == "shelf" || m == "uswflex" || m == "ux" || m == "dev1" || m == "dev2") ? 1 : 0;
+    : (m == "ms105g" || m == "uswflex" || m == "ux" || m == "dev1" || m == "dev2") ? 1 : 0;
 n_ties = sum_list([for (m = bom_mods) ties_of(m)]);
 n_pi = sum_list([for (m = bom_mods) mod_kind(m) == "pi" ? len(pi_list(mod_items(m)))
                                       : mod_kind(m) == "piblade" ? len(blade_list(mod_items(m))) : 0]);
@@ -197,15 +211,10 @@ nk_bom = [for (m = part == "assembly" ? used_mods
           if (mod_kind(m) == "nkvm") nk_layout(mod_items(m))];
 function nk_bom_n(lay) = len([for (l = nk_bom) if (l == lay) 1]);
 n_nk_jacks = sum_list([for (l = nk_bom) nk_nks(l)]) - nk_bom_n("ks");      // (ks: keystone 1 is the coupler)
-nk_drawer_L = max([for (l = [6, 8, 10, 12, 16, 20]) if (l <= 2 + panel_t + 7) l]);   // bezel + plate + the insert boss
 if (len(nk_bom) > 0) echo(str("BOM | NanoKVM bay lid: ", 4 * len(nk_bom), " x M3 x 8 countersunk  +  ", 4 * len(nk_bom),
     " x M3 heat-set insert (hole ", NK_M3[2], " x ", NK_M3[3], " mm)"));
-if (nkvm_split && !nkvm_raised && nk_bom_n("side") > 0) echo(str("BOM | NanoKVM bay to plate: ", 4 * nk_bom_n("side"),
-    " x M3 x 8 pan head, from the back  +  ", 4 * nk_bom_n("side"), " x M3 heat-set insert (in the plate)"));
-if (nkvm_split && nkvm_raised && nk_bom_n("side") > 0) echo(str("BOM | NanoKVM mountain to plate: ", 4 * nk_bom_n("side"),
+if (nkvm_split && nk_bom_n("side") > 0) echo(str("BOM | NanoKVM mountain to plate: ", 4 * nk_bom_n("side"),
     " x M3 x 8 countersunk, from the back  +  ", 4 * nk_bom_n("side"), " x M3 heat-set insert (in the mountain posts)"));
-if (nkvm_split && nk_bom_n("front") > 0) echo(str("BOM | NanoKVM drawer: ", 2 * nk_bom_n("front"), " x M3 x ", nk_drawer_L,
-    " countersunk  +  ", 2 * nk_bom_n("front"), " x M3 heat-set insert (behind the plate)"));
 if (nk_bom_n("ks") > 0) echo(str("BOM | NanoKVM bay: ", nk_bom_n("ks"), " x RJ45 keystone coupler (female-female)  +  ",
     nk_bom_n("ks"), " x 10 cm patch cable (keystone to NanoKVM)"));
 n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
@@ -235,24 +244,27 @@ if (n_btn > 0) {
         echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
     }
 }
-n_fan = part == "rack_panel" ? (panel_fill == "fan80" && panel_u * U - 0.79 >= 82 ? 1 : 0)
-      : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
-         || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-        ? len([for (zn = zones) if (zn[2] == "fan80" && zone_h_of(zn) >= 82 && zone_w_of(zn) >= 82) 1]) : 0;
-if (n_fan > 0) echo(str("BOM | fan: ", n_fan, " x 80 mm fan (80 x 80 x 25) + ", 4 * n_fan, " x fan screws"));
-// 40 mm fans: only where they fit side by side (the model leaves them out otherwise); the screws go through the
-// thickest plate that holds fans (a 1U module, the filler panel, or the frame when they are cut into it)
-fan40_zones = (part == "assembly" || (part == "adapter" && filler_mode != "separate")
-               || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
-            ? [for (zn = zones) if (zn[2] == "fan40" && fan40_fits(zone_w_of(zn), zone_h_of(zn))) zn] : [];
-fan40_mods = fan40_fits(hole_s - R[0] - 6, U - 0.79) ? len([for (m = bom_mods) if (m == "fan40") 1]) : 0;
-n_fan40 = fan40_count * (part == "rack_panel" ? (panel_fill == "fan40" && fan40_fits(hole_s - R[0] - 6, panel_u * U - 0.79) ? 1 : 0)
-      : fan40_mods + len(fan40_zones));
-fan40_plate = max(concat(fan40_mods > 0 || part == "rack_panel" ? [panel_t] : [],
-                         len(fan40_zones) > 0 ? [filler_mode == "separate" ? filler_t : ft] : [], [0]));
-if (n_fan40 > 0) echo(str("BOM | fans: ", n_fan40, " x 40 mm fan (40 x 40 x ", fan40_t, ") + ", 4 * n_fan40,
-                         " x M3 x ", min([for (l = [16, 20, 25, 30, 35, 40, 45, 50]) if (l >= fan40_t + fan40_plate + 2.6) l]),
-                         " screw + nut (5 or 12 V, to a fan header)"));
+// fans: the fan fills and modules this part makes, only where they fit (the model leaves them out otherwise),
+// [type, how many, the plate their screws go through: a module, the filler panel, or the frame they are cut into]
+mod_fw = hole_s - R[0] - 6;
+fan_sets = concat(
+    part == "rack_panel" ? (is_fan(panel_fill) && fan_fits(panel_fill, mod_fw, panel_u * U - 0.79)
+                            ? [[panel_fill, fan_n(panel_fill, mod_fw), panel_t]] : [])
+  : (part == "assembly" || (part == "adapter" && filler_mode != "separate")
+     || ((part == "filler" || part == "filler_2") && filler_mode == "separate"))
+    ? [for (zn = zones) if (is_fan(zn[2]) && fan_fits(zn[2], zone_w_of(zn), zone_h_of(zn)))
+          [zn[2], fan_n(zn[2], zone_w_of(zn)), filler_mode == "separate" ? filler_t : ft]]
+  : [],
+    [for (m = bom_mods) if (is_fan(m) && fan_fits(m, mod_fw, mod_u(m) * U - 0.79)) [m, fan_n(m, mod_fw), panel_t]]);
+// 40 mm fans: M3 screws and nuts through the thickest plate; bigger ones (25 mm thick) take their own fan screws
+for (f = FANS) {
+    sets = [for (x = fan_sets) if (x[0] == str("fan", f[0])) x];
+    n = sum_list([for (x = sets) x[1]]);
+    if (n > 0) echo(str("BOM | fans: ", n, " x ", f[0], " mm fan (", f[0], " x ", f[0], " x ", f[0] == 40 ? fan40_t : 25, ") + ", 4 * n,
+        f[0] == 40 ? str(" x M3 x ", min([for (l = [16, 20, 25, 30, 35, 40, 45, 50]) if (l >= fan40_t + max([for (x = sets) x[2]]) + 2.6) l]),
+                         " screw + nut") : " x fan screw (self-tapping, they come with the fan)",
+        " (5 or 12 V, to a fan header)"));
+}
 if ((part == "assembly" && rear_slots) || part == "pci_bracket")
     echo(str("BOM | rear slots: ", part == "pci_bracket" ? 1 : 2, " x printed PCI-slot bracket",
              part == "pci_bracket" ? (pci_kind == "lan" ? " (network cables)" : " (power cable)") : " (network cables, power cable)", " + the case's slot screws"));
@@ -318,8 +330,8 @@ for (z = rack_zs) {
 //  Parameter checks: values that are in range one by one but do not go together
 // ---------------------------------------------------------------------
 KS_TYPES = ["rj45m", "rj45", "hdmi", "usb", "rca", "jack", "toslink", "cover", "pass", "none"];
-MOD_KINDS = ["ms105g", "kvm", "kvm2", "pi", "piblade", "nkvm", "uswflex", "ux", "dev1", "dev2", "shelf", "patch",
-             "fan40", "buttons", "vent", "blank", "cable", "label"];
+MOD_KINDS = concat(["ms105g", "kvm", "kvm2", "pi", "piblade", "nkvm", "uswflex", "ux", "dev1", "dev2", "patch",
+                    "buttons", "vent", "blank", "cable", "label"], [for (f = FANS) str("fan", f[0])]);
 function known(x, list) = len([for (y = list) if (y == x) 1]) > 0;
 for (tp = ks_types) if (!known(tp, KS_TYPES)) echo(str("WARNING: unknown keystone type '", tp, "' in ks_ports_list - use ", KS_TYPES));
 for (m = concat(rack_mods, [module_type])) if (!known(mod_kind(m), MOD_KINDS))
@@ -328,7 +340,7 @@ for (m = part == "rack_module" ? [module_type] : rack_mods) {   // (the modules 
     k = mod_kind(m);
     if (k == "patch") { for (tp = patch_types(m)) if (!known(tp, KS_TYPES))
         echo(str("WARNING: unknown keystone type '", tp, "' in the patch module (", m, ") - use ", KS_TYPES)); }
-    else if (k != "label") for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "front", "ks"]
+    else if (k != "label") for (b = mod_items(m)) if (!known(b, k == "kvm" ? ["jet", "nano", "custom"] : k == "nkvm" ? ["side", "ks"]
                                         : (k == "pi" || k == "piblade") ? ["pi5", "pi4", "pi3", "zero"] : [b]))
         echo(str("WARNING: '", b, "' is not a box of the ", k, " module (", m, ")"));
 }
@@ -346,9 +358,9 @@ if (bezel_mode && bezel_depth > sleeve_depth)
     echo("WARNING: bezel_depth is deeper than the sleeve - raise sleeve_depth");
 if (ks_ports_list != "" && ks_ports != len(ks_types))
     echo(str("NOTE: ks_ports_list sets ", len(ks_types), " ports - ks_ports (", ks_ports, ") only counts when the list is empty"));
-if (nkvm_raised && len([for (m = concat(used_mods, [module_type])) if (mod_kind(m) == "nkvm" && nk_layout(mod_items(m)) == "side") 1]) > 0
+if (len([for (m = concat(used_mods, [module_type])) if (mod_kind(m) == "nkvm" && nk_layout(mod_items(m)) == "side") 1]) > 0
     && (part == "assembly" || mod_kind(module_type) == "nkvm"))
     echo(str("NOTE: the raised NanoKVM bay sticks out ", round((-nk_r_lf - panel_t) * 10) / 10,
-             " mm from the rack front - check that your case door still closes (else set nkvm_raised = false: in the plate)"));
+             " mm from the rack front - check that your case door still closes (else use nkvm:ks: inside the case)"));
 if (mount_lip * 2 >= min(ms_w, ms_h))
     echo("WARNING: mount_lip closes the switch window - lower it");

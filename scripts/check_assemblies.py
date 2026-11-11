@@ -27,7 +27,12 @@ for b in range(1, 7):
                           "filler_mode": "integral" if front == "bezel" else "separate"}))
 cases += [
     ("nkvm/side-in-3", {"bays": 3, "rack_modules": "nkvm:side,ms105g"}),
-    ("nkvm/front-2ks", {"bays": 3, "rack_modules": "nkvm:front", "nkvm_keystones": 2}),
+    ("nkvm/ks-in-5", {"bays": 5, "rack_modules": "nkvm:side,nkvm:ks,patch"}),
+    ("fans/120-60", {"bays": 6, "rack_modules": "fan120,fan60"}),
+    ("fans/92-80", {"bays": 6, "rack_modules": "fan92,fan80"}),
+    ("fans/panel-120", {"bays": 3, "fit": "panel", "filler_mode": "integral", "spare_fill": "fan120"}),
+    ("fans/panel-split-60", {"bays": 4, "fit": "panel", "filler_mode": "integral", "spare_pos": "split", "spare_split": 0.6,
+                             "spare_fill": "fan60", "spare_fill_2": "buttons"}),
     ("nkvm/ks-2ks", {"bays": 3, "rack_modules": "nkvm:ks,ms105g", "nkvm_keystones": 2, "labels_multicolour": True}),
     ("nkvm/split-multicolour", {"bays": 3, "rack_modules": "nkvm:side,patch", "nkvm_split": True, "labels_multicolour": True}),
     ("labels/multicolour-names", {"bays": 4, "rack_modules": "patch,label,vent", "labels_multicolour": True, "ks_names": "WAN,LAN,,NAS"}),

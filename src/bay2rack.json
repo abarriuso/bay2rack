@@ -114,6 +114,13 @@
             "spare_fill": "fan80",
             "spare_fill_2": "buttons"
         },
+        "bezels/3bay-fan120": {
+            "bays": "3",
+            "fit": "panel",
+            "front_style": "plate",
+            "filler_mode": "integral",
+            "spare_fill": "fan120"
+        },
         "panels/1U-patch6": {
             "part": "rack_panel",
             "panel_u": "1",
@@ -185,9 +192,21 @@
             "part": "rack_module",
             "module_type": "fan40"
         },
-        "modules/shelf": {
+        "modules/fan60": {
             "part": "rack_module",
-            "module_type": "shelf"
+            "module_type": "fan60"
+        },
+        "modules/fan80": {
+            "part": "rack_module",
+            "module_type": "fan80"
+        },
+        "modules/fan92": {
+            "part": "rack_module",
+            "module_type": "fan92"
+        },
+        "modules/fan120": {
+            "part": "rack_module",
+            "module_type": "fan120"
         },
         "modules/buttons": {
             "part": "rack_module",
