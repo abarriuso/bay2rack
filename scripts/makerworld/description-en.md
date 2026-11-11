@@ -21,10 +21,11 @@ Source and docs: https://github.com/abarriuso/bay2rack
   an exact 5.25" bezel and a 6-port patch panel.
 - **Fillers** for the strip: 6 keystones, vents, blank.
 - **Rack modules** (1U): Mercusys MS105G switch, UniFi Flex Mini, UniFi Express, JetKVM + NanoKVM, Raspberry Pi 5,
-  three 40 mm fans, 6-port patch panel, power / reset buttons with MX switches. **2U**: four Raspberry Pi on edge.
-  In the web configurator too: a **NanoKVM Lite bay** (standing out of the case, in a drawer, or behind a keystone),
-  a shelf, labels, and trays for your own devices.
-- **Bezel without a rack**: 80 mm fan + power / reset buttons, for the other PCs of the homelab.
+  three 40 mm fans, 6-port patch panel, power / reset buttons with MX switches. **2U**: four Raspberry Pi on edge,
+  two 60 mm fans, one 80 mm fan. **3U**: one 92 mm or 120 mm fan.
+  In the web configurator too: a **NanoKVM Lite bay** (standing outside the case, or inside it behind a keystone),
+  labels, and trays for your own devices.
+- **Bezels without a rack**: 80 or 120 mm fan, power / reset buttons, vents, for the other PCs of the homelab.
 - **Keystone covers** (blank and cable pass-through) and **PCI-slot brackets** to bring the cables in from the back.
 - **Test pieces**: print these first and check them against your case. If the keystone jack, the sleeve or an insert comes out tight or loose, change it in the "Adjust after the test prints" step of the web configurator before printing the rest.
 

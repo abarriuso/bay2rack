@@ -5,6 +5,36 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Simpler module list:
+  - Removed the 1U shelf (`shelf`): the device trays (`dev1`, `dev2`, `kvm`, `pi`) cover what it held.
+  - The NanoKVM Lite bay keeps two versions: `nkvm:side`, standing outside the case in its little mountain, and
+    `nkvm:ks`, inside the case with its network port at a keystone (1 or 2). The drawer (`nkvm:front`) and the
+    pocket in the plate (`nkvm_raised = false`) are gone, with `nkvm_raised`, `nkvm_cover` and `nkvm_vents`.
+- Fans of every common size: 40 mm (up to three in 1U), 60 mm (two in 2U), 80 mm (2U), 92 mm and 120 mm (3U), as
+  rack modules (`fan60` ... `fan120`, they take the units they need) and as fills of the spare strip or of a bezel
+  (a 120 mm bezel needs three bays). `fan40_count` becomes `fan_count`: each place takes as many fans as fit, up
+  to it. Round openings or a hex grille (`fan_guard`) for every size; the bill of materials lists the fan screws.
+  New STLs: `stl/modules/fan60` ... `fan120`, `stl/bezels/3bay-fan120`.
+- Web, motion in the configurator (only transform and opacity, nothing running while idle, off with "reduce
+  motion"): the camera glides to a view instead of jumping and comes in turning the first time, a new result
+  settles into place, the steps glide to their new places and come in one after another, pressed controls give,
+  a folded step unfolds, a line runs along the 3D view while it works, the kit button nudges when its count changes.
+- Web, wording: "front bays" instead of 5.25" bays (the measure stays in the glossary and in what search engines read).
+- Scroll film (work in progress): `scripts/blender/scroll.py` renders the rack coming apart for a film the page
+  will play with the scroll, in a dark and a light version.
+- MakerWorld print profiles: `scripts/bambu_profiles.py` builds Bambu Studio projects (A1 mini bed, 0.20 mm, PETG)
+  with the pieces on named plates - the 3-bay kit (tests first, adapter, patch panel, fillers, PCI brackets) and
+  every rack module on its own plate - and slices every plate with Bambu Studio itself, the test MakerWorld runs.
+  The MakerWorld package lists the new fan modules and the 120 mm bezel; its script finds OpenSCAD like the others.
+- Web: "How it works" in the menu goes to the three steps and "Configure" straight to the configurator (both went
+  to the same place); jumping to the configurator no longer leaves it cut at the bottom (the header was counted
+  twice). On phones the choice cards of the steps are rows (picture, name, its line) instead of three narrow columns.
+- CI: the model tests run when the ready-made builds change (the workflow watched `main.js`, they live in
+  `examples.js`).
+- Web: the footer no longer leaves an empty band under it (the hidden texts of the steps reached past it), and its
+  credits say which licence is whose (OpenSCAD GPL-3.0; model, STLs and site CC BY-NC-SA 4.0) with a link to the
+  source. The module picker says how many free units a 2U / 3U module needs.
+
 - Consistency pass:
   - Each ready-made build names the case of its gallery picture, so loading it shows the same PC (the configurator
     used to pick the smallest case that fits: 5 of 8 showed another one). The router and homelab builds show their

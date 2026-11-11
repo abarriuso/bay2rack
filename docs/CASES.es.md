@@ -25,8 +25,8 @@ son dos minutos. Si puedes, imprime antes la pieza de prueba de la bahía (`test
    caja de frontal hondo, los paneles de rack de 152,4 mm chocan con el hueco de 148 mm.
 6. **¿Tiene puerta?** Los montajes que sobresalen salen unos mm y la bahía NanoKVM en montañita unos 19 mm: comprueba
    que la puerta cierra, o usa un montaje dentro de las bahías.
-7. **Fondo.** Las guías entran 62 mm en las bahías y las bandejas tanto como sus aparatos (el switch unos 70 mm, el
-   estante 100 mm): comprueba que detrás de las bahías no estorba nada (cables, un radiador, el borde de la placa).
+7. **Fondo.** Las guías entran 62 mm en las bahías y las bandejas tanto como sus aparatos (el switch unos 70 mm, la
+   bandeja de Raspberry Pi unos 100 mm): comprueba que detrás de las bahías no estorba nada (cables, un radiador, el borde de la placa).
 
 ## Cajas reportadas
 

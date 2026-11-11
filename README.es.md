@@ -82,13 +82,13 @@ Usa el frontal plano cuando el frontal de tu caja sea plano a la altura de las b
 frontal de plástico que sobresale de la chapa, usa el bisel y ajusta `bezel_depth` a lo que sobresale ese frontal.
 
 Otros ajustes: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split)
-y el relleno de la franja libre (`keystone`, `buttons`, `vent`, `cable`, `label`, `fan40`, `fan80` o `blank`).
+y el relleno de la franja libre (`keystone`, `buttons`, `vent`, `cable`, `label`, `fan40`, `fan60`, `fan80`, `fan92`, `fan120` o `blank`).
 El relleno puede ser `separate` (panel atornillado en el mismo plano que los accesorios) o `integral` (cortado en el marco).
 
 ## Módulos de rack
 
-`rack_modules` indica qué va en cada U del rack, de arriba abajo. Cada módulo es una pieza aparte (de 1U; los blades
-de 2U) que se atornilla a los agujeros del rack:
+`rack_modules` indica qué va en cada U del rack, de arriba abajo. Cada módulo es una pieza aparte (de 1U; los blades y los ventiladores
+de 60 / 80 mm de 2U, los de 92 / 120 mm de 3U) que se atornilla a los agujeros del rack:
 
 | Módulo | |
 |---|---|
@@ -97,18 +97,17 @@ de 2U) que se atornilla a los agujeros del rack:
 | `kvm:jet+nano` | **Bandeja de KVM por IP**: de 1 a 3 cajas a elegir una al lado de otra (`jet` JetKVM, `nano` NanoKVM, `custom`), p. ej. `kvm:nano+nano`; avisa si no caben |
 | `pi:pi5` | **Bandeja de Raspberry Pi**: Pi 5 / 4 / 3 o Zero en plano sobre separadores M2,5, USB y Ethernet por delante; dos placas una al lado de otra con HAT PoE |
 | `piblade:pi5+pi5+pi5+pi5` | **Blades de Raspberry Pi de 2U**: hasta cuatro placas de canto, cada una en su aleta, con separadores que se imprimen sin soportes |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **Bahía NanoKVM Lite** en tres piezas (`ks`: dos), con tapa sobre insertos térmicos M3 y el disipador al aire. `side`: de pie, fuera de la caja en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos (`nkvm_raised`; desactivado = metido en el frontal). `front`: un cajón con el puerto de red en su frontal que sale por delante con el NanoKVM (dos tornillos), con hasta dos keystones al lado. `ks`: la red llega al keystone 1 y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`). `nkvm_split = false` imprime el frontal y la bahía en una sola pieza |
+| `nkvm:side` / `nkvm:ks` | **Bahía NanoKVM Lite** con tapa sobre insertos térmicos M3 y el disipador al aire. `side`, **fuera de la caja**: de pie en una montañita, con los puertos abiertos a los lados para enchufar desde fuera; los cables van por fuera o hacia dentro por las ranuras de los extremos; tres piezas (frontal, montañita, tapa), `nkvm_split = false` imprime el frontal y la montañita en una. `ks`, **dentro de la caja**: la red sale por el keystone 1 (`nkvm_keystones = 2` añade un segundo) y el NanoKVM va tumbado justo detrás, con un latiguillo recto de 10 cm (`nkvm_patch`); dos piezas |
 | `dev1`, `dev2` | Bandeja a medida para cualquier dispositivo: indica su ancho, alto y fondo |
-| `fan40` | Panel de 1U con hasta tres **ventiladores de 40 mm** tras aberturas redondas o una rejilla hexagonal (`fan_guard`) |
-| `shelf` | Estante con ranuras para bridas para dispositivos pequeños |
+| `fan40`, `fan60`, `fan80`, `fan92`, `fan120` | **Paneles de ventiladores**: hasta tres de 40 mm en 1U, dos de 60 mm o uno de 80 mm en 2U, uno de 92 mm o de 120 mm en 3U, tras aberturas redondas o una rejilla hexagonal (`fan_guard`); `fan_count` limita cuántos van lado a lado |
 | `patch` | Patch panel de 1U con los puertos que elijas: `patch` a secas usa `ks_ports_list` / `ks_names`, `patch:rj45m=NAS+hdmi+cover` lleva los suyos (tipo de puerto, `=` su nombre, `_` para un espacio) |
 | `buttons` | Botonera de 1U (ver abajo) |
 | `vent`, `blank`, `cable`, `label` | Paneles de ventilación (ranuras, lamas, panal o agujeros), paneles ciegos, pasacables y de etiqueta (`label` pone `label_text`, `label:MI_LAB` su propio texto) |
 
-Un módulo puede ocupar más de una U (los blades ocupan 2U): el rack se llena desde arriba y un módulo que ya no cabe
+Un módulo puede ocupar más de una U (los blades y los ventiladores grandes): el rack se llena desde arriba y un módulo que ya no cabe
 se convierte en un panel ciego.
 
-![Soporte del switch, bandeja y tapa pasacables](docs/img/modules.png)
+![Soporte del switch y tapa pasacables de keystone](docs/img/modules.png)
 
 ## Keystones
 
@@ -155,7 +154,7 @@ Tres diseños de LED, todos imprimibles con la cara frontal sobre la cama:
   guía (con un nervio por dentro para que la pared no pierda rigidez), así que no hace falta doblarlos.
 - **Paredes laterales rígidas**: un labio interior en sus bordes superior e inferior y un redondeo hacia cada poste
   del rack, todo fuera de la abertura del rack.
-- Tornillos de bahía con inserto térmico o tuerca; las aberturas de ventilador de 80 y 40 mm son agujeros redondos o
+- Tornillos de bahía con inserto térmico o tuerca; las aberturas de ventilador (de 40 a 120 mm) son agujeros redondos o
   una rejilla hexagonal (`fan_guard`).
 
 ## Estándar de rack

@@ -19,9 +19,11 @@ from pathlib import Path
 
 from PIL import Image
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build import find_openscad  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "build" / "makerworld"
-OPENSCAD = r"C:\Program Files\OpenSCAD\openscad.com"
 
 # (published name, file in stl/)
 STLS = [
@@ -33,6 +35,7 @@ STLS = [
     ("filler-vent.stl", "plate-flush/3bay-2U/filler-vent.stl"),
     ("filler-blank.stl", "plate-flush/3bay-2U/filler-blank.stl"),
     ("bezel-3bay-fan80-buttons.stl", "bezels/3bay-buttons-fan80/adapter.stl"),
+    ("bezel-3bay-fan120.stl", "bezels/3bay-fan120/adapter.stl"),
     ("module-ms105g.stl", "modules/ms105g.stl"),
     ("module-unifi-flex-mini.stl", "modules/uswflex.stl"),
     ("module-unifi-express.stl", "modules/ux.stl"),
@@ -40,6 +43,10 @@ STLS = [
     ("module-raspberry-pi5.stl", "modules/pi5.stl"),
     ("module-raspberry-pi-blades-2U.stl", "modules/piblade-x4.stl"),
     ("module-fans-40mm.stl", "modules/fan40.stl"),
+    ("module-fans-60mm-2U.stl", "modules/fan60.stl"),
+    ("module-fan-80mm-2U.stl", "modules/fan80.stl"),
+    ("module-fan-92mm-3U.stl", "modules/fan92.stl"),
+    ("module-fan-120mm-3U.stl", "modules/fan120.stl"),
     ("module-patch6.stl", "modules/patch6.stl"),
     ("module-buttons.stl", "modules/buttons.stl"),
     ("keystone-cover.stl", "covers/keystone-blank.stl"),
@@ -147,7 +154,7 @@ def triangles(path):
 def check(scad):
     """The one-file model must give the same adapter as the repo."""
     stl = OUT / "_check.stl"
-    r = subprocess.run([OPENSCAD, "-o", str(stl), str(scad)], capture_output=True, text=True)
+    r = subprocess.run([find_openscad(), "-o", str(stl), str(scad)], capture_output=True, text=True)
     if r.returncode or not stl.exists():
         sys.exit("OpenSCAD failed on the flattened file:\n" + r.stderr[-2000:])
     got, want = triangles(stl), triangles(ROOT / "stl/plate-flush/3bay-2U/adapter.stl")
@@ -181,4 +188,5 @@ def main():
     print(f"{len(STLS)} STL, {len(IMAGES)} images -> {OUT}")
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -22,9 +22,10 @@ Código y documentación: https://github.com/abarriuso/bay2rack
 - **Rellenos** para la franja: 6 keystones, rejilla, ciego.
 - **Módulos de rack** (1U): switch Mercusys MS105G, UniFi Flex Mini, UniFi Express, JetKVM + NanoKVM, Raspberry Pi 5,
   tres ventiladores de 40 mm, patch panel de 6 puertos, botonera de encendido / reset con interruptores MX.
-  **2U**: cuatro Raspberry Pi de canto. En el configurador web también: una **bahía para NanoKVM Lite** (de pie
-  saliendo de la caja, en un cajón o detrás de un keystone), un estante, etiquetas y bandejas para tus aparatos.
-- **Bisel sin rack**: ventilador de 80 mm + botonera, para los demás PCs del homelab.
+  **2U**: cuatro Raspberry Pi de canto, dos ventiladores de 60 mm, uno de 80 mm. **3U**: un ventilador de 92 o de
+  120 mm. En el configurador web también: una **bahía para NanoKVM Lite** (de pie fuera de la caja, o dentro de
+  ella detrás de un keystone), etiquetas y bandejas para tus aparatos.
+- **Biseles sin rack**: ventilador de 80 o de 120 mm, botonera, rejilla, para los demás PCs del homelab.
 - **Tapas de keystone** (lisa y pasacables) y **soportes para ranuras PCI** para meter los cables por detrás.
 - **Piezas de prueba**: imprímelas primero y compruébalas con tu caja. Si el keystone, la funda o un inserto quedan justos u holgados, cámbialo en el paso «Ajustar tras imprimir las pruebas» del configurador web antes de imprimir el resto.
 

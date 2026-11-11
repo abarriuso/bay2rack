@@ -69,7 +69,7 @@ solo objeto con varias partes»; luego da a las letras el segundo filamento.
   lateral de la bahía. Mételos rectos para que esa pared no se abombe y comprueba después que el adaptador sigue
   entrando en las bahías. (Los M6 solo dejan 1,4 mm; el modelo lo avisa en una nota.)
 - **Insertos de la bahía:** dentro de las guías, en las torretas que quedan detrás de los agujeros laterales.
-- Módulos: los postes de la tapa y las torretas del cajón del NanoKVM (M3), los postes del soporte de la botonera
+- Módulos: los postes de la tapa del NanoKVM (M3), los postes del soporte de la botonera
   retro (M3).
 
 ## 5. Montaje
@@ -112,7 +112,7 @@ solo objeto con varias partes»; luego da a las letras el segundo filamento.
 | Un aparato entra justo en su bandeja | sube *Dispositivos en sus bandejas* (`mount_clear`) |
 | Los insertos del rack giran | baja *Agujero del inserto del rack* (`rack_insert_d`) |
 | Los agujeros de la bahía no coinciden | `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` (mide los tuyos) |
-| La puerta de la caja no cierra | un montaje que sobresale o la bahía NanoKVM en montañita: usa «Dentro de las bahías», o desactiva «Montañita» |
+| La puerta de la caja no cierra | un montaje que sobresale o la bahía NanoKVM en montañita: usa «Dentro de las bahías», o la bahía NanoKVM dentro de la caja («Dentro, por keystone») |
 
 Y luego cuéntanos qué tal: [informe de caja](https://github.com/abarriuso/bay2rack/issues/new?template=case-report.yml).
 Cada informe entra en la [lista de compatibilidad](CASES.md).

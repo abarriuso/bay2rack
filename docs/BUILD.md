@@ -65,7 +65,7 @@ letters the second filament.
   of the bay. Press them in straight so that wall does not bulge, then check that the adapter still slides into the
   bays. (M6 inserts leave only 1.4 mm; the model says so in a note.)
 - **Bay inserts:** inside the sleeve, in the bosses behind the case's side holes.
-- Modules: the NanoKVM lid posts and drawer bosses (M3), the retro button carrier posts (M3).
+- Modules: the NanoKVM lid posts (M3), the retro button carrier posts (M3).
 
 ## 5. Assemble
 
@@ -107,7 +107,7 @@ letters the second filament.
 | A device is tight in its tray | *Devices in their trays* (`mount_clear`) up |
 | Rack inserts spin | *Rack insert hole* (`rack_insert_d`) down |
 | Bay holes do not line up | `bay_hole_y1`, `bay_hole_z1`, `bay_hole_offset` (measure yours) |
-| The case door does not close | an overhang build or the raised NanoKVM bay sticks out: use flush, or `nkvm_raised` off |
+| The case door does not close | an overhang build or the raised NanoKVM bay sticks out: use flush, or the NanoKVM bay inside the case (`nkvm:ks`) |
 
 Then tell us how it went: [case report](https://github.com/abarriuso/bay2rack/issues/new?template=case-report.yml).
 Every report goes into the [compatibility list](CASES.md).

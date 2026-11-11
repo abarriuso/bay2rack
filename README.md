@@ -81,13 +81,13 @@ Use the plate front when your case front is flat at the drive bays. If the case 
 stands out from the metal, use the bezel front and set `bezel_depth` to how far that front stands out.
 
 Other knobs: `units_override`, `overhang_align` (center/top/bottom), `spare_pos` (top/bottom/split),
-and the spare-zone fill (`keystone`, `buttons`, `vent`, `cable`, `label`, `fan40`, `fan80`, `blank`).
+and the spare-zone fill (`keystone`, `buttons`, `vent`, `cable`, `label`, `fan40`, `fan60`, `fan80`, `fan92`, `fan120`, `blank`).
 The fill can be `separate` (a screw-on panel in the same plane as the rack accessories) or `integral` (cut into the frame).
 
 ## Rack modules
 
-`rack_modules` lists what goes in every rack unit, top first. Every module is a separate print (1U; the blades 2U)
-that screws to the rack holes:
+`rack_modules` lists what goes in every rack unit, top first. Every module is a separate print (1U; the blades and the 60 / 80 mm fans 2U,
+the 92 / 120 mm fans 3U) that screws to the rack holes:
 
 | Module | |
 |---|---|
@@ -96,18 +96,17 @@ that screws to the rack holes:
 | `kvm:jet+nano` | **KVM over IP tray**: 1 to 3 boxes of your choice side by side (`jet` JetKVM, `nano` NanoKVM, `custom`), e.g. `kvm:nano+nano`; it warns when they don't fit |
 | `pi:pi5` | **Raspberry Pi tray**: Pi 5 / 4 / 3 or Zero flat on M2.5 standoffs, USB and Ethernet through the front; two boards side by side with PoE HATs |
 | `piblade:pi5+pi5+pi5+pi5` | **2U Raspberry Pi blades**: up to four boards on edge, each on its own fin, standoffs that print without supports |
-| `nkvm:side` / `nkvm:front` / `nkvm:ks` | **NanoKVM Lite bay** in three pieces (`ks`: two) with a lid on M3 heat-set inserts, the heatsink in the open. `side`: standing out of the case in a little mountain, its ports open at both sides so you plug in from outside; the cables run outside or into the case through slots at the ends (`nkvm_raised`; off = in a pocket of the plate). `front`: a drawer with the Ethernet port in its face that slides out of the front with the NanoKVM (two screws), up to two keystones beside it. `ks`: the Ethernet port comes to keystone 1, the NanoKVM flat right behind it with a straight 10 cm patch cable (`nkvm_patch`). `nkvm_split = false` prints the plate and the bay in one piece |
+| `nkvm:side` / `nkvm:ks` | **NanoKVM Lite bay** with a lid on M3 heat-set inserts, the heatsink in the open. `side`, **outside the case**: standing in a little mountain, its ports open at both sides so you plug in from outside; the cables run outside or into the case through slots at the ends; three pieces (plate, mountain, lid), `nkvm_split = false` prints the plate and the mountain in one. `ks`, **inside the case**: the Ethernet port comes out at keystone 1 (`nkvm_keystones = 2` adds a second one), the NanoKVM flat right behind it with a straight 10 cm patch cable (`nkvm_patch`); two pieces |
 | `dev1`, `dev2` | A made-to-measure tray for any device: set its width, height and depth |
-| `fan40` | 1U panel with up to three **40 mm fans** behind round openings or a hex grille (`fan_guard`) |
-| `shelf` | Shelf with zip-tie slots for small devices |
+| `fan40`, `fan60`, `fan80`, `fan92`, `fan120` | **Fan panels**: up to three 40 mm fans in 1U, two 60 mm or one 80 mm in 2U, one 92 mm or 120 mm in 3U, behind round openings or a hex grille (`fan_guard`); `fan_count` caps how many go side by side |
 | `patch` | 1U patch panel with the ports you choose: a bare `patch` takes `ks_ports_list` / `ks_names`, `patch:rj45m=NAS+hdmi+cover` has its own (port type, `=` its name, `_` for a space) |
 | `buttons` | 1U button panel (see below) |
 | `vent`, `blank`, `cable`, `label` | Vented (slots, louvres, honeycomb or holes), blank, cable pass-through and label panels (`label` says `label_text`, `label:MY_LAB` its own text) |
 
-A module can take more than one unit (the blades take 2U): the rack is filled from the top and a module that no
+A module can take more than one unit (the blades and the bigger fans): the rack is filled from the top and a module that no
 longer fits becomes a blank.
 
-![Switch mount, shelf and pass-through cover](docs/img/modules.png)
+![Switch mount and keystone pass-through cover](docs/img/modules.png)
 
 ## Keystones
 
@@ -154,7 +153,7 @@ Three LED designs, all printable front face down:
   its strength), so you don't have to bend them flat.
 - **Stiff side walls**: an inner lip along their top and bottom edges and a fillet into each rack post, all outside
   the rack opening.
-- Bay screws, heat-set inserts or nuts; the 80 mm and 40 mm fan openings are round holes or a hex grille
+- Bay screws, heat-set inserts or nuts; the fan openings (40 to 120 mm) are round holes or a hex grille
   (`fan_guard`).
 
 ## Rack standard

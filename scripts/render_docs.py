@@ -5,7 +5,8 @@ Each view is rendered by OpenSCAD at 2x into build/render/, cropped to its conte
 downscaled (anti-aliasing) and laid out as captioned cards on a few sheets.
 Needs OpenSCAD and Pillow (pip install pillow).
 
-Usage: python scripts/render_docs.py
+Usage: python scripts/render_docs.py               # every sheet
+       python scripts/render_docs.py modules.png   # only these sheets (and their views)
 """
 import os
 import subprocess
@@ -44,10 +45,6 @@ VIEWS = {
     "hw-row":          ("0,0,0,60,0,-25,0", "1200,900", True, {"section": "rack_row"}),
     "hw-column":       ("0,0,0,75,0,60,0", "1200,900", True, {"section": "rack_column"}),
     "mod-ms105g":      ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "ms105g"}),
-    "mod-shelf":       ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "shelf"}),
-    "mod-kvm":         ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "kvm:jet+nano"}),
-    "mod-pi":          ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "pi:pi5"}),
-    "mod-nkvm":        ("0,0,0,55,0,25,0", "1200,900", True, {"part": "rack_module", "module_type": "nkvm:side"}),
     "ks-front":        ("0,0,0,90,0,0,0", "1200,900", True, {"part": "rack_panel", "print_orientation": False}),
     "ks-back":         ("0,0,0,62,0,200,0", "1200,900", True, {"part": "rack_panel", "print_orientation": False}),
     "ks-cut":          ("0,0,0,90,0,90,0", "1200,900", True, None),     # special: cut-open coupon
@@ -66,11 +63,7 @@ SHEETS = {
                          ("bo-3", "bezel-overhang · 3 bays · 3U")]),
     "mounted.png":  (2, [("mounted-bezel", "exact 5.25\" bezel · flush with the case front"),
                          ("mounted-1bay", "1 bay · patch panel bezel")]),
-    "modules.png":  (3, [("mod-ms105g", "Mercusys MS105G mount"),
-                         ("mod-kvm", "KVM over IP tray · JetKVM + NanoKVM"),
-                         ("mod-pi", "Raspberry Pi tray"),
-                         ("mod-nkvm", "NanoKVM bay · standing, lid apart"),
-                         ("mod-shelf", "1U shelf (NanoKVM, Pi...)"),
+    "modules.png":  (2, [("mod-ms105g", "Mercusys MS105G mount"),
                          ("cover-pass", "keystone pass-through cover")]),
     "buttons.png":  (3, [("btn-ring", "MX keys · LED ring"),
                          ("btn-halo", "MX keys · halo"),
@@ -185,13 +178,14 @@ def main():
     RAW.mkdir(parents=True, exist_ok=True)
     IMG.mkdir(parents=True, exist_ok=True)
     openscad = find_openscad()
+    sheets = {k: v for k, v in SHEETS.items() if k in sys.argv[1:]} or SHEETS
+    need = {name for _, items in sheets.values() for name, _ in items}
     with ThreadPoolExecutor(max_workers=os.cpu_count() or 4) as pool:
-        for name, ok in pool.map(lambda kv: render(openscad, *kv), VIEWS.items()):
+        for name, ok in pool.map(lambda kv: render(openscad, *kv), [kv for kv in VIEWS.items() if kv[0] in need]):
             if not ok:
                 print(f"  FAIL  render {name}")
-    for old in IMG.glob("*.png"):
-        old.unlink()
-    for filename, (cols, items) in SHEETS.items():
+    # (each sheet overwrites its file; docs/img also keeps the icons and the photos, never delete there)
+    for filename, (cols, items) in sheets.items():
         sheet(filename, cols, items)
         print(f"  ok    docs/img/{filename}")
 

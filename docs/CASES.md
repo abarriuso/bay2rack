@@ -24,7 +24,7 @@ for a plate front, `stl/tests/bay-bezel.stl` for a bezel front).
 6. **A front door?** Overhang builds stick out a few mm and the raised NanoKVM bay about 19 mm: check the door closes,
    or use a flush build.
 7. **Depth.** The sleeve goes 62 mm into the bays and the trays as deep as their devices (the switch about 70 mm,
-   the shelf 100 mm): check nothing (cables, a radiator, the top of the motherboard) is in the way behind the bays.
+   the Raspberry Pi tray about 100 mm): check nothing (cables, a radiator, the top of the motherboard) is in the way behind the bays.
 
 ## Reported cases
 
