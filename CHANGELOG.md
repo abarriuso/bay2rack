@@ -20,8 +20,15 @@ on the photos and in the MakerWorld notes.
   settles into place, the steps glide to their new places and come in one after another, pressed controls give,
   a folded step unfolds, a line runs along the 3D view while it works, the kit button nudges when its count changes.
 - Web, wording: "front bays" instead of 5.25" bays (the measure stays in the glossary and in what search engines read).
-- Scroll film (work in progress): `scripts/blender/scroll.py` renders the rack coming apart for a film the page
-  will play with the scroll, in a dark and a light version.
+- The page opens with a film you play with the scroll (it replaces the hero video): a retro homelab, the rack in
+  close-up, its screws and cables coming off, the modules shooting out and hanging in the air while the camera
+  goes round them, the side of the tower opening for the bay screws, the adapter, the kit on the table. Each
+  stretch has its text, on the side the shot leaves free; a dark and a light version follow the theme; phones get
+  every second frame at 960 px with the subject kept in the middle; with "reduce motion" or data saving it is a
+  still and the texts. `scripts/blender/scroll.py` renders it, `scroll_encode.py` makes the frames (`docs/scroll/`).
+- 3D view: the NanoKVM bay shows its own screws (four through the lid, four from the back of the plate into the
+  mountain); the retro tower has its lock, lights, display and keys in a row under the bays, where the towers of
+  the 90s had them (they sat beside the bays, where a real case has no room).
 - MakerWorld print profiles: `scripts/bambu_profiles.py` builds Bambu Studio projects (A1 mini bed, 0.20 mm, PETG)
   with the pieces on named plates - the 3-bay kit (tests first, adapter, patch panel, fillers, PCI brackets) and
   every rack module on its own plate - and slices every plate with Bambu Studio itself, the test MakerWorld runs.

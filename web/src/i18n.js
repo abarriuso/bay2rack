@@ -21,6 +21,7 @@ export function applyI18n(root = document) {
   root.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
   root.querySelectorAll('[data-i18n-tip]').forEach((el) => { el.dataset.tip = t(el.dataset.i18nTip); });
   root.querySelectorAll('[data-i18n-aria]').forEach((el) => el.setAttribute('aria-label', t(el.dataset.i18nAria)));
+  root.querySelectorAll('[data-i18n-alt]').forEach((el) => { el.alt = t(el.dataset.i18nAlt); });
   root.querySelectorAll('[data-href-es]').forEach((el) => { el.href = lang === 'es' ? el.dataset.hrefEs : el.dataset.hrefEn; });
   if (root === document) {
     document.title = t('page_title');

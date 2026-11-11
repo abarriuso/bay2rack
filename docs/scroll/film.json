@@ -1,0 +1,75 @@
+{
+ "frames": 240,
+ "sizes": [
+  {
+   "dir": "1600",
+   "w": 1600,
+   "h": 900,
+   "step": 1
+  },
+  {
+   "dir": "960",
+   "w": 960,
+   "h": 540,
+   "step": 2
+  }
+ ],
+ "beats": [
+  {
+   "from": 1,
+   "to": 24,
+   "key": "homelab",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 25,
+   "to": 54,
+   "key": "rack",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 55,
+   "to": 88,
+   "key": "screws",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 89,
+   "to": 134,
+   "key": "modules",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 135,
+   "to": 164,
+   "key": "frozen",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 165,
+   "to": 206,
+   "key": "adapter",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 207,
+   "to": 228,
+   "key": "kit",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 229,
+   "to": 240,
+   "key": "build",
+   "side": "left",
+   "subject": 0.63
+  }
+ ]
+}

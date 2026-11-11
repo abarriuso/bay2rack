@@ -36,6 +36,21 @@ test('/es/ is Spanish, its scripts and images load from one folder up', async ({
   expect(errors).toEqual([]);
 });
 
+test('the film follows the scroll: each text comes in at its frames', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await expect(page.locator('.beat.on h1')).toHaveText('Bay2Rack');
+  await page.evaluate(() => {
+    const f = document.querySelector('#film');
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.offsetTop + (f.offsetHeight - innerHeight) * 0.45);
+  });
+  await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
+  await expect(page.locator('.beat.on')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
 test('a share page sends you to its build', async ({ page }) => {
   await page.goto('/m/router/');
   await page.waitForURL(/#.*rack_modules=/);

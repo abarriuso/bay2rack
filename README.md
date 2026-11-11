@@ -279,7 +279,9 @@ scripts/render_docs.py   README images
 scripts/test_models.py   model tests (CI)
 scripts/check_assemblies.py  every example and bays x fit x front assembly, no warnings (CI)
 scripts/makerworld.py    MakerWorld upload kit (scripts/makerworld/: the descriptions)
-scripts/blender/         hero film: hero.py (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF);
+scripts/blender/         the site's scroll film: scroll.py (the rack comes apart, a dark and a light version),
+                         scroll_encode.py (its frames for the page, docs/scroll/); the README film: hero.py
+                         (scene, materials, animation), encode.py (grade + MP4 / WebM / GIF);
                          product.py (the adapter shots in docs/img)
 web/                     browser viewer + generator (Cloudflare Pages, Vite + pnpm)
 stl/<family>/<variant>/  ready-to-print STLs, see stl/README.md

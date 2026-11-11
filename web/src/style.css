@@ -59,8 +59,8 @@
 /* each section fills the screen under the header; the page scrolls freely (no snapping, it tugged at the scroll) */
 html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); -webkit-text-size-adjust: 100%; }
 :root { --top-h: calc(57px + env(safe-area-inset-top, 0px)); }
-.hero-band, .band { min-height: min(calc(100svh - var(--top-h)), 1200px); display: grid; align-content: center; }
-.hero-band > *, .band > * { min-width: 0; width: 100%; }
+.band { min-height: min(calc(100svh - var(--top-h)), 1200px); display: grid; align-content: center; }
+.band > * { min-width: 0; width: 100%; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -126,30 +126,51 @@ button:disabled { opacity: .45; cursor: default; }
 .nav-link:hover { color: var(--ink); background: var(--plate); }
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-/* ------------------------------------------------------------ hero */
 /* the band takes the black of the film, so the video has no edge: the page opens into it */
-.hero-band {
-  --ground: #020203; --plate: #171b1e; --plate-2: #1d2226; --ink: #e8ebe9; --ink-2: #a7b0b6; --ink-3: #85909a;
-  --rule: #2a3135; --tape: #e8ebe9; --tape-ink: #111416;
-  background: var(--ground); color: var(--ink); color-scheme: dark;
+/* ------------------------------------------------------------ the scroll film
+   A tall section: its stage stays on screen while the page scrolls through it, film.js draws the frame of that
+   point and lights the text of that stretch. .plain (reduced motion, data saving, no frames): a still and the
+   texts one after another. The shots keep their subject to the right, so the text has the left. */
+.film { --film-bg: #020203; position: relative; height: 760svh; background: var(--film-bg); }
+:root[data-theme="light"] .film { --film-bg: #c9cbce; }
+.film-stage { position: sticky; top: var(--top-h); height: calc(100svh - var(--top-h)); overflow: hidden; }
+.film-still, .film-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 63% 50%; display: block; }
+.film-canvas { opacity: 0; }
+.film.live .film-canvas { opacity: 1; }
+.film-shade { position: absolute; inset: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--film-bg) 86%, transparent) 0%, color-mix(in srgb, var(--film-bg) 50%, transparent) 30%, transparent 52%); }
+.film-beats { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
+.beat {
+  position: absolute; top: 50%; left: max(var(--gutter), calc((100% - var(--page)) / 2 + var(--gutter)));
+  width: min(40ch, 34%); display: grid; gap: var(--s-3); color: var(--ink);
+  opacity: 0; transform: translateY(calc(-50% + 18px)); pointer-events: none;
+  transition: opacity .32s ease, transform .5s cubic-bezier(.2, .8, .2, 1);
 }
-/* text on the left, the film on the right (two thirds of the width) */
-.hero {
-  display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7.5fr); gap: clamp(28px, 3.5vw, 60px); align-items: center;
-  max-width: var(--page); margin: 0 auto; padding: clamp(28px, 4vw, 60px) var(--gutter) clamp(40px, 5vw, 76px);
-}
-.hero-copy { display: grid; gap: var(--s-4); align-content: center; min-width: 0; }
-.hero h1 {
-  font-size: clamp(2.3rem, 1rem + 3.3vw, 4.4rem); line-height: .95; font-weight: 820; font-stretch: 116%;
-  letter-spacing: -.03em; margin: var(--s-2) 0 0;
-}
-.hero .lead { font-size: clamp(1rem, .95rem + .25vw, 1.15rem); color: var(--ink-2); max-width: 52ch; margin: 0; }
+.beat.on { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
+.beat h1 { font-size: clamp(2.6rem, 1rem + 4vw, 5rem); line-height: .95; font-weight: 820; font-stretch: 116%; letter-spacing: -.03em; margin: 0; }
+.beat h2 { font-size: clamp(1.7rem, 1rem + 2vw, 2.9rem); line-height: 1.02; font-weight: 800; font-stretch: 112%; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.beat p { margin: 0; font-size: clamp(1rem, .95rem + .3vw, 1.2rem); color: var(--ink-2); text-wrap: pretty; }
+.film-hint { font: 500 12px/1.3 var(--f-mono); font-stretch: 87.5%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.film-hint::before { content: "↓ "; }
 .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--s-1); }
 .cta .btn { padding: 14px 20px; font-size: 16px; }
 .cta .btn.ghost { border-color: var(--ink); }
-.hero-media { margin: 0; min-width: 0; }
-.hero-stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--r); background: var(--ground); }
-.hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+/* how far through the film: a line along the foot of the stage */
+.film-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--signal); transform: scaleX(0); transform-origin: 0 50%; }
+.film.plain { height: auto; }
+.film.plain .film-stage { position: static; height: auto; overflow: visible; }
+.film.plain .film-still { position: static; height: auto; aspect-ratio: 16 / 9; }
+.film.plain .film-canvas, .film.plain .film-shade, .film.plain .film-bar, .film.plain .film-hint { display: none; }
+.film.plain .film-beats { position: static; display: grid; gap: var(--s-6); max-width: var(--page); margin: 0 auto; padding: var(--s-6) var(--gutter); }
+.film.plain .beat { position: static; width: auto; max-width: 60ch; opacity: 1; transform: none; pointer-events: auto; }
+/* a screen taller than 4:3 (a phone, a narrow window): the picture is cropped at its sides, film.js keeps the subject
+   in the middle and the text sits at the foot */
+@media (max-aspect-ratio: 4/3) {
+  .film-still { object-position: 50% 50%; }
+  .film-shade { background: linear-gradient(0deg, color-mix(in srgb, var(--film-bg) 94%, transparent) 0%, color-mix(in srgb, var(--film-bg) 66%, transparent) 36%, transparent 62%); }
+  .beat { top: auto; bottom: clamp(20px, 6svh, 56px); left: var(--gutter); right: var(--gutter); width: auto; max-width: 46ch; transform: translateY(18px); }
+  .beat.on { transform: none; }
+  .film.plain .beat { transform: none; }
+}
 
 /* cable colour key (hero and configurator) */
 .legend {
@@ -594,8 +615,6 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* ------------------------------------------------------------ tablet */
 @media (max-width: 1080px) {
-  .hero { grid-template-columns: minmax(0, 1fr); }
-  .hero-copy { max-width: 760px; }
   .why { grid-template-columns: minmax(0, 1fr); }
   .gallery { grid-auto-columns: clamp(260px, 44%, 420px); }
 }
@@ -643,11 +662,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* ------------------------------------------------------------ phone */
 @media (max-width: 760px) {
-  /* phone: title and text, then the film, then the buttons under it */
-  .hero { padding-top: var(--s-4); gap: var(--s-4); }
-  .hero-copy { display: contents; }
-  .cta { order: 1; margin-top: 0; }
-  .hero-stage { border-radius: 4px; }
+  .film { height: 620svh; }
   .cta .btn { flex: 1 1 auto; justify-content: center; }
 }
 @media (max-width: 600px) {
@@ -658,7 +673,6 @@ button:disabled { opacity: .45; cursor: default; }
   .card-btn:has(> .ico) { grid-template-columns: 56px minmax(0, 1fr); }
   .card-btn > .ico { grid-row: 1 / span 2; width: 56px; height: 38px; }
   .top-actions .btn.small { display: none; }
-  .hero-stage .legend { display: none; }
   .legend { font-size: 10px; padding: 6px 8px; gap: 2px; }
   .gallery { grid-auto-columns: 82%; }
   .param { grid-template-columns: minmax(0, 1fr) 128px; }

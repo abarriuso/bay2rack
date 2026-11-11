@@ -23,15 +23,8 @@ copy(join(wasm, 'LICENSES'), 'openscad/LICENSES');
 copy(join(repo, 'docs', 'img', 'og.jpg'), 'img/og.jpg');
 for (const n of [192, 512]) copy(join(repo, 'docs', 'img', `icon-${n}.png`), `img/icon-${n}.png`);
 if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'), 'img/gallery');
-// the hero film (the GIFs next to it are for the README only)
-for (const f of ['hero.mp4', 'hero.webm', 'hero-960.mp4', 'hero-960.webm', 'hero.webp'])
-  if (existsSync(join(repo, 'docs', 'video', f))) copy(join(repo, 'docs', 'video', f), `video/${f}`);
-// the film has no sound: its one caption says so and what it shows
-writeFileSync(join(pub, 'video', 'hero.vtt'), `WEBVTT
-
-00:00.000 --> 00:30.000
-[No sound] An old beige PC opens: inside is a modern server, and its 5.25" bays become a rack.
-`);
+// the scroll film: its frames (scripts/blender/scroll_encode.py) and what frames each text belongs to
+if (existsSync(join(repo, 'docs', 'scroll'))) copy(join(repo, 'docs', 'scroll'), 'scroll');
 
 // Cloudflare Pages headers: the hashed bundles never change; OpenSCAD only with a new release (a week, then checked
 // again in the background); the film and the images a day; the model and the STLs keep the default, so a push shows
@@ -46,7 +39,7 @@ writeFileSync(join(pub, '_headers'), `/*
   Cache-Control: public, max-age=31536000, immutable
 /openscad/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
-/video/*
+/scroll/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 /img/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
@@ -114,7 +107,7 @@ self.addEventListener('activate', (e) => e.waitUntil((async () => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.includes('/video/')) return;
+  if (req.method !== 'GET' || url.origin !== location.origin || url.pathname.includes('/scroll/')) return;
   const scope = new URL(self.registration.scope).pathname;
   const path = url.pathname.slice(scope.length);
   // the engine and the hashed scripts never change under the same name: the cache first

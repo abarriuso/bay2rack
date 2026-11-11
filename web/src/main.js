@@ -17,7 +17,8 @@ import { buildAdvanced } from './tabs.js';
 import { hashString, shortHash, readHash } from './hash.js';
 import { schedule, render, showEchoes } from './render.js';
 import { downloadKit } from './kit.js';
-import { wireHeroVideo, wireGallery, renderGallery, renderBayTable } from './gallery.js';
+import { wireGallery, renderGallery, renderBayTable } from './gallery.js';
+import { startFilm } from './film.js';
 
 // ---------------------------------------------------------------- chrome
 function applyTheme(th) {
@@ -44,7 +45,6 @@ function wire() {
     refresh();
     renderGallery();
     renderBayTable();
-    heroRelabel?.();
     if (S.lastEcho) showEchoes(...S.lastEcho);
     renderLegend($('#legend'), S.lastScene ?? null);
   };
@@ -119,7 +119,6 @@ function wire() {
   });
 }
 
-let heroRelabel = null;
 
 async function boot() {
   // dev only: the state for the console, and saving a build as GLB for the Blender video (docs/blender/)
@@ -154,7 +153,7 @@ async function boot() {
   renderGallery();
   wireGallery();
   renderBayTable();
-  heroRelabel = wireHeroVideo();
+  startFilm();
   // installable, and offline after the first visit (the service worker is only in the built site)
   if ('serviceWorker' in navigator && !import.meta.env.DEV)
     addEventListener('load', () => navigator.serviceWorker.register(BASE + 'sw.js').catch(() => {}), { once: true });

@@ -14,7 +14,7 @@ const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'mod
 const liveRepoFiles = () => ({
   name: 'bay2rack-live-files',
   configureServer(server) {
-    for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl'], ['/img/gallery/', 'docs/gallery'], ['/video/', 'docs/video']]) {
+    for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl'], ['/img/gallery/', 'docs/gallery'], ['/scroll/', 'docs/scroll']]) {
       server.middlewares.use(url, (req, res, next) => {
         const file = normalize(join(repo, dir, decodeURIComponent(req.url.split('?')[0])));
         if (!file.startsWith(join(repo, dir)) || !existsSync(file) || !statSync(file).isFile()) return next();

@@ -5,30 +5,7 @@ import { BASE, GALLERY, USES, $, h, S } from './state.js';
 import { calc, usedMods } from './model.js';
 import { applyExample } from './steps.js';
 
-// ---------------------------------------------------------------- hero + gallery
-// the hero film: its still is what you see first; the film loads after the page (960 px on phones, 1.1 MB instead
-// of 3.4), plays while on screen, and stays a still for reduced motion or data saving
-export function wireHeroVideo() {
-  const video = $('#heroVideo');
-  const label = () => video.setAttribute('aria-label', t('hero_video_label'));
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData;
-  const start = () => {
-    if (matchMedia('(max-width: 900px)').matches)
-      for (const s of video.querySelectorAll('source')) s.src = s.src.replace(/hero\.(webm|mp4)$/, 'hero-960.$1');
-    video.preload = 'auto';
-    video.autoplay = true;                              // (a play() right after load() can be dropped)
-    video.load();
-    new IntersectionObserver(([e]) => { if (e.isIntersecting) video.play().catch(() => {}); else video.pause(); })
-      .observe(video);
-  };
-  if (!still) {
-    if (document.readyState === 'complete') setTimeout(start, 300);
-    else addEventListener('load', () => setTimeout(start, 300), { once: true });
-  }
-  label();
-  return label;
-}
-
+// ---------------------------------------------------------------- gallery
 // one line of facts for a build: bays, rack units and what fills the strip
 export function buildSpec(k) {
   const v = { ...S.defaults, ...EXAMPLES[k] };
