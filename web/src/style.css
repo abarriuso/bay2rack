@@ -1,56 +1,53 @@
 /* bay2rack site
-   Simple, and the colours of its film: the cream plastic of a 90s tower and the black of its inside, with the red
-   of its little display as the only accent (links, focus, the numbers of the steps). Light theme: the case closed.
-   Dark theme: the case open. Flat surfaces, thin rules, no ornaments; four blocks: film, builds, configurator, foot. */
+   Clean and bold. Pure white or pure black, square corners, hairlines, one accent (the red of the tower's display:
+   links, focus, the numbers of the steps); what is on or pressed is the black key (the white one in the dark). The
+   colour is in the film. Headings are very large and set wide; everything shares the edges of the configurator. */
 :root {
-  --ground: #e6dfcd;        /* the plastic of the case */
-  --plate: #f0eadb;         /* panels */
-  --plate-2: #dcd4bf;       /* recesses */
-  --ink: #1e1b16;
-  --ink-2: #4a4439;
-  --ink-3: #635c4e;
-  --rule: #c4baa2;
-  --signal: #b3261b;        /* the red of the display */
-  --key: #1e1b16;           /* what you press: the main button, the choice that is on */
-  --key-ink: #f0eadb;
-  --tape: #1e1b16;
-  --tape-ink: #f0eadb;
-  --ok: #146c33;
-  --warn: #7d4f00;
-  --note: #5a5446;
-  --stage: #d6cdb8;
-  --tip-bg: #1e1b16;
-  --tip-ink: #f0eadb;
-  --shadow: 0 1px 0 rgba(30, 27, 22, .04), 0 18px 40px -24px rgba(30, 27, 22, .45);
+  --ground: #ffffff;
+  --plate: #f6f6f6;         /* panels */
+  --plate-2: #ececec;       /* recesses */
+  --ink: #0a0a0a;
+  --ink-2: #404040;
+  --ink-3: #6b6b6b;
+  --rule: #dcdcdc;
+  --signal: #d81f12;        /* the red of the display */
+  --key: #0a0a0a;           /* what you press: the main button, the choice that is on */
+  --key-ink: #ffffff;
+  --tape: #0a0a0a;
+  --tape-ink: #ffffff;
+  --ok: #0f7a37;
+  --warn: #8a5200;
+  --note: #595959;
+  --stage: #efefef;
+  --tip-bg: #0a0a0a;
+  --tip-ink: #ffffff;
+  --shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 18px 40px -24px rgba(0, 0, 0, .45);
 
   --f-display: "Archivo Variable", "Archivo", "Arial Narrow", system-ui, sans-serif;
   --f-body: "Archivo Variable", "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "Martian Mono Variable", "Martian Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
-  --r: 6px;
-  --r-s: 3px;
-  --measure: 1200px;
-  --page: 1640px;                 /* the wide frame: header, film and configurator share its edges */
+  --r: 0px;
+  --r-s: 0px;
+  --page: 1640px;                 /* the one frame: header, film, builds, configurator and foot share its edges */
   --gutter: clamp(16px, 4vw, 40px);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --ground: #0c0b09; --plate: #151310; --plate-2: #1d1a16; --ink: #ebe3cf; --ink-2: #b6ad98; --ink-3: #8f8775;
-    --rule: #2f2a23; --signal: #ff6a5c;
-    --key: #e6dfcd; --key-ink: #1e1b16; --tape: #e6dfcd; --tape-ink: #1e1b16;
-    --ok: #4ade80; --warn: #f2b84b; --note: #a39b88; --stage: #12100e;
-    --tip-bg: #ebe3cf; --tip-ink: #1e1b16; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
+    --ground: #000000; --plate: #0b0b0b; --plate-2: #161616; --ink: #f5f5f5; --ink-2: #b3b3b3; --ink-3: #8a8a8a;
+    --rule: #262626; --signal: #ff4b3e; --key: #f5f5f5; --key-ink: #0a0a0a; --tape: #f5f5f5; --tape-ink: #0a0a0a;
+    --ok: #4ade80; --warn: #f2b84b; --note: #a3a3a3; --stage: #0a0a0a;
+    --tip-bg: #f5f5f5; --tip-ink: #0a0a0a; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --ground: #0c0b09; --plate: #151310; --plate-2: #1d1a16; --ink: #ebe3cf; --ink-2: #b6ad98; --ink-3: #8f8775;
-  --rule: #2f2a23; --signal: #ff6a5c;
-  --key: #e6dfcd; --key-ink: #1e1b16; --tape: #e6dfcd; --tape-ink: #1e1b16;
-  --ok: #4ade80; --warn: #f2b84b; --note: #a39b88; --stage: #12100e;
-  --tip-bg: #ebe3cf; --tip-ink: #1e1b16; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
+  --ground: #000000; --plate: #0b0b0b; --plate-2: #161616; --ink: #f5f5f5; --ink-2: #b3b3b3; --ink-3: #8a8a8a;
+  --rule: #262626; --signal: #ff4b3e; --key: #f5f5f5; --key-ink: #0a0a0a; --tape: #f5f5f5; --tape-ink: #0a0a0a;
+  --ok: #4ade80; --warn: #f2b84b; --note: #a3a3a3; --stage: #0a0a0a;
+  --tip-bg: #f5f5f5; --tip-ink: #0a0a0a; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
   color-scheme: dark;
 }
 
@@ -121,7 +118,7 @@ button:disabled { opacity: .45; cursor: default; }
   border-bottom: 1px solid var(--rule);
 }
 .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; flex: none; }
-.wordmark { font: 800 20px/1 var(--f-display); font-stretch: 118%; letter-spacing: -.01em; }
+.wordmark { font: 850 20px/1 var(--f-display); font-stretch: 125%; letter-spacing: -.03em; text-transform: uppercase; }
 .nav { display: flex; gap: 2px; margin-left: var(--s-4); }
 .nav-link { text-decoration: none; color: var(--ink-2); font-weight: 550; font-size: 15px; padding: 6px 10px; border-radius: var(--r-s); }
 .nav-link:hover { color: var(--ink); background: var(--plate); }
@@ -142,14 +139,14 @@ button:disabled { opacity: .45; cursor: default; }
 .film-beats { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; }
 .beat {
   position: absolute; top: 50%; left: max(var(--gutter), calc((100% - var(--page)) / 2 + var(--gutter)));
-  width: min(40ch, 34%); display: grid; gap: var(--s-3); color: var(--ink);
+  width: min(52ch, 44%); display: grid; gap: var(--s-4); color: var(--ink);
   opacity: 0; transform: translateY(calc(-50% + 18px)); pointer-events: none;
   transition: opacity .32s ease, transform .5s cubic-bezier(.2, .8, .2, 1);
 }
 .beat.on { opacity: 1; transform: translateY(-50%); pointer-events: auto; }
-.beat h1 { font-size: clamp(2.6rem, 1rem + 4vw, 5rem); line-height: .95; font-weight: 820; font-stretch: 116%; letter-spacing: -.03em; margin: 0; }
-.beat h2 { font-size: clamp(1.7rem, 1rem + 2vw, 2.9rem); line-height: 1.02; font-weight: 800; font-stretch: 112%; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
-.beat p { margin: 0; font-size: clamp(1rem, .95rem + .3vw, 1.2rem); color: var(--ink-2); text-wrap: pretty; }
+.beat h1 { font-size: clamp(3.2rem, 1rem + 7.5vw, 9rem); line-height: .86; font-weight: 880; font-stretch: 125%; letter-spacing: -.05em; margin: 0; text-transform: uppercase; }
+.beat h2 { font-size: clamp(2rem, .8rem + 3.6vw, 4.6rem); line-height: .92; font-weight: 850; font-stretch: 125%; letter-spacing: -.035em; margin: 0; text-wrap: balance; text-transform: uppercase; }
+.beat p { margin: 0; font-size: clamp(1rem, .95rem + .3vw, 1.2rem); color: var(--ink-2); text-wrap: pretty; max-width: 40ch; }
 .film-hint { font: 500 12px/1.3 var(--f-mono); font-stretch: 87.5%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .film-hint::before { content: "↓ "; }
 .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: var(--s-1); }
@@ -187,9 +184,15 @@ button:disabled { opacity: .45; cursor: default; }
 /* ------------------------------------------------------------ sections */
 .band { padding-block: clamp(40px, 7vh, 88px); }
 .band.alt { background: var(--plate); border-block: 1px solid var(--rule); }
-.wrap { max-width: var(--measure); margin: 0 auto; padding-inline: var(--gutter); }
-.section-head { display: grid; gap: var(--s-3); margin-bottom: var(--s-6); }
-.band h2, .build h2 { font-size: clamp(1.9rem, 1.1rem + 2.4vw, 3.1rem); line-height: 1.02; font-weight: 800; font-stretch: 112%; letter-spacing: -.02em; }
+.wrap { max-width: var(--page); margin: 0 auto; padding-inline: var(--gutter); }
+.section-head {
+  display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); align-items: end; gap: var(--s-4) var(--s-7);
+  border-top: 1px solid var(--ink); padding-top: var(--s-4); margin-bottom: var(--s-7);
+}
+.band h2, .build h2 {
+  font-size: clamp(2.5rem, .6rem + 7vw, 8rem); line-height: .9; font-weight: 850; font-stretch: 125%; letter-spacing: -.04em;
+  text-transform: uppercase;
+}
 .section-lead { color: var(--ink-2); font-size: 1.05rem; max-width: 62ch; }
 
 /* gallery: one row of builds that scrolls sideways */
@@ -512,7 +515,11 @@ button:disabled { opacity: .45; cursor: default; }
 .swatch.custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
 
 /* ------------------------------------------------------------ footer */
-.foot { border-top: 1px solid var(--rule); margin-top: clamp(48px, 7vw, 88px); }
+.foot { border-top: 1px solid var(--ink); margin-top: clamp(64px, 9vw, 140px); overflow: hidden; }
+.foot-mark {
+  margin: 0; padding: var(--s-5) var(--gutter) 0; max-width: var(--page); margin-inline: auto; white-space: nowrap;
+  font: 880 clamp(3.4rem, 17.2vw, 19rem)/.8 var(--f-display); font-stretch: 125%; letter-spacing: -.06em; text-transform: uppercase;
+}
 .foot a { text-underline-offset: 3px; }
 .foot-row {
   display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s-3) var(--s-6);
@@ -529,6 +536,10 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .tip strong { display: block; margin-bottom: 3px; font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .02em; opacity: .75; }
 .tip p { margin: 0; white-space: pre-line; }
+
+/* titles come up as they scroll into view (main.js adds .reveal, then .in) */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity .6s ease, transform .8s cubic-bezier(.2, .8, .2, 1); }
+.reveal.in { opacity: 1; transform: none; }
 
 /* ------------------------------------------------------------ motion
    Only transform and opacity move (the compositor does it: no layout per frame), nothing runs while the page is
@@ -573,6 +584,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 @media (max-width: 900px) {
   .nav { display: none; }
+  .section-head { grid-template-columns: minmax(0, 1fr); }
 }
 /* narrow and upright (phones, tablets): the configurator is one screen, the 3D view on top and the steps (and then
    the downloads) scrolling on their own below it, so nothing slides under the view and each area keeps its own touch.

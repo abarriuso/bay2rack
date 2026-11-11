@@ -17,6 +17,8 @@ Run (Blender 5.2):
   blender -b -P scripts/blender/scroll.py -- --preview            640x360, every 2nd frame -> docs/blender/scroll/preview/
   blender -b -P scripts/blender/scroll.py -- --still 60,150       frames -> docs/blender/scroll/still_####.png
   blender -b -P scripts/blender/scroll.py -- --render [--frames A-B] [--step 2] [--lowres]   final frames -> docs/blender/scroll/frames/
+  blender -b -P scripts/blender/scroll.py -- --between 4          the three moments between each two frames of --render
+                                                                  (a film four times as fine; q_####_k.png, resumable)
   add --light for the light theme's version (its files get _light), --save to keep docs/blender/scroll/scroll.blend
 """
 import json
@@ -319,6 +321,22 @@ def main():
             sc.frame_set(int(f))
             sc.render.filepath = os.path.join(OUT, f"still{TAG}_{int(f):04d}.png")
             bpy.ops.render.render(write_still=True)
+        return
+    between = h.arg("--between")
+    if between:
+        # a finer film from the same keys: the N - 1 moments between each two frames (N = 4: four times the frames),
+        # saved as q_<frame>_<k>.png next to the f_<frame>.png of --render. It skips the ones already there, so it
+        # can be stopped and run again.
+        n = int(between)
+        folder = os.path.join(OUT, "frames" + TAG)
+        for f in range(1, END):
+            for k in range(1, n):
+                path = os.path.join(folder, f"q_{f:04d}_{k}.png")
+                if os.path.exists(path):
+                    continue
+                sc.frame_set(f, subframe=k / n)
+                sc.render.filepath = path
+                bpy.ops.render.render(write_still=True)
         return
     if preview or h.arg("--render"):
         fr = h.arg("--frames")

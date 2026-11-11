@@ -8,7 +8,7 @@ import { initTooltips } from './tooltip.js';
 import { ICONS } from './icons.js';
 import { EXAMPLES } from './examples.js';
 import { renderLegend } from './legend.js';
-import { BASE, filamentHexes, $, NARROW, h, svgEl, S } from './state.js';
+import { BASE, filamentHexes, $, NARROW, h, svgEl, S, CALM } from './state.js';
 import { calc, usedMods } from './model.js';
 import { viewer, startEngine, runJob, definesFor, setStatus } from './engine.js';
 import { past, snapshot, undo, redo, refresh } from './edit.js';
@@ -152,6 +152,13 @@ async function boot() {
   renderGallery();
   wireGallery();
   startFilm();
+  // the titles (and the name in the foot) come up as they scroll into view
+  if (!CALM.matches && 'IntersectionObserver' in window) {
+    const seen = new IntersectionObserver((es) => es.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -8% 0px' });
+    for (const el of document.querySelectorAll('.section-head, .foot-mark')) { el.classList.add('reveal'); seen.observe(el); }
+  }
   // installable, and offline after the first visit (the service worker is only in the built site)
   if ('serviceWorker' in navigator && !import.meta.env.DEV)
     addEventListener('load', () => navigator.serviceWorker.register(BASE + 'sw.js').catch(() => {}), { once: true });
