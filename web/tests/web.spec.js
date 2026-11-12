@@ -42,9 +42,11 @@ test('the film follows the scroll: each text comes in at its frames', async ({ p
   await expect(page.locator('#film')).toHaveClass(/live/);
   await expect(page.locator('.beat.on h1')).toHaveText('Bay2Rack');
   await page.evaluate(() => {
-    const f = document.querySelector('#film');
+    const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
     document.documentElement.style.scrollBehavior = 'auto';
-    window.scrollTo(0, f.offsetTop + (f.offsetHeight - innerHeight) * 0.45);
+    // (the film's own stretch: its length less the coda's, where the stage closes and the PC is built)
+    const span = f.offsetHeight - st.offsetHeight - f.querySelector('.film-coda').offsetHeight - f.querySelector('.film-assemble').offsetHeight;
+    window.scrollTo(0, f.offsetTop + span * 0.52);
   });
   await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
   await expect(page.locator('.beat.on')).toHaveCount(1);

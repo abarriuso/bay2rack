@@ -544,12 +544,14 @@ export async function startFilm() {
       const s = stage.getBoundingClientRect();
       const wt = win.getBoundingClientRect().top - s.top, v = vw.getBoundingClientRect();
       const y = wt - stage.offsetHeight - (v.top - build.getBoundingClientRect().top);
-      build.style.setProperty('--merge-y', `${Math.round(y)}px`);
-      // the 3D view's place on the stage while the PC is built: there, its size
-      set('--v3-l', `${v.left - s.left}px`);
-      set('--v3-t', `${Math.round(wt)}px`);
-      set('--v3-w', `${v.width}px`);
-      set('--v3-h', `${v.height}px`);
+      build.style.setProperty('--merge-y', `${y.toFixed(3)}px`);
+      // the 3D view's place on the stage while the PC is built: there, its size (the view itself, inside the
+      // viewer's frame: a phone's has a line under it)
+      const c = $('#view')?.getBoundingClientRect() ?? v;
+      set('--v3-l', `${(c.left - s.left).toFixed(3)}px`);
+      set('--v3-t', `${(wt + c.top - v.top).toFixed(3)}px`);
+      set('--v3-w', `${c.width}px`);
+      set('--v3-h', `${c.height}px`);
     }
   }
   // The window changes its width or its zoom: everything in the film is as tall as the screen, so the same scrollY
@@ -576,7 +578,7 @@ export async function startFilm() {
     const c = close ? Math.min(1, Math.max(0, (y - span) / (close * 0.8))) : 0;
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
     if (t >= last * ENGINE_AT) prepare();
-    setMerged(y >= span + coda - 0.5);
+    setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
     if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && a === asmT && !running) { restTimer = setTimeout(rest, REST_MS); return; }

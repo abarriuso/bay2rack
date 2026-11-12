@@ -650,8 +650,14 @@ button:disabled { opacity: .45; cursor: default; }
 @media (max-width: 900px) and (max-aspect-ratio: 5/4) {
   /* on phones the site header slides away while you scroll down and comes back when you scroll up */
   html.head-off .top { transform: translateY(-100%); }
+  /* the film has the whole screen: the header comes over its top and goes as you scroll down (the stage does not
+     move with it, so the film's frames keep their place in the scroll), and its end is the configurator's place */
+  .film-stage { top: 0; height: 100vh; height: 100svh; }
+  html:not(.head-off) .film-skip { top: calc(var(--top-h) + var(--s-3)); }
   /* the one-screen configurator: the scroll settles on it when it is close */
   html { scroll-snap-type: y proximity; }
+  /* (not while the film has the scroll: there each place is a moment of it, and the page does not move by itself) */
+  html:has(.film.coda:not(.merged):not(.plain)) { scroll-snap-type: none; }
   /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
   .layout { padding-inline: 0; gap: 0; }
   .workbench {
