@@ -19,8 +19,9 @@
 // frame.
 //
 // At its end the film turns into the configurator: a coda (a little more scroll after the last frame) closes the
-// picture into the shape of the workbench, its 3D view and its steps column; the 3D view then comes in from the
-// film's camera. "Configure yours" in the film carries the frame on screen into the 3D view itself.
+// picture into the shape of the workbench, its 3D view and its steps column. The configurator is right under it, its
+// 3D view where the coda's window is: there the film gives way to it, and the kit on the table - the same pieces, in
+// the same places, from the same camera, now in 3D - builds itself into the PC of the film (assemble.js).
 import './css/film-extra.css';
 import { $, BASE, CALM } from './state.js';
 import { viewer, startEngine } from './engine.js';
@@ -47,9 +48,8 @@ const REST_MS = 200;
 // the fine pictures asked for around the scroll position: ahead of the way it goes, behind it, and before the first
 // scroll (the film may never be played)
 const FINE_AHEAD = 140, FINE_BEHIND = 40, FINE_FIRST = 36;
-// where the camera of the film looks from (eye - target, Z up, -Y the front): the last shot, over the table; the
-// first one, low from the front left (scripts/blender/scroll.py)
-const FROM_TABLE = [0.02, -0.24, 1.08], FROM_DESK = [-0.46, -0.88, 0.16];
+// how far into the film the configurator's engine starts (it has the film's build ready by its end)
+const ENGINE_AT = 0.4;
 
 export async function startFilm() {
   const root = $('#film');
@@ -117,8 +117,7 @@ export async function startFilm() {
   let kc = 0, codaT = 0;                                    // the coda: 0 film, 1 workbench
   let resting = false, restKey = -1, restTimer = 0, visible = true;
   let engaged = false, booted = false, fineAt = -1, fineDir = 1;   // (the fine set: see nextJob)
-  // the handoff to the configurator (below): armed once the film was seen to its end or left by its button
-  let armed = false, handed = false, holding = false, from = FROM_TABLE;
+  let merged = false;                                       // the configurator over the stage (see the end)
   let subject = { x: 0.5, y: 0.5 };                         // where the subject of the drawn frame is (canvas fractions)
   const inflight = new Set();
   // each text of the page and the frames it belongs to (film.json has them, in the order of the page)
@@ -461,7 +460,6 @@ export async function startFilm() {
       kWritten = k;
       stage.style.setProperty('--k', k.toFixed(4));
       root.classList.toggle('closing', k > 0);
-      if (k > 0.5) armed = true;                            // the film was seen to its end: the 3D view takes it on
     }
     if (cur !== target || kc !== codaT || fade || (swap && performance.now() - swap.t0 < 5000)) requestAnimationFrame(tick);
     else { running = false; clearTimeout(restTimer); restTimer = setTimeout(rest, REST_MS); }
@@ -528,6 +526,14 @@ export async function startFilm() {
       set('--fr-s', Math.min(1, Math.max(0.3, (panel.clientWidth - 2 * pad) / Math.max(1, w))).toFixed(4));
       set('--fr-dx', `${b.left - s.left + pad - lastBeat.offsetLeft}px`);
     } else for (const k of ['--fr-l', '--fr-r', '--fr-t', '--fr-b', '--fr-col', '--fr-s', '--fr-dx']) set(k, null);
+    // the configurator comes up under the stage: where the stage lets go, its 3D view is where the coda's window is
+    // (so the two scroll on together, one over the other, and the film can give way to it there)
+    const win = root.querySelector('.film-window'), vw = $('.viewer'), build = $('#build');
+    if (win && vw && build) {
+      const s = stage.getBoundingClientRect();
+      const y = win.getBoundingClientRect().top - s.top - stage.offsetHeight - (vw.getBoundingClientRect().top - build.getBoundingClientRect().top);
+      build.style.setProperty('--merge-y', `${Math.round(y)}px`);
+    }
   }
   // The window changes its width or its zoom: everything in the film is as tall as the screen, so the same scrollY
   // would be another moment of the film. The place is kept instead: how far through the film (or its coda) the page
@@ -550,6 +556,8 @@ export async function startFilm() {
     const t = Math.min(1, Math.max(0, y / span)) * last;
     // the coda closes over its first three quarters and holds the last one, then the stage scrolls away
     const c = coda ? Math.min(1, Math.max(0, (y - span) / (coda * 0.75))) : 0;
+    if (t >= last * ENGINE_AT) prepare();
+    setMerged(y >= span + coda - 0.5);
     if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && !running) { restTimer = setTimeout(rest, REST_MS); return; }
@@ -657,108 +665,79 @@ export async function startFilm() {
   booted = true;
 
   // ---------------------------------------------------------------- into the configurator
-  // The 3D view, the first time it comes on screen after the film (seen to its end, or left by its button), comes in
-  // from the film's camera: from over the table down to the view of the configurator.
+  // Where the stage lets go, the configurator is under it, its 3D view exactly where the coda's window is (geometry):
+  // there the workbench fades in over the stage (.merged), and back up into the film it fades out again. Its first
+  // model - the film's build, for an address without settings - is laid out on the table as the film left it and,
+  // from the film's camera, builds itself (assemble.js). A visitor who touched the view first, or came with settings
+  // in the link, gets the configurator as it is.
+  let assembly = null, assembled = false, preparing = false, touched = false;
   const view = $('#view');
-  const status = $('#status');
-  function cameraFromFilm() {
-    const v = viewer, b = v?.focus ?? v?.whole;
-    if (handed || !b || !v.look || !v.fit) return handed;
-    const c = ['x', 'y', 'z'].map((a) => (b.min[a] + b.max[a]) / 2);
-    const r = Math.hypot(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) / 2;
-    const n = Math.hypot(...from), d = r * 3.6;
-    v.look(c.map((x, i) => x + (from[i] / n) * d), c);
-    v.fit();                                                // (it glides from there to its own view)
-    handed = true;
-    return true;
+  for (const ev of ['pointerdown', 'wheel', 'keydown']) $('.workbench')?.addEventListener(ev, () => { touched = true; }, { passive: true, capture: true });
+  const firstLook = () => !assembled && !touched && !/=/.test(location.hash);
+  // where the film's last picture lies, seen from the coda's window (CSS px): as paint() lays it, and the coda moves it
+  function pictureRect() {
+    const W = canvas.clientWidth, H = canvas.clientHeight, A = plainSz.w && plainSz.h ? plainSz.w / plainSz.h : 16 / 9;
+    const pw = Math.max(W, H * A), ph = pw / A, fx = subjectAt(1 + last);
+    const x = Math.min(0, Math.max(W - pw, W * (W / H < 4 / 3 ? 0.5 : fx) - pw * fx));
+    const s = stage.getBoundingClientRect(), w = root.querySelector('.film-window').getBoundingClientRect();
+    let y = (H - ph) / 2;
+    if (matchMedia('(max-aspect-ratio: 4/3)').matches) y += (w.height - H) / 2;   // (upright the coda slides it up)
+    return { left: x - (w.left - s.left), top: y - (w.top - s.top), width: pw, height: ph };
   }
-  if (view && 'IntersectionObserver' in window) {
-    let seen = false;
-    const io = new IntersectionObserver(([e]) => {
-      seen = e.isIntersecting;
-      if (seen && armed && !holding && cameraFromFilm()) io.disconnect();
-    }, { threshold: 0.5 });
-    io.observe(view);
-    // the view came on screen before its first model: that model comes in from the film instead
-    if (status) {
-      const mo = new MutationObserver(() => {
-        if (handed) { mo.disconnect(); return; }
-        if (seen && armed && !holding && cameraFromFilm()) { mo.disconnect(); io.disconnect(); }
-      });
-      mo.observe(status, { attributes: true, attributeFilter: ['class'] });
-    }
+  // the engine starts in the film; its first model is laid out on the table the moment it comes (before it is drawn)
+  async function prepare() {
+    if (preparing) return;
+    preparing = true;
+    try {
+      const [mod] = await Promise.all([import('./assemble.js'), startEngine()]);
+      mod.preloadTable();
+      const v = viewer;
+      if (!v || !firstLook()) return;
+      const lay = async () => {
+        if (!firstLook()) return;
+        // (already on screen as it is: it stays so)
+        if (merged && v.model && !fresh) return;
+        assembly = await mod.fromTable(v, pictureRect(), { left: 0, top: 0, width: view.clientWidth, height: view.clientHeight });
+        if (assembly && merged) play();
+      };
+      let fresh = false;
+      if (v.model) { lay(); return; }
+      const load = v.load;
+      v.load = function (...args) {
+        v.load = load;
+        load.apply(this, args);
+        fresh = true;
+        lay().finally(() => { fresh = false; });
+      };
+    } catch (e) { console.warn(e); }
   }
-
-  // "Configure yours": the frame on screen goes into the 3D view of the configurator (the page jumps there under
-  // it), waits there for the model a moment and gives way to it.
-  for (const a of root.querySelectorAll('.film-beats a[href="#configurator"]')) a.addEventListener('click', (e) => {
-    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || !root.classList.contains('live') || holding) return;
-    const vw = view?.closest('.viewer');
-    if (!vw) return;
-    from = a.closest('.beat') === beats[0]?.el ? FROM_DESK : FROM_TABLE;
-    armed = true;
-    startEngine();
-    // what is on screen now: the stage, closed by the coda as far as it is
-    const sr = stage.getBoundingClientRect();
-    const wr = root.querySelector('.film-window')?.getBoundingClientRect() ?? sr;
-    const kNow = Math.max(0, kWritten);
-    const lerp = (p, q) => p + (q - p) * kNow;
-    const start = { top: lerp(sr.top, wr.top), left: lerp(sr.left, wr.left), right: lerp(sr.right, wr.right), bottom: lerp(sr.bottom, wr.bottom) };
-    const shot = document.createElement('canvas');
-    shot.width = canvas.width; shot.height = canvas.height;
-    shot.getContext('2d', { alpha: false }).drawImage(canvas, 0, 0);
-    const layer = document.createElement('div');
-    layer.className = 'film-handoff';
-    layer.setAttribute('aria-hidden', 'true');
-    // (upright, the coda slid the picture up into its window: so does the copy)
-    const ty = sr.width / sr.height < 4 / 3 ? -kNow * (sr.height - wr.height) / 2 : 0;
-    Object.assign(shot.style, { left: sr.left + 'px', top: sr.top + ty + 'px', width: sr.width + 'px', height: sr.height + 'px' });
-    layer.append(shot);
-    const W = document.documentElement.clientWidth, H = innerHeight;
-    const inset = (q) => `inset(${q.top}px ${W - q.right}px ${H - q.bottom}px ${q.left}px)`;
-    layer.style.clipPath = inset(start);
-    document.body.append(layer);
-    // the jump, instant (the page's own handler of in-page links would glide through the whole page), and what that
-    // handler does besides: the focus goes along, so the next Tab carries on from the configurator
+  function play() {
+    if (!assembly || assembled) return;
+    assembled = true;
+    const a = assembly;
+    assembly = null;
+    requestAnimationFrame(() => a.play());
+  }
+  function setMerged(m) {
+    if (m === merged) return;
+    merged = m;
+    root.classList.toggle('merged', m);
+    if (m) { prepare(); play(); }
+  }
+  // the keyboard in the configurator while the film still covers it (a Tab from the last text): the page goes on to it
+  $('#build')?.addEventListener('focusin', () => { if (!merged) toConfigurator(); });
+  function toConfigurator() {
+    scrollTo({ top: filmTop - stick + span + coda + 1, behavior: 'instant' });
+    measure();
+  }
+  // "Configure yours", the key that skips the film: the page goes on to where the film has given way
+  for (const a of root.querySelectorAll('a[href="#configurator"], .film-skip')) a.addEventListener('click', (e) => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     e.stopPropagation();
-    const wb = document.getElementById('configurator');
-    wb.scrollIntoView({ behavior: 'instant' });
-    if (!wb.matches('a, button, input, select, textarea, summary, [tabindex]')) wb.setAttribute('tabindex', '-1');
+    toConfigurator();
+    const wb = $('#configurator');
+    if (!wb.matches('[tabindex]')) wb.setAttribute('tabindex', '-1');
     wb.focus({ preventScroll: true });
-    holding = true;
-    requestAnimationFrame(() => {
-      const vr = vw.getBoundingClientRect();
-      // the subject of the frame lands in the middle of the view, the copy scaled down as far as it still covers it
-      const sx = sr.left + subject.x * sr.width, sy = sr.top + ty + subject.y * sr.height;
-      const sc = Math.min(1, Math.max(vr.width / sr.width, vr.height / sr.height));   // (the copy still covers the view)
-      shot.style.transformOrigin = `${sx - sr.left}px ${sy - sr.top - ty}px`;
-      const ease = 'cubic-bezier(.7, 0, .2, 1)', ms = 760;
-      shot.animate([{ transform: 'none' }, { transform: `translate(${vr.left + vr.width / 2 - sx}px, ${vr.top + vr.height / 2 - sy}px) scale(${sc})` }],
-        { duration: ms, easing: ease, fill: 'forwards' });
-      const land = layer.animate([{ clipPath: inset(start) }, { clipPath: inset(vr) }], { duration: ms, easing: ease, fill: 'forwards' });
-      let gone = false, cap = 0;
-      const away = (fast) => {
-        if (gone) return;
-        gone = true;
-        clearTimeout(cap);
-        for (const [ev, f] of quit) removeEventListener(ev, f);
-        holding = false;
-        cameraFromFilm();
-        layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: fast ? 180 : 520, easing: 'ease-out', fill: 'forwards' })
-          .finished.then(() => layer.remove(), () => layer.remove());
-      };
-      // a scroll, a wheel, a touch or a key: the picture goes at once (it is fixed: it would come loose of the view)
-      const quit = ['wheel', 'touchstart', 'keydown', 'scroll'].map((ev) => [ev, () => away(true)]);
-      land.finished.then(() => {
-        if (gone) return;
-        for (const [ev, f] of quit) addEventListener(ev, f, { passive: true, once: true });
-        const ready = () => viewer?.whole && status && /\bok\b/.test(status.className);
-        if (ready()) { away(false); return; }
-        const mo = new MutationObserver(() => { if (ready()) { mo.disconnect(); away(false); } });
-        if (status) mo.observe(status, { attributes: true, attributeFilter: ['class'] });
-        cap = setTimeout(() => { mo.disconnect(); away(false); }, 2400);
-      }, () => away(true));
-    });
   });
 }

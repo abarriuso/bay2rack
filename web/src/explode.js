@@ -12,7 +12,7 @@ const EPS = 1e-4;
 
 // connected pieces of a geometry: triangles that share a vertex position are one piece.
 // -> { tri: Int32Array (piece of each triangle), boxes: [Box3] }
-function pieces(geo) {
+export function pieces(geo) {
   const pos = geo.attributes.position;
   const idx = geo.index;
   const n = (idx ? idx.count : pos.count) / 3;
@@ -50,7 +50,7 @@ function pieces(geo) {
 
 // A screw comes as several pieces (its head, its shank, a washer): the pieces of a hardware mesh that touch are one
 // fastener, and go together. -> the box of the whole fastener, for each piece
-function fasteners(boxes) {
+export function fasteners(boxes) {
   const n = boxes.length;
   const up = boxes.map((_, i) => i);
   const find = (a) => { while (up[a] !== a) { up[a] = up[up[a]]; a = up[a]; } return a; };
@@ -71,7 +71,7 @@ function fasteners(boxes) {
 }
 
 // the triangles of `geo` whose flag is set, as a new (non-indexed) geometry with the same attributes
-function subset(geo, keep, count) {
+export function subset(geo, keep, count) {
   const idx = geo.index;
   const out = new THREE.BufferGeometry();
   for (const [name, a] of Object.entries(geo.attributes)) {

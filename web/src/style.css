@@ -255,7 +255,7 @@ button:disabled { opacity: .45; cursor: default; }
 /* ------------------------------------------------------------ configurator */
 .build { padding-block: clamp(48px, 7vw, 88px) 0; }
 .build-head { margin-bottom: var(--s-5); }
-.examples { margin-bottom: var(--s-5); }
+.examples { margin-block: var(--s-6) 0; }   /* (under the workbench and its downloads) */
 .examples summary {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px var(--s-3); cursor: pointer; list-style: none;
   padding: var(--s-3) var(--s-4); border: 1px solid var(--rule); border-radius: var(--r); background: var(--plate);

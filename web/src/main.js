@@ -20,6 +20,7 @@ import { downloadKit } from './kit.js';
 import { share } from './share.js';
 import { wireGallery, renderGallery } from './gallery.js';
 import { startFilm } from './film.js';
+import { soundOn, setSound, sfx } from './sound.js';
 import { themeSwitch, langSwap, widen } from './motion.js';
 
 // ---------------------------------------------------------------- chrome
@@ -103,6 +104,17 @@ function wire() {
     focusOn(el);
   });
   $('#fit').onclick = () => viewer?.fit();
+  // the sounds of the build (sound.js): the key says what it will do
+  const snd = $('#sound');
+  const showSound = () => {
+    const k = soundOn() ? 'sound_mute' : 'sound_unmute';
+    snd.classList.toggle('muted', !soundOn());
+    snd.dataset.i18nTip = snd.dataset.i18nAria = k;
+    snd.dataset.tip = t(k);
+    snd.setAttribute('aria-label', t(k));
+  };
+  snd.onclick = () => { setSound(!soundOn()); showSound(); setTimeout(() => sfx.snap(0, 1), 60); };
+  showSound();
   $('#warnBadge').onclick = () => { const c = $('#warningsCard'); c.scrollIntoView({ block: 'center' }); focusOn(c); };
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
   const narrow = matchMedia(NARROW);
