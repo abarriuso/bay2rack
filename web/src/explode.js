@@ -48,6 +48,28 @@ function pieces(geo) {
   return { tri, boxes };
 }
 
+// A screw comes as several pieces (its head, its shank, a washer): the pieces of a hardware mesh that touch are one
+// fastener, and go together. -> the box of the whole fastener, for each piece
+function fasteners(boxes) {
+  const n = boxes.length;
+  const up = boxes.map((_, i) => i);
+  const find = (a) => { while (up[a] !== a) { up[a] = up[up[a]]; a = up[a]; } return a; };
+  const s = new THREE.Vector3();
+  const small = boxes.map((b) => { b.getSize(s); return Math.max(s.x, s.y, s.z) < 45; });   // (not a metal box of a device)
+  const fat = boxes.map((b) => b.clone().expandByScalar(0.2));
+  for (let i = 0; i < n; i++) {
+    if (!small[i]) continue;
+    for (let j = i + 1; j < n; j++) if (small[j] && fat[i].intersectsBox(fat[j])) up[find(i)] = find(j);
+  }
+  const whole = new Map();
+  for (let i = 0; i < n; i++) {
+    const r = find(i);
+    if (!whole.has(r)) whole.set(r, new THREE.Box3());
+    whole.get(r).union(boxes[i]);
+  }
+  return boxes.map((_, i) => whole.get(find(i)));
+}
+
 // the triangles of `geo` whose flag is set, as a new (non-indexed) geometry with the same attributes
 function subset(geo, keep, count) {
   const idx = geo.index;
@@ -138,7 +160,7 @@ export class Explode {
     for (const m of meshes) {
       const mat = m.material.name;
       const { tri, boxes } = pieces(m.geometry);
-      const keyOf = boxes.map((b) => classify(b, mat));
+      const keyOf = (HARDWARE.has(mat) ? fasteners(boxes) : boxes).map((b) => classify(b, mat));
       const keys = [...new Set(keyOf)];
       const add = (mesh, key) => {
         if (key === 'stay') return;

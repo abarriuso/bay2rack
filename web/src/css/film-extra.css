@@ -41,7 +41,10 @@
 }
 .film.closing .film-shade, .film.closing .film-bar { opacity: calc(1 - var(--k)); }
 /* the last text steps into the column, as far in as the steps sit in theirs */
-.film.closing .beat:last-child { translate: calc(var(--k) * var(--s-5)) 0; }
+.film.closing .beat:last-child {
+  translate: calc(var(--k) * var(--fr-dx, var(--s-5))) 0; scale: calc(1 - var(--k) * (1 - var(--fr-s, 1)));
+  transform-origin: 0 0;                    /* (its left edge, its middle line: the text is set up by half its height) */
+}
 
 /* upright (a phone): the view on top, as tall as the configurator's, the picture slides up into it */
 @media (max-aspect-ratio: 4/3) {
@@ -52,7 +55,7 @@
     clip-path: inset(calc(var(--k) * (100% - var(--win)) / 2) 0);
     translate: 0 calc(var(--k) * (var(--win) - 100%) / 2);
   }
-  .film.closing .beat:last-child { translate: none; }
+  .film.closing .beat:last-child { translate: none; scale: none; }
 }
 
 /* "Configure yours": the frame on screen, on its way into the 3D view (film.js moves it; under the header) */

@@ -176,7 +176,7 @@ ks_style = "metal"; // [metal:Metal / shielded keystone - holder cells, standard
 // Number of ports (only when ks_ports_list is empty)
 ks_ports = 6; // [1:1:12]
 // Type of every port, comma separated (empty = ks_ports x ks_style): rj45m = metal RJ45 cell, rj45 hdmi usb rca jack toslink = standard keystones, cover = plain cover, pass = cable pass-through cover, none = no hole
-ks_ports_list = "rj45m,rj45m,rj45m,cover,cover,pass";
+ks_ports_list = "rj45m,rj45m,rj45m,cover,pass,pass";
 ks_labels = true;
 // Names over the ports, comma separated in port order (e.g. WAN,LAN 1,NAS,,PC). An empty one shows the type for HDMI / USB / RCA / audio / optical jacks, else the next number
 ks_names = "";

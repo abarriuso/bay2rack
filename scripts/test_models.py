@@ -137,7 +137,8 @@ CASES = (
        ("module/nkvm:side-2ks", {"part": "rack_module", "module_type": "nkvm:side", "nkvm_keystones": 2}, None)]
     # the bill of materials: what each piece needs
     + [("bom/filler-keystones", {"part": "filler"}, None,
-        ["keystones: 3 x metal / shielded RJ45 keystone", "keystones: 2 x printed keystone cover", "filler panels: 2 x"]),
+        ["keystones: 3 x metal / shielded RJ45 keystone", "keystones: 1 x printed keystone cover",
+         "keystones: 2 x printed cable pass-through cover", "filler panels: 2 x"]),
        ("bom/patch-module", {"part": "rack_module", "module_type": "patch"}, None,
         ["keystones: 3 x metal", "(into the adapter's fixings"]),
        # a patch module with its own ports (not the strip's ks_ports_list), a label module with its own text

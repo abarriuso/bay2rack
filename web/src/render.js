@@ -46,7 +46,10 @@ export function showResult(res, ext, values) {
   const key = [values.part, values.bays, values.scene, values.case_view, values.module_type].join('|');
   const homelab = values.part === 'assembly' && values.case_view === 'tower' && values.scene === 'homelab';
   const top = values.bays * 43.18 + 25;
-  const focus = values.part === 'assembly' && !homelab ? { min: [-95, -40, -25], max: [95, 40, top] } : null;
+  // the view opens on the rack (in the homelab a little wider: its patch cords, the top of the tower), not on the
+  // whole room; the rest is there to turn to
+  const focus = values.part !== 'assembly' ? null
+    : homelab ? { min: [-150, -70, -70], max: [150, 60, top + 45] } : { min: [-95, -40, -25], max: [95, 40, top] };
   const scene = { cables: [] };
   for (const l of res.logs) {
     const m = l.match(/^ECHO: "SCENE (.*)"$/);

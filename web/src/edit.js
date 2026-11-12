@@ -36,7 +36,7 @@ export function update(patch) {
   refresh();
   schedule();
 }
-// the settings of a link or a saved build ('#' for the defaults): one undo step, like any change
+// the settings of a link or a saved build ('#' for the first look): one undo step, like any change
 export function loadLink(hash) {
   startEngine();
   past.push(snapshot());

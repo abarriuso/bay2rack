@@ -43,8 +43,19 @@ export const FILAMENTS = {
   black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
   blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
 };
-export const UI_DEFAULT = { filament: 'black', custom: '#e07a2f', labelColour: '#f2f3ef', cables: true, side: true, sleeper: false };
-export const UI = (() => { try { return { ...UI_DEFAULT, ...JSON.parse(localStorage.getItem('ui') || '{}') }; } catch { return { ...UI_DEFAULT }; } })();
+// What the configurator shows before anything is touched (an address without settings): a four-bay rack in the
+// homelab, its cables plugged in - a patch panel, a switch and the KVMs, vents in the bay left over. Not the
+// model's own defaults (those stay as the file has them, and are what a link leaves out).
+export const START = { bays: 4, scene: 'homelab', rack_modules: 'patch,ms105g,kvm:jet+nano', spare_pos: 'top', spare_fill: 'vent' };
+// (v: the sleeper case became the first look in 2; what an older visit stored about it does not count)
+export const UI_DEFAULT = { v: 2, filament: 'black', custom: '#e07a2f', labelColour: '#f2f3ef', cables: true, side: true, sleeper: true };
+export const UI = (() => {
+  try {
+    const old = JSON.parse(localStorage.getItem('ui') || '{}');
+    if (old.v !== UI_DEFAULT.v) { delete old.sleeper; delete old.v; }
+    return { ...UI_DEFAULT, ...old };
+  } catch { return { ...UI_DEFAULT }; }
+})();
 export const saveUI = () => { try { localStorage.setItem('ui', JSON.stringify(UI)); } catch { /* private mode */ } };
 // the colour of the printed parts: a preset, or your own (three close shades so the parts still read apart)
 export function filamentHexes() {

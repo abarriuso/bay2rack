@@ -1,9 +1,11 @@
 """Frames from scroll.py -> the scroll film of the site (docs/scroll/).
 
-  python scripts/blender/scroll_encode.py
+  python scripts/blender/scroll_encode.py [--only tall,960]
 
-For each theme (dark, light): <theme>/1600/NNNN.webp with every frame, and <theme>/960/NNNN.webp with one in four
-for phones; film.json says how many frames there are, in which sizes, and which frames each text of the page
+For each theme (dark, light): <theme>/1600/NNNN.webp with every frame, <theme>/960/NNNN.webp with one in four (what
+loads first) and <theme>/tall/NNNN.webp, one in two, cut upright around the subject for a phone held upright (its
+screen shows a slice of the picture: these are that slice, sharper and with twice the frames in the same room).
+--only encodes just those sets again (the rest stay as they are). film.json says how many frames there are, in which sizes, and which frames each text of the page
 belongs to (the beats of scroll.py, without their draft texts: the page has its own, in both languages).
 The frames are those of scroll.py --render (f_####.png) with, between each two, the ones of --between
 (q_####_k.png) when they are there. When scroll.py --sharp has rendered the key frames again at 2560 x 1440
@@ -19,13 +21,15 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 SRC = ROOT / "docs" / "blender" / "scroll"
 OUT = ROOT / "docs" / "scroll"
 # (folder, width, height, every nth frame, WebP quality, role): "fine" plays on wide screens, "base" loads first
-# everywhere (and is all a phone takes), "sharp" is for a frame the scroll stops on (the key frames, see SHARP)
-SIZES = [("1600", 1600, 900, 1, 76, "fine"), ("960", 960, 540, 4, 70, "base")]
+# everywhere, "tall" is the upright cut for touch screens taller than TALL (w / h), "sharp" is for a frame the scroll
+# stops on (the key frames, see SHARP)
+SIZES = [("1600", 1600, 900, 1, 76, "fine"), ("960", 960, 540, 4, 70, "base"), ("tall", 576, 720, 2, 68, "tall")]
 SHARP = ("2560", 2560, 1440, 4, 80, "sharp")
 THEMES = {"dark": "frames", "light": "frames_light"}
 
 
 def main():
+    only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     beats = json.loads((SRC / "beats.json").read_text(encoding="utf-8"))
     total = 0
     grain = None                                           # frames per frame of the keys (1: no in-between frames)
@@ -46,13 +50,24 @@ def main():
         if grain not in (None, fine):
             sys.exit("the two themes have a different number of in-between frames")
         grain = fine
-        for name, w, h, step, quality, _ in SIZES:
+        # where the subject is across each frame (the beats say, in key frames)
+        def subject(k):
+            key = k // fine + 1
+            return next((b["subject"] for b in beats["beats"] if key <= b["to"]), 0.5)
+        for name, w, h, step, quality, role in SIZES:
+            if only and name not in only:
+                continue
             out = OUT / theme / name
             out.mkdir(parents=True, exist_ok=True)
             for old in out.glob("*.webp"):
                 old.unlink()
             for i, f in enumerate(frames[::step]):
                 im = Image.open(f).convert("RGB")
+                if role == "tall":
+                    # the upright slice, the subject in its middle (as far as the picture goes)
+                    cw = round(im.height * w / h)
+                    x = min(im.width - cw, max(0, round(im.width * subject(i * step) - cw / 2)))
+                    im = im.crop((x, 0, x + cw, im.height))
                 if im.size != (w, h):
                     im = im.resize((w, h), Image.LANCZOS)
                 im.save(out / f"{i + 1:04d}.webp", quality=quality, method=6)
@@ -66,6 +81,8 @@ def main():
     if all(len(v) == beats["frames"] for v in sharp.values()):
         name, w, h, _, quality, role = SHARP
         for theme, keys in sharp.items():
+            if only and name not in only:
+                continue
             out = OUT / theme / name
             out.mkdir(parents=True, exist_ok=True)
             for old in out.glob("*.webp"):

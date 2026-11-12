@@ -109,13 +109,21 @@ function wire() {
   placeResults();
   // narrow screens: the header hides while scrolling down and over the full-screen configurator
   let lastY = scrollY;
+  // (where the configurator is in the page: measured when the page changes size, never while it scrolls - a scroll
+  // reads scrollY and nothing else, on a phone as on a wide screen)
+  let wbTop = 0, wbBottom = 0;
+  const place = () => { const r = $('.workbench').getBoundingClientRect(); wbTop = r.top + scrollY; wbBottom = r.bottom + scrollY; };
+  if ('ResizeObserver' in window) {
+    const ro = new ResizeObserver(place);
+    ro.observe(document.documentElement);
+    ro.observe($('.workbench'));
+  } else addEventListener('resize', place);
+  place();
   const head = () => {
     const y = scrollY;
     const root = document.documentElement.classList;
-    // (wide screens never measure anything here: no layout read per scroll)
     if (!narrow.matches || y < 80) { root.remove('head-off'); lastY = y; return; }
-    const r = $('.workbench').getBoundingClientRect();
-    const inApp = r.top <= 1 && r.bottom >= innerHeight - 1;
+    const inApp = wbTop - y <= 1 && wbBottom - y >= innerHeight - 1;
     if (inApp || y > lastY + 6) root.add('head-off');
     else if (y < lastY - 6) root.remove('head-off');
     if (Math.abs(y - lastY) > 6) lastY = y;

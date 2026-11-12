@@ -484,10 +484,18 @@ module cable(pts, c = [0.15, 0.45, 0.9], d = CABLE_D)
     }
 module plug(p, c) color(c) translate(p) translate([-6, -14, -4.5]) cube([12, 14, 9]);   // RJ45 boot, cable side -Y
 
-// keystone ports of the first patch zone, in world coordinates: [x, z, type]
+// keystone ports of the scene's patch panel, in world coordinates: [x, z, type]. The first keystone zone; without
+// one, the first patch module of the rack (its face is the modules' face, patch_yf)
 ks_zone = [for (zn = zones) if (zn[2] == "keystone") zn];
-patch_ports = len(ks_zone) == 0 ? [] :
-    [for (p = ks_layout(zone_w(), zone_h(ks_zone[0]), len(ks_types))) [p[0], zone_z0(ks_zone[0]) + p[1], ks_types[p[3]]]];
+patch_mod = [for (p = placed_mods) if (mod_kind(p[0]) == "patch") p];
+pm_types = len(patch_mod) > 0 ? patch_types(patch_mod[0][0]) : [];
+patch_ports = len(ks_zone) > 0
+    ? [for (p = ks_layout(zone_w(), zone_h(ks_zone[0]), len(ks_types))) [p[0], zone_z0(ks_zone[0]) + p[1], ks_types[p[3]]]]
+    : len(patch_mod) > 0
+    ? [for (p = ks_layout_of(min(hole_s - R[0] - 6, 2 * x_in - 1), U - 0.79, pm_types))
+           [p[0], units_z0 + patch_mod[0][1] * U + 0.395 + p[1], pm_types[p[3]]]]
+    : [];
+patch_yf = len(ks_zone) > 0 ? zone_yf : -ft - explode - panel_t;
 rj_ports = [for (p = patch_ports) if (p[2] == "rj45m" || p[2] == "rj45") p];
 pass_ports = [for (p = patch_ports) if (p[2] == "pass") p];
 // switches in the rack: the managed UniFi one is the main switch when there are two
@@ -613,7 +621,7 @@ function tidy_route(a, k, xs, zs) =
 
 // keystone back -> along the inside of the case -> out through the rear LAN slot (or the back) -> target
 function inner_route(p, i) =
-    let(yb = zone_yf + 33, xs = rear_slots ? pci_x(40 + i * 14) : 0,
+    let(yb = patch_yf + 33, xs = rear_slots ? pci_x(40 + i * 14) : 0,
         zs = rear_slots ? pci_cz(pci_lan_slot) : tc_z1 - 200 - i * 6)
     concat([[p[0], yb, p[1]], [p[0], yb + 30, p[1]]], tidy_route(p, i, xs, zs));
 
@@ -640,12 +648,12 @@ function cord(a, ya, b, yb, lift = 4) =
      [b[0], min(ya, yb) - 28, b[1] - lift], [b[0], yb - 14, b[1]], [b[0], yb - 2, b[1]]];
 // which switch port feeds patch port i: with two switches the NAS hangs off the second one
 function cord_from(i) = sw_second != undef && i == 1 ? sw_ports_of(sw_second)[1] : sw_ports_of(sw_main)[i];
-function cord_route(i) = cord(cord_from(i), sw_yf, rj_ports[i], zone_yf);
+function cord_route(i) = cord(cord_from(i), sw_yf, rj_ports[i], patch_yf);
 
 // cable through a pass-through cover, along the inside to a rear expansion slot and out
 function pass_route(a, q, slot, along, tail, k) =
     let(xp = pci_x(along), zp = pci_cz(slot))
-    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 20, a[1]], [q[0], zone_yf - 18, q[1]], [q[0], zone_yf + 4, q[1]],
+    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 20, a[1]], [q[0], patch_yf - 18, q[1]], [q[0], patch_yf + 4, q[1]],
             [q[0], 60, q[1]]],
            rear_slots ? concat(tidy_route(q, k, xp, zp), tail) : tidy_route(q, k, 0, tc_z0 + 60));
 function power_route() = pass_route(sw_jack_of(sw_main), pass_ports[len(pass_ports) - 1], pci_power_slot, 80,
@@ -653,8 +661,8 @@ function power_route() = pass_route(sw_jack_of(sw_main), pass_ports[len(pass_por
 // router LAN (trunk): last switch port -> first pass-through -> inside, out through the LAN slot -> card port 2
 function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4], p = lan_port,
                               xs = pci_x(30), zs = pci_cz(pci_lan_slot) + 3)
-    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], zone_yf - 26, q[1] + 6], [q[0], zone_yf - 18, q[1]],
-            [q[0], zone_yf + 4, q[1]], [q[0], 70, q[1] + 10]],
+    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], patch_yf - 26, q[1] + 6], [q[0], patch_yf - 18, q[1]],
+            [q[0], patch_yf + 4, q[1]], [q[0], 70, q[1] + 10]],
            rear_slots ? concat(tidy_route(q, 3, xs, zs), [[p[0] - 8, TC_D + 44, (zs + p[2]) / 2]])
                       : concat(tidy_route(q, 3, 0, p[2] - 10), [[p[0] - 18, TC_D + 20, p[2] - 10]]),
            [[p[0], TC_D + 32, p[2]], [p[0], TC_D + 4, p[2]]]);
