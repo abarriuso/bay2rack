@@ -113,7 +113,7 @@ export async function startFilm() {
 
   const sets = {};
   let theme = themeNow();
-  let cur = 0, target = 0, dirty = true, running = false, shownIm = null;
+  let cur = 0, target = 0, running = false, shownIm = null;
   let kc = 0, codaT = 0;                                    // the coda: 0 film, 1 workbench
   let resting = false, restKey = -1, restTimer = 0, visible = true;
   let engaged = false, booted = false, fineAt = -1, fineDir = 1;   // (the fine set: see nextJob)
@@ -157,7 +157,7 @@ export async function startFilm() {
         else {
           maps.set(i, bmp);
           // (the picture for the frame on screen, or a nearer one than what is drawn)
-          if (th === theme && (Math.abs(i * step - cur) <= step * 2 || !shownIm)) { dirty = true; kick(); }
+          if (th === theme && (Math.abs(i * step - cur) <= step * 2 || !shownIm)) kick();
         }
         feed();
       }, () => {
@@ -220,7 +220,7 @@ export async function startFilm() {
             if (dead || ask !== stillAsk) { bmp.close?.(); return; }
             still?.bmp.close?.();
             still = { frame, bmp, mid: !!cropFine && cropOk };
-            if (th === theme && resting && Math.round(cur) === frame) { dirty = true; kick(); }
+            if (th === theme && resting && Math.round(cur) === frame) kick();
           }).catch(() => {});
       },
       end() {
@@ -248,6 +248,7 @@ export async function startFilm() {
   function nextJob(s) {
     if (resting && sharpOn) for (const k of [restKey, restKey - 1, restKey + 1])
       if (k >= 0 && k < tiers.sharp.n && !s.sharp.has(k)) return ['sharp', k];
+    if (resting && fineOn && visible) { const c = Math.round(cur / tiers.fine.step); if (c < tiers.fine.n && !s.fine[c]) return ['fine', c]; }
     while (s.next < order.length) { const i = order[s.next++]; if (!s.base[i]) return ['base', i]; }
     if (fineOn && visible && s.fineLeft > 0) {
       const n = tiers.fine.n, c = Math.min(n - 1, Math.max(0, Math.round(cur / tiers.fine.step)));
@@ -275,11 +276,13 @@ export async function startFilm() {
         if (ok) {
           im.ok = true;
           const frame = i * t.step;
-          if (th === theme && (tier === 'sharp' ? resting && i === restKey : Math.abs(frame - cur) <= tiers.base.step * 2)) { dirty = true; kick(); }
+          if (th === theme && (tier === 'sharp' ? resting && i === restKey : Math.abs(frame - cur) <= tiers.base.step * 2)) kick();
         }
         pump();
       };
-      im.onload = () => (tier === 'sharp' && im.decode ? im.decode().then(() => done(true), () => done(true)) : done(true));
+      // decoded before it counts as there (off the page's thread): a picture decoded when it is first drawn holds that
+      // frame up by its decode (14 ms for a sharp one, past the 16.7 ms of a frame with the draw)
+      im.onload = () => (im.decode ? im.decode().then(() => done(true), () => done(true)) : done(true));
       im.onerror = () => done(false);
       im.src = url(th, t, i);
       inflight.add(im);
@@ -332,31 +335,37 @@ export async function startFilm() {
 
   // the picture for the film frame f: the sharp one where it rests, the fine one of that frame or one within two,
   // else the nearest base one
+  // (a picture of another frame than the scroll's is the film out of step with it: the nearest frame wins, and of
+  // two as near, the sharper)
   function pick(f) {
     if (useReel) return reel?.get(f) ?? null;
     const s = sets[theme];
     if (!s) return null;
-    if (resting && sharpOn) { const im = s.sharp.get(restKey); if (im?.ok) return [im, restKey * tiers.sharp.step]; }
-    if (fineOn) {
-      const c = Math.round(f / tiers.fine.step);
-      for (const d of [0, -1, 1, -2, 2]) { const im = s.fine[c + d]; if (im?.ok) return [im, (c + d) * tiers.fine.step]; }
-    }
+    if (resting && sharpOn && f === restKey * tiers.sharp.step) { const im = s.sharp.get(restKey); if (im?.ok) return [im, f]; }
+    let best = null;
     const b = s.base, c = Math.round(f / tiers.base.step);
     for (let d = 0; d < b.length; d++) {
-      if (b[c - d]?.ok) return [b[c - d], (c - d) * tiers.base.step];
-      if (b[c + d]?.ok) return [b[c + d], (c + d) * tiers.base.step];
+      if (b[c - d]?.ok) { best = [b[c - d], (c - d) * tiers.base.step]; break; }
+      if (b[c + d]?.ok) { best = [b[c + d], (c + d) * tiers.base.step]; break; }
     }
-    return null;
+    if (fineOn) {
+      const c = Math.round(f / tiers.fine.step);
+      for (const d of [0, -1, 1, -2, 2]) {
+        const im = s.fine[c + d], frame = (c + d) * tiers.fine.step;
+        if (im?.ok) { if (!best || Math.abs(frame - f) <= Math.abs(best[1] - f)) best = [im, frame]; break; }
+      }
+    }
+    return best;
   }
 
-  function draw(force) {
-    const got = pick(Math.round(cur));
-    if (!got) return;
-    const [im, frame, mid] = got;
-    if (im === shownIm && !force) return;
-    if (!root.classList.contains('live')) root.classList.add('live');
+  // A sharper picture of the frame already on screen (the fine or the sharp one, come in where the scroll rests) fades
+  // in over the softer one instead of snapping to it; another frame is drawn as it is (the film moves on).
+  const FADE_MS = 260;
+  let shownFrame = -1, shownMid = false, fade = null;
+  function paint(im, frame, mid, alpha = 1) {
     const cw = canvas.width, ch = canvas.height;
     const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+    if (!iw || !ih) return null;
     const s = Math.max(cw / iw, ch / ih);
     const w = iw * s, hh = ih * s;
     // a screen less wide than the picture crops its sides. Tall (the text is at the foot, see the styles): the
@@ -366,9 +375,35 @@ export async function startFilm() {
     // (a reel's upright pictures are cut around the subject already: it is in their middle)
     const px = mid ? 0.5 : fx;
     const x = Math.min(0, Math.max(cw - w, cw * (tall ? 0.5 : fx) - w * px));
-    ctx.drawImage(im, x, (ch - hh) / 2, w, hh);
-    subject = { x: (x + w * px) / cw, y: 0.5 };
-    shownIm = im;
+    ctx.globalAlpha = alpha;
+    // (a picture let go meanwhile - a reel's closed bitmap, a sharp one dropped - draws nothing)
+    try { ctx.drawImage(im, x, (ch - hh) / 2, w, hh); } catch { return null; } finally { ctx.globalAlpha = 1; }
+    return (x + w * px) / cw;
+  }
+  function draw(force) {
+    const got = pick(Math.round(cur));
+    if (!got) return;
+    const [im, frame, mid = false] = got;
+    if (fade && (fade.im !== im || force)) fade = null;     // (the film moved on, or the canvas was redone)
+    if (fade) {
+      const a = Math.min(1, (performance.now() - fade.t0) / FADE_MS);
+      paint(fade.im0, frame, fade.mid0);
+      paint(im, frame, mid, a * a * (3 - 2 * a));
+      if (a >= 1) fade = null;
+      return;
+    }
+    if (im === shownIm && !force) return;
+    if (!root.classList.contains('live')) root.classList.add('live');
+    // the same frame, a new picture of it (a sharper one, come in): faded in
+    if (!force && shownIm && frame === shownFrame) {
+      fade = { im0: shownIm, mid0: shownMid, t0: performance.now(), im };
+      kick();
+    } else {
+      const sx = paint(im, frame, mid);
+      if (sx == null) return;
+      subject = { x: sx, y: 0.5 };
+    }
+    shownIm = im; shownFrame = frame; shownMid = mid;
   }
 
   let kWritten = -1, rolling = false;
@@ -383,8 +418,7 @@ export async function startFilm() {
       const c = Math.round(cur / tiers.fine.step), d = Math.sign(target - cur) || fineDir;
       if (c !== fineAt || d !== fineDir) { fineAt = c; fineDir = d; pump(); }
     }
-    draw(dirty);
-    dirty = false;
+    draw(false);                                            // (the canvas redone: fit() draws it whole)
     const frame = 1 + cur;
     // only what changed is written: no style work for the page while the texts stay as they are
     for (const b of beats) {
@@ -403,7 +437,7 @@ export async function startFilm() {
       root.classList.toggle('closing', k > 0);
       if (k > 0.5) armed = true;                            // the film was seen to its end: the 3D view takes it on
     }
-    if (cur !== target || kc !== codaT) requestAnimationFrame(tick);
+    if (cur !== target || kc !== codaT || fade) requestAnimationFrame(tick);
     else { running = false; clearTimeout(restTimer); restTimer = setTimeout(rest, REST_MS); }
   }
   function kick() { if (!running) { running = true; requestAnimationFrame(tick); } }
@@ -416,14 +450,23 @@ export async function startFilm() {
       resting = true;
       const frame = Math.round(cur);
       reel.rest(frame, sliceOf(fineSz, frame));
-      dirty = true; kick();                                // (a picture of this frame it has already)
+      kick();                                             // (a picture of this frame it has already)
       return;
     }
-    if (!sharpOn || !visible || cur !== target || resting) return;
+    if (!fineOn || !visible || cur !== target || resting) return;
     resting = true;
-    restKey = Math.min(tiers.sharp.n - 1, Math.max(0, Math.round(cur / tiers.sharp.step)));
     const s = setOf(theme);
-    if (s.sharp.get(restKey)?.ok) { dirty = true; kick(); }
+    if (sharpOn) {
+      // the sharp pictures are every few frames: the film settles on the nearest of them (a frame or two, gliding)
+      // so that what comes in sharper is the very frame on screen, not one beside it
+      restKey = Math.min(tiers.sharp.n - 1, Math.max(0, Math.round(cur / tiers.sharp.step)));
+      // (not across the edge of a text: that one stays as it is, and the frame takes its fine picture instead)
+      const k = restKey * tiers.sharp.step;
+      const same = beats.every((x) => (1 + k >= x.from && 1 + k <= x.to + 0.999) === x.on);
+      if (!same) restKey = -1;
+      else if (k !== target) { target = k; kick(); }
+      else if (s.sharp.get(restKey)?.ok) kick();
+    }
     pump();
   }
 
@@ -481,7 +524,7 @@ export async function startFilm() {
     const t = Math.min(1, Math.max(0, y / span)) * last;
     // the coda closes over its first three quarters and holds the last one, then the stage scrolls away
     const c = coda ? Math.min(1, Math.max(0, (y - span) / (coda * 0.75))) : 0;
-    if (t !== target) { target = t; if (booted) engaged = true; if (resting) { resting = false; dirty = true; } }
+    if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && !running) { restTimer = setTimeout(rest, REST_MS); return; }
     codaT = c;
@@ -567,7 +610,6 @@ export async function startFilm() {
     showStill(baseSz.dir);
     thread();
     pump();
-    dirty = true;
     shownIm = null;
     kick();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
