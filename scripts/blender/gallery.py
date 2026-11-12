@@ -38,7 +38,7 @@ def srgb(h):
 # per build: the setting, the camera (azimuth from the front, elevation, lens, f-stop, how much of the frame
 # the rack fills), the lights and the floor. Angles in degrees; the rack front faces -Y.
 LOOKS = {
-    "router": dict(world=("#0b0d12", 0.6), floor="wood_dark", az=-24, el=12, lens=60, fstop=4, fill=0.36, shift=0.17,
+    "router": dict(world=("#0b0d12", 0.6), floor="wood_dark", az=-18, el=10, lens=60, fstop=4, fill=0.6, shift=-0.05,
                    lights=[("key", -1.0, -0.9, 0.7, 0.5, 40, "#ffe4c8"), ("rim", 0.9, 0.9, 0.6, 0.6, 160, "#6d8cff"),
                            ("fill", 1.2, -1.0, 0.3, 1.2, 14, "#c9d6ff")]),
     "network": dict(world=("#05080f", 0.4), floor="slate", az=24, el=8, lens=60, fstop=4, fill=0.66,

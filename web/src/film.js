@@ -7,7 +7,7 @@
 //   fine   every frame, 1600 px: wide screens without touch, only around the scroll position (ahead of the way it
 //          goes) and only while the film is on screen - a visitor who never scrolls it downloads a first stretch
 //          and no more; each one replaces the base picture of its frame as it arrives
-//   sharp  every 4th frame, 2560 px: big screens, only where the scroll RESTS (the key frame there and its
+//   sharp  every 2nd frame, 2560 px: big screens, only where the scroll RESTS (the key frame there and its
 //          neighbours, a dozen at most kept)
 // One scheduler, six requests at a time.
 //
