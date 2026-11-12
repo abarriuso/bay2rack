@@ -12,7 +12,7 @@ import { BASE, filamentHexes, $, NARROW, h, svgEl, S, CALM } from './state.js';
 import { calc, usedMods } from './model.js';
 import { viewer, startEngine, runJob, definesFor, setStatus } from './engine.js';
 import { undo, redo, refresh, loadLink } from './edit.js';
-import { applyExample } from './steps.js';
+import { applyExample, loadSaved } from './steps.js';
 import { buildAdvanced } from './tabs.js';
 import { hashString, shortHash, readHash } from './hash.js';
 import { schedule, render, showEchoes, relabel } from './render.js';
@@ -184,7 +184,9 @@ async function boot() {
   S.catalog = catalog;
   S.values = { ...S.defaults };
   readHash();
-  if (!/=/.test(location.hash)) $('#examples').open = true;
+  // the ready-made builds are in the gallery right above the configurator: here they wait folded, one line; open
+  // when there are builds of your own to go back to
+  if (loadSaved().length) $('#examples').open = true;
   wire();
   refresh();
   renderGallery();

@@ -49,7 +49,7 @@ export function showResult(res, ext, values) {
   // the view opens on the rack (in the homelab a little wider: its patch cords, the top of the tower), not on the
   // whole room; the rest is there to turn to
   const focus = values.part !== 'assembly' ? null
-    : homelab ? { min: [-150, -70, -70], max: [150, 60, top + 45] } : { min: [-95, -40, -25], max: [95, 40, top] };
+    : homelab ? { min: [-112, -45, -32], max: [112, 40, top + 14] } : { min: [-95, -40, -25], max: [95, 40, top] };
   const scene = { cables: [] };
   for (const l of res.logs) {
     const m = l.match(/^ECHO: "SCENE (.*)"$/);

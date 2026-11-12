@@ -396,7 +396,7 @@ button:disabled { opacity: .45; cursor: default; }
 .zone-head b { font-size: 13.5px; }
 .zone-size { font: 500 12px var(--f-mono); font-stretch: 87.5%; color: var(--ink-3); font-variant-numeric: tabular-nums; }
 /* a choice that is off: still tappable, the tap says why */
-.zone .chip.off, .seg-btn.off, .chip.off, .mini.off { color: var(--ink-3); color: color-mix(in srgb, var(--ink) 40%, transparent); border-style: dashed; cursor: not-allowed; }
+.zone .chip.off, .seg-btn.off, .chip.off, .mini.off { color: var(--ink-3); color: color-mix(in srgb, var(--ink) 60%, transparent); border-style: dashed; cursor: not-allowed; }
 .zone .chip.off { text-decoration: line-through; }
 .zone .chip.active.misfit { background: var(--warn); border-color: var(--warn); }
 .split { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }

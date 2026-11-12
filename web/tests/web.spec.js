@@ -117,7 +117,7 @@ test('the film ends inside the configurator', async ({ page }) => {
   });
   await expect(page.locator('#film')).toHaveClass(/closing/);
   await expect.poll(() => page.locator('.film-stage').evaluate((s) => +s.style.getPropertyValue('--k'))).toBeGreaterThan(0.99);
-  await expect(page.locator('.beat.on h2')).toHaveText(/Configure yours/);
+  await expect(page.locator('.beat.on h2')).toHaveText(/Now, yours/);
   await page.locator('.beat.on .cta .btn').click();
   await expect(page.locator('#configurator')).toBeInViewport({ ratio: 0.9 });
   await expect(page.locator('#configurator')).toBeFocused();

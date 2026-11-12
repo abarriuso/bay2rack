@@ -368,8 +368,8 @@ export function previewEditor() {
     ['none', t('case_none')]];
   return [
     segmented('scene', ['homelab', 'single'], (x) => t('scene_' + x), stepHelp('scene')),
-    select(null, caseOpts, v.case_view === 'none' ? 'none' : v.case_model,
-      (val) => update(val === 'none' ? { case_view: 'none' } : { case_view: 'tower', case_model: val })),
+    Object.assign(select(null, caseOpts, v.case_view === 'none' ? 'none' : v.case_model,
+      (val) => update(val === 'none' ? { case_view: 'none' } : { case_view: 'tower', case_model: val })), { ariaLabel: t('case_pick') }),
     h('div', { className: 'toggles' },
       toggle(t('cables'), UI.cables, (on) => {
         UI.cables = on; saveUI(); viewer?.setVisible('cables', on);

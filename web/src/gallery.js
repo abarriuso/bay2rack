@@ -68,7 +68,7 @@ export function renderGallery() {
       h('span', { className: 'shot-img' },
         // (a 640 px copy for the card size; the big one for sharp screens)
         h('img', { src: `${BASE}img/gallery/${k}.webp`, srcset: `${BASE}img/gallery/${k}-640.webp 640w, ${BASE}img/gallery/${k}.webp 1200w`,
-          sizes: '(max-width: 600px) 82vw, 420px', alt: '', loading: 'lazy', decoding: 'async', width: 1200, height: 900,
+          sizes: '(max-width: 600px) 82vw, 420px', alt: t('gallery_alt', { name: t('ex_' + k) }), loading: 'lazy', decoding: 'async', width: 1200, height: 900,
           onerror: (e) => { e.target.style.visibility = 'hidden'; } }),
         h('span', { className: 'tape', textContent: units > 0 ? `${units}U` : t('opt_panel') })),
       h('figcaption', {},
