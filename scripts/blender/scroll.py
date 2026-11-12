@@ -338,6 +338,19 @@ def main():
                 sc.render.filepath = path
                 bpy.ops.render.render(write_still=True)
         return
+    if h.arg("--sharp"):
+        # the frames of --render again at 2560 x 1440, for the page to show when the scroll stops on one (the film
+        # itself plays at 1600). Same names, in sharp<TAG>/; it skips the ones already there, so it can be resumed.
+        sc.render.resolution_x, sc.render.resolution_y = 2560, 1440
+        folder = os.path.join(OUT, "sharp" + TAG)
+        for f in range(1, END + 1):
+            path = os.path.join(folder, f"f_{f:04d}.png")
+            if os.path.exists(path):
+                continue
+            sc.frame_set(f)
+            sc.render.filepath = path
+            bpy.ops.render.render(write_still=True)
+        return
     if preview or h.arg("--render"):
         fr = h.arg("--frames")
         if fr and fr is not True:

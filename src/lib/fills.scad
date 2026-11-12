@@ -315,7 +315,7 @@ module buttons_cut(w, h, t) {
     for (k = btn_leds(w, h)) led_cut(k, t, btn_led_style, false);
     xz_extrude(-t - eps, 0.6 + eps) btn_legends2d(w, h);
     if (btn_type == "retro") for (p = rt_posts(h)) translate([p[0], rt_carrier_y + eps, p[1]]) rotate([90, 0, 0])
-        cylinder(d = hw("M3")[2], h = hw("M3")[3] + 0.3, $fn = 24);     // heat-set inserts for the carrier screws
+        cylinder(d = m3_fixing == "selftap" ? M3_TAP : hw("M3")[2], h = hw("M3")[3] + 0.3, $fn = 24);   // inserts (or pilots) for the carrier screws
 }
 
 // the engraved icons and names of a button panel (0.6 mm deep): under each key, and under the ring LEDs

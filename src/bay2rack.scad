@@ -284,6 +284,9 @@ nkvm_plugs = [32, 42]; // [0:1:60]
 nkvm_split = true;
 // Hole for the M3 heat-set inserts of the NanoKVM bay (0 = 4.2 mm table value): raise it if the insert melts in crooked, lower it if it spins
 nkvm_insert_d = 0; // [0:0.05:5]
+// The M3 screws of the NanoKVM bay (lid, three-piece mountain) and of the retro button carrier: heat-set inserts, or
+// screwed straight into the plastic (no soldering iron: a 2.5 mm pilot hole the screw cuts its own thread in)
+m3_fixing = "heatset"; // [heatset:M3 heat-set inserts, selftap:M3 straight into the plastic - no soldering iron]
 // Boards of the Raspberry Pi tray made by part = rack_module, joined with +: pi5, pi4, pi3 (3B / 3B+), zero (Zero / Zero 2 W). The flat tray takes 1 or 2, the 2U blade tray up to 4 (not Zero)
 pi_boards = "pi5";
 // Blade tray: distance between boards (26 fits a Pi 5 with the active cooler, use ~32 with PoE HATs)

@@ -160,11 +160,13 @@ export function renderSteps() {
   group('make');
   // (a panel-only front cut into the frame has no rack screws)
   const rackScrews = c.units > 0 || (v.filler_mode === 'separate' && c.zones.length > 0);
-  const noIron = v.rack_fixing !== 'heatset' && v.bay_fixing !== 'heatset';
+  // no soldering iron: nothing in the build takes a heat-set insert (nuts in the rack and the bay, the M3 screws
+  // straight into the plastic)
+  const noIron = v.rack_fixing !== 'heatset' && v.bay_fixing !== 'heatset' && v.m3_fixing !== 'heatset';
   fold('screw', rackScrews ? `${v.rack_screw} · ${t('fix_' + v.rack_fixing)}` : `${v.bay_screw} · ${t('fixb_' + v.bay_fixing)}`,
     toggle(t('noIron'), noIron, (on) => update(on
-      ? { rack_screw: fixingFits(v, 'square_nut', v.rack_screw) ? v.rack_screw : 'M5', rack_fixing: 'square_nut', bay_fixing: 'nut' }
-      : { rack_screw: S.defaults.rack_screw, rack_fixing: 'heatset', bay_fixing: 'heatset' })),
+      ? { rack_screw: fixingFits(v, 'square_nut', v.rack_screw) ? v.rack_screw : 'M5', rack_fixing: 'square_nut', bay_fixing: 'nut', m3_fixing: 'selftap' }
+      : { rack_screw: S.defaults.rack_screw, rack_fixing: 'heatset', bay_fixing: 'heatset', m3_fixing: 'heatset' })),
     h('small', { className: 'hint', textContent: t(noIron ? 'noIronOn' : 'screwEasy') }),
     rackScrews ? [h('b', { className: 'row-head', textContent: t('screwRack') }),
       rowTitle('screwSize'), chips('rack_screw', SCREWS, String),

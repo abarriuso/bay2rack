@@ -157,6 +157,8 @@ nk_lo = frame_rim + 1;                                // nothing behind the plat
                                                       // this: the adapter's front frame keeps a rim round the opening
 nk_plug_c = 2;                                        // extra room round the RJ45 / HDMI plugs (their boots are wider than the jacks)
 NK_M3 = with_insert(hw("M3"), nkvm_insert_d, 0);   // M3 heat-set inserts of the lid (and the split mountain)
+// the hole those M3 screws go into: the insert's, or (m3_fixing = selftap) a pilot the screw threads itself
+NK_M3_HOLE = m3_fixing == "selftap" ? M3_TAP : NK_M3[2];
 function nk_layout(items) = len(items) > 0 && items[0] == "ks" ? "ks" : "side";
 // keystones: none in the standing version (its plugs take the whole width), one or two in ks
 function nk_nks(lay) = lay == "ks" ? max(1, nk_n_ks()) : 0;
@@ -270,10 +272,10 @@ module nk_r_mountain() {
             translate([xs, nk_r_lb, nk_zv0 + 2.5]) cube([cl, -panel_t - nk_r_lb + 1, W - 5]);
             translate([xs, nk_r_lb, nk_zv0 - nk_plug_c]) cube([cl, -panel_t - nk_c - 4.5 - nk_r_lb, W + 2 * nk_plug_c]);
         }
-        // heat-set inserts: the lid at the top of the posts, (three pieces) the plate screws at their foot
+        // heat-set inserts (or pilot holes): the lid at the top of the posts, (three pieces) the plate screws at their foot
         for (q = nk_posts("side")) translate([x0 + q[0], 0, nk_zv0 + q[1]]) {
-            translate([0, nk_r_lb - eps, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
-            if (nkvm_split) translate([0, -panel_t + eps, 0]) rotate([90, 0, 0]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+            translate([0, nk_r_lb - eps, 0]) rotate([-90, 0, 0]) cylinder(d = NK_M3_HOLE, h = NK_M3[3] + 0.8 + eps, $fn = 24);
+            if (nkvm_split) translate([0, -panel_t + eps, 0]) rotate([90, 0, 0]) cylinder(d = NK_M3_HOLE, h = NK_M3[3] + 0.8 + eps, $fn = 24);
         }
     }
 }
@@ -307,8 +309,8 @@ module nk_tray_local(lay = "ks") {
             }
             linear_extrude(nk_top) nk_posts2d(lay, v0, v1);
         }
-        // heat-set inserts from the top
-        for (q = nk_posts(lay)) translate([q[0], q[1], nk_top - NK_M3[3] - 0.8]) cylinder(d = NK_M3[2], h = NK_M3[3] + 0.8 + eps, $fn = 24);
+        // heat-set inserts (or pilot holes) from the top
+        for (q = nk_posts(lay)) translate([q[0], q[1], nk_top - NK_M3[3] - 0.8]) cylinder(d = NK_M3_HOLE, h = NK_M3[3] + 0.8 + eps, $fn = 24);
     }
 }
 

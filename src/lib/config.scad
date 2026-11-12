@@ -211,10 +211,13 @@ nk_bom = [for (m = part == "assembly" ? used_mods
           if (mod_kind(m) == "nkvm") nk_layout(mod_items(m))];
 function nk_bom_n(lay) = len([for (l = nk_bom) if (l == lay) 1]);
 n_nk_jacks = sum_list([for (l = nk_bom) nk_nks(l)]) - nk_bom_n("ks");      // (ks: keystone 1 is the coupler)
-if (len(nk_bom) > 0) echo(str("BOM | NanoKVM bay lid: ", 4 * len(nk_bom), " x M3 x 8 countersunk  +  ", 4 * len(nk_bom),
-    " x M3 heat-set insert (hole ", NK_M3[2], " x ", NK_M3[3], " mm)"));
+// the M3 screws of the NanoKVM bay and the button carrier: into heat-set inserts, or (selftap) straight into the plastic
+M3_TAP = 2.5;
+M3_INTO = m3_fixing == "selftap" ? " (straight into the plastic, no insert)" : "";
+if (len(nk_bom) > 0) echo(str("BOM | NanoKVM bay lid: ", 4 * len(nk_bom), " x M3 x 8 countersunk",
+    m3_fixing == "selftap" ? M3_INTO : str("  +  ", 4 * len(nk_bom), " x M3 heat-set insert (hole ", NK_M3[2], " x ", NK_M3[3], " mm)")));
 if (nkvm_split && nk_bom_n("side") > 0) echo(str("BOM | NanoKVM mountain to plate: ", 4 * nk_bom_n("side"),
-    " x M3 x 8 countersunk, from the back  +  ", 4 * nk_bom_n("side"), " x M3 heat-set insert (in the mountain posts)"));
+    " x M3 x 8 countersunk, from the back", m3_fixing == "selftap" ? M3_INTO : str("  +  ", 4 * nk_bom_n("side"), " x M3 heat-set insert (in the mountain posts)")));
 if (nk_bom_n("ks") > 0) echo(str("BOM | NanoKVM bay: ", nk_bom_n("ks"), " x RJ45 keystone coupler (female-female)  +  ",
     nk_bom_n("ks"), " x 10 cm patch cable (keystone to NanoKVM)"));
 n_btn = part == "rack_panel" ? (panel_fill == "buttons" ? 1 : 0)
@@ -237,7 +240,7 @@ if (n_btn > 0) {
         echo(str("BOM | buttons: ", n_btn * n_keys, " x 12 x 12 mm tactile switch (12 x 12 x 7.3) + the printed caps (part = button_cap)"));
         echo(str("BOM | buttons: ", n_btn * (btn_turbo ? 3 : 2), " x ", led_d, " mm dome LED (power green, HDD amber",
                  btn_turbo ? ", turbo yellow" : "", ") + front-panel header wires"));
-        echo(str("BOM | buttons: ", n_btn * 2, " x M3 x 8 screw + ", n_btn * 2, " x M3 heat-set insert (switch carrier)"));
+        echo(str("BOM | buttons: ", n_btn * 2, " x M3 x 8 screw", m3_fixing == "selftap" ? M3_INTO : str(" + ", n_btn * 2, " x M3 heat-set insert (switch carrier)")));
     } else {
         echo(str("BOM | buttons: ", n_btn * btn_count, " x Cherry MX compatible keyboard switch + 1u keycap (",
                  btn_count >= 2 ? "power, reset" : "power", ")"));
