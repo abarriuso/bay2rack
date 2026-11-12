@@ -125,6 +125,65 @@ test('the film ends inside the configurator', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+// a zoom of the page (or a window made narrower) changes how tall everything in the film is: the place in the film
+// is kept, not the scrollY (it once jumped to another moment)
+test('the film keeps its place when the window changes size', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await page.evaluate(() => {
+    const f = document.querySelector('#film');
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.offsetTop + (f.offsetHeight - innerHeight) * 0.45);
+  });
+  await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
+  const progress = () => page.locator('#filmBar').evaluate((b) => +(b.style.transform.match(/scaleX\(([\d.]+)\)/)?.[1] ?? 0));
+  // (the picture glides after the scroll: the place is read once it has settled)
+  let seen = -1;
+  await expect.poll(async () => { const p = await progress(), still = p > 0.3 && p === seen; seen = p; return still; }, { intervals: [400] }).toBe(true);
+  const before = seen;
+  await page.setViewportSize({ width: 1000, height: 560 });    // (as a zoom does: the svh of the film change too)
+  await expect.poll(async () => Math.abs((await progress()) - before)).toBeLessThan(0.02);
+  await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
+});
+
+// the blueprint and the explode: on, off, and nothing breaks
+test('the blueprint draws the build with its sizes, the explode takes it apart and back', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/#bays=4');
+  await rendered(page);
+  const bp = page.getByRole('button', { name: /^Blueprint/ });
+  await bp.click();
+  await expect(bp).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.vx-title')).toContainText(/4/);
+  await bp.click();
+  await expect(bp).toHaveAttribute('aria-pressed', 'false');
+  const ex = page.getByRole('button', { name: /^Take the build apart/ });
+  await ex.click();
+  await expect(ex).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.vx-range')).toHaveValue('100');
+  await ex.click();
+  await expect(ex).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('.vx-range')).toHaveValue('0');
+  expect(errors).toEqual([]);
+});
+
+// "Share": the link, and a picture of the build made for it, ready to save
+test('the share dialog makes a picture of the build', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/#bays=4');
+  await rendered(page);
+  await page.locator('#share').click();
+  const dialog = page.locator('dialog.sf-share');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('.sf-url')).toHaveValue(/bays=4|\/s\//);
+  await expect(dialog.locator('.sf-img')).toBeVisible({ timeout: 15_000 });
+  expect(await dialog.locator('.sf-img').evaluate((im) => im.naturalWidth)).toBeGreaterThan(600);
+  await expect(dialog.locator('.sf-save')).not.toHaveAttribute('aria-disabled', 'true');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('a share page sends you to its build', async ({ page }) => {
   await page.goto('/m/router/');
   await page.waitForURL(/#.*rack_modules=/);
