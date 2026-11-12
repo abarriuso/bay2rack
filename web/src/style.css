@@ -405,11 +405,12 @@ button:disabled { opacity: .45; cursor: default; }
 .tray-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; }
 .tray-slots .select { padding: 5px 8px; font-size: 13px; }
 
-.ports { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+/* six to a row, as on the panel; a narrow column wraps them rather than shrinking them past their word */
+.ports { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(40px, calc((100% - 30px) / 6)), 1fr)); gap: 6px; }
 .port {
   aspect-ratio: 1; min-width: 0; border-radius: var(--r-s); border: 1px solid var(--rule); cursor: pointer;
   display: grid; place-items: center; align-content: center; gap: 1px; padding: 2px; background: var(--plate-2);
-  font-size: 11px; line-height: 1.1; text-align: center; overflow: hidden;
+  font-size: 12px; line-height: 1.1; text-align: center; overflow: hidden;
 }
 .port { position: relative; }
 .port b { font: 600 13px var(--f-mono); }
@@ -422,7 +423,7 @@ button:disabled { opacity: .45; cursor: default; }
 .port-hdmi, .port-usb, .port-rca, .port-jack, .port-toslink { background: #2a2c31; color: #f3f1ec; }
 .port-rca { box-shadow: inset 0 -4px 0 #c0392b; }
 .port-cover { background: #5a6170; color: #fff; }
-.port-pass { background: repeating-linear-gradient(135deg, #5a6170 0 6px, #6f7787 6px 12px); color: #fff; }
+.port-pass { background: repeating-linear-gradient(135deg, #474d59 0 6px, #575e6c 6px 12px); color: #fff; }
 .port-none { background: transparent; border-style: dashed; color: var(--ink-3); }
 .port-ctl { grid-column: 1 / -1; display: flex; gap: 6px; }
 .mini { width: 28px; height: 28px; border-radius: var(--r-s); border: 1px solid var(--rule); background: var(--plate); cursor: pointer; font-weight: 700; padding: 0; }
@@ -682,7 +683,7 @@ button:disabled { opacity: .45; cursor: default; }
   .card-btn:has(> .ico) { grid-template-columns: 56px minmax(0, 1fr); }
   .card-btn > .ico { grid-row: 1 / span 2; width: 56px; height: 38px; }
   .top-actions .btn.small { display: none; }
-  .legend { font-size: 11px; padding: 6px 8px; gap: 2px; }
+  .legend { font-size: 12px; padding: 6px 8px; gap: 2px; }
   .gallery { grid-auto-columns: 82%; }
   .param { grid-template-columns: minmax(0, 1fr) 128px; }
   /* the bar over the 3D view is one row: the note that a render is done (and how long it took) is not said here,

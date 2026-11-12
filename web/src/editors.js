@@ -303,7 +303,7 @@ export function portsEditor(most, own = null) {
     h('div', { className: 'ports' },
       types.map((tp, i) => h('label', {
         className: `port port-${tp}`, dataset: { tip: tipOf('port:' + tp), tipTitle: `${i + 1} · ${t('port_' + tp)}` },
-      }, h('b', { textContent: i + 1 }), h('span', { textContent: t('port_' + tp) }),
+      }, h('b', { textContent: i + 1 }), h('span', { textContent: t('port_s_' + tp) === 'port_s_' + tp ? t('port_' + tp) : t('port_s_' + tp), 'aria-hidden': 'true' }),
         // an invisible list over the port: tap it and pick the type
         h('select', { className: 'port-pick', 'aria-label': `${t('portType')} ${i + 1}`,
           onchange: (e) => { const list = [...types]; list[i] = e.target.value; setTypes(list); } },

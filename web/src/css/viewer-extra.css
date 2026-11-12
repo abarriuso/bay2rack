@@ -76,9 +76,9 @@
 .viewer.vx-bp .legend { visibility: hidden; }
 
 @media (max-width: 600px) {
-  .vx-dims { font-size: 10px; }
+  .vx-dims { font-size: 11px; }
   /* a phone: only the bays and units, one line under the tabs (the sizes are on the drawing) */
-  .vx-title { top: 50px; right: 8px; font-size: 10px; }
+  .vx-title { top: 50px; right: 8px; font-size: 11px; }
   .vx-title > div { padding: 3px 7px; }
   .vx-title > .vx-title-head, .vx-title > div:last-child:not(:nth-child(2)) { display: none; }
   .vx-title > div + div { border-top: 0; }

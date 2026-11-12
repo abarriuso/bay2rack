@@ -90,6 +90,8 @@ export const dict = {
     sum_changed: '{n} changed', sum_on: 'On', sum_off: 'Off',
     port_rj45m: 'Metal RJ45', port_rj45: 'RJ45', port_hdmi: 'HDMI', port_usb: 'USB',
     port_cover: 'Cover', port_pass: 'Pass-through', port_none: 'None',
+    // on the port's own little square: a word that fits it (the whole name is in its tip and its list)
+    port_s_rj45m: 'RJ45', port_s_jack: 'Jack', port_s_toslink: 'TOS', port_s_cover: 'Cover', port_s_pass: 'Pass', port_s_none: '—',
     ks_metal: 'Metal keystones', ks_standard: 'Plastic keystones',
     btn_1: 'Power', btn_2: 'Power + reset',
     led_ring: 'Ring', led_ring_sub: 'the LED dome sticks out',
@@ -342,6 +344,7 @@ export const dict = {
     sum_changed: '{n} cambiadas', sum_on: 'Sí', sum_off: 'No',
     port_rj45m: 'RJ45 metálico', port_rj45: 'RJ45', port_hdmi: 'HDMI', port_usb: 'USB',
     port_cover: 'Tapón', port_pass: 'Pasacables', port_none: 'Sin hueco',
+    port_s_cover: 'Tapón', port_s_pass: 'Paso',
     ks_metal: 'Keystones metálicos', ks_standard: 'Keystones de plástico',
     btn_1: 'Encendido', btn_2: 'Encendido + reset',
     led_ring: 'Anillo', led_ring_sub: 'el LED asoma',
