@@ -224,7 +224,7 @@ cover_clear = 0.25; // [0:0.05:0.8]
 cover_cable_d = 6.5; // [3:0.5:12]
 
 /* [Button panel] */
-// Power / reset keys use normal keyboard switches (Cherry MX compatible: 14 mm cut-out, 1.5 mm plate)
+// Power / reset keys use normal keyboard switches (MX-compatible: 14 mm cut-out, 1.5 mm plate)
 btn_count = 2; // [1:Power only, 2:Power + reset]
 // mx = keyboard switches + keycaps.  metal = the round metal PC push buttons you buy (anti-vandal, LED ring, nut behind).  retro = 90s PC front: printed buttons on 12 x 12 tactile switches, POWER / HDD LEDs, pinstripes
 btn_type = "mx"; // [mx:Keyboard switch + keycap, metal:Metal PC push button, retro:Retro PC - printed buttons on tactile switches]
@@ -338,7 +338,7 @@ explode = 0; // [0:1:60]
 // Show the adapter mounted in a PC case
 case_view = "tower"; // [none:No case, ghost:Transparent bay sheets only, tower:PC tower case]
 // Real PC case for the preview (approximate outer size). auto = the smallest one with enough 5.25in bays
-case_model = "auto"; // [auto:Auto - smallest case that fits, definer5:Quiet mid tower - 2 bays, obsidian750d:Windowed full tower - 3 bays, antec300:Compact mesh tower - 3 bays, enthoopro:Large mid tower - 3 bays, definexlr2:Quiet full tower - 4 bays, haf932:Mesh full tower - 5 bays, stacker830:All-bays tower - 11 bays]
+case_model = "auto"; // [auto:Auto - smallest case that fits, quiet_mid:Quiet mid tower - 2 bays, window_full:Windowed full tower - 3 bays, mesh_compact:Compact mesh tower - 3 bays, large_mid:Large mid tower - 3 bays, quiet_full:Quiet full tower - 4 bays, mesh_full:Mesh full tower - 5 bays, all_bays:All-bays tower - 11 bays]
 // Transparent side panel of the preview tower
 case_window = "left"; // [left, right, none]
 show_devices = true;

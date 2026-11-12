@@ -574,6 +574,7 @@ button:disabled { opacity: .45; cursor: default; }
   position: fixed; z-index: 60; max-width: min(320px, calc(100vw - 24px)); padding: 10px 13px; border-radius: var(--r-s);
   background: var(--tip-bg); color: var(--tip-ink); box-shadow: 0 10px 30px rgba(0, 0, 0, .3); font-size: 13px; line-height: 1.45;
 }
+.tip:not(.sticky) { pointer-events: none; }
 .tip strong { display: block; margin-bottom: 3px; font-family: var(--f-mono); font-size: 12px; letter-spacing: .02em; opacity: .75; }
 .tip p { margin: 0; white-space: pre-line; }
 

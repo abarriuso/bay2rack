@@ -72,6 +72,16 @@ export function showResult(res, ext, values) {
   S.result = { url: URL.createObjectURL(new Blob([res.data])), name: `bay2rack-${values.part}.${ext}` };
   $('#download').disabled = false;
   setStatus(t('rendered', { s: num(res.ms / 1000) }), 'ok');
+  S.lastShown = { values, ext, scene, ms: res.ms };
+}
+
+// the texts of the result in the language now in use (after a switch: the view's label, the case, the status)
+export function relabel() {
+  const r = S.lastShown;
+  if (!r) return;
+  viewer?.setLabel(`${t('aria_view')} ${describeView(r.values)}`);
+  $('#caseName').textContent = r.ext === '3mf' && r.scene.case ? (UI.sleeper ? t('sleeperName') : t('case_m_' + r.scene.case.id)) : '';
+  if ($('#status').classList.contains('ok') && !S.dirty) setStatus(t('rendered', { s: num(r.ms / 1000) }), 'ok');
 }
 
 export function showEchoes(echoes, errors) {

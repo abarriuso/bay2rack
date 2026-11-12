@@ -30,10 +30,13 @@ export function initTooltips(tip) {
     tip.style.top = `${top}px`;
   };
 
-  const show = (el) => {
+  // sticky: opened on purpose (a tap, Enter on (i)): it takes the pointer, to be read and selected. A hover tip lets
+  // clicks through, so it never blocks the key next to the one it explains
+  const show = (el, sticky = false) => {
     const text = el.dataset.tip;
     if (!text) return;
     current = el;
+    tip.classList.toggle('sticky', sticky);
     tip.replaceChildren();
     if (el.dataset.tipTitle) tip.append(Object.assign(document.createElement('strong'), { textContent: el.dataset.tipTitle }));
     tip.append(Object.assign(document.createElement('p'), { textContent: text }));
@@ -65,7 +68,7 @@ export function initTooltips(tip) {
     if (off) {
       e.preventDefault();
       e.stopPropagation();
-      if (current === off && !tip.hidden) hide(); else show(off);
+      if (current === off && !tip.hidden) hide(); else show(off, true);
       return;
     }
     const btn = e.target.closest('.info');
@@ -73,7 +76,7 @@ export function initTooltips(tip) {
     e.preventDefault();
     e.stopPropagation();
     const el = btn.closest('[data-tip]');
-    if (current === el && !tip.hidden) hide(); else show(el);
+    if (current === el && !tip.hidden) hide(); else show(el, true);
   }, true);
   // keyboard: the help of what has the focus (not on a click, that would cover what you just pressed)
   document.addEventListener('focusin', (e) => {

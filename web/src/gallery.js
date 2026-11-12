@@ -42,6 +42,10 @@ export function wireGallery() {
     if (!drag.moved) { drag.moved = true; row.classList.add('dragging'); }
     row.scrollLeft = drag.left - dx;
   });
+  // a drag ends with a click on the card under the pointer: that one click is swallowed (only within a moment of the
+  // drag, so a drag let go outside the row does not eat the next real click)
+  let dragEnd = -1e9;
+  row.addEventListener('click', (e) => { if (performance.now() - dragEnd < 60) { e.preventDefault(); e.stopPropagation(); } }, true);
   addEventListener('pointerup', () => {
     if (!drag) return;
     const moved = drag.moved;
@@ -52,7 +56,7 @@ export function wireGallery() {
     const w = row.querySelector('.shot')?.getBoundingClientRect().width ?? 1;
     const gap = parseFloat(getComputedStyle(row).columnGap) || 0;
     row.scrollTo({ left: Math.round(row.scrollLeft / (w + gap)) * (w + gap), behavior: CALM.matches ? 'auto' : 'smooth' });
-    row.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, { capture: true, once: true });
+    dragEnd = performance.now();
   });
 }
 

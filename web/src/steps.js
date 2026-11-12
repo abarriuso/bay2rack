@@ -6,7 +6,7 @@ import { EXAMPLES } from './examples.js';
 import { EXAMPLE_KEYS, SCREWS, FIXINGS, BAY_FIXINGS, DEVICE_DIMS, UI, $, NARROW, CALM, h, svgEl, num, S } from './state.js';
 import { calc, modKind, placeMods, sideWall, fixingFits, fanPlaces, zoneList, isFan } from './model.js';
 import { viewer } from './engine.js';
-import { update } from './edit.js';
+import { update, loadLink } from './edit.js';
 import { tipOf, choice, chips, segmented, cards, toggle, step, foldStep, TOL_KEYS, rowTitle, sliderRow } from './widgets.js';
 import { labelEditor, colourEditor, multicolourEditor, tolerancesEditor, contentsEditor, fillEditor, deviceEntries, devicesEditor, portsEditor, buttonsEditor, previewEditor } from './editors.js';
 import { hashString } from './hash.js';
@@ -266,7 +266,7 @@ export function savedEditor() {
     list.length ? h('div', { className: 'chips' }, list.map((x) => h('span', { className: `chip saved-chip${x.hash === here ? ' active' : ''}` },
       h('button', { type: 'button', className: 'link', textContent: x.name, dataset: { tip: x.at },
         ...(x.hash === here ? { 'aria-current': 'true' } : {}),
-        onclick: () => { location.hash = x.hash; } }),
+        onclick: () => loadLink(x.hash) }),
       h('button', { type: 'button', className: 'link saved-del', textContent: '×', 'aria-label': `${t('savedDelete')}: ${x.name}`,
         onclick: () => { storeSaved(list.filter((y) => y !== x)); $('#examplesList').replaceChildren(...examplesEditor()); } }))))
       : h('small', { className: 'hint', textContent: t('savedNone') }),

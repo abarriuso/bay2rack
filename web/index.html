@@ -71,9 +71,12 @@
   <main>
     <section class="film" id="film" aria-label="Bay2Rack" data-i18n-aria="film_aria">
       <div class="film-stage" id="top">
+        <!-- the coda (film.js, css/film-extra.css): the workbench the film closes into at its end -->
+        <div class="film-frame" aria-hidden="true"></div>
         <img class="film-still" src="scroll/dark/960/0001.webp" width="960" height="540" alt="" data-i18n-alt="film_alt">
         <canvas id="filmCanvas" class="film-canvas" aria-hidden="true"></canvas>
         <div class="film-shade" aria-hidden="true"></div>
+        <div class="film-window" aria-hidden="true"></div>
         <ol class="film-beats">
           <li class="beat on">
             <h1 data-i18n="hero_title"></h1>
@@ -118,6 +121,7 @@
         </ol>
         <div class="film-bar" id="filmBar" aria-hidden="true"></div>
       </div>
+      <div class="film-coda" aria-hidden="true"></div>
     </section>
 
     <section class="band" id="gallery">

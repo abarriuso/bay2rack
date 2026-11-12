@@ -223,6 +223,9 @@ const CASE_STYLES = {
   // a "sleeper": a 90s beige tower outside, a modern server inside
   sleeper:      { body: 0xcbc2a8, front: 'retro', frontColor: 0xd6cdb4, window: false, top: 'solid', sleeper: true },
 };
+// the same cases under their newer ids (the model may send either)
+for (const [from, to] of Object.entries({ definer5: 'quiet_mid', obsidian750d: 'window_full', antec300: 'mesh_compact',
+  enthoopro: 'large_mid', definexlr2: 'quiet_full', haf932: 'mesh_full', stacker830: 'all_bays' })) CASE_STYLES[to] = CASE_STYLES[from];
 
 // a named sub-group of a case: the Blender video moves these as single parts
 function part(parent, name) {
@@ -461,24 +464,28 @@ export function buildCase(c) {
   const winRect = st.window ? [70, z0 + 40, d - 110, h - 80] : null;
   const winSide = c.window === 'right' ? 1 : -1;
   const sideG = part(root, 'side_panel');
-  const side = sidePanel(winSide > 0 ? w / 2 - t : -w / 2, 0, z0, d, h, t, body, st.window ? winRect : null);
+  // the shell sits a hair (e) inside the front fascia's rounded rim: where the rim ran almost along a panel (the roof,
+  // the sides) the two flickered, a dotted white line along the case's front edges. Roof and floor go between the
+  // side panels, and the rear wall inside all four, for the same reason (faces that coincide flicker)
+  const e = 0.6;
+  const side = sidePanel(winSide > 0 ? w / 2 - t - e : -w / 2 + e, 0, z0, d, h, t, body, st.window ? winRect : null);
   side.userData.role = 'side';
   sideG.add(side);
-  part(root, 'side_panel_mb').add(sidePanel(winSide > 0 ? -w / 2 : w / 2 - t, 0, z0, d, h, t, body, null));
+  part(root, 'side_panel_mb').add(sidePanel(winSide > 0 ? -w / 2 + e : w / 2 - t - e, 0, z0, d, h, t, body, null));
   if (st.window) {
-    const glass = plane(winSide * (w / 2 - t / 2), winRect[0] + winRect[2] / 2, winRect[1] + winRect[3] / 2, winRect[2], winRect[3], MAT.glass(), 'x');
+    const glass = plane(winSide * (w / 2 - e - t / 2), winRect[0] + winRect[2] / 2, winRect[1] + winRect[3] / 2, winRect[2], winRect[3], MAT.glass(), 'x');
     glass.userData.role = 'side';
     sideG.add(glass);
   }
-  part(root, 'top_panel').add(box(-w / 2, 0, z1 - t, w, d, t, body));
-  g.add(box(-w / 2, 0, z0, w, d, t, body));
+  part(root, 'top_panel').add(box(-w / 2 + t + e, 0, z1 - t - e, w - 2 * (t + e), d, t, body));
+  g.add(box(-w / 2 + t + e, 0, z0, w - 2 * (t + e), d, t, body));
   // rear wall, cut like the real sheet: a round bore for the exhaust fan next to the I/O shield, the I/O and
   // PSU openings (both fill them flush), one opening per expansion slot (the covers sit outside) and a
   // honeycomb vent field beside the slots
   const fanX = Math.min(-10, w / 2 - 60 - 66), fanZ = z1 - 120;
   const [px0, pztop, ppitch, pl] = c.pci?.length === 4 ? c.pci : [w / 2 - 18 - 112, z1 - ATX.top - ATX.slot0, ATX.pitch, 112];
   const slotZ = (i) => pztop - i * ppitch;
-  const rearWall = rrect(new THREE.Shape(), -w / 2, z0, w, h, 2);
+  const rearWall = rrect(new THREE.Shape(), -w / 2 + t + e, z0 + t, w - 2 * (t + e), h - 2 * t - e, 1);
   const cut = (x0, z0_, x1, z1_) => rearWall.holes.push(rrect(new THREE.Path(), x0, z0_, x1 - x0, z1_ - z0_, 1));
   rearWall.holes.push(new THREE.Path().absarc(fanX, fanZ, 58, 0, Math.PI * 2, true));
   cut(w / 2 - 60, z1 - ATX.top - 4 - 158.75, w / 2 - 60 + 44.45, z1 - ATX.top - 4);

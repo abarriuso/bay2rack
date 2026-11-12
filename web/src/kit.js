@@ -118,7 +118,7 @@ export async function downloadKit(testsOnly = false) {
       ...files.filter((f) => !f.name.startsWith('tests/')).map((f) => `  2. ${f.qty} x ${f.name}`), '',
       t('readme_need'), ...bom.map((b) => `  - ${b}`), '',
       t('readme_guide'), `  https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD${lang === 'es' ? '.es' : ''}.md`, '',
-      t('readme_settings'), `  ${SITE}${hashString(v)}`, '',
+      t('readme_settings'), `  ${SITE}${lang === 'es' ? 'es/' : ''}${hashString(v)}`, '',
       'https://github.com/abarriuso/bay2rack · CC BY-NC-SA 4.0', '',
     ];
     zip['bay2rack/README.txt'] = strToU8(lines.join('\n'));
@@ -126,10 +126,15 @@ export async function downloadKit(testsOnly = false) {
       Object.entries(v).filter(([k, x]) => !same(x, S.defaults[k]))), null, 2));
     const blob = new Blob([zipSync(zip, { level: 6 })], { type: 'application/zip' });
     const url = URL.createObjectURL(blob);
-    h('a', { href: url, download: testsOnly ? 'bay2rack-tests.zip' : `bay2rack-kit-${v.bays}bay.zip` }).click();
+    const zipName = testsOnly ? 'bay2rack-tests.zip' : `bay2rack-kit-${v.bays}bay.zip`;
+    h('a', { href: url, download: zipName }).click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
     setStatus(t('kitDone', { n: files.length + 2 }), 'ok', true);
     $('#nextStep').hidden = false;
+    // the finish screen: the pieces on print plates, rough filament and time, what to do next (loaded only now)
+    const pieces = files.map((f) => ({ ...f, data: zip['bay2rack/' + f.name] }));
+    import('./finish.js').then(({ showFinish }) => showFinish({ pieces, blob, zipName, testsOnly }))
+      .catch((e) => console.warn(e));
   } finally {
     S.kitBusy = false;
     $('#kit').disabled = false;

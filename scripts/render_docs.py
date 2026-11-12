@@ -31,7 +31,7 @@ VIEWS = {
     "rack-nkvm":       ("-170,-330,150,0,0,60", "1200,900", False, {"scene": "single", "case_view": "none", "rack_modules": "nkvm:side,ms105g"}),
     "rack-close":      ("-170,-330,150,0,0,60", "1200,900", False, {"scene": "single", "case_view": "none"}),
     "mounted-bezel":   (CLOSE, "1200,900", False, {**BEZEL, "scene": "single"}),
-    "mounted-1bay":    ("-260,-400,200,0,40,15", "1200,900", False, {"bays": 1, "case_model": "obsidian750d", **BEZEL, "scene": "single"}),
+    "mounted-1bay":    ("-260,-400,200,0,40,15", "1200,900", False, {"bays": 1, "case_model": "window_full", **BEZEL, "scene": "single"}),
     "btn-ring":        ("-60,-230,95,0,-10,108", "1200,900", False, {"spare_fill": "buttons", "led_style": "ring", **NO_CASE}),
     "btn-halo":        ("-60,-230,95,0,-10,108", "1200,900", False, {"spare_fill": "buttons", "led_style": "halo", **NO_CASE}),
     "btn-glow":        ("-60,-230,95,0,-10,108", "1200,900", False, {"spare_fill": "buttons", "led_style": "glow", **NO_CASE}),

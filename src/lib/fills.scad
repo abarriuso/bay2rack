@@ -224,7 +224,7 @@ module icon2d(kind, s) {
 }
 
 // ---- what goes where, for each button type -----------------------------------------------------
-//   mx    = keyboard switches (Cherry MX) + keycaps, power and HDD LEDs
+//   mx    = keyboard switches (MX type) + keycaps, power and HDD LEDs
 //   metal = the round metal PC push buttons you buy (anti-vandal, nut behind; the power one has its own LED ring)
 //   retro = a 90s PC front: printed POWER / RESET (/ TURBO) buttons on 12 x 12 tactile switches held by a
 //           printed carrier behind the panel, POWER / HDD (/ TURBO) LEDs, engraved labels and pinstripes

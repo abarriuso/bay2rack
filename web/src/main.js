@@ -11,14 +11,16 @@ import { renderLegend } from './legend.js';
 import { BASE, filamentHexes, $, NARROW, h, svgEl, S, CALM } from './state.js';
 import { calc, usedMods } from './model.js';
 import { viewer, startEngine, runJob, definesFor, setStatus } from './engine.js';
-import { past, snapshot, undo, redo, refresh } from './edit.js';
+import { undo, redo, refresh, loadLink } from './edit.js';
 import { applyExample } from './steps.js';
 import { buildAdvanced } from './tabs.js';
 import { hashString, shortHash, readHash } from './hash.js';
-import { schedule, render, showEchoes } from './render.js';
+import { schedule, render, showEchoes, relabel } from './render.js';
 import { downloadKit } from './kit.js';
+import { share } from './share.js';
 import { wireGallery, renderGallery } from './gallery.js';
 import { startFilm } from './film.js';
+import { themeSwitch, langSwap, widen } from './motion.js';
 
 // ---------------------------------------------------------------- chrome
 // moves the keyboard focus to a section (one that takes no focus of its own takes it from the script only)
@@ -27,6 +29,12 @@ function focusOn(el) {
   el.focus({ preventScroll: true });
 }
 // the language key names the other language, in that language (a screen reader says "Español", not "E S")
+// the address says the language (/ or /es/), so a reload or a copied link keeps it (nothing on the page is
+// relative to it once loaded: the files come from BASE)
+function langPath() {
+  const want = new URL(lang === 'es' ? 'es/' : './', BASE).pathname;
+  if (location.pathname !== want && !/\/m\//.test(location.pathname)) history.replaceState(null, '', want + location.search + location.hash);
+}
 function langKey() {
   const b = $('#lang');
   const other = lang === 'es' ? 'en' : 'es';
@@ -34,7 +42,11 @@ function langKey() {
   b.lang = other;
   b.setAttribute('aria-label', other === 'es' ? 'Español' : 'English');
 }
-function applyTheme(th) {
+// the theme you chose (none: the system's, followed as it changes)
+const THEMES = ['light', 'dark'];
+const storedTheme = () => { try { const v = localStorage.getItem('theme'); return THEMES.includes(v) ? v : null; } catch { return null; } };
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+function applyTheme(th, chosen = false) {
   document.documentElement.dataset.theme = th;
   viewer?.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
@@ -42,19 +54,26 @@ function applyTheme(th) {
   // the browser's own bars (Safari on iPhone) take the colour of the page
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
-  try { localStorage.setItem('theme', th); } catch { /* private mode */ }
+  // (only a choice is kept: a first visit does not freeze the system's theme of that day)
+  if (chosen) try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }
 
 function wire() {
   initTooltips($('#tip'));
   for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
-  let th = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  try { th = localStorage.getItem('theme') || th; } catch { /* private mode */ }
-  applyTheme(th);
-  $('#theme').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+  applyTheme(storedTheme() ?? (systemDark.matches ? 'dark' : 'light'));
+  systemDark.addEventListener('change', (e) => { if (!storedTheme()) applyTheme(e.matches ? 'dark' : 'light'); });
+  // (the new theme opens in a circle from this key: motion.js)
+  $('#theme').onclick = (e) => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    themeSwitch(() => applyTheme(next, true), e.currentTarget);
+  };
   $('#lang').onclick = () => {
+    langSwap();                                   // (the words of the other language come in: motion.js)
     setLang(lang === 'es' ? 'en' : 'es');
     langKey();
+    langPath();
+    relabel();
     if (adv.checked) buildAdvanced(); else $('#form').replaceChildren();
     refresh();
     renderGallery();
@@ -106,12 +125,10 @@ function wire() {
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
   $('#kit').onclick = () => downloadKit();
   $('#kitBar').onclick = () => downloadKit();
+  $('#withTests')?.addEventListener('change', () => refresh());
   $('#kitTests').onclick = () => downloadKit(true);
-  $('#share').onclick = async () => {
-    const ex = Object.keys(EXAMPLES).find((k) => hashString({ ...S.defaults, ...EXAMPLES[k] }) === hashString());
-    const url = ex ? `${BASE}m/${ex}/` : location.href.split('#')[0] + shortHash();
-    try { await navigator.clipboard.writeText(url); setStatus(t('copied'), 'ok', true); } catch { prompt('URL', url); }
-  };
+  // the link (copied at once) and a picture card of the build, in a dialog (share.js)
+  $('#share').onclick = () => share();
   document.addEventListener('keydown', (e) => {
     if (!(e.ctrlKey || e.metaKey)) return;
     if (e.key === 'Enter') render();
@@ -126,12 +143,7 @@ function wire() {
   addEventListener('hashchange', () => {
     if (location.hash === hashString()) return;
     if (!/=/.test(location.hash)) return;                       // plain section anchors (#build, #gallery…)
-    past.push(snapshot());
-    startEngine();
-    S.values = { ...S.defaults };
-    readHash();
-    refresh();
-    schedule(0);
+    loadLink(location.hash);
   });
 }
 
@@ -151,6 +163,7 @@ async function boot() {
   }
   document.documentElement.lang = lang;
   langKey();
+  langPath();
   applyI18n();
   const [src, presets, catalog] = await Promise.all([
     fetch(BASE + 'scad/bay2rack.scad').then((r) => r.text()),
@@ -169,12 +182,25 @@ async function boot() {
   renderGallery();
   wireGallery();
   startFilm();
-  // the titles (and the name in the foot) come up as they scroll into view
+  // the titles (and the name in the foot) come up as they scroll into view, their headings opening wide (motion.js)
   if (!CALM.matches && 'IntersectionObserver' in window) {
+    const waiting = new WeakSet();
     const seen = new IntersectionObserver((es) => es.forEach((e) => {
-      if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
+      const el = e.target;
+      // the first look: one already on screen (a link to #gallery, a reload further down) stays as it is - hiding it
+      // now would make it blink; the others wait for their turn, hidden (off screen: nobody sees them go)
+      if (!waiting.has(el)) {
+        const r = e.boundingClientRect;                   // (the observer's own numbers: no layout read)
+        if (r.top < innerHeight && r.bottom > 0) seen.unobserve(el);
+        else { waiting.add(el); el.classList.add('reveal'); }
+        return;
+      }
+      if (!e.isIntersecting) return;
+      el.classList.add('in');
+      seen.unobserve(el);
+      widen(el.matches('.foot-mark') ? el : el.querySelector('h2'));
     }), { rootMargin: '0px 0px -8% 0px' });
-    for (const el of document.querySelectorAll('.section-head, .foot-mark')) { el.classList.add('reveal'); seen.observe(el); }
+    for (const el of document.querySelectorAll('.section-head, .foot-mark')) seen.observe(el);
   }
   // installable, and offline after the first visit (the service worker is only in the built site)
   if ('serviceWorker' in navigator && !import.meta.env.DEV)

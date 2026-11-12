@@ -105,13 +105,13 @@ module section_cut() {
 // Outer size from the makers' spec sheets (approximate, preview only).
 // [id, name, width, height, depth, 5.25in bays, case top to the first bay, front, body colour, front colour]
 CASES = [
-    ["definer5",     "Quiet mid tower",    232, 451, 521,  2, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
-    ["obsidian750d", "Windowed full tower",       230, 560, 545,  3, 34, "solid", [0.14, 0.14, 0.15], [0.22, 0.22, 0.24]],
-    ["antec300",     "Compact mesh tower",         205, 470, 465,  3, 22, "mesh",  [0.10, 0.10, 0.11], [0.06, 0.06, 0.07]],
-    ["enthoopro",    "Large mid tower",         235, 535, 550,  3, 36, "solid", [0.11, 0.11, 0.12], [0.08, 0.08, 0.09]],
-    ["definexlr2",   "Quiet full tower", 232, 560, 560,  4, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
-    ["haf932",       "Mesh full tower",       230, 605, 548,  5, 40, "mesh",  [0.09, 0.09, 0.10], [0.05, 0.05, 0.06]],
-    ["stacker830",   "All-bays tower",   220, 547, 598, 11, 24, "mesh",  [0.70, 0.71, 0.73], [0.60, 0.61, 0.64]]
+    ["quiet_mid",     "Quiet mid tower",    232, 451, 521,  2, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
+    ["window_full", "Windowed full tower",       230, 560, 545,  3, 34, "solid", [0.14, 0.14, 0.15], [0.22, 0.22, 0.24]],
+    ["mesh_compact",     "Compact mesh tower",         205, 470, 465,  3, 22, "mesh",  [0.10, 0.10, 0.11], [0.06, 0.06, 0.07]],
+    ["large_mid",    "Large mid tower",         235, 535, 550,  3, 36, "solid", [0.11, 0.11, 0.12], [0.08, 0.08, 0.09]],
+    ["quiet_full",   "Quiet full tower", 232, 560, 560,  4, 34, "solid", [0.13, 0.13, 0.14], [0.09, 0.09, 0.10]],
+    ["mesh_full",       "Mesh full tower",       230, 605, 548,  5, 40, "mesh",  [0.09, 0.09, 0.10], [0.05, 0.05, 0.06]],
+    ["all_bays",   "All-bays tower",   220, 547, 598, 11, 24, "mesh",  [0.70, 0.71, 0.73], [0.60, 0.61, 0.64]]
 ];
 tc_fit = [for (c = CASES) if (c[5] >= bays) c];
 tc_sel = [for (c = CASES) if (c[0] == case_model) c];
@@ -598,7 +598,7 @@ wan_port = nic_on ? nic_port(0) : io_nic + [14, 0, 0];
 // down the back wall beside the exhaust fan and out through slot zs at xs. The cables lie side by side in a
 // flat ribbon (lane k), tied to the roof and the wall; under a roof fan the ribbon runs below the fan.
 // Without the printed slot brackets they leave through the back at zs.
-ROOF_FAN = TC[0] == "antec300" || TC[0] == "haf932";
+ROOF_FAN = TC[0] == "mesh_compact" || TC[0] == "mesh_full";
 TIDY_Z = tc_z1 - (ROOF_FAN ? 50 : 10);                  // the ribbon's height along the roof
 TIDY_Y = TC_D - 15;                                     // and its distance down the back wall
 function tidy_x(k) = -TC_W / 2 + 18 + k * 5.5;
@@ -778,7 +778,7 @@ module assembly() {
             if (pi == "all" || pi == "adapter") scene_echo();
             if ((pi == "all" || pi == "clients") && case_view == "tower" && scene == "homelab") client_bezels();
             if ((pi == "all" || pi == "clients" || pi == "brackets") && case_view == "tower") rear_brackets();
-            // one bezel of the Proxmox node on its own (the video swaps them)
+            // one bezel of the virtualization node on its own (the video swaps them)
             for (k = [0, 1]) if (pi == str("bezel", k) && case_view == "tower" && scene == "homelab")
                 client_bezel(CLIENT_FILLS[k][0], cl_x[0], client_bezels_at()[k][0], CLIENT_FILLS[k][1]);
         }

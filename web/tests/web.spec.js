@@ -79,6 +79,27 @@ test.describe('on a phone', () => {
   });
 });
 
+// the end of the film: its coda closes the picture into the shape of the configurator, and "Configure yours" carries
+// the frame on screen into the 3D view, then gives way to it
+test('the film ends inside the configurator', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await page.evaluate(() => {
+    const f = document.querySelector('#film'), st = document.querySelector('.film-stage');
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.offsetTop + f.offsetHeight - st.offsetHeight - parseFloat(getComputedStyle(st).top) - 4);
+  });
+  await expect(page.locator('#film')).toHaveClass(/closing/);
+  await expect.poll(() => page.locator('.film-stage').evaluate((s) => +s.style.getPropertyValue('--k'))).toBeGreaterThan(0.99);
+  await expect(page.locator('.beat.on h2')).toHaveText(/Configure yours/);
+  await page.locator('.beat.on .cta .btn').click();
+  await expect(page.locator('#configurator')).toBeInViewport({ ratio: 0.9 });
+  await expect(page.locator('#configurator')).toBeFocused();
+  await expect(page.locator('.film-handoff')).toHaveCount(0, { timeout: 15_000 });
+  expect(errors).toEqual([]);
+});
+
 test('a share page sends you to its build', async ({ page }) => {
   await page.goto('/m/router/');
   await page.waitForURL(/#.*rack_modules=/);

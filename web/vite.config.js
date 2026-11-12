@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { readFileSync } from 'node:fs';
 import { dict } from './src/strings.js';
-import { EXAMPLES } from './src/examples.js';
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..');
 const TYPES = { '.scad': 'text/plain', '.json': 'application/json', '.stl': 'model/stl', '.md': 'text/markdown', '.webp': 'image/webp', '.png': 'image/png', '.mp4': 'video/mp4', '.webm': 'video/webm' };
@@ -64,36 +63,15 @@ function spanish(html) {
     .replace(/(<meta property="og:description" content=")[^"]*/, `$1${attr(es.page_desc)}`)
     .replace(/(<meta property="og:url" content=")[^"]*/, `$1${SITE}es/`)
     .replace(/(<link rel="canonical" href=")[^"]*/, `$1${SITE}es/`)
+    // the attributes the script would translate: names for screen readers, picture texts, the guide's link
+    .replace(/<[a-z0-9]+\b[^>]*\bdata-i18n-(aria|alt)="([^"]+)"[^>]*>/g, (tag, kind, key) => {
+      const name = kind === 'aria' ? 'aria-label' : 'alt';
+      return es[key] == null ? tag : tag.replace(new RegExp(`(?<![\\w-])${name}="[^"]*"`), `${name}="${attr(es[key])}"`);
+    })
+    .replace(/(<a\b[^>]*?)\bhref="[^"]*"([^>]*\bdata-href-es="([^"]+)")/g, '$1href="$3"$2')
+    .replace(/("description":\s*")[^"]*(")/, `$1${es.page_desc.replace(/"/g, '\\"')}$2`)
     // one folder down: the relative addresses go up one
     .replace(/\b(src|href|poster)="(?!https?:|#|data:|mailto:|\/)([^"]*)"/g, '$1="../$2"');
-}
-function sharePage(k) {
-  const en = dict.en;
-  const hash = '#' + new URLSearchParams(Object.entries(EXAMPLES[k]).map(([a, b]) => [a, String(b)])).toString();
-  const img = existsSync(join(repo, 'docs', 'gallery', `${k}-og.jpg`)) ? `img/gallery/${k}-og.jpg` : 'img/og.jpg';
-  const title = `${en['ex_' + k]} · Bay2Rack`;
-  const to = `../../${hash}`;
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${esc(title)}</title>
-  <meta name="robots" content="noindex">
-  <meta name="description" content="${attr(en['ex_' + k + '_tip'])}">
-  <meta property="og:type" content="website">
-  <meta property="og:title" content="${attr(title)}">
-  <meta property="og:description" content="${attr(en['ex_' + k + '_tip'])}">
-  <meta property="og:image" content="${SITE}${img}">
-  <meta property="og:url" content="${SITE}m/${k}/">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="canonical" href="${SITE}">
-  <meta http-equiv="refresh" content="0; url=${attr(to)}">
-  <script>location.replace(${JSON.stringify(to)});</script>
-</head>
-<body><p><a href="${attr(to)}">${esc(title)}</a></p></body>
-</html>
-`;
 }
 const extraPages = () => {
   let outDir = 'dist';
@@ -105,13 +83,40 @@ const extraPages = () => {
       const dir = join(dirname(fileURLToPath(import.meta.url)), outDir);
       mkdirSync(join(dir, 'es'), { recursive: true });
       writeFileSync(join(dir, 'es', 'index.html'), spanish(readFileSync(join(dir, 'index.html'), 'utf8')));
-      for (const k of Object.keys(EXAMPLES)) {
-        mkdirSync(join(dir, 'm', k), { recursive: true });
-        writeFileSync(join(dir, 'm', k, 'index.html'), sharePage(k));
-      }
+      // any other address: a page that says so (without it the host answers with the home page, broken one folder down)
+      writeFileSync(join(dir, '404.html'), notFound());
+      // (the pages of the ready-made builds, m/<build>/ and es/m/<build>/, come from scripts/copy-assets.mjs)
     },
   };
 };
+
+function notFound() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>404 · Bay2Rack</title>
+  <style>
+    :root { color-scheme: light dark; --g: #fff; --i: #0a0a0a; --s: #d81f12; }
+    @media (prefers-color-scheme: dark) { :root { --g: #000; --i: #f5f5f5; --s: #ff4b3e; } }
+    body { margin: 0; min-height: 100vh; display: grid; place-content: center; gap: 24px; padding: 24px; background: var(--g); color: var(--i);
+      font: 16px/1.5 system-ui, sans-serif; }
+    h1 { margin: 0; font-size: clamp(4rem, 18vw, 12rem); line-height: .85; letter-spacing: -.05em; font-weight: 900; }
+    h1 b { color: var(--s); }
+    p { margin: 0; max-width: 40ch; }
+    a { color: inherit; font-weight: 700; text-underline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <h1>4<b>0</b>4</h1>
+  <p>This page does not exist. <a href="/">Bay2Rack</a></p>
+  <p lang="es">Esta página no existe. <a href="/es/">Bay2Rack en español</a></p>
+</body>
+</html>
+`;
+}
 
 // Relative base so the build works on any path (GitHub Pages serves it under /bay2rack/).
 export default defineConfig({

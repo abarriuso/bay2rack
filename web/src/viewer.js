@@ -11,6 +11,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MAT, boxUV, materialFor } from './materials.js';
 import { buildScene } from './scene.js';
+import { ViewTools } from './blueprint.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
 const VIEW_DIR = new THREE.Vector3(-0.55, -1, 0.6).normalize();   // front-left, from above
@@ -61,7 +62,9 @@ export class Viewer {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
     this.controls.addEventListener('change', () => { this.dirty = true; });
-    this.controls.addEventListener('start', () => this.stopFly?.());      // a drag takes the camera from a glide
+    // a drag takes the camera from a glide; while a finger or the mouse holds it, frames are asked for
+    this.controls.addEventListener('start', () => { this.stopFly?.(); this.dragging = true; this.kick?.(); });
+    this.controls.addEventListener('end', () => { this.dragging = false; this.kick?.(); });
 
     this.scene.add(new THREE.HemisphereLight(0xffffff, 0x8b8f99, 0.6));
     this.key = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -99,22 +102,41 @@ export class Viewer {
     this.camera.position.set(-300, -500, 300);
     this.hooks = [];          // per-frame callbacks (animations)
     this.active = true;       // paused while scrolled out of view
+    // the frames: one is asked for only while there is something to draw (dirty, an animation, the camera moving or
+    // held); at rest nothing runs at all, not even an empty requestAnimationFrame
     let last = performance.now();
+    let frame = 0;
     const loop = (now) => {
-      requestAnimationFrame(loop);
-      const dt = Math.min(0.1, (now - last) / 1000);
+      frame = 0;
+      const dt = Math.min(0.1, Math.max(0, now - last) / 1000);
       last = now;
-      if (!this.active) return;
-      for (const f of this.hooks) f(dt);
+      if (!this.active) return;                           // (the IntersectionObserver asks again when it is back)
+      for (const f of [...this.hooks]) f(dt);
       // controls.update() is true while the camera moves (dragging, and the damping after it)
       const moved = this.controls.update();
-      if (!moved && !this.dirty && !this.hooks.length) return;
-      this.dirty = false;
-      this.composer.render();
+      if (moved || this._dirty || this.hooks.length) {
+        this._dirty = false;
+        this.depthRange();
+        this.composer.render();
+        this.tools?.place();                              // the blueprint's labels follow (only when it drew)
+      }
+      if (moved || this._dirty || this.hooks.length || this.dragging) this.kick();
     };
-    requestAnimationFrame(loop);
+    this.kick = () => {
+      if (frame) return;
+      last = Math.max(last, performance.now() - 1000 / 60);   // (after a rest the first step is one frame, not a jump)
+      frame = requestAnimationFrame(loop);
+    };
+    this.kick();
     new IntersectionObserver(([e]) => { this.active = e.isIntersecting; this.dirty = true; }).observe(el);
+    // the blueprint and the explode, in the page's viewer only (not in an off-screen one, the GLB export)
+    const bar = el.closest('.viewer')?.querySelector('.floatbar');
+    this.tools = bar ? new ViewTools(this, bar) : null;
   }
+
+  // something changed on screen: a frame is asked for
+  get dirty() { return this._dirty; }
+  set dirty(on) { this._dirty = on; if (on) this.kick?.(); }
 
   // what the view shows, for screen readers (the canvas is an image to them)
   setLabel(text) {
@@ -148,6 +170,7 @@ export class Viewer {
     // the outlines take the accent of the theme (the page has switched it already)
     const c = signal();
     for (const m of this.marks) for (const mat of m.userData.mats) mat.color.set(c);
+    this.tools?.theme(theme);
   }
 
   resize() {
@@ -163,6 +186,7 @@ export class Viewer {
   clear() {
     this.dirty = true;
     this.stopArrive?.();
+    this.tools?.cleared();
     for (const o of [this.model, this.extras]) {
       if (!o) continue;
       this.scene.remove(o);
@@ -187,7 +211,9 @@ export class Viewer {
   setVisible(what, on) {
     this.dirty = true;
     this.show[what] = on;
-    this.extras?.traverse((o) => { if (o.userData.role === what) o.visible = on; });
+    // (the cables stay away while the build is apart)
+    const off = what === 'cables' && this.tools?.cablesHidden;
+    this.extras?.traverse((o) => { if (o.userData.role === what) o.visible = on && !off; });
   }
 
   // one STL (a printed part) or a coloured 3MF -> group of meshes with real materials
@@ -230,6 +256,7 @@ export class Viewer {
     const obj = this.parse(buffer, ext);
     this.show3d(obj, opts);
     this.arrive(obj, opts.keepView);
+    this.tools?.loaded(opts.keepView);
   }
 
   // an animation of the view: f(0..1) on every frame for `ms`, then it is gone (the view only draws while
@@ -240,6 +267,7 @@ export class Viewer {
     const stop = () => { const i = this.hooks.indexOf(hook); if (i >= 0) this.hooks.splice(i, 1); this.dirty = true; };
     const hook = (dt) => { t = Math.min(1, t + dt * 1000 / ms); f(t); if (t >= 1) { stop(); done?.(); } };
     this.hooks.push(hook);
+    this.dirty = true;                                    // (the frames start)
     return stop;
   }
 
@@ -297,7 +325,9 @@ export class Viewer {
     this.focus = focus ? box.clone().intersect(new THREE.Box3(new THREE.Vector3(...focus.min), new THREE.Vector3(...focus.max))) : null;
     if (this.focus?.isEmpty()) this.focus = null;
     this.whole = box;
-    if (!keepView) this.fit();
+    // (a waiting entry from a side is the first model's way in, whatever the view)
+    if (!keepView || this.entry) this.fit(undefined, this.entry);
+    this.entry = null;
     // a step still pointed at: its outline is there at once on the new result (it was on screen already)
     this.parts = scene?.parts ?? null;
     const boxes = this.partBoxes(this.pointTarget);
@@ -307,7 +337,7 @@ export class Viewer {
     }
   }
 
-  fit(box = this.focus ?? this.whole) {
+  fit(box = this.focus ?? this.whole, entry = null) {
     this.dirty = true;
     if (!box) return;
     const center = box.getCenter(new THREE.Vector3());
@@ -320,24 +350,51 @@ export class Viewer {
     this.camera.near = dist / 100;
     this.camera.far = dist * 30;
     this.camera.updateProjectionMatrix();
-    this.flyTo(center.clone().addScaledVector(VIEW_DIR, dist), center);
+    this.flyTo(center.clone().addScaledVector(VIEW_DIR, dist), center, entry);
+  }
+
+  // the first model comes in from a side: the camera starts out along `dir` (a direction from the target) and glides
+  // to the fitted view in `ms` (the film hands over to the configurator with it). Before the model is there it waits.
+  enterFrom(dir, ms = 1100) {
+    const entry = { dir: (dir?.isVector3 ? dir.clone() : new THREE.Vector3(...dir)).normalize(), ms };
+    if (this.whole) this.fit(undefined, entry);
+    else this.entry = entry;
   }
 
   // the camera glides to a view instead of jumping; the first time it comes in from further out, turning.
   // A drag or a key takes over at once.
-  flyTo(eye, target) {
+  flyTo(eye, target, entry = null) {
     this.stopFly?.();
     const first = !this.flown;
     this.flown = true;
-    const from = first ? target.clone().add(eye.clone().sub(target).multiplyScalar(1.3).applyAxisAngle(THREE.Object3D.DEFAULT_UP, -0.45))
-      : this.camera.position.clone();
-    const fromT = first ? target.clone() : this.controls.target.clone();
-    this.stopFly = this.run(first ? 1100 : 480, (t) => {
+    const from = entry ? target.clone().addScaledVector(entry.dir, eye.distanceTo(target) * 1.3)
+      : first ? target.clone().add(eye.clone().sub(target).multiplyScalar(1.3).applyAxisAngle(THREE.Object3D.DEFAULT_UP, -0.45))
+        : this.camera.position.clone();
+    const fromT = first || entry ? target.clone() : this.controls.target.clone();
+    this.stopFly = this.run(entry ? entry.ms : first ? 1100 : 480, (t) => {
       const k = easeOut(t);
       this.camera.position.lerpVectors(from, eye, k);
       this.controls.target.lerpVectors(fromT, target, k);
       this.controls.update();
     }, () => { this.stopFly = null; });
+  }
+
+  // the near plane as far out as the scene allows (it was a hundredth of the distance: the depth buffer then had too
+  // little precision, and a cable inside the case came through its closed front as a dotted line). Only the frames
+  // that draw: a box distance, the projection again only when it changes by more than a few per cent.
+  depthRange() {
+    const box = this.whole;
+    if (!box) return;
+    const cam = this.camera.position;
+    const d = cam.distanceTo(this.controls.target);
+    // (room round the scene for what moves out of it: the exploded parts, the outlines)
+    const room = box.getSize(this._v ??= new THREE.Vector3()).length() * 0.1 + 180;
+    const gap = Math.max(0, box.distanceToPoint(cam) - room);
+    const near = Math.max(d / 100, Math.min(gap * 0.8, d / 2));
+    if (Math.abs(near - this.camera.near) > this.camera.near * 0.04) {
+      this.camera.near = near;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   // camera from eye + target (README captures)

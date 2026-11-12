@@ -5,7 +5,7 @@ import { calc, fixingFits, fanPlaces } from './model.js';
 import { startEngine } from './engine.js';
 import { renderSteps } from './steps.js';
 import { renderTabs, syncAdvanced, showPrebuilt } from './tabs.js';
-import { writeHash } from './hash.js';
+import { writeHash, readHash } from './hash.js';
 import { schedule } from './render.js';
 
 // ---------------------------------------------------------------- state changes
@@ -35,6 +35,17 @@ export function update(patch) {
   normalize(S.values);
   refresh();
   schedule();
+}
+// the settings of a link or a saved build ('#' for the defaults): one undo step, like any change
+export function loadLink(hash) {
+  startEngine();
+  past.push(snapshot());
+  if (past.length > 60) past.shift();
+  future.length = 0;
+  S.values = { ...S.defaults };
+  readHash(hash);
+  refresh();
+  schedule(0);
 }
 // a choice another one made impossible moves to one that works
 export function normalize(v) {

@@ -1,0 +1,85 @@
+/* The viewer's tools (blueprint.js, explode.js): two keys and a slider in its bar, the blueprint's labels over the
+   view. Square, hairlines, the mono font; the red only where the rack screws are. */
+
+.vx-tools { display: flex; align-items: center; gap: 6px; }
+.floatbar .vx-btn {
+  width: 32px; height: 32px; color: var(--ink-2);
+  background: var(--plate); background: color-mix(in srgb, var(--plate) 88%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.floatbar .vx-btn:hover { color: var(--ink); }
+.floatbar .vx-btn[aria-pressed="true"] { background: var(--key); color: var(--key-ink); border-color: var(--key); }
+.vx-btn svg { width: 18px; height: 18px; }
+
+/* the explode: its key and, where there is room, a slider joined to it */
+.vx-explode { display: flex; align-items: center; }
+.vx-range {
+  -webkit-appearance: none; appearance: none; width: 96px; height: 32px; margin: 0; padding: 0 10px;
+  border: 1px solid var(--rule); border-left: 0; cursor: pointer;
+  background: var(--plate); background: color-mix(in srgb, var(--plate) 88%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.vx-range::-webkit-slider-runnable-track {
+  height: 1px; background: linear-gradient(90deg, var(--ink) calc(var(--vx-k, 0) * 100%), var(--edge) 0);
+}
+.vx-range::-moz-range-track { height: 1px; background: var(--edge); }
+.vx-range::-moz-range-progress { height: 1px; background: var(--ink); }
+.vx-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 10px; height: 14px; margin-top: -7px;
+  background: var(--ink); border: 0; border-radius: 0;
+}
+.vx-range::-moz-range-thumb { width: 10px; height: 14px; background: var(--ink); border: 0; border-radius: 0; }
+.vx-range:focus-visible { outline: 2px solid var(--signal); outline-offset: -2px; }
+.vx-range:hover { border-color: var(--ink-3); }
+
+/* phones: the key alone (it takes the whole build apart and back), so the bar stays one row */
+@media (max-width: 600px) {
+  .vx-tools { gap: 4px; }
+  .floatbar .vx-btn { width: 30px; height: 30px; }
+  .vx-range { display: none; }
+}
+
+/* ------------------------------------------------------------ blueprint */
+/* the paper the two looks cross through (blueprint.js fades it) */
+.vx-veil {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0;
+  background: var(--vx-paper, var(--ground)); will-change: opacity;
+}
+.vx-dims {
+  position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none;
+  visibility: hidden; opacity: 0; overflow: visible;
+  font: 500 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .02em;
+}
+.vx-dims line, .vx-dims polyline { stroke: var(--ink); stroke-width: 1; fill: none; vector-effect: non-scaling-stroke; }
+.vx-dims .vx-ext { stroke: var(--ink-3); stroke-width: .75; }
+.vx-dims .vx-tick { stroke-width: 1.4; }
+.vx-dims text {
+  fill: var(--ink); dominant-baseline: middle; font-variant-numeric: tabular-nums;
+  paint-order: stroke; stroke: var(--vx-paper, var(--ground)); stroke-width: 4px; stroke-linejoin: round;
+}
+.vx-dims .vx-post line { stroke: var(--signal); stroke-width: .9; stroke-dasharray: 14 3 2 3; }
+.vx-dims .vx-unit polyline { stroke: var(--ink-3); stroke-width: .75; }
+.vx-dims .vx-unit circle { fill: var(--ink); }
+.vx-dims .vx-unit text { font-weight: 650; }
+
+/* the title block, like the corner of a drawing */
+.vx-title {
+  position: absolute; z-index: 1; right: 10px; top: 52px; pointer-events: none; visibility: hidden; opacity: 0;
+  border: 1px solid var(--ink); background: var(--vx-paper, var(--ground)); color: var(--ink);
+  font: 500 11px/1.25 var(--f-mono); font-stretch: 87.5%; letter-spacing: .04em; text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.vx-title > div { padding: 5px 9px; }
+.vx-title > div + div { border-top: 1px solid var(--ink); }
+.vx-title-head { font-weight: 700; letter-spacing: .12em; }
+/* the cables' legend has no place on a drawing (the cables are not drawn) */
+.viewer.vx-bp .legend { visibility: hidden; }
+
+@media (max-width: 600px) {
+  .vx-dims { font-size: 10px; }
+  /* a phone: only the bays and units, one line under the tabs (the sizes are on the drawing) */
+  .vx-title { top: 50px; right: 8px; font-size: 10px; }
+  .vx-title > div { padding: 3px 7px; }
+  .vx-title > .vx-title-head, .vx-title > div:last-child:not(:nth-child(2)) { display: none; }
+  .vx-title > div + div { border-top: 0; }
+}

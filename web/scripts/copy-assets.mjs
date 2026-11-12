@@ -130,4 +130,63 @@ self.addEventListener('fetch', (e) => {
 });
 `);
 
+// The page of each ready-made build, in both languages (m/<build>/ and es/m/<build>/): its name, its text and its
+// picture for link previews (og / twitter, with the picture's size), then straight into the configurator. The share
+// button links to the one in the page's language. (vite.config.js writes the English ones again after the build.)
+const { dict } = await import('../src/strings.js');
+const { EXAMPLES } = await import('../src/examples.js');
+const jpegSize = (file) => {
+  const b = readFileSync(file);
+  for (let i = 2; i + 9 < b.length;) {
+    if (b[i] !== 0xff) { i++; continue; }
+    const m = b[i + 1];
+    if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)];
+    i += 2 + b.readUInt16BE(i + 2);
+  }
+  return null;
+};
+const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+for (const l of ['en', 'es']) {
+  const tx = (k) => dict[l][k] ?? dict.en[k] ?? '';
+  for (const k of Object.keys(EXAMPLES)) {
+    const own = join(repo, 'docs', 'gallery', `${k}-og.jpg`);
+    const img = existsSync(own) ? `img/gallery/${k}-og.jpg` : 'img/og.jpg';
+    const size = jpegSize(existsSync(own) ? own : join(repo, 'docs', 'img', 'og.jpg'));
+    const title = `${tx('ex_' + k)} · Bay2Rack`;
+    const desc = tx('ex_' + k + '_tip');
+    const hash = '#' + new URLSearchParams(Object.entries(EXAMPLES[k]).map(([a, b]) => [a, String(b)])).toString();
+    const to = `../../${hash}`;                        // m/<k>/ -> the site (or /es/) with the build's settings
+    const here = `${SITE}${l === 'es' ? 'es/' : ''}m/${k}/`;
+    const dir = join(pub, ...(l === 'es' ? ['es'] : []), 'm', k);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, 'index.html'), `<!doctype html>
+<html lang="${l}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${esc(title)}</title>
+  <meta name="robots" content="noindex">
+  <meta name="description" content="${esc(desc)}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Bay2Rack">
+  <meta property="og:locale" content="${l === 'es' ? 'es_ES' : 'en_US'}">
+  <meta property="og:title" content="${esc(title)}">
+  <meta property="og:description" content="${esc(desc)}">
+  <meta property="og:image" content="${SITE}${img}">
+${size ? `  <meta property="og:image:width" content="${size[0]}">\n  <meta property="og:image:height" content="${size[1]}">\n` : ''}  <meta property="og:image:alt" content="${esc(title)}">
+  <meta property="og:url" content="${here}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${esc(title)}">
+  <meta name="twitter:description" content="${esc(desc)}">
+  <meta name="twitter:image" content="${SITE}${img}">
+  <link rel="canonical" href="${SITE}${l === 'es' ? 'es/' : ''}">
+  <meta http-equiv="refresh" content="0; url=${esc(to)}">
+  <script>location.replace(${JSON.stringify(to)});</script>
+</head>
+<body><p><a href="${esc(to)}">${esc(title)}</a></p></body>
+</html>
+`);
+  }
+}
+
 console.log('static assets copied to web/public/');

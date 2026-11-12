@@ -1,0 +1,60 @@
+/* The end of the scroll film (film.js): its coda and the way into the configurator. On top of the film of style.css.
+
+   The coda is a little more scroll after the last frame. Over it the stage closes into the shape of the workbench
+   under it: a frame on the page's edges, the steps column on the left (the last text sits in it, as the steps will)
+   and the picture cut down to where the 3D view will be, with its hairlines. film.js only writes --k (0 film, 1
+   workbench) on the stage; everything else follows from it here, so a frame of the coda is one style change, no
+   layout. A phone's configurator has its 3D view on top and the steps under it: so has its coda. */
+
+/* the coda's length: style.css's film (760 / 620 svh on phones) and 70 svh more; film.js reads the coda from
+   .film-coda, so the frames keep their pace */
+.film.coda { height: 830vh; height: 830svh; }
+@media (max-width: 760px) { .film.coda { height: 690svh; } }
+.film-coda { position: absolute; left: 0; right: 0; bottom: 0; height: 70vh; height: 70svh; pointer-events: none; visibility: hidden; }
+.film.plain .film-coda, .film-frame, .film-window { display: none; }
+
+.film-stage {
+  --k: 0;
+  /* the workbench, seen from the stage: the page's edges, a little air above and below, the steps column as wide
+     as the last text (and never narrower than the real one) */
+  --fr-t: var(--s-3); --fr-b: var(--s-3);
+  --fr-l: max(var(--gutter-l), calc((100% - var(--page)) / 2 + var(--gutter-l)));
+  --fr-r: max(var(--gutter-r), calc((100% - var(--page)) / 2 + var(--gutter-r)));
+  --fr-col: max(350px, calc(min(52ch, 38%) + 2 * var(--s-5)));
+}
+.film.coda:not(.plain) .film-frame, .film.coda:not(.plain) .film-window { display: block; }
+.film-frame, .film-window { position: absolute; pointer-events: none; opacity: var(--k); visibility: hidden; }
+.film.closing .film-frame, .film.closing .film-window { visibility: visible; }
+/* under the picture: the page's ground around the frame, the plate of the steps column in it */
+.film-frame {
+  top: var(--fr-t); bottom: var(--fr-b); left: var(--fr-l); right: var(--fr-r);
+  border: 1px solid var(--rule); background: var(--plate); box-shadow: 0 0 0 100vmax var(--ground);
+}
+/* over the picture: the hairline between the steps and the view */
+.film-window {
+  top: calc(var(--fr-t) + 1px); bottom: calc(var(--fr-b) + 1px); right: calc(var(--fr-r) + 1px);
+  left: calc(var(--fr-l) + var(--fr-col)); border-left: 1px solid var(--rule);
+}
+.film.closing .film-still, .film.closing .film-canvas {
+  clip-path: inset(calc(var(--k) * (var(--fr-t) + 1px)) calc(var(--k) * (var(--fr-r) + 1px))
+    calc(var(--k) * (var(--fr-b) + 1px)) calc(var(--k) * (var(--fr-l) + var(--fr-col) + 1px)));
+}
+.film.closing .film-shade, .film.closing .film-bar { opacity: calc(1 - var(--k)); }
+/* the last text steps into the column, as far in as the steps sit in theirs */
+.film.closing .beat:last-child { translate: calc(var(--k) * var(--s-5)) 0; }
+
+/* upright (a phone): the view on top, as tall as the configurator's, the picture slides up into it */
+@media (max-aspect-ratio: 4/3) {
+  .film-stage { --win: max(200px, min(42vh, 440px)); --win: max(200px, min(42svh, 440px)); }
+  .film-frame { inset: 0; border: 0; box-shadow: none; }
+  .film-window { inset: 0 0 auto 0; height: var(--win); border-left: 0; border-bottom: 1px solid var(--rule); }
+  .film.closing .film-still, .film.closing .film-canvas {
+    clip-path: inset(calc(var(--k) * (100% - var(--win)) / 2) 0);
+    translate: 0 calc(var(--k) * (var(--win) - 100%) / 2);
+  }
+  .film.closing .beat:last-child { translate: none; }
+}
+
+/* "Configure yours": the frame on screen, on its way into the 3D view (film.js moves it; under the header) */
+.film-handoff { position: fixed; inset: 0; z-index: 25; pointer-events: none; }
+.film-handoff canvas { position: absolute; display: block; will-change: transform; }

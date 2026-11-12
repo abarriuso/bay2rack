@@ -6,7 +6,7 @@ look per build: a desk at night, a blue homelab shelf, a workbench, a macro, a w
 case in haze, a white product shot, late sun.
 
 Input: docs/blender/gallery/<k>.glb (+ .json), exported from the web viewer in dev mode (see export-glb.js):
-  await __b2r.exportBuild('gallery/router', { ...__b2r.EXAMPLES.router, case_model: 'definexlr2' }, { filament })
+  await __b2r.exportBuild('gallery/router', { ...__b2r.EXAMPLES.router, case_model: 'quiet_full' }, { filament })
 
 Run (Blender 5.2):
   blender -b -P scripts/blender/gallery.py -- router [kvm ...] [--samples 256] [--preview]

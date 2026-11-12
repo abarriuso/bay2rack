@@ -37,12 +37,12 @@ const STEP_HELP = {
     es: 'Cada puerto del patch panel: keystone RJ45 metálico o de plástico, HDMI, USB, audio (RCA, jack de 3,5 mm, Toslink), un tapón liso impreso para un puerto sin usar, un tapón pasacables partido para un cable que entra por delante (p. ej. el de alimentación del switch), o sin hueco.',
   },
   buttons: {
-    en: 'Power and reset (and TURBO on the retro panel) plus power and disk-activity LEDs, wired to the motherboard front-panel header.\nKeyboard switch: Cherry MX compatible, any 1u keycap. Metal push button: the round ones sold for PC cases, with an LED ring. Retro: printed buttons on 12 mm tactile switches held by a printed carrier, like a 90s beige PC.\nLED styles (keyboard switches): ring, a halo round each key, or a hidden glow that lights the engraved icon.',
-    es: 'Encendido y reset (y TURBO en la retro) con LEDs de encendido y de disco, conectados al panel frontal de la placa base.\nTecla mecánica: compatible Cherry MX, cualquier tecla 1u. Pulsador metálico de PC: los redondos que se venden para cajas, con anillo LED. Retro: botones impresos sobre micropulsadores de 12 mm en un soporte impreso, como un PC beige de los 90.\nEstilos de LED (teclas mecánicas): anillo, halo alrededor de cada tecla o brillo oculto que ilumina el icono grabado.',
+    en: 'Power and reset (and TURBO on the retro panel) plus power and disk-activity LEDs, wired to the motherboard front-panel header.\nKeyboard switch: MX-compatible, any 1u keycap. Metal push button: the round ones sold for PC cases, with an LED ring. Retro: printed buttons on 12 mm tactile switches held by a printed carrier, like a 90s beige PC.\nLED styles (keyboard switches): ring, a halo round each key, or a hidden glow that lights the engraved icon.',
+    es: 'Encendido y reset (y TURBO en la retro) con LEDs de encendido y de disco, conectados al panel frontal de la placa base.\nTecla mecánica: compatible MX, cualquier tecla 1u. Pulsador metálico de PC: los redondos que se venden para cajas, con anillo LED. Retro: botones impresos sobre micropulsadores de 12 mm en un soporte impreso, como un PC beige de los 90.\nEstilos de LED (teclas mecánicas): anillo, halo alrededor de cada tecla o brillo oculto que ilumina el icono grabado.',
   },
   scene: {
-    en: 'Homelab: this PC as the router (with a 4-port network card), a Proxmox node, a TrueNAS box and an access point next to it. Cable colours are VLANs: the cables leave the case through printed brackets in two PCI slots and run to the patch panel.',
-    es: 'Homelab: este PC como router (con una tarjeta de red de 4 puertos), y al lado un nodo Proxmox, un NAS con TrueNAS y un punto de acceso. Los colores de los cables son VLANs: salen de la caja por chapas impresas en dos ranuras PCI y llegan al patch panel.',
+    en: 'Homelab: this PC as the router (with a 4-port network card), a virtualization node, a NAS and an access point next to it. Cable colours are VLANs: the cables leave the case through printed brackets in two PCI slots and run to the patch panel.',
+    es: 'Homelab: este PC como router (con una tarjeta de red de 4 puertos), y al lado un nodo de virtualización, un NAS y un punto de acceso. Los colores de los cables son VLANs: salen de la caja por chapas impresas en dos ranuras PCI y llegan al patch panel.',
   },
   fans: {
     en: '40 mm fans (40 x 40 x 10 or x 20) behind round openings (a hex grille in "Every parameter"), screwed with M3. Three fit side by side between the rack posts. Wire them to a fan header (5 or 12 V).',
@@ -65,8 +65,8 @@ const STEP_HELP = {
     es: 'El dibujo de los paneles de ventilación y el borde liso que queda alrededor. Solo se cortan agujeros enteros, así que ninguno queda a medias en los bordes.',
   },
   multi: {
-    en: 'For printers with several filaments (e.g. a Bambu AMS): the letters, port names and button legends come as their own STL next to each panel, to print in a second colour.',
-    es: 'Para impresoras con varios filamentos (p. ej. un AMS de Bambu): las letras, los nombres de los puertos y los rótulos de la botonera salen en su propio STL junto a cada panel, para imprimirlos en otro color.',
+    en: 'For printers with several filaments (with a filament changer): the letters, port names and button legends come as their own STL next to each panel, to print in a second colour.',
+    es: 'Para impresoras con varios filamentos (con cambiador de filamento): las letras, los nombres de los puertos y los rótulos de la botonera salen en su propio STL junto a cada panel, para imprimirlos en otro color.',
   },
   colour: {
     en: 'The filament colour in the 3D view (and in the 3MF you download). It does not change the STL files.',
@@ -273,7 +273,7 @@ const PARAM_ES = {
   mount_wall: ['Pared del soporte', 'Grosor de las paredes de los soportes de dispositivos.'],
 
   btn_count: ['Botones', 'Solo encendido, o encendido + reset.'],
-  mx_cut: ['Hueco MX', 'Hueco cuadrado para interruptores compatibles Cherry MX (14 mm).'],
+  mx_cut: ['Hueco MX', 'Hueco cuadrado para interruptores compatibles MX (14 mm).'],
   mx_plate_t: ['Placa MX', 'Grosor donde enganchan los clips del interruptor (1,5 mm).'],
   led_d: ['Tamaño del LED', '3 o 5 mm.'],
   led_style: ['Estilo de LED', 'Anillo (asoma), halo alrededor de la tecla o brillo oculto a través del plástico.'],
@@ -437,7 +437,7 @@ const BOM_ES = [
   [/HDMI keystone/g, 'keystone HDMI'], [/USB keystone/g, 'keystone USB'],
   [/printed keystone cover/g, 'tapón de keystone impreso'], [/printed cable pass-through cover/g, 'tapón pasacables impreso'],
   [/cable tie \(holds the device\)/g, 'brida (para sujetar los dispositivos)'],
-  [/Cherry MX compatible keyboard switch \+ 1u keycap/g, 'interruptor de teclado compatible Cherry MX + tecla 1u'],
+  [/MX-compatible keyboard switch \+ 1u keycap/g, 'interruptor de teclado compatible MX + tecla 1u'],
   [/\(power, reset\)/g, '(encendido, reset)'], [/\(power\)/g, '(encendido)'],
   [/dome LED \(power, disk activity\) \+ front-panel header wires/g, 'LED (encendido, actividad de disco) + cables al panel frontal de la placa'],
   [/^rear slots:/, 'Ranuras traseras:'], [/^fan:/, 'Ventilador:'], [/^fans:/, 'Ventiladores:'],

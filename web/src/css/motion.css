@@ -1,0 +1,65 @@
+/* The motion of the page itself (motion.js): the theme's circle, the language's words, the wide headings, the keys.
+   Only opacity, transform, filter and clip-path move (the compositor's work); "reduce motion" turns all of it off,
+   in style.css and in motion.js. */
+
+/* ------------------------------------------------------------ theme: a circle from the key */
+/* the new page lies over the old one as it is, no cross-fade: the circle (motion.js) is the whole effect */
+html.vt-theme::view-transition-old(root),
+html.vt-theme::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+html.vt-theme::view-transition-new(root) { z-index: 1; }
+
+/* ------------------------------------------------------------ language: the words come in out of a blur */
+@keyframes lang-in-a { from { opacity: 0; filter: blur(5px); } }
+@keyframes lang-in-b { from { opacity: 0; filter: blur(5px); } }
+@keyframes lang-rise-a { from { opacity: 0; filter: blur(5px); transform: translateY(.3em); } }
+@keyframes lang-rise-b { from { opacity: 0; filter: blur(5px); transform: translateY(.3em); } }
+@keyframes lang-fade-a { from { opacity: 0; } }
+@keyframes lang-fade-b { from { opacity: 0; } }
+/* (a line of text moves; a word inside a line cannot - transform does not apply to it - so it only clears) */
+html.lang-a [data-i18n], html.lang-a .top #lang { animation: lang-in-a .3s cubic-bezier(.2, .8, .2, 1) both; }
+html.lang-b [data-i18n], html.lang-b .top #lang { animation: lang-in-b .3s cubic-bezier(.2, .8, .2, 1) both; }
+html.lang-a :is(h1, h2, h3, h4, p, li, summary)[data-i18n] { animation-name: lang-rise-a; }
+html.lang-b :is(h1, h2, h3, h4, p, li, summary)[data-i18n] { animation-name: lang-rise-b; }
+/* what is built again in the other language (the steps, the builds, the lists): the block fades in as one */
+html.lang-a :is(#steps, #examplesList, #galleryGrid, #form, #tabs, #bom, #warnings, #legend, #kitBar, #download) { animation: lang-fade-a .3s ease-out both; }
+html.lang-b :is(#steps, #examplesList, #galleryGrid, #form, #tabs, #bom, #warnings, #legend, #kitBar, #download) { animation: lang-fade-b .3s ease-out both; }
+
+/* ------------------------------------------------------------ wide headings */
+/* each line held as one block while the heading opens (motion.js) */
+.held-line { display: block; white-space: nowrap; }
+/* the film's first heading (one word, one line: nothing under it can move) opens as the page first paints. The
+   language's animation goes with it, not instead of it: an animation that keeps its name keeps its state, so it
+   does not play again after a switch. */
+@keyframes hero-open { from { font-stretch: 78%; letter-spacing: 0em; } }
+.beat h1 { animation: hero-open 1.2s cubic-bezier(.16, 1, .3, 1) .12s both; }
+html.lang-a .beat h1 { animation: hero-open 1.2s cubic-bezier(.16, 1, .3, 1) .12s both, lang-rise-a .3s cubic-bezier(.2, .8, .2, 1) both; }
+html.lang-b .beat h1 { animation: hero-open 1.2s cubic-bezier(.16, 1, .3, 1) .12s both, lang-rise-b .3s cubic-bezier(.2, .8, .2, 1) both; }
+
+/* ------------------------------------------------------------ keys: a red bar runs along the foot */
+.btn, .primary { position: relative; }
+.btn::after, .primary::after {
+  content: ""; position: absolute; left: -1px; right: -1px; bottom: -1px; height: 3px; background: var(--signal);
+  transform: scaleX(0); transform-origin: 100% 50%; transition: transform .3s cubic-bezier(.7, 0, .2, 1); pointer-events: none;
+}
+/* (the keyboard's key shows it too; the focus ring stays as it is) */
+.btn:focus-visible::after, .primary:focus-visible:not(:disabled)::after { transform: scaleX(1); transform-origin: 0 50%; }
+@media (hover: hover) {
+  .btn:hover::after, .primary:hover:not(:disabled)::after { transform: scaleX(1); transform-origin: 0 50%; }
+}
+
+/* ------------------------------------------------------------ links in a line of text: the underline runs red */
+:is(.section-lead, .foot-row, .next-step, .glossary) a:not(.btn) {
+  text-decoration: none;
+  background-image: linear-gradient(var(--signal), var(--signal)), linear-gradient(currentColor, currentColor);
+  background-size: 0% 2px, 100% 1px; background-position: 0 100%, 0 100%; background-repeat: no-repeat;
+  background-origin: content-box;           /* (the line under the letters, not under a finger's taller target) */
+  transition: background-size .35s cubic-bezier(.7, 0, .2, 1);
+}
+:is(.section-lead, .foot-row, .next-step, .glossary) a:not(.btn):focus-visible { background-size: 100% 2px, 100% 1px; }
+@media (hover: hover) {
+  :is(.section-lead, .foot-row, .next-step, .glossary) a:not(.btn):hover { background-size: 100% 2px, 100% 1px; }
+}
+/* high contrast drops backgrounds: the plain underline */
+@media (forced-colors: active) {
+  :is(.section-lead, .foot-row, .next-step, .glossary) a:not(.btn) { text-decoration: underline; background: none; }
+}

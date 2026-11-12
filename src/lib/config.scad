@@ -242,7 +242,7 @@ if (n_btn > 0) {
                  btn_turbo ? ", turbo yellow" : "", ") + front-panel header wires"));
         echo(str("BOM | buttons: ", n_btn * 2, " x M3 x 8 screw", m3_fixing == "selftap" ? M3_INTO : str(" + ", n_btn * 2, " x M3 heat-set insert (switch carrier)")));
     } else {
-        echo(str("BOM | buttons: ", n_btn * btn_count, " x Cherry MX compatible keyboard switch + 1u keycap (",
+        echo(str("BOM | buttons: ", n_btn * btn_count, " x MX-compatible keyboard switch + 1u keycap (",
                  btn_count >= 2 ? "power, reset" : "power", ")"));
         echo(str("BOM | buttons: ", n_btn * 2, " x ", led_d, " mm dome LED (power, disk activity) + front-panel header wires"));
     }
