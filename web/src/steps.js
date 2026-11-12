@@ -133,7 +133,7 @@ export function renderSteps() {
   // 2. what goes in it: the rack units, the devices, the leftover strip and what fills it
   group('contents');
   // the PCI brackets go in the kit whatever is in front: the switch sits in the first step of this group
-  const rear = toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on }));
+  const rear = toggle(t('rearSlots'), v.rear_slots, (on) => update({ rear_slots: on }), t('rearSlots_hint'));
   rear.dataset.hl = '';                                  // (the brackets are at the back: nothing in front to point at)
   if (c.units > 0) add('contents', contentsEditor(placed), h('small', { className: 'hint', textContent: t('contents_hint') }), rear);
   const devs = deviceEntries(mods);

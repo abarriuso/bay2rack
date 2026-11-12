@@ -364,6 +364,6 @@ if (ks_ports_list != "" && ks_ports != len(ks_types))
 if (len([for (m = concat(used_mods, [module_type])) if (mod_kind(m) == "nkvm" && nk_layout(mod_items(m)) == "side") 1]) > 0
     && (part == "assembly" || mod_kind(module_type) == "nkvm"))
     echo(str("NOTE: the raised NanoKVM bay sticks out ", round((-nk_r_lf - panel_t) * 10) / 10,
-             " mm from the rack front - check that your case door still closes (else use nkvm:ks: inside the case)"));
+             " mm from the rack front - check that your case door still closes (if not, choose “Inside, through a keystone”)"));
 if (mount_lip * 2 >= min(ms_w, ms_h))
     echo("WARNING: mount_lip closes the switch window - lower it");

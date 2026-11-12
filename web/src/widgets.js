@@ -37,10 +37,11 @@ export function select(param, options, current, onPick) {
   return sel;
 }
 
-export function toggle(label, on, set) {
+// a switch; `hint`, a line under its name
+export function toggle(label, on, set, hint = '') {
   return h('label', { className: 'toggle' },
     h('input', { type: 'checkbox', checked: on, onchange: (e) => set(e.target.checked) }), h('span', { className: 'track' }),
-    h('span', { textContent: label }));
+    h('span', {}, label, hint ? h('small', { className: 'toggle-hint', textContent: hint }) : null));
 }
 
 export function step(n, key, ...body) {
