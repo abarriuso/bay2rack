@@ -43,11 +43,10 @@ export const FILAMENTS = {
   black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
   blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
 };
-// What the configurator shows before anything is touched (an address without settings): the PC of the film
-// (docs/blender/film.json), so its end builds itself in the 3D view - four bays in the homelab, a switch, the KVM
-// on its side and a vent. Not the model's own defaults (those stay as the file has them, and are what a link
-// leaves out).
-export const START = { bays: 4, case_model: 'quiet_full', scene: 'homelab', rack_modules: 'uswflex,nkvm:side,vent', vent_style: 'dots' };
+// What the configurator shows before anything is touched (an address without settings): a four-bay rack in the
+// homelab, its cables plugged in - a patch panel, a switch and the KVMs, vents in the bay left over. Not the
+// model's own defaults (those stay as the file has them, and are what a link leaves out).
+export const START = { bays: 4, scene: 'homelab', rack_modules: 'patch,ms105g,kvm:jet+nano', spare_pos: 'top', spare_fill: 'vent' };
 // (v: the sleeper case became the first look in 2; what an older visit stored about it does not count)
 export const UI_DEFAULT = { v: 2, filament: 'black', custom: '#e07a2f', labelColour: '#f2f3ef', cables: true, side: true, sleeper: true };
 export const UI = (() => {

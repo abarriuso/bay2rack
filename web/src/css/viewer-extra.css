@@ -10,9 +10,6 @@
 .floatbar .vx-btn:hover { color: var(--ink); }
 .floatbar .vx-btn[aria-pressed="true"] { background: var(--key); color: var(--key-ink); border-color: var(--key); }
 .vx-btn svg { width: 18px; height: 18px; }
-/* the sounds' key: the speaker with its waves, or crossed out */
-.vx-sound .off, .vx-sound.muted .on { display: none; }
-.vx-sound.muted .off { display: inline; }
 
 /* the explode: its key and, where there is room, a slider joined to it */
 .vx-explode { display: flex; align-items: center; }

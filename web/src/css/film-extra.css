@@ -76,14 +76,6 @@
 .film.plain .film-skip { display: none; }
 @media (max-aspect-ratio: 4/3) { .film-skip { bottom: auto; top: var(--s-3); } }
 
-/* The configurator right under the film: film.js lifts it (--merge-y) so that where the stage lets go its 3D view lies
-   exactly where the coda's window is. Till then it waits under the stage, unseen and out of the pointer's way; there
-   it fades in over it (.merged), and out again back up into the film. Its heading is the film's last text: its own
-   is kept for screen readers. */
-.film.coda:not(.plain) + .build { position: relative; margin-top: var(--merge-y, 0px); padding-top: 0; pointer-events: none; }
-.film.coda.merged:not(.plain) + .build { pointer-events: auto; }
-.film.coda:not(.plain) + .build .build-head {
-  position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
-}
-.film.coda:not(.plain) + .build .workbench { opacity: 0; transition: opacity .45s cubic-bezier(.3, 0, .2, 1); }
-.film.coda.merged:not(.plain) + .build .workbench { opacity: 1; }
+/* "Configure yours": the frame on screen, on its way into the 3D view (film.js moves it; under the header) */
+.film-handoff { position: fixed; inset: 0; z-index: 25; pointer-events: none; }
+.film-handoff canvas { position: absolute; display: block; will-change: transform; }
