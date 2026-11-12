@@ -40,7 +40,7 @@ export const BAY_FIXINGS = ['heatset', 'tap', 'nut', 'clearance'];
 export const TESTS = ['test_bay', 'test_rack', 'test_keystone'];
 // filament colours: [adapter, fillers, modules] - slightly different so the parts read apart
 export const FILAMENTS = {
-  beige: [0xc4b896, 0xcdc2a3, 0xd6ccaf], black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
+  beige: [0xafa995, 0xb4ae9a, 0xb9b39f], black: [0x26282c, 0x2e3035, 0x36383d], gray: [0x8a9098, 0x979da5, 0xa4aab2], white: [0xe6e6e1, 0xdcdcd6, 0xefefea],
   blue: [0x2d58a6, 0x3564b5, 0x3f70c2], red: [0xa83029, 0xb63c35, 0xc24841], green: [0x2d7a4c, 0x378858, 0x429564],
 };
 // What the configurator shows before anything is touched (an address without settings): the PC of the film - four

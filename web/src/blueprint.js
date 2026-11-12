@@ -10,6 +10,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { t, lang } from './i18n.js';
 import { Explode } from './explode.js';
+import { sfx } from './sound.js';
 import './css/viewer-extra.css';
 
 const CALM = matchMedia('(prefers-reduced-motion: reduce)');
@@ -35,6 +36,13 @@ export class ViewTools {
     this.v = viewer;
     this.explode = new Explode(viewer);
     this.explode.onChange = () => this.onExplode();
+    // a piece of a build putting itself together seats home: its click, from its side of the view
+    this.explode.onSeat = (key, size) => {
+      const g = this.explode.groups.get(key);
+      const x = g?.meshes[0]?.geometry.boundingBox ? (g.meshes[0].geometry.boundingBox.min.x + g.meshes[0].geometry.boundingBox.max.x) / 2 : 0;
+      const pan = Math.max(-0.6, Math.min(0.6, x / 160));
+      if (key.includes('screw')) sfx.screw(pan, 200, 2); else sfx.snap(pan, size);
+    };
     this.on = false;                  // blueprint wanted
     this.shown = false;               // the scene is in blueprint state now
     this.veil = 0;
@@ -269,10 +277,14 @@ export class ViewTools {
     this.cablesHidden = false;
   }
 
-  // a new model is on screen: it takes the look and the explode the view has
-  loaded(keepView) {
+  // a new model is on screen: it takes the look and the explode the view has. A build comes in apart and puts itself
+  // together - its pieces out as the exploded view lays them, then home one after another - unless the view is apart
+  // already, in the blueprint, with reduced motion, or `still` (the film lays that one out itself). -> it did
+  loaded(keepView, still = false) {
     const v = this.v;
-    if (this.explode.apart) this.explode.prepare();
+    const burst = !still && !CALM.matches && !this.on && !this.explode.apart && !!v.parts?.front;
+    if (this.explode.apart || burst) this.explode.prepare();
+    if (burst) this.explode.burst();
     if (this.shown) {
       v.key.castShadow = false;
       v.floor.visible = false;
@@ -284,6 +296,7 @@ export class ViewTools {
     this.build();
     if (this.shown && !keepView) this.frame();
     if (this.on !== this.shown || this.veil > 0) this.fade();
+    return burst;
   }
 
   // ------------------------------------------------------------ the labels

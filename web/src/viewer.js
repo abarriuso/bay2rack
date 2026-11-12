@@ -14,6 +14,7 @@ import { buildScene } from './scene.js';
 import { ViewTools } from './blueprint.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
+const FOV = 30;                                 // the view's angle of view (top to bottom), degrees
 const VIEW_DIR = new THREE.Vector3(-0.55, -1, 0.6).normalize();   // front-left, from above
 // motion: off for those who ask the system for less of it
 const CALM = matchMedia('(prefers-reduced-motion: reduce)');
@@ -23,23 +24,14 @@ const easeBack = (t) => 1 + 2.6 * (t - 1) ** 3 + 1.6 * (t - 1) ** 2;      // pas
 const MARK_PAD = 1.2, MARK_FILL = 0.05, MARK_LINE = 1.6;
 const signal = () => getComputedStyle(document.documentElement).getPropertyValue('--signal').trim() || '#d81f12';
 
-function gradient(top, bottom) {
-  const c = document.createElement('canvas');
-  c.width = 4; c.height = 256;
-  const g = c.getContext('2d');
-  const gr = g.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, top); gr.addColorStop(1, bottom);
-  g.fillStyle = gr; g.fillRect(0, 0, 4, 256);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
-
 export class Viewer {
   constructor(el) {
     this.el = el;
     const mobile = matchMedia('(max-width: 900px)').matches;
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    // (see through: the studio behind the build is the page's, .viewer in style.css - the film's table can lie under
+    // it too, film.js)
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setClearColor(0x000000, 0);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.5 : 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -57,7 +49,7 @@ export class Viewer {
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
     this.scene.environmentIntensity = 0.75;
-    this.camera = new THREE.PerspectiveCamera(30, 1, 1, 50000);
+    this.camera = new THREE.PerspectiveCamera(FOV, 1, 1, 50000);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
@@ -110,7 +102,8 @@ export class Viewer {
       frame = 0;
       const dt = Math.min(0.1, Math.max(0, now - last) / 1000);
       last = now;
-      if (!this.active) return;                           // (the IntersectionObserver asks again when it is back)
+      if (!this.active && !this.pinned) return;           // (the IntersectionObserver asks again when it is back;
+                                                          //  the film holds it on screen elsewhere: pinned)
       // the damping after a drag works per refresh: kept to the same time at 60, 120 or 144 Hz
       this.controls.dampingFactor = 1 - Math.pow(1 - 0.12, Math.max(dt, 1 / 240) * 60);
       for (const f of [...this.hooks]) f(dt);
@@ -168,7 +161,7 @@ export class Viewer {
 
   setTheme(theme) {
     this.dirty = true;
-    this.scene.background = theme === 'dark' ? gradient('#232a2e', '#0f1214') : gradient('#f1f3f2', '#d6dbd8');
+    this.scene.background = null;                         // (the studio is the page's: .viewer)
     // the outlines take the accent of the theme (the page has switched it already)
     const c = signal();
     for (const m of this.marks) for (const mat of m.userData.mats) mat.color.set(c);
@@ -257,8 +250,8 @@ export class Viewer {
     this.clear();
     const obj = this.parse(buffer, ext);
     this.show3d(obj, opts);
-    this.arrive(obj, opts.keepView);
-    this.tools?.loaded(opts.keepView);
+    // a build comes in apart and puts itself together (blueprint.js); anything else settles into place
+    if (!this.tools?.loaded(opts.keepView, opts.still)) this.arrive(obj, opts.keepView);
   }
 
   // an animation of the view: f(0..1) on every frame for `ms`, then it is gone (the view only draws while
@@ -341,18 +334,25 @@ export class Viewer {
 
   fit(box = this.focus ?? this.whole, entry = null) {
     this.dirty = true;
-    if (!box) return;
+    const pose = this.fitPose(box);
+    if (!pose) return;
+    this.camera.near = pose.near;
+    this.camera.far = pose.far;
+    this.camera.updateProjectionMatrix();
+    this.flyTo(pose.eye, pose.target, entry);
+  }
+
+  // where fit() puts the camera (at the view's own angle of view, FOV, and shape)
+  fitPose(box = this.focus ?? this.whole, aspect = this.camera.aspect) {
+    if (!box) return null;
     const center = box.getCenter(new THREE.Vector3());
     const radius = box.getBoundingSphere(new THREE.Sphere()).radius;
     // the narrower of the two angles of view: a view taller than wide (a portrait window, a zoomed-out page) frames
     // by its width, else the sides of the model are cut
-    const vHalf = THREE.MathUtils.degToRad(this.camera.fov / 2);
-    const half = Math.min(vHalf, Math.atan(Math.tan(vHalf) * (this.camera.aspect || 1)));
+    const vHalf = THREE.MathUtils.degToRad(FOV / 2);
+    const half = Math.min(vHalf, Math.atan(Math.tan(vHalf) * (aspect || 1)));
     const dist = radius / Math.sin(half) * (box === this.focus ? 0.85 : 0.8);
-    this.camera.near = dist / 100;
-    this.camera.far = dist * 30;
-    this.camera.updateProjectionMatrix();
-    this.flyTo(center.clone().addScaledVector(VIEW_DIR, dist), center, entry);
+    return { eye: center.clone().addScaledVector(VIEW_DIR, dist), target: center, near: dist / 100, far: dist * 30 };
   }
 
   // the first model comes in from a side: the camera starts out along `dir` (a direction from the target) and glides

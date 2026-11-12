@@ -20,6 +20,10 @@ Run (Blender 5.2):
   blender -b -P scripts/blender/scroll.py -- --between 4          the three moments between each two frames of --render
                                                                   (a film four times as fine; q_####_k.png, resumable)
   add --light for the light theme's version (its files get _light), --save to keep docs/blender/scroll/scroll.blend
+  blender -b -P scripts/blender/scroll.py -- --table              no render: where each piece lies on the table at the
+                                                                  last frame, and the camera there -> docs/scroll/table.json
+                                                                  (the configurator puts the pieces there and builds the
+                                                                  PC from them, from the same camera)
 """
 import json
 import math
@@ -51,6 +55,8 @@ BEATS = [
 ]
 # where the subject sits for a text on that side: the camera's lens shift (a fraction of the picture's width)
 SHIFT = {"left": -0.13, "right": 0.13}
+# the bare table of --plate sees this much more than the last frame (web/src/assemble.js has the same number)
+PLATE_OVERSCAN = 1.5
 random.seed(11)
 
 
@@ -180,6 +186,7 @@ def build_film(sc, root, info):
     h.area("table", (0.0, -0.58, floor + 1.5), (0.0, -0.58, floor), 1.2, 55, (1.0, 0.96, 0.9))        # over the kit
     h.area("rake", (-1.3, -1.0, floor + 0.4), (0.0, -0.58, floor), 0.7, 140, (1.0, 0.9, 0.78), 0.3)  # long shadows on it
     groups = {h.base(o.name): o for o in h.descendants(root) if o.type == "EMPTY"}
+    film = {}
     Z = (0.0, 0.0, 0.0)
     FLAT = (math.pi / 2, 0.0, 0.0)                                         # front face down: how it is printed
     blacken(groups["module0"])                                             # the switch
@@ -237,6 +244,7 @@ def build_film(sc, root, info):
         lo, hi = world_box(panel)
         off, rot = hinged(math.radians(-105), (lo.x, hi.y))
         move(panel, [(1, Z, Z, "move"), (160, Z, Z, "snap"), (176, off, rot, "move")])
+    film.update(groups=groups, screws=screws, panel=panel, floor=floor)
 
     # the modules and the strip's panel shoot out of the bays and lock in the air; later the adapter follows
     stage = {"module0": (90, (0.0, -0.2, 0.135)), "module1": (98, (0.0, -0.31, 0.075)), "module2": (106, (0.0, -0.42, 0.018)),
@@ -284,6 +292,7 @@ def build_film(sc, root, info):
     S(cam, aim, focus, 206, (-0.6, -0.74, 0.1), (0.0, -0.1, 0.08), (0.0, -0.09, 0.085), lens=45, fstop=4.0)
     S(cam, aim, focus, 228, (0.0, -0.86, floor + 1.2), kit, kit, lens=45, fstop=5.6)                       # over the table
     S(cam, aim, focus, END, (0.02, -0.82, floor + 1.08), kit, kit, lens=45, fstop=5.6)
+    film["cam"], film["aim"] = cam, aim
     # the picture slides sideways under the camera (lens shift: the perspective stays) so the subject sits on the
     # side the text of that stretch leaves free
     for a, b, _, side, _ in BEATS:
@@ -295,6 +304,47 @@ def build_film(sc, root, info):
             for kp in fc.keyframe_points:
                 kp.interpolation = "BEZIER"
                 kp.easing = "AUTO"
+    return film
+
+
+def mm(m):
+    """A world matrix (metres) -> rows of 4, in mm (the configurator's units: OpenSCAD's, Z up)."""
+    return [[round(m[r][c] * (1000 if c == 3 and r < 3 else 1), 4) for c in range(4)] for r in range(4)]
+
+
+def table(sc, film):
+    """Where each piece is at the first frame (built) and at the last (on the table), and the last camera."""
+    names = [n for n in ("adapter", "filler", "module0", "module1", "module2", "module3") if n in film["groups"]]
+    rest, end = {}, {}
+    for f, out in ((1, rest), (END, end)):
+        sc.frame_set(f)
+        bpy.context.view_layer.update()
+        for n in names:
+            out[n] = film["groups"][n].matrix_world.copy()
+        for i, p in enumerate(film["screws"]):
+            lo, hi = world_box(p)
+            out[f"screw{i}"] = (p.matrix_world.copy(), (lo + hi) / 2, hi - lo)
+        if film["panel"]:
+            out["panel"] = film["panel"].matrix_world.copy()
+        if f == END:
+            cam, aim = film["cam"], film["aim"]
+            camera = {"matrix": mm(cam.matrix_world), "aim": [round(x * 1000, 2) for x in aim.matrix_world.translation],
+                      "lens": cam.data.lens, "sensor": cam.data.sensor_width, "shift": [cam.data.shift_x, cam.data.shift_y],
+                      "size": [sc.render.resolution_x, sc.render.resolution_y]}
+    pieces = {n: {"move": mm(end[n] @ rest[n].inverted())} for n in names}
+    screws = []
+    for i, p in enumerate(film["screws"]):
+        m0, c0, s0 = rest[f"screw{i}"]
+        m1, _, _ = end[f"screw{i}"]
+        screws.append({"at": [round(x * 1000, 2) for x in c0], "size": [round(x * 1000, 2) for x in s0],
+                       "move": mm(m1 @ m0.inverted()), "hidden": bool(p.hide_render)})
+    out = {"floor": round(film["floor"] * 1000, 2), "camera": camera, "pieces": pieces, "screws": screws}
+    if film["panel"]:
+        out["panel"] = {"move": mm(end["panel"] @ rest["panel"].inverted())}
+    path = os.path.normpath(os.path.join(h.SRC, "..", "scroll", "table.json"))
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(out, f, separators=(",", ":"))
+    print(f"table: {len(pieces)} pieces, {len(screws)} screws -> {path}")
 
 
 def main():
@@ -303,7 +353,10 @@ def main():
     h.studio(sc)
     root, info = h.import_build("film", 0.0)
     h.dress_materials()
-    build_film(sc, root, info)
+    film = build_film(sc, root, info)
+    if h.arg("--table"):
+        table(sc, film)
+        return
     if LIGHT:
         light_theme(sc)
     preview = bool(h.arg("--preview"))
@@ -337,6 +390,34 @@ def main():
                 sc.frame_set(f, subframe=k / n)
                 sc.render.filepath = path
                 bpy.ops.render.render(write_still=True)
+        return
+    if h.arg("--plate"):
+        # the last frame without the kit: the bare table the configurator lays its 3D pieces on (the page projects
+        # it onto its floor from this camera, so the film's picture turns into the 3D view with nothing moving), and
+        # the same frame with the kit, to match the 3D pieces against
+        sc.render.resolution_x, sc.render.resolution_y = 2560, 1440
+        sc.frame_set(END)
+        folder = os.path.join(OUT, "plate")
+        os.makedirs(folder, exist_ok=True)
+        sc.render.filepath = os.path.join(folder, f"kit{TAG}.png")
+        bpy.ops.render.render(write_still=True)
+        kit = [film["groups"][n] for n in ("adapter", "filler", "module0", "module1", "module2", "module3") if n in film["groups"]]
+        for o in kit + list(film["screws"]):
+            for d in [o] + list(h.descendants(o)):
+                d.hide_render = True
+        # only the floor: the PC and the homelab are the page's 3D (their shadows and reflections on the floor stay)
+        for o in sc.objects:
+            if o.type in ("MESH", "CURVE") and o.name != "floor":
+                o.visible_camera = False
+        # overscan: half as wide again on every side of the same centre (the page's camera rises off the table and
+        # sees more of it). The lens shift is a fraction of the frame's width: the same offset is a smaller one.
+        cam = film["cam"].data
+        cam.animation_data_clear()
+        cam.shift_x = cam.shift_x / PLATE_OVERSCAN
+        cam.sensor_width *= PLATE_OVERSCAN
+        sc.render.resolution_x, sc.render.resolution_y = 3200, 1800
+        sc.render.filepath = os.path.join(folder, f"plate{TAG}.png")
+        bpy.ops.render.render(write_still=True)
         return
     if h.arg("--sharp"):
         # the frames of --render again at 2560 x 1440, for the page to show when the scroll stops on one (the film

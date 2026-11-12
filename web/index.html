@@ -77,7 +77,7 @@
         <canvas id="filmCanvas" class="film-canvas" aria-hidden="true"></canvas>
         <div class="film-shade" aria-hidden="true"></div>
         <div class="film-window" aria-hidden="true"></div>
-        <a class="film-skip pill" href="#gallery"><span data-i18n="film_skip"></span><span aria-hidden="true">↓</span></a>
+        <a class="film-skip pill" href="#configurator"><span data-i18n="film_skip"></span><span aria-hidden="true">↓</span></a>
         <ol class="film-beats">
           <li class="beat on">
             <h1 data-i18n="hero_title"></h1>
@@ -123,20 +123,7 @@
         <div class="film-bar" id="filmBar" aria-hidden="true"></div>
       </div>
       <div class="film-coda" aria-hidden="true"></div>
-    </section>
-
-    <section class="band" id="gallery">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 data-i18n="gallery_title"></h2>
-          <p class="section-lead" data-i18n="gallery_lead"></p>
-        </div>
-        <div class="gallery-nav">
-          <button type="button" class="icon-btn" id="galPrev" aria-label="Previous" data-i18n-aria="aria_prev">←</button>
-          <button type="button" class="icon-btn" id="galNext" aria-label="Next" data-i18n-aria="aria_next">→</button>
-        </div>
-        <div id="galleryGrid" class="gallery"></div>
-      </div>
+      <div class="film-assemble" aria-hidden="true"></div>
     </section>
 
     <section class="build" id="build">
@@ -145,10 +132,6 @@
         <p class="section-lead"><span data-i18n="build_lead"></span>
           <a href="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-en="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.md" data-href-es="https://github.com/abarriuso/bay2rack/blob/main/docs/BUILD.es.md" data-i18n="how_guide"></a></p>
       </div>
-      <details class="wrap examples" id="examples">
-        <summary><span data-i18n="step_example"></span> <small data-i18n="ex_hint"></small></summary>
-        <div id="examplesList"></div>
-      </details>
       <div class="layout">
         <!-- the steps and the 3D view in one frame, one screen tall; the downloads and the lists go under it -->
         <div class="workbench" id="configurator">
@@ -182,6 +165,7 @@
               <span class="spacer"></span>
               <button id="fit" class="pill" type="button" data-i18n="resetView"></button>
               <button id="share" class="pill" type="button" data-i18n="share"></button>
+              <button id="sound" class="icon-btn vx-btn vx-sound" type="button" data-i18n-tip="sound_mute" data-i18n-aria="sound_mute"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="on" d="M15.5 9.2a4 4 0 0 1 0 5.6M18 6.8a7.5 7.5 0 0 1 0 10.4"/><path class="off" d="M16 9.5l5 5m0-5l-5 5"/></svg></button>
             </div>
           </div>
         </div>
@@ -204,6 +188,10 @@
             <a class="more-link" href="#credits" data-i18n="toFooter"></a>
           </div>
       </div>
+      <details class="wrap examples" id="examples">
+        <summary><span data-i18n="step_example"></span> <small data-i18n="ex_hint"></small></summary>
+        <div id="examplesList"></div>
+      </details>
       <div class="wrap">
         <details class="glossary" id="glossary">
           <summary data-i18n="gloss_title"></summary>
@@ -215,6 +203,20 @@
             <li data-i18n="gloss_screw"></li><li data-i18n="gloss_stl"></li>
           </ul>
         </details>
+      </div>
+    </section>
+
+    <section class="band" id="gallery">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-i18n="gallery_title"></h2>
+          <p class="section-lead" data-i18n="gallery_lead"></p>
+        </div>
+        <div class="gallery-nav">
+          <button type="button" class="icon-btn" id="galPrev" aria-label="Previous" data-i18n-aria="aria_prev">←</button>
+          <button type="button" class="icon-btn" id="galNext" aria-label="Next" data-i18n-aria="aria_next">→</button>
+        </div>
+        <div id="galleryGrid" class="gallery"></div>
       </div>
     </section>
   </main>

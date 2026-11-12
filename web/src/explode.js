@@ -12,7 +12,7 @@ const EPS = 1e-4;
 
 // connected pieces of a geometry: triangles that share a vertex position are one piece.
 // -> { tri: Int32Array (piece of each triangle), boxes: [Box3] }
-function pieces(geo) {
+export function pieces(geo) {
   const pos = geo.attributes.position;
   const idx = geo.index;
   const n = (idx ? idx.count : pos.count) / 3;
@@ -50,7 +50,7 @@ function pieces(geo) {
 
 // A screw comes as several pieces (its head, its shank, a washer): the pieces of a hardware mesh that touch are one
 // fastener, and go together. -> the box of the whole fastener, for each piece
-function fasteners(boxes) {
+export function fasteners(boxes) {
   const n = boxes.length;
   const up = boxes.map((_, i) => i);
   const find = (a) => { while (up[a] !== a) { up[a] = up[up[a]]; a = up[a]; } return a; };
@@ -71,7 +71,7 @@ function fasteners(boxes) {
 }
 
 // the triangles of `geo` whose flag is set, as a new (non-indexed) geometry with the same attributes
-function subset(geo, keep, count) {
+export function subset(geo, keep, count) {
   const idx = geo.index;
   const out = new THREE.BufferGeometry();
   for (const [name, a] of Object.entries(geo.attributes)) {
@@ -219,7 +219,22 @@ export class Explode {
     this.onChange?.();
   }
 
+  // a build that has just come: every part out where the full explode has it, and home at once - each one after its
+  // delay, on its spring, but a piece stops at its seat (it knocks and rests, it does not go through the rack)
+  burst() {
+    this.prepare();
+    if (!this.groups.size) return;
+    for (const st of this.state.values()) { st.s = 1; st.vel = 0; st.seated = false; }
+    this.target = 0;
+    this.history = [{ at: -Infinity, value: 1 }, { at: performance.now() + 120, value: 0 }];
+    this.seat = true;
+    this.apply();
+    if (!this.hook) { this.hook = (dt) => this.step(dt); this.v.hooks.push(this.hook); }
+    this.v.dirty = true;
+  }
+
   set(value, calm) {
+    this.seat = false;                            // (the slider takes it: the springs as they are)
     if (value > 0) this.prepare();                // (its parts start where the slider was)
     const now = performance.now();
     if (!this.history.length) this.history.push({ at: -Infinity, value: this.target });
@@ -268,6 +283,12 @@ export class Explode {
         const h = Math.min(left, 1 / 120);
         st.vel += (g.w * g.w * (goal - st.s) - 2 * ZETA * g.w * st.vel) * h;
         st.s += st.vel * h;
+        // home: a knock, a little back out, and it rests there
+        if (this.seat && st.s < 0) {
+          st.s = 0;
+          if (!st.seated) { st.seated = true; this.onSeat?.(key, Math.min(1, 0.6 + Math.abs(st.vel) / 6)); }
+          st.vel = Math.abs(st.vel) * 0.18;
+        }
       }
       if (Math.abs(goal - st.s) > EPS || Math.abs(st.vel) > EPS * 10) moving = true;
     }
@@ -275,6 +296,7 @@ export class Explode {
     while (this.history.length > 1 && this.history[1].at <= now - maxDelay - 50) this.history.shift();
     const settled = !moving && (this.history.length <= 1 || this.history.at(-1).at <= now - maxDelay);
     if (settled) {
+      this.seat = false;
       // exactly where the slider is (0 is the assembly as it came, to the bit)
       for (const st of this.state.values()) { st.s = this.target; st.vel = 0; }
       this.history = [];

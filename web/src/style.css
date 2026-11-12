@@ -20,6 +20,8 @@
   --warn: #8a5200;
   --note: #595959;
   --stage: #efefef;
+  /* the 3D view's studio: the film's (its table lit in the middle, the room falling away round it) */
+  --studio-in: #fbfbf9; --studio-out: #dcdddb;
   --tip-bg: #0a0a0a;
   --tip-ink: #ffffff;
   --shadow: 0 1px 0 rgba(0, 0, 0, .04), 0 18px 40px -24px rgba(0, 0, 0, .45);
@@ -42,7 +44,7 @@
   :root:not([data-theme="light"]) {
     --ground: #000000; --plate: #0b0b0b; --plate-2: #161616; --ink: #f5f5f5; --ink-2: #b3b3b3; --ink-3: #8a8a8a;
     --rule: #262626; --edge: #6b6b6b; --signal: #ff4b3e; --key: #f5f5f5; --key-ink: #0a0a0a; --tape: #f5f5f5; --tape-ink: #0a0a0a;
-    --ok: #4ade80; --warn: #f2b84b; --note: #a3a3a3; --stage: #0a0a0a;
+    --ok: #4ade80; --warn: #f2b84b; --note: #a3a3a3; --stage: #0a0a0a; --studio-in: #3e3f42; --studio-out: #121316;
     --tip-bg: #f5f5f5; --tip-ink: #0a0a0a; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
     color-scheme: dark;
   }
@@ -50,7 +52,7 @@
 :root[data-theme="dark"] {
   --ground: #000000; --plate: #0b0b0b; --plate-2: #161616; --ink: #f5f5f5; --ink-2: #b3b3b3; --ink-3: #8a8a8a;
   --rule: #262626; --edge: #6b6b6b; --signal: #ff4b3e; --key: #f5f5f5; --key-ink: #0a0a0a; --tape: #f5f5f5; --tape-ink: #0a0a0a;
-  --ok: #4ade80; --warn: #f2b84b; --note: #a3a3a3; --stage: #0a0a0a;
+  --ok: #4ade80; --warn: #f2b84b; --note: #a3a3a3; --stage: #0a0a0a; --studio-in: #3e3f42; --studio-out: #121316;
   --tip-bg: #f5f5f5; --tip-ink: #0a0a0a; --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 18px 40px -22px rgba(0, 0, 0, .9);
   color-scheme: dark;
 }
@@ -257,7 +259,7 @@ button:disabled { opacity: .45; cursor: default; }
 /* ------------------------------------------------------------ configurator */
 .build { padding-block: clamp(48px, 7vw, 88px) 0; }
 .build-head { margin-bottom: var(--s-5); }
-.examples { margin-bottom: var(--s-5); }
+.examples { margin-block: var(--s-6) 0; }   /* (under the workbench and its downloads) */
 .examples summary {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 2px var(--s-3); cursor: pointer; list-style: none;
   padding: var(--s-3) var(--s-4); border: 1px solid var(--rule); border-radius: var(--r); background: var(--plate);
@@ -475,7 +477,8 @@ button:disabled { opacity: .45; cursor: default; }
 .slider input[type=range] { width: 100%; accent-color: var(--key); }
 
 .stage { min-width: 0; min-height: 0; }
-.viewer { position: relative; height: 100%; overflow: hidden; background: var(--stage); }
+.viewer, .film-3d { background: radial-gradient(130% 110% at 50% 72%, var(--studio-in), var(--studio-out)); }
+.viewer { position: relative; height: 100%; overflow: hidden; }
 .view { position: absolute; inset: 0; }
 .view canvas { width: 100%; height: 100%; display: block; }
 .view canvas:focus-visible { outline-offset: -3px; }

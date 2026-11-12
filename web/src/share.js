@@ -100,7 +100,15 @@ function snapshot(w, hgt) {
     cam.updateProjectionMatrix();
     v.composer.render();
     const c = h('canvas', { width: w, height: hgt });
-    c.getContext('2d').drawImage(r.domElement, 0, 0);
+    const g = c.getContext('2d');
+    // (the view sees through to its studio, the page's: painted under it here as style.css has it)
+    const css = getComputedStyle(document.documentElement);
+    const st = g.createRadialGradient(w / 2, hgt * 0.72, 0, w / 2, hgt * 0.72, Math.hypot(w * 0.65, hgt * 0.8));
+    st.addColorStop(0, css.getPropertyValue('--studio-in').trim() || '#3e3f42');
+    st.addColorStop(1, css.getPropertyValue('--studio-out').trim() || '#121316');
+    g.fillStyle = st;
+    g.fillRect(0, 0, w, hgt);
+    g.drawImage(r.domElement, 0, 0);
     return c;
   } catch (e) {
     console.warn(e);

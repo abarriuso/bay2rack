@@ -73,7 +73,8 @@ test('a film nobody scrolls stays light, and can be skipped', async ({ page }) =
   await expect.poll(() => fine.size).toBeGreaterThan(60);
   expect(fine.size).toBeLessThan(400);
   await page.locator('.film-skip').click();
-  await expect(page.locator('#gallery h2')).toBeInViewport();
+  await expect(page.locator('#film')).toHaveClass(/merged/);
+  await expect(page.locator('#configurator')).toBeInViewport({ ratio: 0.9 });
 });
 
 // a phone: an iPhone's screen and touch (in Chromium: Safari itself only on a real one). The big headings once ran off
@@ -92,7 +93,7 @@ test.describe('on a phone', () => {
     const canvas = await page.locator('#filmCanvas').evaluate((c) => c.width * c.height);
     expect(canvas).toBeLessThanOrEqual(1100 * 1100);
     const overflow = () => page.evaluate(() => {
-      const wide = [...document.querySelectorAll('.beat h1, .beat h2, .band h2, .build h2, .foot-mark')]
+      const wide = [...document.querySelectorAll('.beat h1, .beat h2, .band h2, .build h2:not(.build-head h2), .foot-mark')]
         .filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent);
       return { page: document.documentElement.scrollWidth - document.documentElement.clientWidth, wide };
     });
@@ -104,8 +105,8 @@ test.describe('on a phone', () => {
   });
 });
 
-// the end of the film: its coda closes the picture into the shape of the configurator, and "Configure yours" carries
-// the frame on screen into the 3D view, then gives way to it
+// the end of the film: its coda closes the picture into the shape of the configurator, which lies right under it -
+// its 3D view where the coda's window is - and takes over there; back up, the film is on top again
 test('the film ends inside the configurator', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/');
@@ -118,10 +119,57 @@ test('the film ends inside the configurator', async ({ page }) => {
   await expect(page.locator('#film')).toHaveClass(/closing/);
   await expect.poll(() => page.locator('.film-stage').evaluate((s) => +s.style.getPropertyValue('--k'))).toBeGreaterThan(0.99);
   await expect(page.locator('.beat.on h2')).toHaveText(/Now, yours/);
+  // the 3D view lies exactly where the coda's window is, at the moment the stage lets go
+  const at = await page.evaluate(() => {
+    const f = document.querySelector('#film'), st = document.querySelector('.film-stage');
+    window.scrollTo(0, f.getBoundingClientRect().top + scrollY + f.offsetHeight - st.offsetHeight - parseFloat(getComputedStyle(st).top) - 1);
+    const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
+    return [w.left - v.left, w.top - v.top, w.width - v.width, w.height - v.height].map((x) => Math.abs(x) <= 2);
+  });
+  expect(at).toEqual([true, true, true, true]);
+  await expect(page.locator('#film')).not.toHaveClass(/merged/);
   await page.locator('.beat.on .cta .btn').click();
+  await expect(page.locator('#film')).toHaveClass(/merged/);
   await expect(page.locator('#configurator')).toBeInViewport({ ratio: 0.9 });
   await expect(page.locator('#configurator')).toBeFocused();
-  await expect(page.locator('.film-handoff')).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.locator('#status')).toHaveClass(/\bok\b/, { timeout: 60_000 });
+  // back up into the film: the stage is on top again
+  await page.evaluate(() => window.scrollBy(0, -600));   // (a wheel over the 3D view zooms it)
+  await expect(page.locator('#film')).not.toHaveClass(/merged/);
+  expect(errors).toEqual([]);
+});
+
+// after the coda, the scroll builds the PC from the film's table in the 3D view itself: its canvas is on the stage
+// while it is built, home in the configurator where the stage lets go, and back on the stage up again
+test('the scroll builds the PC from the film table, into the configurator', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  const to = (k) => page.evaluate((k) => {
+    const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
+    const all = f.offsetHeight - st.offsetHeight, close = f.querySelector('.film-coda').offsetHeight, asm = f.querySelector('.film-assemble').offsetHeight;
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm + k * asm);
+  }, k);
+  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas)')?.parentElement?.className ?? '');
+  // (down through the film: the engine starts on the way)
+  for (const k of [-8, -6, -4, -2, -1]) await to(k);
+  await to(0);
+  await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
+  await to(0.5);
+  await expect.poll(home).toBe('film-3d on');
+  await expect(page.locator('.film-3d')).toHaveCSS('opacity', '1');
+  await to(1.01);
+  await expect(page.locator('#film')).toHaveClass(/merged/);
+  await expect.poll(home).toBe('view');
+  await expect(page.locator('.film-3d canvas')).toHaveCount(0);
+  await to(0.5);
+  await expect(page.locator('#film')).not.toHaveClass(/merged/);
+  await expect.poll(home).toBe('film-3d on');
+  // a hand on the view: it is the visitor's (the film no longer builds it)
+  await to(1.01);
+  await page.locator('#view canvas').click();
+  await expect(page.locator('#film')).not.toHaveClass(/live3d/);
   expect(errors).toEqual([]);
 });
 
@@ -131,9 +179,11 @@ test('the film keeps its place when the window changes size', async ({ page }) =
   await page.goto('/');
   await expect(page.locator('#film')).toHaveClass(/live/);
   await page.evaluate(() => {
-    const f = document.querySelector('#film');
+    const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
     document.documentElement.style.scrollBehavior = 'auto';
-    window.scrollTo(0, f.offsetTop + (f.offsetHeight - innerHeight) * 0.45);
+    // (the film's own stretch: its length less the coda's, where the stage closes and the PC is built)
+    const span = f.offsetHeight - st.offsetHeight - f.querySelector('.film-coda').offsetHeight - f.querySelector('.film-assemble').offsetHeight;
+    window.scrollTo(0, f.offsetTop + span * 0.52);
   });
   await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
   const progress = () => page.locator('#filmBar').evaluate((b) => +(b.style.transform.match(/scaleX\(([\d.]+)\)/)?.[1] ?? 0));
