@@ -6,10 +6,10 @@
    workbench) on the stage; everything else follows from it here, so a frame of the coda is one style change, no
    layout. A phone's configurator has its 3D view on top and the steps under it: so has its coda. */
 
-/* the coda's length: style.css's film (760 / 620 svh on phones) and 70 svh more; film.js reads the coda from
+/* the coda's length: style.css's film (530 / 470 svh on phones) and 70 svh more; film.js reads the coda from
    .film-coda, so the frames keep their pace */
-.film.coda { height: 830vh; height: 830svh; }
-@media (max-width: 760px) { .film.coda { height: 690svh; } }
+.film.coda { height: 600vh; height: 600svh; }
+@media (max-width: 760px) { .film.coda { height: 540svh; } }
 .film-coda { position: absolute; left: 0; right: 0; bottom: 0; height: 70vh; height: 70svh; pointer-events: none; visibility: hidden; }
 .film.plain .film-coda, .film-frame, .film-window { display: none; }
 
@@ -57,6 +57,24 @@
   }
   .film.closing .beat:last-child { translate: none; scale: none; }
 }
+/* (a phone's 3D view is lower: style.css) */
+@media (max-aspect-ratio: 4/3) and (max-width: 600px) {
+  .film-stage { --win: max(200px, min(38vh, 400px)); --win: max(200px, min(38svh, 400px)); }
+}
+
+/* The way past the film: a key at the foot of the stage (upright, at its top: the texts are at the foot) from the
+   second text on. The first text has its own two; the keyboard meets this one first, and sees it then. */
+.film-skip {
+  position: absolute; z-index: 2; right: max(var(--gutter-r), calc((100% - var(--page)) / 2 + var(--gutter-r))); bottom: var(--s-4);
+  font: 500 12px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
+  background: var(--plate); background: color-mix(in srgb, var(--plate) 82%, transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s, border-color .15s;
+}
+.film-skip:hover { color: var(--ink); }
+.film.rolling .film-skip, .film-skip:focus-visible { opacity: 1; visibility: visible; transition-delay: 0s; }
+.film.plain .film-skip { display: none; }
+@media (max-aspect-ratio: 4/3) { .film-skip { bottom: auto; top: var(--s-3); } }
 
 /* "Configure yours": the frame on screen, on its way into the 3D view (film.js moves it; under the header) */
 .film-handoff { position: fixed; inset: 0; z-index: 25; pointer-events: none; }

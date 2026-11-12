@@ -51,6 +51,31 @@ test('the film follows the scroll: each text comes in at its frames', async ({ p
   expect(errors).toEqual([]);
 });
 
+// The big frames (1600 px, one for every frame of the film: 21 MB) are asked for around the scroll position only: a
+// visitor who never scrolls the film gets a first stretch of them, one who does gets the ones on the way. From the
+// second text on, a key skips the film.
+test('a film nobody scrolls stays light, and can be skipped', async ({ page }) => {
+  const fine = new Set();
+  page.on('request', (r) => { if (/\/scroll\/\w+\/1600\//.test(r.url())) fine.add(r.url()); });
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await page.waitForTimeout(2500);
+  expect(fine.size).toBeGreaterThan(0);
+  expect(fine.size).toBeLessThan(60);
+  expect([...fine][0]).toMatch(/\.webp\?v=\w+$/);          // (under the film's version: kept long, new after an encode)
+  await expect(page.locator('.film-skip')).toBeHidden();
+  await page.evaluate(() => {
+    const f = document.querySelector('#film');
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.offsetTop + (f.offsetHeight - innerHeight) * 0.45);
+  });
+  await expect(page.locator('#film')).toHaveClass(/rolling/);
+  await expect.poll(() => fine.size).toBeGreaterThan(60);
+  expect(fine.size).toBeLessThan(400);
+  await page.locator('.film-skip').click();
+  await expect(page.locator('#gallery h2')).toBeInViewport();
+});
+
 // a phone: an iPhone's screen and touch (in Chromium: Safari itself only on a real one). The big headings once ran off
 // the side, and the film once drew at four times the pixels its frames have.
 test.describe('on a phone', () => {

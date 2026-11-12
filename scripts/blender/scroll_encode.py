@@ -5,12 +5,13 @@
 For each theme (dark, light): <theme>/1600/NNNN.webp with every frame, <theme>/960/NNNN.webp with one in four (what
 loads first) and <theme>/tall/NNNN.webp, one in two, cut upright around the subject for a phone held upright (its
 screen shows a slice of the picture: these are that slice, sharper and with twice the frames in the same room).
---only encodes just those sets again (the rest stay as they are). film.json says how many frames there are, in which sizes, and which frames each text of the page
+--only encodes just those sets again (the rest stay as they are; --only none writes film.json alone). film.json says how many frames there are, in which sizes, and which frames each text of the page
 belongs to (the beats of scroll.py, without their draft texts: the page has its own, in both languages).
 The frames are those of scroll.py --render (f_####.png) with, between each two, the ones of --between
 (q_####_k.png) when they are there. When scroll.py --sharp has rendered the key frames again at 2560 x 1440
 (sharp/, sharp_light/), <theme>/2560/NNNN.webp has them too: the page shows one of those when the scroll stops.
 """
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -98,7 +99,12 @@ def main():
         sizes.append((name, w, h, grain, quality, role))
     else:
         print("no sharp frames (scroll.py --sharp, both themes): the film has none")
-    meta = {"frames": count,
+    # the version of the frames (their names and sizes): the page asks for them under it, so a browser can keep them
+    # for a long time and still takes the new ones after an encode
+    stamp = hashlib.sha1()
+    for p in sorted(OUT.rglob("*.webp")):
+        stamp.update(f"{p.relative_to(OUT).as_posix()}:{p.stat().st_size};".encode())
+    meta = {"frames": count, "v": stamp.hexdigest()[:10],
             "sizes": [{"dir": name, "w": w, "h": h, "step": step, "role": role} for name, w, h, step, _, role in sizes],
             "beats": [{"from": (b["from"] - 1) * grain + 1, "to": min(count, b["to"] * grain), "key": b["key"], "side": b["side"],
                        "subject": b["subject"]} for b in beats["beats"]]}

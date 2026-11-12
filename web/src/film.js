@@ -4,8 +4,9 @@
 //
 // The frames come in tiers (film.json "sizes", each with its role):
 //   base   every 4th frame, small: on every device, coarse first, so the whole film scrubs almost at once
-//   fine   every frame, 1600 px: wide screens without touch, nearest the scroll position first, then outwards;
-//          each one replaces the base picture of its frame as it arrives
+//   fine   every frame, 1600 px: wide screens without touch, only around the scroll position (ahead of the way it
+//          goes) and only while the film is on screen - a visitor who never scrolls it downloads a first stretch
+//          and no more; each one replaces the base picture of its frame as it arrives
 //   sharp  every 4th frame, 2560 px: big screens, only where the scroll RESTS (the key frame there and its
 //          neighbours, a dozen at most kept)
 // One scheduler, six requests at a time.
@@ -43,6 +44,9 @@ const FINE_FROM = 1100;         // device px across the canvas from which the fi
 const SHARP_FROM = 1700;        // ...and the sharp one, where the scroll rests
 const SHARP_KEEP = 12;          // sharp pictures kept (the farthest goes)
 const REST_MS = 200;
+// the fine pictures asked for around the scroll position: ahead of the way it goes, behind it, and before the first
+// scroll (the film may never be played)
+const FINE_AHEAD = 140, FINE_BEHIND = 40, FINE_FIRST = 36;
 // where the camera of the film looks from (eye - target, Z up, -Y the front): the last shot, over the table; the
 // first one, low from the front left (scripts/blender/scroll.py)
 const FROM_TABLE = [0.02, -0.24, 1.08], FROM_DESK = [-0.46, -0.88, 0.16];
@@ -63,7 +67,8 @@ export async function startFilm() {
   };
   // reduced motion, data saving, or a screen too short for a stage (a page zoomed to 400 %): the plain page
   if (CALM.matches || navigator.connection?.saveData || matchMedia('(max-height: 300px)').matches) { plain(); return; }
-  const meta = await fetch(BASE + 'scroll/film.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  // (the frames are kept by the browser for a long time, under the version film.json gives them: it is asked anew)
+  const meta = await fetch(BASE + 'scroll/film.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const canvas = $('#filmCanvas');
   const ctx = canvas?.getContext('2d', { alpha: false });
   if (!meta?.sizes?.length || !ctx) { plain(); return; }
@@ -103,13 +108,15 @@ export async function startFilm() {
     return order;
   };
   const order = coarseFirst(tiers.base.n);
-  const url = (th, t, i) => `${BASE}scroll/${th}/${t.sz.dir}/${pad(i * t.skip + 1)}.webp`;
+  const ver = meta.v ? `?v=${meta.v}` : '';
+  const url = (th, t, i) => `${BASE}scroll/${th}/${t.sz.dir}/${pad(i * t.skip + 1)}.webp${ver}`;
 
   const sets = {};
   let theme = themeNow();
   let cur = 0, target = 0, dirty = true, running = false, shownIm = null;
   let kc = 0, codaT = 0;                                    // the coda: 0 film, 1 workbench
   let resting = false, restKey = -1, restTimer = 0, visible = true;
+  let engaged = false, booted = false, fineAt = -1, fineDir = 1;   // (the fine set: see nextJob)
   // the handoff to the configurator (below): armed once the film was seen to its end or left by its button
   let armed = false, handed = false, holding = false, from = FROM_TABLE;
   let subject = { x: 0.5, y: 0.5 };                         // where the subject of the drawn frame is (canvas fractions)
@@ -168,7 +175,7 @@ export async function startFilm() {
         const i = files[next++];
         if (blobs[i]) continue;
         fetching++;
-        fetch(`${BASE}scroll/${th}/${sz.dir}/${pad(i + 1)}.webp`).then((r) => (r.ok ? r.blob() : null)).catch(() => null).then((b) => {
+        fetch(`${BASE}scroll/${th}/${sz.dir}/${pad(i + 1)}.webp${ver}`).then((r) => (r.ok ? r.blob() : null)).catch(() => null).then((b) => {
           fetching--;
           if (b) blobs[i] = b;
           feed();
@@ -206,7 +213,7 @@ export async function startFilm() {
       rest(frame, cropFine) {
         if (!fineSz || fineSz === sz || frame % fineSz.step || still?.frame === frame) return;
         const ask = ++stillAsk;
-        fetch(`${BASE}scroll/${th}/${fineSz.dir}/${pad(frame / fineSz.step + 1)}.webp`).then((x) => (x.ok ? x.blob() : null))
+        fetch(`${BASE}scroll/${th}/${fineSz.dir}/${pad(frame / fineSz.step + 1)}.webp${ver}`).then((x) => (x.ok ? x.blob() : null))
           .then((b) => (b ? (cropFine && cropOk ? createImageBitmap(b, cropFine[0], 0, cropFine[1], fineSz.h) : createImageBitmap(b)) : null))
           .then((bmp) => {
             if (!bmp) return;
@@ -242,11 +249,13 @@ export async function startFilm() {
     if (resting && sharpOn) for (const k of [restKey, restKey - 1, restKey + 1])
       if (k >= 0 && k < tiers.sharp.n && !s.sharp.has(k)) return ['sharp', k];
     while (s.next < order.length) { const i = order[s.next++]; if (!s.base[i]) return ['base', i]; }
-    if (fineOn && s.fineLeft > 0) {
+    if (fineOn && visible && s.fineLeft > 0) {
       const n = tiers.fine.n, c = Math.min(n - 1, Math.max(0, Math.round(cur / tiers.fine.step)));
-      for (let d = 0; d < n; d++) {
-        if (c + d < n && !s.fine[c + d]) return ['fine', c + d];
-        if (d && c - d >= 0 && !s.fine[c - d]) return ['fine', c - d];
+      const fwd = engaged ? FINE_AHEAD : FINE_FIRST, back = engaged ? FINE_BEHIND : 0;
+      const up = fineDir >= 0 ? fwd : back, down = fineDir >= 0 ? back : fwd;
+      for (let d = 0; d <= Math.max(up, down); d++) {
+        if (d <= up && c + d < n && !s.fine[c + d]) return ['fine', c + d];
+        if (d && d <= down && c - d >= 0 && !s.fine[c - d]) return ['fine', c - d];
       }
     }
     return null;
@@ -362,13 +371,18 @@ export async function startFilm() {
     shownIm = im;
   }
 
-  let kWritten = -1;
+  let kWritten = -1, rolling = false;
   function tick() {
     cur += (target - cur) * 0.2;                           // the picture follows the scroll with a little weight
     if (Math.abs(target - cur) < 0.05) cur = target;
     kc += (codaT - kc) * 0.2;
     if (Math.abs(codaT - kc) < 0.002) kc = codaT;
     reel?.aim(cur, target);
+    if (fineOn) {
+      // the scroll has moved on a frame (or turned): the fine pictures around the new place
+      const c = Math.round(cur / tiers.fine.step), d = Math.sign(target - cur) || fineDir;
+      if (c !== fineAt || d !== fineDir) { fineAt = c; fineDir = d; pump(); }
+    }
     draw(dirty);
     dirty = false;
     const frame = 1 + cur;
@@ -378,6 +392,9 @@ export async function startFilm() {
       if (on !== b.on) { b.on = on; b.el.classList.toggle('on', on); }
     }
     if (bar) bar.style.transform = `scaleX(${(cur / last).toFixed(4)})`;
+    // past the first text (it has its own keys) and before the coda: the key that skips the film
+    const roll = beats.length > 1 && frame > beats[0].to + 0.999 && codaT === 0 && kc === 0;
+    if (roll !== rolling) { rolling = roll; root.classList.toggle('rolling', roll); }
     // the coda: eased, written only when it moves
     const k = kc * kc * (3 - 2 * kc);
     if (Math.abs(k - kWritten) > 0.0005 || (k !== kWritten && (k === 0 || k === 1))) {
@@ -464,7 +481,7 @@ export async function startFilm() {
     const t = Math.min(1, Math.max(0, y / span)) * last;
     // the coda closes over its first three quarters and holds the last one, then the stage scrolls away
     const c = coda ? Math.min(1, Math.max(0, (y - span) / (coda * 0.75))) : 0;
-    if (t !== target) { target = t; if (resting) { resting = false; dirty = true; } }
+    if (t !== target) { target = t; if (booted) engaged = true; if (resting) { resting = false; dirty = true; } }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && !running) { restTimer = setTimeout(rest, REST_MS); return; }
     codaT = c;
@@ -523,6 +540,7 @@ export async function startFilm() {
   // no sharp pictures for a film that is not on screen
   new IntersectionObserver(([e]) => {
     visible = e.isIntersecting;
+    if (visible) pump();                                    // (the fine pictures wait while the film is off screen)
     if (visible && !running) { clearTimeout(restTimer); restTimer = setTimeout(rest, REST_MS); }
   }).observe(root);
   // the keyboard: a link of a text that is not on screen yet (Tab) takes the film to that text's frames, so what has
@@ -556,6 +574,7 @@ export async function startFilm() {
   geometry();
   fit();
   measure();
+  booted = true;
 
   // ---------------------------------------------------------------- into the configurator
   // The 3D view, the first time it comes on screen after the film (seen to its end, or left by its button), comes in

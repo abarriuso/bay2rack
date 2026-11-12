@@ -27,7 +27,7 @@ if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'
 if (existsSync(join(repo, 'docs', 'scroll'))) copy(join(repo, 'docs', 'scroll'), 'scroll');
 
 // Cloudflare Pages headers: the hashed bundles never change; OpenSCAD only with a new release (a week, then checked
-// again in the background); the film and the images a day; the model and the STLs keep the default, so a push shows
+// again in the background); the film a month (its frames are asked for under the version film.json gives them), the images a day; the model and the STLs keep the default, so a push shows
 // up at once. Every page: no framing by other sites, no MIME sniffing, HTTPS only.
 writeFileSync(join(pub, '_headers'), `/*
   X-Content-Type-Options: nosniff
@@ -40,7 +40,7 @@ writeFileSync(join(pub, '_headers'), `/*
 /openscad/*
   Cache-Control: public, max-age=604800, stale-while-revalidate=2592000
 /scroll/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=31536000
 /img/*
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 `);

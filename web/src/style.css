@@ -137,7 +137,7 @@ button:disabled { opacity: .45; cursor: default; }
    A tall section: its stage stays on screen while the page scrolls through it, film.js draws the frame of that
    point and lights the text of that stretch. .plain (reduced motion, data saving, no frames): a still and the
    texts one after another. The shots keep their subject to the right, so the text has the left. */
-.film { --film-bg: #020203; position: relative; height: 760vh; height: 760svh; background: var(--film-bg); }
+.film { --film-bg: #020203; position: relative; height: 530vh; height: 530svh; background: var(--film-bg); }
 :root[data-theme="light"] .film { --film-bg: #c9cbce; }
 /* svh, not dvh: the stage keeps its size while Safari's bars fold and unfold (no re-layout, no new canvas mid-scroll);
    the scroll stays the browser's own (vertical pan only: no zoom delay, nothing for a script to wait on) */
@@ -666,7 +666,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 /* ------------------------------------------------------------ phone */
 @media (max-width: 760px) {
-  .film { height: 620svh; }
+  .film { height: 470svh; }
   .cta .btn { flex: 1 1 auto; justify-content: center; }
 }
 /* the narrowest phones (320 px): the name and three 44 px keys still fit on one line */
@@ -685,7 +685,14 @@ button:disabled { opacity: .45; cursor: default; }
   .legend { font-size: 11px; padding: 6px 8px; gap: 2px; }
   .gallery { grid-auto-columns: 82%; }
   .param { grid-template-columns: minmax(0, 1fr) 128px; }
-  .floatbar { gap: 4px; left: 8px; right: 8px; bottom: 8px; }
+  /* the bar over the 3D view is one row: the note that a render is done (and how long it took) is not said here,
+     only that one is under way or went wrong */
+  .floatbar { gap: 4px; left: 8px; right: 8px; bottom: 8px; flex-wrap: nowrap; }
+  .floatbar .status.ok { display: none; }
+  .floatbar .status { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* the steps get the room: a lower 3D view, the kit's bar only its button */
+  .viewer { height: min(38vh, 400px); height: min(38svh, 400px); }
+  .kit-bar small { display: none; }
   .floatbar .pill { padding: 5px 8px; font-size: 12px; }
   .status { font-size: 12px; padding: 6px 8px; }
   .viewer .legend { display: none; }
