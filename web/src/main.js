@@ -41,6 +41,8 @@ function langKey() {
   b.textContent = other.toUpperCase();
   b.lang = other;
   b.setAttribute('aria-label', other === 'es' ? 'Español' : 'English');
+  // (its tip in the language it takes you to, as the key itself says it)
+  b.dataset.tip = other === 'es' ? 'Leer en español' : 'Read in English';
 }
 // the theme you chose (none: the system's, followed as it changes)
 const THEMES = ['light', 'dark'];

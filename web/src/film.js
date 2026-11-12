@@ -143,7 +143,8 @@ export async function startFilm() {
     const half = Math.max(3, Math.floor((room - Math.ceil(n / every)) / 4));
     const blobs = old?.sz === sz && old.th === th ? old.blobs : new Array(n);
     const maps = new Map(), decoding = new Set(), files = coarseFirst(n);
-    let next = 0, fetching = 0, dead = false, at = 0, dir = 1;
+    let next = 0, fetching = 0, dead = false, at = Math.min(n - 1, Math.max(0, Math.round(cur / step))), dir = 1;
+    const asked = new Set();
     let still = null, stillAsk = 0;                       // the fine picture of the frame the scroll rests on
     const near = (i, k) => i >= at - half * k && i <= at + half * k;
     const ahead = (i) => i >= at - half * (dir > 0 ? 1 : 2) && i <= at + half * (dir > 0 ? 2 : 1);
@@ -171,12 +172,16 @@ export async function startFilm() {
     }
     function feed() {
       if (dead) return;
-      while (fetching < IN_FLIGHT && next < files.length) {
-        const i = files[next++];
-        if (blobs[i]) continue;
+      // the files where the film is first (a reel made anew - the other theme - starts there), then the whole film
+      const around = [at, at + dir, at - dir, at + 2 * dir].filter((i) => i >= 0 && i < n && !blobs[i] && !asked.has(i));
+      while (fetching < IN_FLIGHT && (around.length || next < files.length)) {
+        const i = around.length ? around.shift() : files[next++];
+        if (blobs[i] || asked.has(i)) continue;
+        asked.add(i);
         fetching++;
         fetch(`${BASE}scroll/${th}/${sz.dir}/${pad(i + 1)}.webp${ver}`).then((r) => (r.ok ? r.blob() : null)).catch(() => null).then((b) => {
           fetching--;
+          asked.delete(i);
           if (b) blobs[i] = b;
           feed();
         });
@@ -249,6 +254,8 @@ export async function startFilm() {
     if (resting && sharpOn) for (const k of [restKey, restKey - 1, restKey + 1])
       if (k >= 0 && k < tiers.sharp.n && !s.sharp.has(k)) return ['sharp', k];
     if (resting && fineOn && visible) { const c = Math.round(cur / tiers.fine.step); if (c < tiers.fine.n && !s.fine[c]) return ['fine', c]; }
+    const c = Math.min(tiers.base.n - 1, Math.round(cur / tiers.base.step));
+    for (const i of [c, c + 1, c - 1]) if (i >= 0 && i < tiers.base.n && !s.base[i]) return ['base', i];
     while (s.next < order.length) { const i = order[s.next++]; if (!s.base[i]) return ['base', i]; }
     if (fineOn && visible && s.fineLeft > 0) {
       const n = tiers.fine.n, c = Math.min(n - 1, Math.max(0, Math.round(cur / tiers.fine.step)));
@@ -380,10 +387,23 @@ export async function startFilm() {
     try { ctx.drawImage(im, x, (ch - hh) / 2, w, hh); } catch { return null; } finally { ctx.globalAlpha = 1; }
     return (x + w * px) / cw;
   }
+  let swap = null;                                          // the other theme on its way: { shot, tol } (see below)
   function draw(force) {
     const got = pick(Math.round(cur));
-    if (!got) return;
+    if (!got) { if (swap && force) paint(swap.shot, Math.round(cur), false); return; }
     const [im, frame, mid = false] = got;
+    if (swap) {
+      // (a picture of another moment - the first ones of a film are spread over all of it - would flash by)
+      // (on a wide screen it waits a moment for the fine picture of this very frame: a base one is up to two away)
+      // (and after a few seconds - a slow network - whatever it has)
+      const late = performance.now() - swap.t0;
+      const tol = late > 4000 ? Infinity : !useReel && fineOn && late < 1500 ? 1 : swap.tol;
+      if (Math.abs(frame - Math.round(cur)) > tol) { if (force) paint(swap.shot, frame, false); return; }
+      fade = { im0: swap.shot, mid0: false, t0: performance.now(), im };
+      swap = null;
+      shownIm = im; shownFrame = frame; shownMid = mid;
+      kick();
+    }
     if (fade && (fade.im !== im || force)) fade = null;     // (the film moved on, or the canvas was redone)
     if (fade) {
       const a = Math.min(1, (performance.now() - fade.t0) / FADE_MS);
@@ -443,7 +463,7 @@ export async function startFilm() {
       root.classList.toggle('closing', k > 0);
       if (k > 0.5) armed = true;                            // the film was seen to its end: the 3D view takes it on
     }
-    if (cur !== target || kc !== codaT || fade) requestAnimationFrame(tick);
+    if (cur !== target || kc !== codaT || fade || (swap && performance.now() - swap.t0 < 5000)) requestAnimationFrame(tick);
     else { running = false; clearTimeout(restTimer); restTimer = setTimeout(rest, REST_MS); }
   }
   function kick() { if (!running) { running = true; lastT = 0; requestAnimationFrame(tick); } }
@@ -614,9 +634,21 @@ export async function startFilm() {
     delete sets[theme];
     theme = themeNow();
     showStill(baseSz.dir);
+    // what is on screen stays (a copy: the pictures behind it are let go) until the new film has this frame
+    if (shownIm && canvas.width) {
+      const shot = document.createElement('canvas');
+      shot.width = canvas.width; shot.height = canvas.height;
+      shot.getContext('2d', { alpha: false }).drawImage(canvas, 0, 0);
+      swap = { shot, tol: useReel ? 2 : tiers.base.step, t0: performance.now() };
+    }
+    fade = null;
+    shownIm = null;
+    // the sharper picture where it rests: the new film's
+    resting = false;
+    clearTimeout(restTimer);
+    restTimer = setTimeout(rest, REST_MS);
     thread();
     pump();
-    shownIm = null;
     kick();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   geometry();
