@@ -407,10 +407,16 @@ export async function startFilm() {
   }
 
   let kWritten = -1, rolling = false;
-  function tick() {
-    cur += (target - cur) * 0.2;                           // the picture follows the scroll with a little weight
+  // the picture follows the scroll with a little weight: a fifth of the way per 60th of a second, whatever the
+  // screen's rate (at 120 Hz, a tenth of it per refresh: the same glide, twice the pictures)
+  let lastT = 0;
+  function tick(now) {
+    const dt = Math.min(100, Math.max(1, now - (lastT || now - 1000 / 60)));
+    lastT = now;
+    const ease = 1 - Math.pow(0.8, dt / (1000 / 60));
+    cur += (target - cur) * ease;
     if (Math.abs(target - cur) < 0.05) cur = target;
-    kc += (codaT - kc) * 0.2;
+    kc += (codaT - kc) * ease;
     if (Math.abs(codaT - kc) < 0.002) kc = codaT;
     reel?.aim(cur, target);
     if (fineOn) {
@@ -440,7 +446,7 @@ export async function startFilm() {
     if (cur !== target || kc !== codaT || fade) requestAnimationFrame(tick);
     else { running = false; clearTimeout(restTimer); restTimer = setTimeout(rest, REST_MS); }
   }
-  function kick() { if (!running) { running = true; requestAnimationFrame(tick); } }
+  function kick() { if (!running) { running = true; lastT = 0; requestAnimationFrame(tick); } }
 
   // the scroll has stopped: the sharp key frame there (and its neighbours) on a big screen
   function rest() {

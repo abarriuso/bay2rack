@@ -350,6 +350,15 @@ def main():
             sc.frame_set(f)
             sc.render.filepath = path
             bpy.ops.render.render(write_still=True)
+        # and halfway between each two (h_####.png): a sharp picture every other frame of the page's film, so the
+        # scroll that stops settles at most one frame away from where it was
+        for f in range(1, END):
+            path = os.path.join(folder, f"h_{f:04d}.png")
+            if os.path.exists(path):
+                continue
+            sc.frame_set(f, subframe=0.5)
+            sc.render.filepath = path
+            bpy.ops.render.render(write_still=True)
         return
     if preview or h.arg("--render"):
         fr = h.arg("--frames")

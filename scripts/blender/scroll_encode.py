@@ -76,10 +76,18 @@ def main():
             total += size
             print(f"{theme}/{name}: {len(frames[::step])} frames, {size / 1e6:.1f} MB")
     count = (beats["frames"] - 1) * grain + 1
-    # the sharp key frames: one every `grain` frames of the film (the key frames are 1, 1 + grain, ...)
+    # the sharp key frames: one every `grain` frames of the film (the key frames are 1, 1 + grain, ...); with the
+    # halfway ones of scroll.py --sharp (h_####.png, both themes, all of them), one every grain / 2
     sizes = list(SIZES)
     sharp = {th: sorted((SRC / ("sharp" + folder[len("frames"):])).glob("f_*.png")) for th, folder in THEMES.items()}
-    if all(len(v) == beats["frames"] for v in sharp.values()):
+    halves = {th: [SRC / ("sharp" + folder[len("frames"):]) / f"h_{i:04d}.png" for i in range(1, beats["frames"])]
+              for th, folder in THEMES.items()}
+    sharp_step = grain
+    if grain % 2 == 0 and all(p.exists() for v in halves.values() for p in v):
+        sharp_step = grain // 2
+        sharp = {th: [f for i, k in enumerate(keys) for f in ([k, halves[th][i]] if i < len(keys) - 1 else [k])]
+                 for th, keys in sharp.items()}
+    if all(len(v) == (beats["frames"] - 1) * grain // sharp_step + 1 for v in sharp.values()):
         name, w, h, _, quality, role = SHARP
         for theme, keys in sharp.items():
             if only and name not in only:
@@ -96,7 +104,7 @@ def main():
             size = sum(p.stat().st_size for p in out.glob("*.webp"))
             total += size
             print(f"{theme}/{name}: {len(keys)} frames, {size / 1e6:.1f} MB")
-        sizes.append((name, w, h, grain, quality, role))
+        sizes.append((name, w, h, sharp_step, quality, role))
     else:
         print("no sharp frames (scroll.py --sharp, both themes): the film has none")
     # the version of the frames (their names and sizes): the page asks for them under it, so a browser can keep them

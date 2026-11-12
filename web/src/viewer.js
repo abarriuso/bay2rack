@@ -111,6 +111,8 @@ export class Viewer {
       const dt = Math.min(0.1, Math.max(0, now - last) / 1000);
       last = now;
       if (!this.active) return;                           // (the IntersectionObserver asks again when it is back)
+      // the damping after a drag works per refresh: kept to the same time at 60, 120 or 144 Hz
+      this.controls.dampingFactor = 1 - Math.pow(1 - 0.12, Math.max(dt, 1 / 240) * 60);
       for (const f of [...this.hooks]) f(dt);
       // controls.update() is true while the camera moves (dragging, and the damping after it)
       const moved = this.controls.update();
