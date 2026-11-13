@@ -131,6 +131,7 @@ export async function startFilm() {
   let engaged = false, booted = false, fineAt = -1, fineDir = 1;   // (the fine set: see nextJob)
   let merged = false;                                       // the configurator over the stage (see the end)
   let built = false, rested = 0, touching = 0;              // (the PC built once: its stretch gone, see the end)
+  let auto = null;                                          // (the build playing itself: see the end)
   let subject = { x: 0.5, y: 0.5 };                         // where the subject of the drawn frame is (canvas fractions)
   const inflight = new Set();
   // each text of the page and the frames it belongs to (film.json has them, in the order of the page)
@@ -590,6 +591,7 @@ export async function startFilm() {
   });
   function measure() {
     if (keep) return;                                       // (the sizes are changing: see above)
+    const prev = lastY;
     lastY = scrollY;
     const y = lastY + stick - filmTop;
     const t = Math.min(1, Math.max(0, y / span)) * last;
@@ -599,6 +601,7 @@ export async function startFilm() {
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
     if (t >= last * ENGINE_AT) prepare();
     setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
+    autoplay(lastY - prev, a);
     if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && a === asmT && !running) { restTimer = setTimeout(rest, REST_MS); return; }
@@ -893,6 +896,32 @@ export async function startFilm() {
     measure();
     collapse();
   }
+  // Once the film's picture has become the 3D view, the build plays itself: the page goes on into the configurator
+  // on its own, at the pace of the build (the scroll is still what drives it - the same poses, the same sounds - so a
+  // hand on the page takes it back at once: a finger, the wheel or a key upwards; a scroll on down goes along with it).
+  const AUTO_MS = 4600;                                     // (the whole build, from the 3D view in)
+  function autoplay(dy, a) {
+    if (auto || touching || dy <= 0 || dy > innerHeight * 2 || merged || !assembly || assembly.parked) return;
+    if (a < assembly.fade || a > 0.97) return;
+    const to = filmTop - stick + span + coda + 1;
+    auto = { from: scrollY, to, t0: performance.now(), ms: AUTO_MS * (1 - a) / (1 - assembly.fade), set: scrollY };
+    requestAnimationFrame(play);
+  }
+  function play(now) {
+    if (!auto) return;
+    const y = scrollY;
+    if (y < auto.set - 2 || !assembly) { auto = null; return; }   // (taken back up, or the build is the visitor's now)
+    const k = Math.min(1, (now - auto.t0) / auto.ms);
+    const want = auto.from + (auto.to - auto.from) * (1 - Math.cos(Math.PI * k)) / 2;
+    // (a scroll of the visitor's ahead of it leads: it goes on from there)
+    if (want > y + 0.5) { auto.set = want; scrollTo({ top: want, behavior: 'instant' }); } else auto.set = y;
+    if (k < 1 && y < auto.to) requestAnimationFrame(play); else auto = null;
+  }
+  const stopAuto = () => { auto = null; };
+  addEventListener('touchstart', stopAuto, { passive: true });
+  addEventListener('wheel', (e) => { if (e.deltaY < 0) stopAuto(); }, { passive: true });
+  addEventListener('keydown', (e) => { if (/^(ArrowUp|PageUp|Home)$/.test(e.key) || (e.key === ' ' && e.shiftKey)) stopAuto(); });
+
   // The sounds of the build: a browser lets a page make them only after a click or a key on it, never for a scroll.
   // Until then (and unless they were turned off) the film offers a quiet key for them, by the one that skips it.
   const hush = () => root.classList.toggle('hush', soundOn() && !audible());
