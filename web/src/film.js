@@ -899,7 +899,7 @@ export async function startFilm() {
   // page's place is moved up by as much and nothing on screen moves. Back up from the configurator, the film is right
   // there - not a long way back through the build.
   addEventListener('touchstart', () => { touching++; }, { passive: true });
-  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); aim(); steer(); }, { passive: true });
+  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); aim(); steer(true); }, { passive: true });
   addEventListener('scroll', () => {
     const y = scrollY;
     if (y !== wentY) { went = Math.sign(y - wentY); wentY = y; }
@@ -980,13 +980,17 @@ export async function startFilm() {
   }
   addEventListener('scroll', track, { passive: true, capture: true });     // (before measure reads it)
   const drivable = () => !!assembly && !assembly.parked && !merged && !failed && !CALM.matches;
-  function steer() {
+  // the page's speed now: none if it has not moved for a moment
+  const moving = () => (trail.length && performance.now() - trail[trail.length - 1][0] < 120 ? Math.max(0, vel) : 0);
+  function steer(letGo = false) {
     if (drive || touching || !drivable() || went < 0) return;
     const y = scrollY;
     if (y >= endY() - 1) return;
     // (a fling: taken over from half a screen before the build)
     if (vel > fastest() * 1.1 && y >= buildY() - innerHeight * 0.5) { take(vel); return; }
     if (y < buildY() - 1) return;
+    // a finger let go in the build: on at its speed (the browser's own glide would leave the build half done)
+    if (letGo) { take(moving()); return; }
     // let go in the build: once the page's own glide is down to the cruise (or has stopped), on from there
     if (vel > 0 && vel <= cruise()) { take(vel); return; }
     clearTimeout(steerT);
@@ -1000,7 +1004,8 @@ export async function startFilm() {
     auto = null;
     // its braking: enough to stop by the end from the speed it is taken at (a fling late in the build brakes harder,
     // but from its own speed - never a jump down)
-    const v = Math.min(Math.max(0, v0), innerHeight / 80), left = endY() - scrollY;
+    // (from the page's own speed at least: whatever takes it - a stop, the 3D view ready mid-glide - it goes on from it)
+    const v = Math.min(Math.max(0, v0, moving()), innerHeight / 80), left = endY() - scrollY;
     drive = { v, a: Math.max(brake(), (v * v) / (2 * left)), t: performance.now() - 1000 / 60, y: scrollY, boost, done };
     // (on a touch screen the browser's own glide stops here: this one goes on from its speed)
     if (TOUCH) document.documentElement.classList.add('driven');
@@ -1013,7 +1018,10 @@ export async function startFilm() {
   const RIDE = 1.6;                                       // (the build's pace on a ride: a little quicker)
   function ride(done) {
     if (CALM.matches || merged || failed) { toConfigurator(); done(); return; }
-    const from = filmTop - stick + span + close + (assembly?.fade ?? 0.15) * asm;
+    // (the 3D view started now, its files coming while the film runs; not ready by the end of the film, it waits on
+    // the film's last picture - a still one - not halfway into the build)
+    early();
+    const from = filmTop - stick + span + close + (assembly ? assembly.fade * asm : 0);
     const build = () => {
       const t0 = performance.now();
       const wait = () => {
