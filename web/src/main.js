@@ -113,8 +113,18 @@ function wire() {
     snd.dataset.tip = t(k);
     snd.setAttribute('aria-label', t(k));
   };
+  snd.dataset.quiet = '';
   snd.onclick = () => { setSound(!soundOn()); showSound(); setTimeout(() => sfx.snap(0, 1), 60); };
   showSound();
+  addEventListener('b2r:sound', showSound);              // (the film's key turns them on or off too)
+  // every key of the page answers with a soft click (a little lower for what turns something off); the keys that
+  // make a sound of their own (data-quiet) and the film's links keep to theirs
+  document.addEventListener('click', (e) => {
+    const k = e.target.closest?.('button, [role="button"], [role="tab"], [role="radio"], [role="switch"], summary, input[type="checkbox"], input[type="radio"], a.btn');
+    if (!k || k.disabled || k.closest('[data-quiet], .film')) return;
+    const off = k.getAttribute('aria-pressed') === 'true' || k.getAttribute('aria-checked') === 'true' || k.matches('.on, .active') || (k.type === 'checkbox' && !k.checked);
+    sfx.tap(!off);
+  }, true);
   $('#warnBadge').onclick = () => { const c = $('#warningsCard'); c.scrollIntoView({ block: 'center' }); focusOn(c); };
   // narrow screens: the downloads go at the end of the steps, which scroll on their own under the 3D view
   const narrow = matchMedia(NARROW);

@@ -97,8 +97,12 @@
   display: flex; align-items: center; gap: 20px; pointer-events: none;
 }
 .film-keys > * { pointer-events: auto; }
-/* the key for the sounds (film.js: .hush, until the browser lets the page make them), the same quiet line of type */
-.film-sound { -webkit-appearance: none; appearance: none; background: none; border: 0; margin: 0; cursor: pointer; }
+/* the key for the sounds (film.js): a speaker, crossed out while they cannot be heard - the same quiet ink */
+.film-sound { -webkit-appearance: none; appearance: none; background: none; border: 0; margin: 0 -6px 0 0; cursor: pointer;
+  padding: 6px !important; }
+.film-sound svg { width: 18px; height: 18px; display: block; filter: drop-shadow(0 0 3px var(--film-bg)); }
+.film-sound .off, .film-sound.muted .on { display: none; }
+.film-sound.muted .off { display: inline; }
 .film-skip, .film-sound {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 0; text-decoration: none;
   font: 500 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2);
@@ -106,8 +110,8 @@
   opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s, color .15s;
 }
 :is(.film-skip, .film-sound) span:first-child { border-bottom: 1px solid transparent; transition: border-color .15s; }
-.film.rolling .film-skip, .film.hush:is(.rolling, .closing):not(.merged) .film-sound { opacity: .6; visibility: visible; transition-delay: 0s; }
-.film-skip:hover, .film-skip:focus-visible, .film.hush .film-sound:is(:hover, :focus-visible) { color: var(--ink); opacity: 1; visibility: visible; transition-delay: 0s; }
+.film.rolling .film-skip, .film:is(.rolling, .closing):not(.merged) .film-sound { opacity: .6; visibility: visible; transition-delay: 0s; }
+.film-skip:hover, .film-skip:focus-visible, .film:not(.merged) .film-sound:is(:hover, :focus-visible) { color: var(--ink); opacity: 1; visibility: visible; transition-delay: 0s; }
 :is(.film-skip, .film-sound):is(:hover, :focus-visible) span:first-child { border-color: currentColor; }
 :is(.film-skip, .film-sound):focus-visible { outline-offset: 4px; }
 .film.plain .film-keys { display: none; }

@@ -6,6 +6,7 @@ import { UI, $, CALM, h, num, S, atRest } from './state.js';
 import { calc, modLabel, usedMods } from './model.js';
 import { viewer, engineStarted, runJob, cachedJob, readyMade, definesFor, setStatus, announce } from './engine.js';
 import { meshesOf } from './mesh.js';
+import { sfx } from './sound.js';
 import { renderSteps } from './steps.js';
 import { pieceLabel } from './tabs.js';
 import { kitList } from './kit.js';
@@ -38,7 +39,12 @@ export async function render() {
   S.aheadKey = null;
   S.busy = true; S.dirty = false; S.wantRender = false;
   setStatus(t('rendering'), 'busy');
+  // (the visitor's own render - not the first model: a tick when it takes a moment, a chime when it is there)
+  const theirs = !!viewer?.model;
+  const working = theirs ? setTimeout(() => sfx.work(), 220) : 0;
+  const t0 = performance.now();
   const res = await cachedJob(runJob, defs, 'out.' + ext);
+  clearTimeout(working);
   await engineStarted;                                  // (the 3D view loads alongside the engine)
   if (res.ok && ext === '3mf') {
     res.meshes = await meshesOf(res.data);              // (read off the page's thread)
@@ -48,6 +54,8 @@ export async function render() {
   S.busy = false;
   try {
     showResult(res, ext, values);
+    if (theirs && !res.ok) sfx.fail();
+    else if (theirs && !S.dirty && performance.now() - t0 > 220) sfx.done();
   } catch (e) {
     console.error(e);
     setStatus(t('failed'), 'error');

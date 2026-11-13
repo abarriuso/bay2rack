@@ -37,11 +37,13 @@ function wake() {
       const n = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate), d = n.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       noise = n;
+      setTimeout(told);                                   // (it may be running from the start: no state change)
     }
-    if (ctx.state === 'suspended') ctx.resume();
+    // (iOS: 'interrupted' after a call or another app's audio - it comes back on the next touch)
+    if (ctx.state === 'suspended' || ctx.state === 'interrupted') ctx.resume().then(told, () => {});
   } catch { ctx = null; }
 }
-for (const ev of ['pointerdown', 'keydown', 'touchend']) addEventListener(ev, wake, { passive: true, capture: true });
+for (const ev of ['pointerdown', 'pointerup', 'click', 'keydown', 'touchend']) addEventListener(ev, wake, { passive: true, capture: true });
 
 const live = () => on && ctx && ctx.state === 'running';
 // the sounds of the scroll (the PC built as the page goes down) are quieter than the editor's: softly(k, ...) plays
@@ -93,6 +95,7 @@ export const sfx = {
     hiss(t, { freq: 2600 * p, q: 1.6, gain: 0.55, decay: 0.035, pan });
     hiss(t + 0.012, { freq: 4200 * p, q: 3, gain: 0.25, decay: 0.02, pan });          // the latch, a hair later
     tone(t, { freq: 210 * p, to: 95 * p, gain: 0.5, decay: 0.09, drop: 0.07, pan });
+    tone(t + 0.004, { freq: 1250 * p, to: 1080 * p, type: 'triangle', gain: 0.06, decay: 0.035, drop: 0.03, pan });   // its body, a short tock
   },
   // the adapter sliding home in the bays, the side panel shutting: deep, with a little rattle of metal
   thunk(pan = 0) {
@@ -113,6 +116,7 @@ export const sfx = {
     const end = t0 + ms / 1000;
     hiss(end, { freq: 5200 * p, q: 4, gain: 0.35, decay: 0.02, pan });
     tone(end, { freq: 900 * p, to: 600 * p, type: 'triangle', gain: 0.12, decay: 0.03, drop: 0.02, pan });
+    tone(end + 0.002, { freq: 2650 * p, gain: 0.02, attack: 0.002, decay: 0.14, pan });                  // (a little ring of metal)
   },
   // a piece lifting off the table: a soft breath of air
   lift(pan = 0, ms = 500) {
@@ -180,8 +184,39 @@ export const sfx = {
     const t = ctx.currentTime + 0.01;
     tone(t, { freq: 92, to: 62, gain: 0.3, decay: 0.32, drop: 0.25 });
     hiss(t, { type: 'lowpass', freq: 700, q: 0.7, gain: 0.12, decay: 0.12 });
-    for (const [f, g, d] of [[660, 0.035, 0.9], [990, 0.025, 0.8], [1320, 0.015, 0.7]])
-      tone(t + 0.04, { freq: f, gain: g, attack: 0.03, decay: d, pan: (f - 990) / 1400 });
+    for (const [i, f, g, d] of [[0, 523.25, 0.034, 1.1], [1, 659.25, 0.028, 1.0], [2, 783.99, 0.022, 0.95], [3, 1046.5, 0.012, 0.8]])
+      tone(t + 0.05 + i * 0.055, { freq: f, gain: g, attack: 0.02, decay: d, pan: (i - 1.5) / 4 });
+  },
+
+  // the page's keys: a short, soft click - a little lower for one that turns something off
+  tap(up = true) {
+    if (!live()) return;
+    const t = ctx.currentTime + 0.003, p = vary(1, 0.04) * (up ? 1 : 0.84);
+    hiss(t, { freq: 2300 * p, q: 1.3, gain: 0.14, decay: 0.012 });
+    tone(t, { freq: 620 * p, to: 470 * p, type: 'triangle', gain: 0.06, decay: 0.028, drop: 0.022 });
+  },
+  // a render under way: a soft double tick, the job taken
+  work() {
+    if (!live()) return;
+    const t = ctx.currentTime + 0.005;
+    tone(t, { freq: 740, gain: 0.03, attack: 0.004, decay: 0.07 });
+    tone(t + 0.075, { freq: 925, gain: 0.026, attack: 0.004, decay: 0.08 });
+  },
+  // the render on screen: two warm, round notes going up over a soft low touch
+  done() {
+    if (!live()) return;
+    const t = ctx.currentTime + 0.01;
+    tone(t, { freq: 150, to: 104, gain: 0.1, decay: 0.12, drop: 0.1 });
+    tone(t, { freq: 783.99, gain: 0.042, attack: 0.006, decay: 0.5 });
+    tone(t + 0.09, { freq: 1174.66, gain: 0.034, attack: 0.006, decay: 0.75 });
+    tone(t + 0.09, { freq: 2349.3, gain: 0.006, attack: 0.006, decay: 0.3 });
+  },
+  // a render that failed: two low notes going down
+  fail() {
+    if (!live()) return;
+    const t = ctx.currentTime + 0.01;
+    tone(t, { freq: 330, gain: 0.045, attack: 0.01, decay: 0.25 });
+    tone(t + 0.15, { freq: 247, gain: 0.045, attack: 0.01, decay: 0.45 });
   },
 };
 

@@ -66,7 +66,8 @@ export const done = new Map();
 // The first look's build, made ahead (scripts/first-render.mjs, into docs/scroll/): the film builds it in the 3D view
 // before the engine - 11 MB of WebAssembly, then the render - could have it. Only for the model it was made from (a
 // sum of its source) and the very settings it was made with; anything else is rendered as always.
-export const sumOf = (text) => {
+export const sumOf = (raw) => {
+  const text = raw.replace(/\r\n/g, '\n');           // (the same sum for a file checked out with Windows' line ends)
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
   return (h >>> 0).toString(16).padStart(8, '0');

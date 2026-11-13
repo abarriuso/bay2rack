@@ -27,6 +27,7 @@ import './css/film-extra.css';
 import { $, BASE, CALM, NARROW, atRest } from './state.js';
 import { viewer, startEngine, startViewer } from './engine.js';
 import { sfx, softly, drift, audible, setSound, soundOn } from './sound.js';
+import { t } from './i18n.js';
 
 const pad = (n) => String(n).padStart(4, '0');
 // a reload, or back to this page: where it was, kept by the film (see the end of startFilm)
@@ -968,13 +969,25 @@ export async function startFilm() {
   addEventListener('keydown', (e) => { if (/^(ArrowUp|PageUp|Home)$/.test(e.key) || (e.key === ' ' && e.shiftKey)) stopAuto(); });
 
   // The sounds of the build: a browser lets a page make them only after a click or a key on it, never for a scroll.
-  // Until then (and unless they were turned off) the film offers a quiet key for them, by the one that skips it.
-  const hush = () => root.classList.toggle('hush', soundOn() && !audible());
+  // The film has a quiet key for them by the one that skips it, all along: a speaker that says whether they can be
+  // heard now (crossed out until the page may make them, or while they are off), and turns them on or off.
+  const key = root.querySelector('.film-sound');
+  const hush = () => {
+    const on = audible();
+    root.classList.toggle('hush', soundOn() && !on);
+    if (!key) return;
+    const k = on ? 'sound_mute' : 'sound_unmute';
+    key.classList.toggle('muted', !on);
+    key.dataset.i18nTip = key.dataset.i18nAria = k;
+    key.dataset.tip = t(k);
+    key.setAttribute('aria-label', t(k));
+  };
   addEventListener('b2r:sound', hush);
   hush();
-  root.querySelector('.film-sound')?.addEventListener('click', () => {
+  key?.addEventListener('click', () => {
+    // (what the key showed, not the sound now: the same click has just let the page make sounds)
+    if (!key.classList.contains('muted')) { setSound(false); return; }
     setSound(true);
-    hush();
     setTimeout(() => softly(0.6, () => sfx.snap(0, 1)), 80);
   });
   // "Configure yours", the key that skips the film: the page goes on to where the film has given way
