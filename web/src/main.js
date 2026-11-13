@@ -20,7 +20,7 @@ import { downloadKit } from './kit.js';
 import { share } from './share.js';
 import { wireGallery, renderGallery } from './gallery.js';
 import { startFilm } from './film.js';
-import { soundOn, setSound, sfx } from './sound.js';
+import { soundOn, setSound, sfx, breeze } from './sound.js';
 import { themeSwitch, langSwap, widen } from './motion.js';
 
 // ---------------------------------------------------------------- chrome
@@ -147,6 +147,21 @@ function wire() {
     if (Math.abs(y - panelY) > 6 || y < 8) panelY = y;
   }, { passive: true });
   narrow.addEventListener('change', head);
+  // the air of the scroll, all down the page and the steps: as fast as they move, softer than the film's at its end
+  // (sound.js); a jump of the page's place (a link, the film's own) is no scroll
+  const airOf = (get) => {
+    let y0 = get(), t0 = performance.now(), calm = 0;
+    return () => {
+      const y = get(), now = performance.now(), dy = y - y0, dt = Math.max(8, now - t0);
+      y0 = y; t0 = now;
+      if (Math.abs(dy) > innerHeight * 1.5) return;
+      breeze((Math.abs(dy) / innerHeight) * (1000 / dt), dy > 0);
+      clearTimeout(calm);
+      calm = setTimeout(() => breeze(0), 140);
+    };
+  };
+  addEventListener('scroll', airOf(() => scrollY), { passive: true });
+  $('.panel')?.addEventListener('scroll', airOf(() => $('.panel').scrollTop), { passive: true });
   // A phone's configurator is one screen, and holds it: come to rest squarely on it and the page stops scrolling (the
   // steps scroll inside it, a finger on the 3D view turns the build). Out of it by its key at the corner of the view -
   // or a link of the page, which takes the page elsewhere. (A scroll reads nothing while it is not held.)

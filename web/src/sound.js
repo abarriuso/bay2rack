@@ -185,37 +185,46 @@ export const sfx = {
   },
 };
 
-// The air of the scroll: while the stage closes into the editor and the PC is built, a faint breath that follows how
-// fast the page moves (`speed`: the stretch's fractions a second), a little higher on the way down than up; 0 lets
-// it die away.
-let air = null, airOff = 0;
-function hushAir() {
-  clearTimeout(airOff);
-  if (!air) return;
-  const a = air;
-  air = null;
-  try { a.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05); a.src.stop(ctx.currentTime + 0.3); } catch { /* gone */ }
+// The air of the scroll: a faint breath that follows how fast the page moves, a little higher on the way down than up;
+// a speed of 0 lets it die away. Two of them: the stage closing into the editor and the PC built (drift: `speed` in
+// the stretch's fractions a second), and, softer and lower, the rest of the page and the steps (breeze: in screens a
+// second).
+function air({ peak, full, low, high }) {
+  let a = null, off = 0;
+  const hush = () => {
+    clearTimeout(off);
+    if (!a) return;
+    const x = a;
+    a = null;
+    try { x.g.gain.setTargetAtTime(0, ctx.currentTime, 0.05); x.src.stop(ctx.currentTime + 0.3); } catch { /* gone */ }
+  };
+  const set = (speed, down = true) => {
+    if (!live()) return;
+    const k = Math.min(1, Math.max(0, speed) / full);
+    if (!a) {
+      if (k < 0.02) return;
+      const src = ctx.createBufferSource();
+      src.buffer = noise;
+      src.loop = true;
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass'; f.Q.value = 0.7; f.frequency.value = low;
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      src.connect(f).connect(g).connect(out);
+      src.start();
+      a = { src, f, g };
+    }
+    const now = ctx.currentTime;
+    a.g.gain.setTargetAtTime(peak * level * k * (2 - k), now, k ? 0.06 : 0.18);
+    a.f.frequency.setTargetAtTime((down ? high : low) * (1 + 1.2 * k), now, 0.1);
+    clearTimeout(off);
+    // (still for a while: the source goes)
+    if (k < 0.02) off = setTimeout(hush, 900);
+  };
+  return { set, hush };
 }
-export function drift(speed, down = true) {
-  if (!live()) return;
-  const k = Math.min(1, Math.max(0, speed) / 1.4);
-  if (!air) {
-    if (k < 0.02) return;
-    const src = ctx.createBufferSource();
-    src.buffer = noise;
-    src.loop = true;
-    const f = ctx.createBiquadFilter();
-    f.type = 'bandpass'; f.Q.value = 0.7; f.frequency.value = 600;
-    const g = ctx.createGain();
-    g.gain.value = 0;
-    src.connect(f).connect(g).connect(out);
-    src.start();
-    air = { src, f, g };
-  }
-  const now = ctx.currentTime;
-  air.g.gain.setTargetAtTime(0.075 * level * k * (2 - k), now, k ? 0.06 : 0.18);
-  air.f.frequency.setTargetAtTime((down ? 620 : 440) * (1 + 1.2 * k), now, 0.1);
-  clearTimeout(airOff);
-  // (still for a while: the source goes)
-  if (k < 0.02) airOff = setTimeout(hushAir, 900);
-}
+const stageAir = air({ peak: 0.075, full: 1.4, low: 440, high: 620 });
+const pageAir = air({ peak: 0.03, full: 3, low: 300, high: 400 });
+function hushAir() { stageAir.hush(); pageAir.hush(); }
+export const drift = (speed, down) => stageAir.set(speed, down);
+export const breeze = (speed, down) => pageAir.set(speed, down);

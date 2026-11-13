@@ -10,7 +10,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { t, lang } from './i18n.js';
 import { Explode } from './explode.js';
-import { sfx } from './sound.js';
+import { sfx, softly } from './sound.js';
 import './css/viewer-extra.css';
 
 const CALM = matchMedia('(prefers-reduced-motion: reduce)');
@@ -37,12 +37,23 @@ export class ViewTools {
     this.explode = new Explode(viewer);
     this.explode.onChange = () => this.onExplode();
     // a piece of a build putting itself together seats home: its click, from its side of the view
-    this.explode.onSeat = (key, size) => {
+    const panOf = (key) => {
       const g = this.explode.groups.get(key);
       const x = g?.meshes[0]?.geometry.boundingBox ? (g.meshes[0].geometry.boundingBox.min.x + g.meshes[0].geometry.boundingBox.max.x) / 2 : 0;
-      const pan = Math.max(-0.6, Math.min(0.6, x / 160));
+      return Math.max(-0.6, Math.min(0.6, x / 160));
+    };
+    this.explode.onSeat = (key, size) => {
+      const pan = panOf(key);
       if (key.includes('screw')) sfx.screw(pan, 200, 2); else sfx.snap(pan, size);
     };
+    // the explode, by its key or its slider: each part comes out of its seat (unlatched, unscrewed, the side panel off)
+    // and goes back in with its click
+    this.explode.onMove = (key, out) => softly(0.8, () => {
+      const pan = panOf(key);
+      if (key.startsWith('side')) (out ? sfx.unthunk : sfx.thunk)(pan);
+      else if (key.includes('screw')) (out ? sfx.unscrew : sfx.screw)(pan, 200, 2);
+      else (out ? sfx.unsnap : sfx.snap)(pan, 1);
+    });
     this.on = false;                  // blueprint wanted
     this.shown = false;               // the scene is in blueprint state now
     this.veil = 0;

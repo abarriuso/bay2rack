@@ -89,6 +89,9 @@ export function subset(geo, keep, count) {
   return out;
 }
 
+// (a part is home below OUT of its way out, and has left past AWAY: apart, so that a spring's wobble is one sound)
+const OUT = 0.02, AWAY = 0.08;
+
 export class Explode {
   constructor(viewer) {
     this.v = viewer;
@@ -190,7 +193,7 @@ export class Explode {
       m.geometry.dispose();
     }
     // the parts take the slider's current place at once (a new result while it is apart: no animation)
-    for (const key of this.groups.keys()) if (!this.state.has(key)) this.state.set(key, { s: this.target, vel: 0 });
+    for (const key of this.groups.keys()) if (!this.state.has(key)) this.state.set(key, { s: this.target, vel: 0, home: this.target < OUT });
     for (const [key, st] of this.state) if (!this.groups.has(key)) this.state.delete(key);
     this.apply();
     v.dirty = true;
@@ -243,7 +246,7 @@ export class Explode {
     if (calm) {
       // no motion: it is where the slider says, at once
       this.stop();
-      for (const st of this.state.values()) { st.s = value; st.vel = 0; }
+      for (const st of this.state.values()) { st.s = value; st.vel = 0; st.home = value < OUT; }
       this.history = [];
       this.apply();
       this.v.dirty = true;
@@ -271,7 +274,7 @@ export class Explode {
 
   step(dt) {
     const now = performance.now();
-    let moving = false;
+    let moving = false, heard = 0;
     let maxDelay = 0;
     for (const [key, st] of this.state) {
       const g = this.groups.get(key);
@@ -290,6 +293,11 @@ export class Explode {
           st.vel = Math.abs(st.vel) * 0.18;
         }
       }
+      // a part leaving its seat, or back in it (the slider's or the key's explode; a build putting itself together
+      // has its own knock, onSeat): its sound - a few a frame at most, the rest come in silence
+      if (this.seat) st.home = st.s < OUT;
+      else if (st.home !== false && st.s > AWAY) { st.home = false; if (heard++ < 4) this.onMove?.(key, true); }
+      else if (st.home === false && st.s < OUT && st.vel <= 0) { st.home = true; if (heard++ < 4) this.onMove?.(key, false); }
       if (Math.abs(goal - st.s) > EPS || Math.abs(st.vel) > EPS * 10) moving = true;
     }
     // the history older than the latest delay is no longer needed (one entry before it stays)
@@ -298,7 +306,7 @@ export class Explode {
     if (settled) {
       this.seat = false;
       // exactly where the slider is (0 is the assembly as it came, to the bit)
-      for (const st of this.state.values()) { st.s = this.target; st.vel = 0; }
+      for (const st of this.state.values()) { st.s = this.target; st.vel = 0; st.home = this.target < OUT; }
       this.history = [];
       this.apply();
       this.stop();
