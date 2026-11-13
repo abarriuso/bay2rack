@@ -10,7 +10,7 @@ import { EXAMPLES } from './examples.js';
 import { renderLegend } from './legend.js';
 import { BASE, filamentHexes, $, NARROW, h, svgEl, S, CALM } from './state.js';
 import { calc, usedMods } from './model.js';
-import { viewer, startEngine, runJob, definesFor, setStatus } from './engine.js';
+import { viewer, startEngine, runJob, definesFor, setStatus, sumOf } from './engine.js';
 import { undo, redo, refresh, loadLink } from './edit.js';
 import { applyExample, loadSaved } from './steps.js';
 import { buildAdvanced } from './tabs.js';
@@ -134,7 +134,9 @@ function wire() {
     else if (y < lastY - 6) root.remove('head-off');
     if (Math.abs(y - lastY) > 6) lastY = y;
   };
-  addEventListener('scroll', head, { passive: true });
+  // (these read the page's place before the film writes its frame - capture comes first - or each read would lay
+  // the page out again)
+  addEventListener('scroll', head, { passive: true, capture: true });
   // in the configurator it is the steps that scroll, not the page: the header follows them, back as they go up (or
   // are at their top), away as they go on - the way out is always at hand
   const panel = $('.panel');
@@ -160,7 +162,7 @@ function wire() {
       calm = setTimeout(() => breeze(0), 140);
     };
   };
-  addEventListener('scroll', airOf(() => scrollY), { passive: true });
+  addEventListener('scroll', airOf(() => scrollY), { passive: true, capture: true });
   $('.panel')?.addEventListener('scroll', airOf(() => $('.panel').scrollTop), { passive: true });
   // A phone's configurator is one screen, and holds it: come to rest squarely on it and the page stops scrolling (the
   // steps scroll inside it, a finger on the 3D view turns the build). Out of it by its key at the corner of the view -
@@ -175,7 +177,7 @@ function wire() {
     }
     if (narrow.matches) holdT = setTimeout(() => { if (narrow.matches && Math.abs(wb.getBoundingClientRect().top) <= 2) doc.add('locked'); }, 250);
   };
-  addEventListener('scroll', hold, { passive: true });
+  addEventListener('scroll', hold, { passive: true, capture: true });
   narrow.addEventListener('change', hold);
   // the view on the whole screen (and the browser's own bars away, where it lets a page do that: not on an iPhone)
   const fullKey = $('#viewFull');
@@ -253,6 +255,7 @@ async function boot() {
     fetch(BASE + 'scad/bay2rack.json').then((r) => r.json()),
     fetch(BASE + 'stl/index.json').then((r) => (r.ok ? r.json() : null)).catch(() => null),
   ]);
+  S.scadSum = sumOf(src);                                // (the build made ahead is only for this model: engine.js)
   S.sections = parseCustomizer(src);
   for (const s of S.sections) for (const p of s.params) { S.params[p.name] = p; S.defaults[p.name] = p.value; }
   S.presets = presets.parameterSets;

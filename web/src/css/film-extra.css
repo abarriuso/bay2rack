@@ -62,6 +62,16 @@
   mask: linear-gradient(to right, transparent 1%, #000 16%, #000 84%, transparent 99%),
     linear-gradient(to bottom, transparent 1%, #000 16%, #000 84%, transparent 99%);
   mask-composite: intersect; }
+/* the 3D on its way (film.js: .waiting) - a quiet line where the 3D view will be, a dot breathing beside it */
+.film-wait { position: absolute; z-index: 1; left: var(--v3-l, 0); top: var(--v3-t, 0); width: var(--v3-w, 0); height: var(--v3-h, 0);
+  margin: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .4s ease;
+  font: 500 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2);
+  text-shadow: 0 0 6px var(--film-bg), 0 0 2px var(--film-bg); }
+.film-wait span::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%;
+  background: currentColor; vertical-align: 1px; animation: film-wait 1.2s ease-in-out infinite; }
+@keyframes film-wait { 50% { opacity: .25; } }
+.film.waiting .film-wait { opacity: .85; transition-delay: .25s; }
+.film.plain .film-wait { display: none; }
 /* the last text steps into the column, as far in as the steps sit in theirs */
 .film.closing .beat:last-child {
   translate: calc(var(--k) * var(--fr-dx, var(--s-5))) 0; scale: calc(1 - var(--k) * (1 - var(--fr-s, 1)));

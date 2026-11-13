@@ -5,6 +5,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { modelSum } from './scad-sum.mjs';
 
 const web = join(dirname(fileURLToPath(import.meta.url)), '..');
 const repo = join(web, '..');
@@ -24,7 +25,17 @@ copy(join(repo, 'docs', 'img', 'og.jpg'), 'img/og.jpg');
 for (const n of [192, 512]) copy(join(repo, 'docs', 'img', `icon-${n}.png`), `img/icon-${n}.png`);
 if (existsSync(join(repo, 'docs', 'gallery'))) copy(join(repo, 'docs', 'gallery'), 'img/gallery');
 // the scroll film: its frames (scripts/blender/scroll_encode.py) and what frames each text belongs to
-if (existsSync(join(repo, 'docs', 'scroll'))) copy(join(repo, 'docs', 'scroll'), 'scroll');
+const first = /^first\./;
+if (existsSync(join(repo, 'docs', 'scroll')))
+  cpSync(join(repo, 'docs', 'scroll'), join(pub, 'scroll'), { recursive: true, filter: (f) => !first.test(f.replace(/^.*[\\/]/, '')) });
+// the film's build made ahead (scripts/first-render.mjs): beside the model (fetched fresh, as the model is), and only
+// if it was made from this very model - otherwise the site renders it as any other build
+const made = join(repo, 'docs', 'scroll', 'first.json');
+if (existsSync(made)) {
+  const j = JSON.parse(readFileSync(made, 'utf8'));
+  if (j.model === modelSum(join(repo, 'src'))) for (const f of ['first.json', j.file]) copy(join(repo, 'docs', 'scroll', f), `scad/${f}`);
+  else console.warn('docs/scroll/first.json was made from another model: run scripts/first-render.mjs (the film renders it meanwhile)');
+}
 
 // Cloudflare Pages headers: the hashed bundles never change; OpenSCAD only with a new release (a week, then checked
 // again in the background); the film a month (its frames are asked for under the version film.json gives them), the images a day; the model and the STLs keep the default, so a push shows

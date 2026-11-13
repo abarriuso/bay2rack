@@ -269,7 +269,7 @@ export class ViewTools {
   undraw() {
     this.v.model?.traverse((m) => {
       if (!m.isMesh || m.userData.bpLine) return;
-      if (m.userData.bpOrig) { m.material = m.userData.bpOrig; m.userData.bpOrig = null; m.castShadow = true; }
+      if (m.userData.bpOrig) { m.material = m.userData.bpOrig; m.userData.bpOrig = null; m.castShadow = !m.userData.noShadow; }
       if (m.userData.bpEdges) m.remove(m.userData.bpEdges);
     });
   }

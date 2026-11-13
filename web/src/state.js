@@ -70,6 +70,26 @@ export function filamentHexes() {
 export const $ = (s) => document.querySelector(s);
 // phones and narrow windows: the one-screen configurator (the same query as in style.css)
 export const CALM = matchMedia('(prefers-reduced-motion: reduce)');       // motion off, if the system asks
+// The page at rest: the heavy steps of the 3D view (its start, a model laid out, its first draw - each holds the page
+// for a moment) wait for a pause in the visitor's scroll, so a scroll seldom stutters on them; never more than `most`
+// ms (a scroll that does not stop still gets its 3D view in time).
+let moved = 0;
+for (const e of ['scroll', 'wheel', 'touchstart', 'touchmove'])
+  addEventListener(e, () => { moved = performance.now(); }, { passive: true, capture: true });
+export function atRest(quiet = 150, most = 900) {
+  const t0 = performance.now();
+  return new Promise((ok) => {
+    const check = () => {
+      const now = performance.now();
+      if (now - t0 > most) return ok();
+      const wait = moved + quiet - now;
+      if (wait > 0) return setTimeout(check, wait + 10);
+      if (window.requestIdleCallback) requestIdleCallback(() => (performance.now() - moved < quiet ? check() : ok()), { timeout: 300 });
+      else setTimeout(() => (performance.now() - moved < quiet ? check() : ok()), 0);
+    };
+    check();
+  });
+}
 export const NARROW = '(max-width: 900px) and (max-aspect-ratio: 5/4)';
 export const h = (tag, { dataset, ...props } = {}, ...kids) => {
   // aria-* (and role) are attributes, not properties (everywhere)

@@ -2,9 +2,10 @@
 import { t } from './i18n.js';
 import { bomText, warnText } from './help.js';
 import { renderLegend } from './legend.js';
-import { UI, $, CALM, h, num, S } from './state.js';
+import { UI, $, CALM, h, num, S, atRest } from './state.js';
 import { calc, modLabel, usedMods } from './model.js';
-import { viewer, engineStarted, runJob, cachedJob, definesFor, setStatus, announce } from './engine.js';
+import { viewer, engineStarted, runJob, cachedJob, readyMade, definesFor, setStatus, announce } from './engine.js';
+import { meshesOf } from './mesh.js';
 import { renderSteps } from './steps.js';
 import { pieceLabel } from './tabs.js';
 import { kitList } from './kit.js';
@@ -16,17 +17,34 @@ export function schedule(ms = 450) {
   timer = setTimeout(render, ms);
 }
 
-export async function render() {
-  if (S.engine !== 'ready' || S.kitBusy) { S.wantRender = true; return; }
-  if (S.busy) { S.dirty = true; return; }
-  S.busy = true; S.dirty = false; S.wantRender = false;
-  const values = { ...S.values };
+// the settings' render: its file and what it is asked with
+const jobOf = (values) => {
   const ext = values.part === 'assembly' ? '3mf' : 'stl';
-  setStatus(t('rendering'), 'busy');
   const defs = definesFor(values);
   if (ext === '3mf') defs.push('web_scene=true');
+  return { ext, defs, key: ext + '\n' + defs.join('\n') };
+};
+
+export async function render() {
+  if (S.kitBusy) { S.wantRender = true; return; }
+  if (S.busy) { S.dirty = true; return; }
+  // (the build made ahead first, if the view has nothing yet - even with the engine ready: it is there at once)
+  if (S.engine !== 'ready' || (viewer && !viewer.model && !S.aheadTried)) { S.wantRender = true; ahead(); return; }
+  if (S.aheading) { S.wantRender = true; return; }      // (the build made ahead is on its way: it renders after it)
+  const values = { ...S.values };
+  const { ext, defs, key } = jobOf(values);
+  // (the build made ahead is on screen already: nothing to do)
+  if (key === S.aheadKey) { S.aheadKey = null; S.wantRender = false; return; }
+  S.aheadKey = null;
+  S.busy = true; S.dirty = false; S.wantRender = false;
+  setStatus(t('rendering'), 'busy');
   const res = await cachedJob(runJob, defs, 'out.' + ext);
   await engineStarted;                                  // (the 3D view loads alongside the engine)
+  if (res.ok && ext === '3mf') {
+    res.meshes = await meshesOf(res.data);              // (read off the page's thread)
+    // the view's first model: the room around it made a piece at a time, in pauses of the scroll
+    if (viewer && !viewer.model) { await viewer.prepareScene(sceneOf(res)); await atRest(); }
+  }
   S.busy = false;
   try {
     showResult(res, ext, values);
@@ -35,6 +53,45 @@ export async function render() {
     setStatus(t('failed'), 'error');
   }
   if (S.dirty || S.wantRender) render();
+}
+
+// The engine is not ready yet, the 3D view is: the build made ahead, if these are its settings (engine.js), on screen
+// now - once; the engine renders whatever comes after
+async function ahead() {
+  if (!viewer || S.aheadTried) return;
+  S.aheadTried = true;
+  const values = { ...S.values };
+  const { ext, defs, key } = jobOf(values);
+  S.aheading = true;
+  const res = await readyMade(defs, 'out.' + ext);
+  if (res && ext === '3mf') {
+    res.meshes = await meshesOf(res.data);
+    await viewer.prepareScene(sceneOf(res));            // (the room around it, made a piece at a time)
+  }
+  if (res) await atRest();                              // (laying it out holds the page a moment: in a pause)
+  S.aheading = false;
+  if (res && !S.busy && jobOf(S.values).key === key) {  // (the settings still those it was made for)
+    try {
+      showResult(res, ext, values);
+      S.aheadKey = key;
+    } catch (e) { console.error(e); }
+  }
+  if (S.engine === 'ready' && S.wantRender) render();
+}
+
+// the scene around the build (its case, the homelab, the cables), from its SCENE lines
+export function sceneOf(res) {
+  const scene = { cables: [] };
+  for (const l of res.logs) {
+    const m = l.match(/^ECHO: "SCENE (.*)"$/);
+    if (!m) continue;
+    try {
+      const d = JSON.parse(m[1]);
+      if (d.cable) scene.cables.push(d.cable); else Object.assign(scene, d);
+    } catch { /* ignore a malformed line */ }
+  }
+  if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
+  return scene;
 }
 
 export function showResult(res, ext, values) {
@@ -50,17 +107,9 @@ export function showResult(res, ext, values) {
   // whole room; the rest is there to turn to
   const focus = values.part !== 'assembly' ? null
     : homelab ? { min: [-112, -45, -32], max: [112, 40, top + 14] } : { min: [-95, -40, -25], max: [95, 40, top] };
-  const scene = { cables: [] };
-  for (const l of res.logs) {
-    const m = l.match(/^ECHO: "SCENE (.*)"$/);
-    if (!m) continue;
-    try {
-      const d = JSON.parse(m[1]);
-      if (d.cable) scene.cables.push(d.cable); else Object.assign(scene, d);
-    } catch { /* ignore a malformed line */ }
-  }
-  if (UI.sleeper && scene.case) scene.case.style = 'sleeper';
-  viewer?.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null });
+  const scene = sceneOf(res);
+  viewer?.load(res.data.buffer, ext, { keepView: key === S.lastKey, focus, scene: ext === '3mf' ? scene : null, meshes: res.meshes });
+  delete res.meshes;                                    // (the view has them now; the render cache keeps the file only)
   // the edit made in a step has landed: its part flares once (the assembly only; a newer edit waits for its own result)
   if (S.pulse && !S.dirty) {
     if (ext === '3mf') viewer?.pulse(S.pulse);

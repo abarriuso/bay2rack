@@ -10,7 +10,8 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MAT, boxUV, materialFor } from './materials.js';
-import { buildScene } from './scene.js';
+import { buildScene, sceneSteps } from './scene.js';
+import { atRest } from './state.js';
 import { ViewTools } from './blueprint.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
@@ -38,6 +39,8 @@ export class Viewer {
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;   // (PCFSoftShadowMap is gone from three.js)
+    // the shadows are drawn again only when something in the scene moved - not for the camera alone (loop)
+    this.renderer.shadowMap.autoUpdate = false;
     el.appendChild(this.renderer.domElement);
     // the keyboard turns it too: arrows orbit, + / - zoom, Home (or 0) frames it again; its label says what it shows
     const canvas = this.renderer.domElement;
@@ -46,14 +49,13 @@ export class Viewer {
     canvas.addEventListener('keydown', (e) => this.onKey(e));
 
     this.scene = new THREE.Scene();
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    this.scene.environmentIntensity = 0.75;
+    this.lit = false;                                     // (the studio's light: light(), apart - it takes a while)
+    this.compiling = null;                                // (a model's shaders, compiling alongside: load)
     this.camera = new THREE.PerspectiveCamera(FOV, 1, 1, 50000);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
-    this.controls.addEventListener('change', () => { this.dirty = true; });
+    this.controls.addEventListener('change', () => { this.turned = true; this.kick?.(); });
     // a drag takes the camera from a glide; while a finger or the mouse holds it, frames are asked for
     this.controls.addEventListener('start', () => { this.stopFly?.(); this.dragging = true; this.kick?.(); });
     this.controls.addEventListener('end', () => { this.dragging = false; this.kick?.(); });
@@ -104,12 +106,16 @@ export class Viewer {
       last = now;
       if (!this.active && !this.pinned) return;           // (the IntersectionObserver asks again when it is back;
                                                           //  the film holds it on screen elsewhere: pinned)
+      if (this.compiling) return;                         // (the new model's shaders: the frame before stays)
       // the damping after a drag works per refresh: kept to the same time at 60, 120 or 144 Hz
       this.controls.dampingFactor = 1 - Math.pow(1 - 0.12, Math.max(dt, 1 / 240) * 60);
       for (const f of [...this.hooks]) f(dt);
       // controls.update() is true while the camera moves (dragging, and the damping after it)
-      const moved = this.controls.update();
+      const moved = this.controls.update() || this.turned;
+      this.turned = false;
       if (moved || this._dirty || this.hooks.length) {
+        // (the camera alone turned: the shadows are as they were)
+        if (this._dirty || this.hooks.length) this.renderer.shadowMap.needsUpdate = true;
         this._dirty = false;
         this.depthRange();
         this.composer.render();
@@ -127,6 +133,107 @@ export class Viewer {
     // the blueprint and the explode, in the page's viewer only (not in an off-screen one, the GLB export)
     const bar = el.closest('.viewer')?.querySelector('.floatbar');
     this.tools = bar ? new ViewTools(this, bar) : null;
+  }
+
+  // The studio's light (a room, blurred into an environment map): the slowest step of the view's start, apart, so its
+  // start can be spread over a pause or two (engine.js). A model is never drawn without it.
+  light() {
+    this.lit ||= (async () => {
+      const r = this.renderer;
+      const pmrem = new THREE.PMREMGenerator(r);
+      const room = new RoomEnvironment();
+      // (its shaders - the room's, the blur's - compiled alongside the page first: compiled as it draws, they held
+      // the page half a second. PMREMGenerator's own steps, three.js 0.186: anything amiss, it draws as it always did)
+      try {
+        pmrem._setSize(256);
+        const target = pmrem._allocateTargets();
+        // (a quarter of the samples of its glossy blur: the same soft room, and its shader a quarter of the work to
+        // build - on Windows' Direct3D the 256 of them took half a second, at the first draw)
+        const ggx = pmrem._ggxMaterial;
+        if (ggx?.defines?.GGX_SAMPLES > 64) { ggx.defines.GGX_SAMPLES = 64; ggx.needsUpdate = true; }
+        const was = r.getRenderTarget(), tone = r.toneMapping;
+        r.setRenderTarget(target);
+        r.toneMapping = THREE.NoToneMapping;
+        const flat = new THREE.OrthographicCamera();
+        const jobs = [r.compileAsync(room, new THREE.PerspectiveCamera(90, 1, 0.1, 100))];
+        for (const m of [pmrem._blurMaterial, pmrem._ggxMaterial]) if (m) jobs.push(r.compileAsync(new THREE.Mesh(new THREE.BufferGeometry(), m), flat));
+        r.setRenderTarget(was);
+        r.toneMapping = tone;
+        await Promise.all(jobs);
+        target.dispose();
+      } catch (e) { /* drawn as it comes */ }
+      this.scene.environment = pmrem.fromScene(room, 0.04).texture;
+      this.scene.environmentIntensity = 0.75;
+      pmrem.dispose();
+      this.dirty = true;
+    })();
+    return this.lit;
+  }
+
+  // The first draw of everything in the scene, ahead and off screen - what is hidden for now too (the cables, while
+  // the film builds the PC): its shaders compiled alongside the page (KHR_parallel_shader_compile), then drawn a few
+  // pieces at a time, each in a pause of the scroll, which takes their buffers to the GPU. So no frame seen later is a
+  // first one, and no step of it holds the page for long.
+  async warm() {
+    await this.light();
+    await this.compiling;
+    const was = new Map(), culled = [], meshes = [];
+    this.scene.traverse((o) => {
+      was.set(o, o.visible);
+      o.visible = true;
+      if (o.isMesh && o.frustumCulled) { culled.push(o); o.frustumCulled = false; }
+      if (o.isMesh) meshes.push(o);
+    });
+    const job = this.compiling = this.compile();
+    try {
+      await job;
+      for (const m of meshes) m.visible = false;
+      for (let i = 0; i < meshes.length;) {
+        let tris = 0;
+        const batch = [];
+        while (i < meshes.length && batch.length < 90 && tris < 90000) {
+          const m = meshes[i++];
+          batch.push(m);
+          const g = m.geometry;
+          tris += (g.index ? g.index.count : g.attributes.position?.count ?? 0) / 3;
+        }
+        for (const m of batch) m.visible = true;
+        this.renderer.shadowMap.needsUpdate = true;
+        this.composer.render();
+        for (const m of batch) m.visible = false;
+        if (i < meshes.length) await new Promise((ok) => requestAnimationFrame(() => setTimeout(ok)));   // (a frame between)
+      }
+    } finally {
+      for (const [o, v] of was) o.visible = v;
+      for (const o of culled) o.frustumCulled = true;
+      if (this.compiling === job) this.compiling = null;
+      this.dirty = true;
+    }
+  }
+
+  // The scene around a build made ahead, a piece at a time, each in a pause of the scroll: the load that comes with
+  // the same scene takes it as it is (show3d)
+  async prepareScene(data) {
+    const key = JSON.stringify(data);
+    const { group, steps } = sceneSteps(data);
+    // (the little steps together, a few dozen ms at a time: a pause each, not one per cable)
+    let t = -Infinity;
+    for (const step of steps) {
+      if (performance.now() - t > 24) { await atRest(120, 600); t = performance.now(); }
+      step();
+    }
+    this.prepared = { key, group };
+  }
+
+  // the scene's shaders, compiled alongside the page - as the composer draws them: into its target (no tone mapping
+  // there, the output pass does it), not the screen, or they would be other shaders
+  compile() {
+    const r = this.renderer, was = r.getRenderTarget();
+    r.setRenderTarget(this.composer.readBuffer);
+    let job;
+    try { job = r.compileAsync(this.scene, this.camera); } catch (e) { job = Promise.resolve(); }
+    r.setRenderTarget(was);
+    return job.catch(() => {});
   }
 
   // something changed on screen: a frame is asked for
@@ -211,8 +318,9 @@ export class Viewer {
     this.extras?.traverse((o) => { if (o.userData.role === what) o.visible = on && !off; });
   }
 
-  // one STL (a printed part) or a coloured 3MF -> group of meshes with real materials
-  parse(buffer, ext) {
+  // one STL (a printed part) or a coloured 3MF -> group of meshes with real materials. `pre`: the 3MF read already,
+  // off the page's thread (mesh.js) - only the materials are left to do here
+  parse(buffer, ext, pre = null) {
     const obj = new THREE.Group();
     const add = (geo, mat) => {
       const m = new THREE.Mesh(geo, mat);
@@ -220,7 +328,22 @@ export class Viewer {
       obj.add(m);
       return m;
     };
-    if (ext === '3mf') {
+    if (ext === '3mf' && pre) {
+      for (const p of pre) {
+        const { mat, print, slot } = materialFor(p.hex, this.filament);
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(p.position, 3));
+        geo.setAttribute('normal', new THREE.BufferAttribute(p.normal, 3));
+        const tile = print ? 24 : mat.map ? 40 : 0;          // (boxUV's tiles, materials.js)
+        if (tile) {
+          const uv = p.uv.slice();
+          for (let i = 0; i < uv.length; i++) uv[i] /= tile;
+          geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+        }
+        if (print) this.printMats.push({ mat, i: slot });
+        add(geo, mat);
+      }
+    } else if (ext === '3mf') {
       new ThreeMFLoader().parse(buffer).traverse((c) => {
         if (!c.isMesh) return;
         c.updateWorldMatrix(true, false);
@@ -248,7 +371,7 @@ export class Viewer {
   // buffer: STL (one printed part) or 3MF (coloured assembly). scene: parsed SCENE data
   load(buffer, ext, opts = {}) {
     this.clear();
-    const obj = this.parse(buffer, ext);
+    const obj = this.parse(buffer, ext, opts.meshes);
     this.show3d(obj, opts);
     // a build comes in apart and puts itself together (blueprint.js); anything else settles into place
     if (!this.tools?.loaded(opts.keepView, opts.still)) this.arrive(obj, opts.keepView);
@@ -292,14 +415,28 @@ export class Viewer {
   }
 
   show3d(obj, { keepView = false, focus = null, scene = null } = {}) {
+    this.light();
     this.dirty = true;
     this.model = obj;
     this.scene.add(obj);
     if (scene) {
-      this.extras = buildScene(scene);
+      const made = this.prepared?.key === JSON.stringify(scene) ? this.prepared.group : null;
+      this.prepared = null;
+      this.extras = made ?? buildScene(scene);
       this.scene.add(this.extras);
       for (const k of Object.keys(this.show)) this.setVisible(k, this.show[k]);
     }
+    // the little things (screws, LEDs, port shells) cast no shadow: one you could not see is a draw saved, every frame
+    for (const root of [obj, this.extras]) root?.traverse((m) => {
+      if (!m.isMesh || !m.castShadow) return;
+      if (!m.geometry.boundingSphere) m.geometry.computeBoundingSphere();
+      if (m.geometry.boundingSphere.radius < 7) { m.castShadow = false; m.userData.noShadow = true; }
+    });
+    // its shaders compile alongside the page; the view waits for them (a frame or two - longer only the first time)
+    const job = this.compile().then(() => {
+      if (this.compiling === job) { this.compiling = null; this.dirty = true; }
+    });
+    this.compiling = job;
 
     const box = new THREE.Box3().setFromObject(obj);
     if (this.extras) box.union(new THREE.Box3().setFromObject(this.extras));

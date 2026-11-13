@@ -753,12 +753,21 @@ export function buildCable(cb) {
 
 // everything at once, from the parsed SCENE lines
 export function buildScene(data) {
+  const { group, steps } = sceneSteps(data);
+  for (const step of steps) step();
+  return group;
+}
+
+// the same, a step at a time (the case, each client, the access point, the cables...): the view can make it ahead
+// over a few pauses of the scroll (viewer.js)
+export function sceneSteps(data) {
   const g = new THREE.Group();
   g.name = 'scene';
+  const steps = [];
   // every object gets a name (the Blender video pipeline animates them by name)
-  const safe = (what, f) => {
+  const safe = (what, f) => steps.push(() => {
     try { const o = f(); if (o) { o.name = what.replace(/\s+/g, '_'); g.add(o); } } catch (e) { console.warn(`scene: ${what} skipped`, e); }
-  };
+  });
   safe('case', () => data.case && buildCase(data.case));
   if (data.homelab && data.case) {
     const c = data.case;
@@ -774,7 +783,7 @@ export function buildScene(data) {
   }
   (data.cables ?? []).forEach((cb, i) => safe(`cable_${i}_vlan${cb.vlan ?? 'x'}`, () => buildCable(cb)));
   if (data.case?.tidy) safe('cable_ties', () => cableTies(data.case, data.cables ?? []));
-  return g;
+  return { group: g, steps };
 }
 
 // Velcro ties around the flat ribbon of cables inside the case (bay2rack.scad routes it along the roof and

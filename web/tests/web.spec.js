@@ -1,6 +1,8 @@
 // The web generator in a browser: the page, the Spanish page, the share pages, the editor with real OpenSCAD renders,
 // the piece view, undo, short links and the kit. Each one guards something that broke once.
 import { test, expect, devices } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+import { modelSum } from '../scripts/scad-sum.mjs';
 
 // the engine is ready and the last render is shown ("Rendered in 1.2 s")
 const rendered = (page) => expect(page.locator('#status')).toHaveText(/Rendered in|Generado en/);
@@ -178,6 +180,26 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await to(1.01);
   await expect.poll(home).toBe('view');
   expect(errors).toEqual([]);
+});
+
+// the film's build is made ahead (scripts/first-render.mjs) for this very model: the PC is built on the table with no
+// engine at all - and a model changed since is caught here, not by a visitor
+test('the film builds the PC made ahead, before the engine', async ({ page }) => {
+  const errors = watchErrors(page);
+  const made = await page.request.get('/scad/first.json');
+  expect(made.ok(), 'no build made ahead for this model: run node scripts/first-render.mjs').toBe(true);
+  expect((await made.json()).model).toBe(modelSum(fileURLToPath(new URL('../../src', import.meta.url))));
+  await page.route('**/openscad/**', (r) => r.abort());
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await page.evaluate(() => {
+    const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
+    const all = f.offsetHeight - st.offsetHeight, asm = f.querySelector('.film-assemble').offsetHeight;
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm);
+  });
+  await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
+  expect(errors.filter((e) => !/openscad|Failed to load resource|engine/i.test(e))).toEqual([]);
 });
 
 // a zoom of the page (or a window made narrower) changes how tall everything in the film is: the place in the film

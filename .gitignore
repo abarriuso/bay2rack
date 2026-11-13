@@ -20,3 +20,5 @@ docs/blender/
 
 # Python
 __pycache__/
+# (the film's build made ahead is served by the site: web/scripts/first-render.mjs)
+!docs/scroll/first.3mf

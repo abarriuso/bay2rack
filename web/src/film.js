@@ -24,8 +24,8 @@
 // the PC from it (assemble.js). The configurator is right under the stage, its 3D view where the coda's window is:
 // there the film gives way to it, built.
 import './css/film-extra.css';
-import { $, BASE, CALM, NARROW } from './state.js';
-import { viewer, startEngine } from './engine.js';
+import { $, BASE, CALM, NARROW, atRest } from './state.js';
+import { viewer, startEngine, startViewer } from './engine.js';
 import { sfx, softly, drift, audible, setSound, soundOn } from './sound.js';
 
 const pad = (n) => String(n).padStart(4, '0');
@@ -52,8 +52,9 @@ const REST_MS = 200;
 // the fine pictures asked for around the scroll position: ahead of the way it goes, behind it, and before the first
 // scroll (the film may never be played)
 const FINE_AHEAD = 140, FINE_BEHIND = 40, FINE_FIRST = 36;
-// how far into the film the configurator's engine starts (it has the film's build ready by its end)
-const ENGINE_AT = 0.4;
+// how far into the film the 3D view starts (its first model, the film's build, is made ahead: it needs no engine), and
+// the configurator's engine (it is there for the visitor's own builds)
+const VIEW_AT = 0.08, ENGINE_AT = 0.4;
 
 export async function startFilm() {
   const root = $('#film');
@@ -599,9 +600,11 @@ export async function startFilm() {
     // scrolls away
     const c = close ? Math.min(1, Math.max(0, (y - span) / (close * 0.8))) : 0;
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
+    if (t >= last * VIEW_AT) early();
     if (t >= last * ENGINE_AT) prepare();
     setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
     autoplay(lastY - prev, a);
+    waiting(a);
     if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && a === asmT && !running) { restTimer = setTimeout(rest, REST_MS); return; }
@@ -769,31 +772,63 @@ export async function startFilm() {
   for (const el of [root, stage, view]) if (el) relayout.observe(el);
   // the engine starts in the film; its first model - the film's build - is laid out on the table the moment it comes,
   // before it is ever drawn
+  let assembleMod = null, hooked = false;
+  const assembler = () => (assembleMod ??= import('./assemble.js').then((m) => { m.preloadTable(); return m; }));
+  let failed = false, earlyOn = false;
+  async function early() {
+    if (earlyOn) return;
+    earlyOn = true;
+    assembler().catch((e) => console.warn(e));
+    try { await startViewer(); hook(); } catch (e) { console.warn(e); }
+    if (!viewer) { failed = true; waiting(0); }            // (no 3D view here: the film gives way to the page as it is)
+  }
   async function prepare() {
     if (preparing) return;
     preparing = true;
-    try {
-      const [mod] = await Promise.all([import('./assemble.js'), startEngine()]);
-      mod.preloadTable();
-      const v = viewer;
-      if (!v || v.model || !firstLook()) return;              // (a model on screen already: it stays as it is)
-      setPlate();
-      const load = v.load;
-      let first = true;
-      v.load = function (buf, ext, opts = {}) {
-        const film = first && firstLook();
-        first = false;
-        load.call(this, buf, ext, film ? { ...opts, still: true } : opts);
-        if (assembly && v.model !== assembly.model) letGo();
-        if (!film) return;
-        mod.fromTable(v, pictureRect(), viewBox()).then((a) => {
-          if (!a || !firstLook() || v.model !== a.model) { a?.finish(); return; }
-          assembly = a;
-          root.classList.add('live3d');
-          stage3d();
-        });
-      };
-    } catch (e) { console.warn(e); }
+    early();
+    try { await startEngine(); } catch (e) { console.warn(e); }
+  }
+  // In the stretch before the 3D view has the build (a slow phone, a slow network): the film's last picture holds, a
+  // quiet line says the 3D is on its way, and the build takes over there the moment it comes.
+  function waiting(a) {
+    const on = a > 0 && !merged && !assembly && !failed && firstLook();
+    if (on !== root.classList.contains('waiting')) root.classList.toggle('waiting', on);
+  }
+  function ready3d() {
+    measure();
+    if (!merged && !touching && asmT > 0) autoplay(1, asmT);
+  }
+  // The 3D view's first model is the film's build: it is laid on the table the moment it comes, before it is ever
+  // drawn. The view is hooked as soon as it exists, whoever started it (engine.js tells), before any model can come.
+  addEventListener('b2r:viewer', () => hook());
+  function hook() {
+    const v = viewer;
+    if (hooked || !v) return;
+    hooked = true;
+    if (v.model || !firstLook()) return;                    // (a model on screen already: it stays as it is)
+    setPlate();
+    assembler().catch(() => {});
+    const load = v.load;
+    let first = true;
+    v.load = function (buf, ext, opts = {}) {
+      const film = first && firstLook();
+      first = false;
+      load.call(this, buf, ext, film ? { ...opts, still: true } : opts);
+      if (assembly && v.model !== assembly.model) letGo();
+      if (!film) return;
+      const model = v.model;
+      // (each heavy step in a pause of the scroll: the build taken apart onto the table, then its first draw)
+      assembler().then(async (mod) => { await atRest(); return mod.fromTable(v, pictureRect(), viewBox()); }).then(async (a) => {
+        if (!a || !firstLook() || v.model !== model || v.model !== a.model) { a?.finish(); return; }
+        await atRest();
+        await v.warm();
+        if (!firstLook() || v.model !== model) { a.finish(); return; }
+        assembly = a;
+        root.classList.add('live3d');
+        stage3d();
+        ready3d();
+      }, (e) => console.warn(e));
+    };
   }
 
   // the canvas on the stage (while the PC is built) or home in the configurator
@@ -958,6 +993,11 @@ export async function startFilm() {
   fit();
   measure();
   booted = true;
+  // the 3D view and the build made ahead start once the page has come and the first pictures are on screen - most
+  // visitors look at the first one a moment, and its heavy steps are done by the time the film is played
+  const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 200));
+  const soon = () => setTimeout(() => idle(() => { if (!root.classList.contains('plain')) early(); }, { timeout: 2000 }), 1200);
+  if (document.readyState === 'complete') soon(); else addEventListener('load', soon, { once: true });
 
   // ---------------------------------------------------------------- a reload, or back to this page
   // The browser would put the page back where it was before the film has its length (this script lays it out, once

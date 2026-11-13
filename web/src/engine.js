@@ -1,7 +1,7 @@
 // The OpenSCAD engine (a worker, more for the kit), the render cache and the 3D view, started on demand.
 import { scadLiteral, same } from './customizer.js';
 import { t } from './i18n.js';
-import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S } from './state.js';
+import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S, atRest } from './state.js';
 import { render } from './render.js';
 
 // ---------------------------------------------------------------- engine
@@ -11,17 +11,29 @@ export let viewer = null;
 export let worker = null;
 export let engineStarted = null;
 export function startEngine() {
-  if (engineStarted) return engineStarted;
+  if (worker) return engineStarted;
   setStatus(t('loading'), 'busy');
   worker = new Worker(new URL('./openscad-worker.js', import.meta.url), { type: 'module' });
   worker.onmessage = onEngine;
   worker.postMessage({ type: 'init', base: BASE });
-  engineStarted = import('./viewer.js').then(({ Viewer }) => {
+  return startViewer();
+}
+// The 3D view, which the film can start well before the engine (its first model is made ahead). Its start is two
+// heavy steps (the WebGL view, the studio's light): each waits for a pause in the scroll (atRest).
+export function startViewer() {
+  engineStarted ??= import('./viewer.js').then(async ({ Viewer }) => {
+    await atRest();
     viewer = new Viewer($('#view'));
     viewer.setTheme(document.documentElement.dataset.theme);
     viewer.setFilament(filamentHexes());
     viewer.show.cables = UI.cables;
     viewer.show.side = UI.side;
+    // (the film lays its first model on its table: it is told before any comes - film.js)
+    dispatchEvent(new Event('b2r:viewer'));
+    await atRest();
+    await viewer.light();
+    // the first look's build may be on screen before the engine is ready: it is made ahead (readyMade)
+    if (S.wantRender) render();
   }).catch((e) => {
     console.warn(e);
     viewer = null;
@@ -51,6 +63,28 @@ export const runJob = (defines, out) => new Promise((resolve) => {
 });
 // the last renders, by their settings: going back to a piece or a view you had is instant
 export const done = new Map();
+// The first look's build, made ahead (scripts/first-render.mjs, into docs/scroll/): the film builds it in the 3D view
+// before the engine - 11 MB of WebAssembly, then the render - could have it. Only for the model it was made from (a
+// sum of its source) and the very settings it was made with; anything else is rendered as always.
+export const sumOf = (text) => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return (h >>> 0).toString(16).padStart(8, '0');
+};
+let ahead = null;
+export function readyMade(defines, out) {
+  const key = out + '\n' + defines.join('\n');
+  if (done.has(key)) return Promise.resolve(done.get(key));
+  ahead ??= fetch(BASE + 'scad/first.json').then((r) => (r.ok ? r.json() : null)).then((j) => (j?.scad === S.scadSum ? j : null)).catch(() => null);
+  return ahead.then(async (j) => {
+    if (!j || j.key !== key) return null;
+    const b = await fetch(BASE + 'scad/' + j.file).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
+    if (!b) return null;
+    const res = { ok: true, code: 0, logs: j.logs, ms: j.ms, data: new Uint8Array(b) };
+    done.set(key, res);
+    return res;
+  });
+}
 export async function cachedJob(run, defines, out) {
   const key = out + '\n' + defines.join('\n');
   if (done.has(key)) { const r = done.get(key); done.delete(key); done.set(key, r); return { ...r, cached: true }; }

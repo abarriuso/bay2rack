@@ -650,19 +650,21 @@ function cord(a, ya, b, yb, lift = 4) =
 function cord_from(i) = sw_second != undef && i == 1 ? sw_ports_of(sw_second)[1] : sw_ports_of(sw_main)[i];
 function cord_route(i) = cord(cord_from(i), sw_yf, rj_ports[i], patch_yf);
 
+// the front of a cable from a switch port a = [x, z] into a pass-through cover q: the arc of the patch cords beside
+// it (out of the port, across, straight into the cover - it once rose past the cover and hooked back down into it)
+function pass_front(a, q) = let(c = cord(a, sw_yf, q, patch_yf))
+    [c[0], c[1], c[2], c[3], c[4], [q[0], patch_yf + 4, q[1]]];
 // cable through a pass-through cover, along the inside to a rear expansion slot and out
 function pass_route(a, q, slot, along, tail, k) =
     let(xp = pci_x(along), zp = pci_cz(slot))
-    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 20, a[1]], [q[0], patch_yf - 18, q[1]], [q[0], patch_yf + 4, q[1]],
-            [q[0], 60, q[1]]],
+    concat(pass_front(a, q), [[q[0], 60, q[1]]],
            rear_slots ? concat(tidy_route(q, k, xp, zp), tail) : tidy_route(q, k, 0, tc_z0 + 60));
 function power_route() = pass_route(sw_jack_of(sw_main), pass_ports[len(pass_ports) - 1], pci_power_slot, 80,
     [[pci_x(80), TC_D + 60, tc_z0 + 8], [pci_x(80) + 160, TC_D + 90, tc_z0 + 4]], 4);
 // router LAN (trunk): last switch port -> first pass-through -> inside, out through the LAN slot -> card port 2
 function uplink_route() = let(q = pass_ports[0], a = sw_ports_of(sw_main)[4], p = lan_port,
                               xs = pci_x(30), zs = pci_cz(pci_lan_slot) + 3)
-    concat([[a[0], sw_yf - 2, a[1]], [a[0], sw_yf - 14, a[1]], [a[0], patch_yf - 26, q[1] + 6], [q[0], patch_yf - 18, q[1]],
-            [q[0], patch_yf + 4, q[1]], [q[0], 70, q[1] + 10]],
+    concat(pass_front(a, q), [[q[0], 70, q[1] + 10]],
            rear_slots ? concat(tidy_route(q, 3, xs, zs), [[p[0] - 8, TC_D + 44, (zs + p[2]) / 2]])
                       : concat(tidy_route(q, 3, 0, p[2] - 10), [[p[0] - 18, TC_D + 20, p[2] - 10]]),
            [[p[0], TC_D + 32, p[2]], [p[0], TC_D + 4, p[2]]]);
