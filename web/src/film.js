@@ -615,7 +615,7 @@ export async function startFilm() {
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
     if (t >= last * VIEW_AT) early();
     setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
-    autoplay(lastY - prev, a);
+    steer();
     waiting(a);
     if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
     clearTimeout(restTimer);
@@ -812,7 +812,7 @@ export async function startFilm() {
   }
   function ready3d() {
     measure();
-    if (!merged && !touching && asmT > 0) autoplay(1, asmT);
+    if (!merged && !touching && asmT > 0 && went >= 0) take(0);
   }
   // The 3D view's first model is the film's build: it is laid on the table the moment it comes, before it is ever
   // drawn. The view is hooked as soon as it exists, whoever started it (engine.js tells), before any model can come.
@@ -899,7 +899,7 @@ export async function startFilm() {
   // page's place is moved up by as much and nothing on screen moves. Back up from the configurator, the film is right
   // there - not a long way back through the build.
   addEventListener('touchstart', () => { touching++; }, { passive: true });
-  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); aim(); }, { passive: true });
+  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); aim(); steer(); }, { passive: true });
   addEventListener('scroll', () => {
     const y = scrollY;
     if (y !== wentY) { went = Math.sign(y - wentY); wentY = y; }
@@ -955,14 +955,116 @@ export async function startFilm() {
     measure();
     collapse();
   }
-  // Once the film's picture has become the 3D view, the build plays itself: the page goes on into the configurator
-  // on its own, at the pace of the build (the scroll is still what drives it - the same poses, the same sounds - so a
-  // hand on the page takes it back at once: a finger, the wheel or a key upwards; a scroll on down goes along with it).
-  const AUTO_MS = 4600;                                     // (the whole build, from the 3D view in)
-  function autoplay(dy, a) {
-    if (auto || touching || dy <= 0 || dy > innerHeight * 2 || merged || !assembly || assembly.parked) return;
-    if (a < assembly.fade || a > 0.97) return;
-    glide(filmTop - stick + span + coda + 1, AUTO_MS * (1 - a) / (1 - assembly.fade));
+  // The build drives itself on. In its stretch - from the moment the film's picture has become the 3D view to the
+  // configurator - the page never stops halfway: a scroll let go there glides on, losing its speed down to a steady
+  // cruise that always gets there, and a finger or the wheel gives it speed again. A fling too fast for it (the build
+  // would only flash by, a frame here and there) is taken over from a little before, and brought down well before
+  // the end: the build is always seen whole, and it arrives softly. (Back up - a finger, the wheel or a key upwards -
+  // it lets go at once.)
+  const endY = () => filmTop - stick + span + coda + 1;
+  const buildY = () => filmTop - stick + span + close + (assembly?.fade ?? 0) * asm;
+  const cruise = () => innerHeight / 2400;                  // px per ms: a screen in 2.4 s
+  const fastest = () => innerHeight / 650;                  // a screen in 0.65 s
+  const brake = () => fastest() ** 2 / (2 * innerHeight * 0.55);   // from the fastest to a stop in half a screen
+  let drive = null, vel = 0, steerT = 0;
+  // the page's own speed (px per ms): over its last tenth of a second of scroll events (a fling's own speed as it is let
+  // go - an average over longer would lag behind it)
+  const trail = [];
+  function track() {
+    const now = performance.now(), y = scrollY;
+    if (trail.length && now - trail[trail.length - 1][0] > 200) trail.length = 0;
+    trail.push([now, y]);
+    while (trail.length > 2 && now - trail[1][0] >= 100) trail.shift();
+    const [t0, y0] = trail[0];
+    vel = now - t0 >= 8 ? (y - y0) / (now - t0) : 0;
+  }
+  addEventListener('scroll', track, { passive: true, capture: true });     // (before measure reads it)
+  const drivable = () => !!assembly && !assembly.parked && !merged && !failed && !CALM.matches;
+  function steer() {
+    if (drive || touching || !drivable() || went < 0) return;
+    const y = scrollY;
+    if (y >= endY() - 1) return;
+    // (a fling: taken over from half a screen before the build)
+    if (vel > fastest() * 1.1 && y >= buildY() - innerHeight * 0.5) { take(vel); return; }
+    if (y < buildY() - 1) return;
+    // let go in the build: once the page's own glide is down to the cruise (or has stopped), on from there
+    if (vel > 0 && vel <= cruise()) { take(vel); return; }
+    clearTimeout(steerT);
+    steerT = setTimeout(() => { if (!drive && !touching && went >= 0 && drivable() && scrollY >= buildY() - 1) take(0); }, 140);
+  }
+  function take(v0, boost = 1, done = null) {
+    if (drive || touching || !drivable() || scrollY >= endY() - 1) return false;
+    clearTimeout(steerT);
+    // (taken from a ride's run down the film - ride: on at its speed, and the ride's end is this one's)
+    if (auto?.ride) { done ??= auto.ride; boost = Math.max(boost, RIDE); }
+    auto = null;
+    // its braking: enough to stop by the end from the speed it is taken at (a fling late in the build brakes harder,
+    // but from its own speed - never a jump down)
+    const v = Math.min(Math.max(0, v0), innerHeight / 80), left = endY() - scrollY;
+    drive = { v, a: Math.max(brake(), (v * v) / (2 * left)), t: performance.now() - 1000 / 60, y: scrollY, boost, done };
+    // (on a touch screen the browser's own glide stops here: this one goes on from its speed)
+    if (TOUCH) document.documentElement.classList.add('driven');
+    addEventListener('wheel', wheelOn, { passive: false });
+    requestAnimationFrame(driveOn);
+    return true;
+  }
+  // "Configure yours": the film runs on to the build at a quick pace, the build plays itself to the end, and the
+  // configurator has the keyboard there. (Without motion, or the build not there in a few seconds: straight to it.)
+  const RIDE = 1.6;                                       // (the build's pace on a ride: a little quicker)
+  function ride(done) {
+    if (CALM.matches || merged || failed) { toConfigurator(); done(); return; }
+    const from = filmTop - stick + span + close + (assembly?.fade ?? 0.15) * asm;
+    const build = () => {
+      const t0 = performance.now();
+      const wait = () => {
+        if (auto || touching) return;                       // (taken back meanwhile)
+        if (take(0, RIDE, done)) return;
+        if (merged || scrollY >= endY() - 1) { done(); return; }
+        if (failed || performance.now() - t0 > 6000) { toConfigurator(); done(); return; }
+        requestAnimationFrame(wait);
+      };
+      wait();
+    };
+    if (scrollY < from - 2) {
+      glide(from, Math.min(2600, 700 + (from - scrollY) / innerHeight * 300));
+      auto.free = true;
+      auto.ride = done;
+      auto.done = build;
+    } else build();
+  }
+  function release() {
+    if (!drive) return;
+    drive = null;
+    document.documentElement.classList.remove('driven');
+    removeEventListener('wheel', wheelOn, { passive: false });
+  }
+  function driveOn(now) {
+    const d = drive;
+    if (!d) return;
+    const dt = Math.min(50, Math.max(1, now - d.t));
+    d.t = now;
+    // (moved under it - a link, a key, the browser - or the build gone: the page is the visitor's again)
+    if (Math.abs(scrollY - d.y) > 2) { release(); return; }
+    if (!drivable()) { const done = merged ? d.done : null; release(); done?.(); return; }   // (merged: arrived)
+    const end = endY(), left = end - d.y;
+    if (left <= 0.5) { scrollTo({ top: end, behavior: 'instant' }); const done = d.done; release(); done?.(); return; }
+    // down to the cruise (a fling: slowly; up from a stop: a little quicker), never faster than the build can be
+    // seen, and braking towards the end
+    const c = cruise() * d.boost;
+    const k = 1 - Math.exp(-dt / (d.v > c ? 420 : 240));
+    let v = d.v + (c - d.v) * k;
+    if (v > fastest()) v = Math.max(fastest(), d.v - fastest() * dt / 260);   // (a fling: down to the fastest in a breath)
+    v = Math.min(v, Math.sqrt(2 * d.a * left));
+    v = Math.max(v, Math.min(left / dt, 0.02));
+    d.v = v;
+    d.y = Math.min(end, d.y + v * dt);
+    scrollTo({ top: d.y, behavior: 'instant' });
+    requestAnimationFrame(driveOn);
+  }
+  // the wheel while it drives: down adds speed, up lets go (only listened to - not passively - while it drives)
+  function wheelOn(e) {
+    if (!drive) return;
+    if (e.deltaY > 0) { e.preventDefault(); drive.v = Math.min(fastest(), drive.v + e.deltaY * (e.deltaMode ? 0.04 : 0.002)); } else release();
   }
   // the page taken to `to` over `ms`, a frame at a time (the film follows it as it follows any scroll)
   function glide(to, ms) {
@@ -973,12 +1075,13 @@ export async function startFilm() {
     if (!auto) return;
     const y = scrollY, d = auto.dir;
     // (taken back the other way, or - on the way down - the build is the visitor's now)
-    if ((y - auto.set) * d < -2 || (d > 0 && !assembly)) { auto = null; return; }
+    if ((y - auto.set) * d < -2 || (d > 0 && !assembly && !auto.free)) { auto = null; return; }
     const k = Math.min(1, (now - auto.t0) / auto.ms);
     const want = auto.from + (auto.to - auto.from) * (1 - Math.cos(Math.PI * k)) / 2;
     // (a scroll of the visitor's ahead of it leads: it goes on from there)
     if ((want - y) * d > 0.5) { auto.set = want; scrollTo({ top: want, behavior: 'instant' }); } else auto.set = y;
-    if (k < 1 && (auto.to - y) * d > 0) requestAnimationFrame(play); else auto = null;
+    if (k < 1 && (auto.to - y) * d > 0) requestAnimationFrame(play);
+    else { const done = auto.done; auto = null; done?.(); }
   }
   // a phone's configurator holds the screen: its key takes the page back up into the film (main.js) - the PC comes
   // apart on the way, as it does for a scroll up - to where the film's last frames are
@@ -987,9 +1090,13 @@ export async function startFilm() {
     glide(filmTop - stick + span, built && !root.classList.contains('bare') ? 2600 : 1600);
   });
   const stopAuto = () => { auto = null; };
-  addEventListener('touchstart', stopAuto, { passive: true });
+  // (a finger takes it: the page is its own again, a lift of it may hand it back - steer)
+  addEventListener('touchstart', () => { stopAuto(); release(); }, { passive: true });
   addEventListener('wheel', (e) => { if (e.deltaY < 0) stopAuto(); }, { passive: true });
-  addEventListener('keydown', (e) => { if (/^(ArrowUp|PageUp|Home)$/.test(e.key) || (e.key === ' ' && e.shiftKey)) stopAuto(); });
+  addEventListener('keydown', (e) => {
+    if (/^(ArrowUp|PageUp|Home)$/.test(e.key) || (e.key === ' ' && e.shiftKey)) stopAuto();
+    release();
+  });
 
   // The sounds of the build: a browser lets a page make them only after a click or a key on it, never for a scroll.
   // The film has a quiet key for them by the one that skips it, all along: a speaker that says whether they can be
@@ -1018,10 +1125,13 @@ export async function startFilm() {
     if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
     e.stopPropagation();
-    toConfigurator();
     const wb = $('#configurator');
-    if (!wb.matches('[tabindex]')) wb.setAttribute('tabindex', '-1');
-    wb.focus({ preventScroll: true });
+    const focus = () => {
+      if (!wb.matches('[tabindex]')) wb.setAttribute('tabindex', '-1');
+      wb.focus({ preventScroll: true });
+    };
+    // (the key that skips the film skips it; "Configure yours" plays the rest of it - ride)
+    if (a.classList.contains('film-skip')) { toConfigurator(); focus(); } else ride(focus);
   });
 
   // (all of the film set up: it starts - a page opened further down starts the engine at once, see measure())

@@ -61,6 +61,8 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 /* each section fills the screen under the header; the page scrolls freely (no snapping, it tugged at the scroll) */
+/* the film's build driving the page on (film.js): the browser's own glide stopped, a touch screen only */
+html.driven, html.driven body { overflow: hidden; }
 html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
   /* no double-tap zoom on a phone (taps answer at once; pinch zoom stays) */
   touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -775,4 +777,16 @@ button:disabled { opacity: .45; cursor: default; }
   .brand { padding-block: 12px; margin-block: -12px; }
   .foot a, .section-lead a, .more-link, .nav-link { padding-block: 12px; }
   .foot-links { gap: 0 var(--s-4); }
+}
+/* a phone's keys over the 3D view: smaller to see - the build has the room - and as easy to hit, their target running on
+   past them (not into each other's) */
+@media (pointer: coarse) and (max-width: 600px) {
+  .viewer :is(.tab, .pill) { min-height: 32px; position: relative; }
+  .viewer .vx-corner .icon-btn { width: 32px; height: 32px; position: relative; }
+  .viewer .floatbar .icon-btn { position: relative; }
+  .viewer :is(.tab, .pill, .floatbar .icon-btn, .vx-corner .icon-btn)::after { content: ''; position: absolute; inset: -6px -2px; }
+  .viewer .tabs { right: 90px; }
+  /* (and the steps' undo and redo: the title's line no taller than its text) */
+  .panel-head .mini { width: 34px; height: 34px; position: relative; }
+  .panel-head .mini::after { content: ''; position: absolute; inset: -5px -2px; }
 }
