@@ -104,13 +104,16 @@
 .film-sound .off, .film-sound.muted .on { display: none; }
 .film-sound.muted .off { display: inline; }
 .film-skip, .film-sound {
-  display: inline-flex; align-items: center; gap: 6px; padding: 8px 0; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; text-decoration: none;
+  /* (on a plate of the page's own ground, nearly solid: 4.5:1 over any part of the picture, the PC's light one too) */
+  background: var(--ground); background: color-mix(in srgb, var(--ground) 84%, transparent);
   font: 500 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2);
   text-shadow: 0 0 6px var(--film-bg), 0 0 2px var(--film-bg);   /* (legible over a light part of the picture too) */
   opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s, color .15s;
 }
 :is(.film-skip, .film-sound) span:first-child { border-bottom: 1px solid transparent; transition: border-color .15s; }
-.film.rolling .film-skip, .film:is(.rolling, .closing):not(.merged) .film-sound { opacity: .6; visibility: visible; transition-delay: 0s; }
+/* (whole, not see-through: the quiet ink over the picture is 4.5:1 only at full strength) */
+.film.rolling .film-skip, .film:is(.rolling, .closing):not(.merged) .film-sound { opacity: 1; visibility: visible; transition-delay: 0s; }
 .film-skip:hover, .film-skip:focus-visible, .film:not(.merged) .film-sound:is(:hover, :focus-visible) { color: var(--ink); opacity: 1; visibility: visible; transition-delay: 0s; }
 :is(.film-skip, .film-sound):is(:hover, :focus-visible) span:first-child { border-color: currentColor; }
 :is(.film-skip, .film-sound):focus-visible { outline-offset: 4px; }
