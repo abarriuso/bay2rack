@@ -61,9 +61,10 @@
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 /* each section fills the screen under the header; the page scrolls freely (no snapping, it tugged at the scroll) */
-/* the film's build driving the page on (film.js): the browser's own glide stopped, a touch screen only (the root alone:
+/* the film's build driving the page on, or the page held at its start till the 3D view has it (film.js): the browser's
+   own glide stopped, a touch screen only (the root alone:
    a body that hides its overflow becomes a box that scrolls, and the film's sticky picture would stay put in it) */
-html.driven { overflow: hidden; }
+html:is(.driven, .held) { overflow: hidden; }
 html { scroll-behavior: smooth; scroll-padding-top: var(--top-h); -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
   /* no double-tap zoom on a phone (taps answer at once; pinch zoom stays) */
   touch-action: manipulation; -webkit-tap-highlight-color: transparent; }

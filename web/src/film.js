@@ -608,6 +608,11 @@ export async function startFilm() {
     if (keep) return;                                       // (the sizes are changing: see above)
     const prev = lastY;
     lastY = scrollY;
+    if (held(prev)) {
+      dispatchEvent(new Event('b2r:jump'));                // (held back, not scrolled up: the header stays away - main.js)
+      scrollTo({ top: holdY(), behavior: 'instant' });
+      lastY = scrollY;
+    }
     const y = lastY + stick - filmTop;
     const t = Math.min(1, Math.max(0, y / span)) * last;
     // the coda closes over its first stretch (and holds a little), the PC is built over the next, then the stage
@@ -807,6 +812,29 @@ export async function startFilm() {
   const engineSoon = () => setTimeout(() => idle(prepare, { timeout: 3000 }), 1500);
   // In the stretch before the 3D view has the build (a slow phone, a slow network): the film's last picture holds, a
   // quiet line says the 3D is on its way, and the build takes over there the moment it comes.
+  // ...and the page holds there: scrolled on, it would go through the build over a still picture, and the 3D would
+  // come in further on, the PC already built (or not at all, the configurator reached first). Only for a visitor
+  // scrolling in from above (not a key or a link that jumps there), and for a while at most (a 3D view slower than
+  // that: on as before). A touch screen's own glide is stopped there (.held), a moment.
+  const HOLD_MS = 8000;
+  const holdY = () => filmTop - stick + span + close + 2;   // (just into the build's stretch: the quiet line shows)
+  let heldAt = 0, unheld = false, heldT = 0;
+  function held(prev) {
+    const h = holdY();
+    if (unheld || assembly || failed || merged || !firstLook() || CALM.matches) return false;
+    if (lastY <= h + 1) { if (lastY < h - innerHeight) heldAt = 0; return false; }
+    if (!heldAt) {
+      if (prev > h + 1 || lastY - prev > innerHeight) return false;
+      heldAt = performance.now();
+    }
+    if (performance.now() - heldAt > HOLD_MS) { unheld = true; return false; }
+    if (TOUCH) {
+      document.documentElement.classList.add('held');
+      clearTimeout(heldT);
+      heldT = setTimeout(() => document.documentElement.classList.remove('held'), 160);
+    }
+    return true;
+  }
   function waiting(a) {
     const on = a > 0 && !merged && !assembly && !failed && firstLook();
     if (on !== root.classList.contains('waiting')) root.classList.toggle('waiting', on);
@@ -952,6 +980,7 @@ export async function startFilm() {
   // the keyboard in the configurator while the film still covers it (a Tab from the last text): the page goes on to it
   $('#build')?.addEventListener('focusin', () => { if (!merged) toConfigurator(); });
   function toConfigurator() {
+    unheld = true;                                          // (the film skipped: nothing holds it back)
     scrollTo({ top: filmTop - stick + span + coda + 1, behavior: 'instant' });
     measure();
     collapse();
