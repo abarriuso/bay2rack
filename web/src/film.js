@@ -1243,14 +1243,17 @@ export async function startFilm() {
   // the list of frames has come), and with the stretch the build took away back in: somewhere in the film, not in the
   // configurator. So the film keeps the page's place in its history entry and puts it back itself, laid out as it was.
   if (back) {
-    // (a PC built before this load is not the film's one any more: the configurator as it is)
+    // (a PC built before this load, the page back at the configurator or under it: the configurator as it is - the PC
+    // is not the film's one any more. Back in the film above it - a reload at the top - the film is as on a first
+    // visit: its build comes again. Above the build's stretch, the page is as long either way.)
     let y = back.y;
-    if (back.built) {
+    geometry();
+    const from = filmTop - stick + span + close;
+    if (back.built && y >= from) {
       built = true;
       root.classList.add('built', 'bare');
       geometry();
       // (the short stretch it had then, under the configurator's place: gone)
-      const from = filmTop - stick + span + close;
       if (back.cut > 0 && y > from) y = Math.max(from, y - back.cut);
     }
     scrollTo({ top: y, behavior: 'instant' });
