@@ -161,6 +161,7 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await to(0.5);
   await expect.poll(home).toBe('film-3d on');
   await expect(page.locator('.film-3d')).toHaveCSS('opacity', '1');
+  const long = await page.evaluate(() => document.querySelector('.film-assemble').offsetHeight);
   await to(1.01);
   await expect(page.locator('#film')).toHaveClass(/merged/);
   await expect.poll(home).toBe('view');
@@ -168,7 +169,6 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   // in the configurator, at rest, the stretch that built it gets short - the view does not move - and back up from it
   // the PC comes apart on the stage again, over that little scroll
   const at = await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top);
-  const long = await page.evaluate(() => document.querySelector('.film-assemble').offsetHeight);
   await expect(page.locator('#film')).toHaveClass(/built/);
   await expect.poll(() => page.evaluate(() => document.querySelector('.film-assemble').offsetHeight)).toBeLessThan(long * 0.6);
   expect(Math.abs(await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top) - at)).toBeLessThan(1);

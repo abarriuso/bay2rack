@@ -147,6 +147,49 @@ function wire() {
     if (Math.abs(y - panelY) > 6 || y < 8) panelY = y;
   }, { passive: true });
   narrow.addEventListener('change', head);
+  // A phone's configurator is one screen, and holds it: come to rest squarely on it and the page stops scrolling (the
+  // steps scroll inside it, a finger on the 3D view turns the build). Out of it by its key at the corner of the view -
+  // or a link of the page, which takes the page elsewhere. (A scroll reads nothing while it is not held.)
+  const wb = $('.workbench'), doc = document.documentElement.classList;
+  let holdT = 0;
+  const hold = () => {
+    clearTimeout(holdT);
+    if (doc.contains('locked')) {
+      if (!narrow.matches || Math.abs(wb.getBoundingClientRect().top) > 2) doc.remove('locked');
+      return;
+    }
+    if (narrow.matches) holdT = setTimeout(() => { if (narrow.matches && Math.abs(wb.getBoundingClientRect().top) <= 2) doc.add('locked'); }, 250);
+  };
+  addEventListener('scroll', hold, { passive: true });
+  narrow.addEventListener('change', hold);
+  // the view on the whole screen (and the browser's own bars away, where it lets a page do that: not on an iPhone)
+  const fullKey = $('#viewFull');
+  const setFull = (on) => {
+    if (doc.contains('view-full') === on) return;
+    doc.toggle('view-full', on);
+    fullKey.replaceChildren(svgEl(on ? ICONS.fullOff : ICONS.full));
+    const k = on ? 'view_full_off' : 'view_full';
+    fullKey.dataset.i18nTip = fullKey.dataset.i18nAria = k;
+    fullKey.dataset.tip = t(k);
+    fullKey.setAttribute('aria-label', t(k));
+    fullKey.setAttribute('aria-pressed', String(on));
+    // (the build framed again for the view's new shape, once it has it)
+    requestAnimationFrame(() => requestAnimationFrame(() => viewer?.fit()));
+    try {
+      if (on && !document.fullscreenElement) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' })?.catch?.(() => {});
+      else if (!on && document.fullscreenElement) document.exitFullscreen?.()?.catch?.(() => {});
+    } catch { /* (not here) */ }
+  };
+  fullKey.onclick = () => setFull(!doc.contains('view-full'));
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setFull(false); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') setFull(false); });
+  narrow.addEventListener('change', () => { if (!narrow.matches) setFull(false); });
+  // back up: the film takes the page there its own way (film.js); without it, the top of the page
+  $('#viewUp').onclick = () => {
+    setFull(false);
+    doc.remove('locked');
+    if (dispatchEvent(new CustomEvent('b2r:up', { cancelable: true }))) $('#top').scrollIntoView({ behavior: CALM.matches ? 'auto' : 'smooth' });
+  };
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
   $('#kit').onclick = () => downloadKit();
   $('#kitBar').onclick = () => downloadKit();

@@ -903,20 +903,30 @@ export async function startFilm() {
   function autoplay(dy, a) {
     if (auto || touching || dy <= 0 || dy > innerHeight * 2 || merged || !assembly || assembly.parked) return;
     if (a < assembly.fade || a > 0.97) return;
-    const to = filmTop - stick + span + coda + 1;
-    auto = { from: scrollY, to, t0: performance.now(), ms: AUTO_MS * (1 - a) / (1 - assembly.fade), set: scrollY };
+    glide(filmTop - stick + span + coda + 1, AUTO_MS * (1 - a) / (1 - assembly.fade));
+  }
+  // the page taken to `to` over `ms`, a frame at a time (the film follows it as it follows any scroll)
+  function glide(to, ms) {
+    auto = { from: scrollY, to, t0: performance.now(), ms, set: scrollY, dir: Math.sign(to - scrollY) || 1 };
     requestAnimationFrame(play);
   }
   function play(now) {
     if (!auto) return;
-    const y = scrollY;
-    if (y < auto.set - 2 || !assembly) { auto = null; return; }   // (taken back up, or the build is the visitor's now)
+    const y = scrollY, d = auto.dir;
+    // (taken back the other way, or - on the way down - the build is the visitor's now)
+    if ((y - auto.set) * d < -2 || (d > 0 && !assembly)) { auto = null; return; }
     const k = Math.min(1, (now - auto.t0) / auto.ms);
     const want = auto.from + (auto.to - auto.from) * (1 - Math.cos(Math.PI * k)) / 2;
     // (a scroll of the visitor's ahead of it leads: it goes on from there)
-    if (want > y + 0.5) { auto.set = want; scrollTo({ top: want, behavior: 'instant' }); } else auto.set = y;
-    if (k < 1 && y < auto.to) requestAnimationFrame(play); else auto = null;
+    if ((want - y) * d > 0.5) { auto.set = want; scrollTo({ top: want, behavior: 'instant' }); } else auto.set = y;
+    if (k < 1 && (auto.to - y) * d > 0) requestAnimationFrame(play); else auto = null;
   }
+  // a phone's configurator holds the screen: its key takes the page back up into the film (main.js) - the PC comes
+  // apart on the way, as it does for a scroll up - to where the film's last frames are
+  addEventListener('b2r:up', (e) => {
+    e.preventDefault();
+    glide(filmTop - stick + span, built && !root.classList.contains('bare') ? 2600 : 1600);
+  });
   const stopAuto = () => { auto = null; };
   addEventListener('touchstart', stopAuto, { passive: true });
   addEventListener('wheel', (e) => { if (e.deltaY < 0) stopAuto(); }, { passive: true });

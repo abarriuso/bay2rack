@@ -255,6 +255,7 @@ export const dict = {
     fin_stepThenKit: 'Change what does not fit in "Adjust after the test prints", then download the full kit.',
     fin_stepBuy: 'Get the screws and inserts:', fin_bomLink: 'what you need', fin_stepGuide: 'Assembly, step by step:',
     // the viewer's blueprint and explode (blueprint.js, explode.js)
+    view_up: 'Back up to the page', view_full: 'The 3D view on the whole screen', view_full_off: 'Back to the steps',
     view_blueprint: 'Blueprint: the build as a technical drawing, with its sizes', view_explode: 'Take the build apart (and back)', view_explode_amount: 'How far apart', bp_screws: 'screw rows {d}',
   },
   es: {
@@ -518,6 +519,7 @@ export const dict = {
     fin_stepThenKit: 'Cambia lo que no encaje en «Ajustes tras las pruebas» y luego descarga el kit completo.',
     fin_stepBuy: 'Consigue los tornillos y los insertos:', fin_bomLink: 'lo que necesitas', fin_stepGuide: 'El montaje, paso a paso:',
     // el plano técnico y el despiece del visor (blueprint.js, explode.js)
+    view_up: 'Volver arriba', view_full: 'La vista 3D en toda la pantalla', view_full_off: 'Volver a los pasos',
     view_blueprint: 'Plano técnico: el montaje como dibujo, con sus medidas', view_explode: 'Despiece: separa las piezas (y las vuelve a juntar)', view_explode_amount: 'Cuánto se separan', bp_screws: 'tornillos a {d}',
   },
 };

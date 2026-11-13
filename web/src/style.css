@@ -497,6 +497,7 @@ button:disabled { opacity: .45; cursor: default; }
 .tab.active { background: var(--key); color: var(--key-ink); border-color: var(--key); }
 .tab-sub { flex: none; }
 .tab-sub .select { width: auto; max-width: 260px; padding: 5px 10px; background: var(--plate); }
+.vx-corner { display: none; }
 .floatbar { position: absolute; z-index: 2; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .floatbar .pill { background: var(--plate); background: color-mix(in srgb, var(--plate) 88%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
   padding: 6px 12px; font-size: 13px; }
@@ -670,7 +671,20 @@ button:disabled { opacity: .45; cursor: default; }
   .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
   /* the header back over the configurator (the steps scrolled up: main.js): the view's keys and legend under it */
   .viewer :is(.tabs, .legend) { transition: translate .25s ease; }
-  html:not(.head-off) .viewer :is(.tabs, .legend) { translate: 0 calc(var(--top-h) - env(safe-area-inset-top, 0px)); }
+  html:not(.head-off) .viewer :is(.tabs, .legend, .vx-corner) { translate: 0 calc(var(--top-h) - env(safe-area-inset-top, 0px)); }
+  /* the corner of the 3D view: the whole screen for it, and the way back up (main.js) */
+  .vx-corner { display: flex; position: absolute; z-index: 3; top: calc(10px + env(safe-area-inset-top, 0px)); right: 10px; gap: 6px;
+    transition: translate .25s ease; }
+  .viewer .tabs { right: 116px; }
+  /* held on the configurator: the page stands still - the steps scroll inside, a finger on the view turns the build -
+     and the header is away (the corner's key is the way out) */
+  html.locked, html.view-full, html:is(.locked, .view-full) body { overflow: hidden; overscroll-behavior: none; }
+  html:is(.locked, .view-full) .top { transform: translateY(-100%); }
+  html:is(.locked, .view-full) .viewer :is(.tabs, .legend, .vx-corner) { translate: none; }
+  html:is(.locked, .view-full) #view canvas { touch-action: none !important; }
+  html.locked .panel { overscroll-behavior-y: contain; }
+  /* the 3D view on the whole screen */
+  html.view-full .viewer { position: fixed; inset: 0; z-index: 40; height: 100vh; height: 100dvh; max-height: none; min-height: 0; border: 0; }
   .panel {
     /* past the end of the steps (or their top) the page goes on: the way out of the configurator */
     flex: 1 1 auto; height: auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; border-right: 0;
