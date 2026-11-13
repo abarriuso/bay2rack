@@ -9,7 +9,7 @@
 // configurator's own view. Every moment is a pose of the scroll (at(p), p 0..1): back up, it comes apart again.
 import * as THREE from 'three';
 import { pieces, fasteners, subset } from './explode.js';
-import { sfx } from './sound.js';
+import { sfx, softly } from './sound.js';
 import { BASE } from './state.js';
 
 // the bare table sees this much more than the film's last frame, about the same centre (scroll.py PLATE_OVERSCAN)
@@ -41,6 +41,7 @@ const MODULES = { fly: 0.14, each: 0.04, len: 0.3, close: 0.64, step: 0.032, sli
 const SCREW_SLIDE = 0.07;
 const CABLES = 0.93;
 const SHADE = [FADE, 0.45];
+const SOFT = 0.5;                  // (the scroll's sounds, of the editor's level)
 
 let tableData = null;
 const loadTable = () => (tableData ??= fetch(BASE + 'scroll/table.json').then((r) => (r.ok ? r.json() : null)).catch(() => null));
@@ -270,7 +271,7 @@ export async function fromTable(v, img0, view0) {
   }
 
   const hidden = hiddenKeys.flatMap((key) => parts.get(key)?.meshes ?? []);
-  const cablesWere = v.show.cables;
+  let cablesWere = v.show.cables;
   const setCables = (on) => v.extras?.traverse((o) => { if (o.userData.role === 'cables') o.visible = on && cablesWere; });
   const doorAt = (a) => {
     if (!door) return;
@@ -284,6 +285,12 @@ export async function fromTable(v, img0, view0) {
   const key = (eye, aim) => { const d = eye.clone().sub(aim); return { aim: aim.clone(), dir: d.clone().normalize(), far: Math.log(d.length()) }; };
   const K0 = key(eye0, aim0);
   const via = (k) => [K0[k], K1[k], K2[k]];
+  // the camera's way ends at K2 (the configurator's view, or where the visitor left it): the wide shot halfway from it
+  const toward = (k2) => {
+    K2 = k2;
+    K1 = { aim: new THREE.Vector3(0, aim0.y + (K2.aim.y - aim0.y) * 0.6, aim0.z + (K2.aim.z - aim0.z) * 0.8),
+      dir: K0.dir.clone().add(K2.dir).normalize(), far: Math.log(Math.max(Math.exp(K0.far), BACK * Math.exp(K2.far))) };
+  };
   // (a quadratic through the middle one at 1/2)
   const thru = ([a, b, c], t) => {
     const u = 1 - t, w0 = u * u - u * t, w1 = 4 * u * t, w2 = t * t - u * t;
@@ -313,9 +320,7 @@ export async function fromTable(v, img0, view0) {
     proj0 = filmProjection(T.camera, img, view);
     proj1 = { full: [view.width, view.height], off: [0, 0], size: [view.width, view.height] };
     end = v.fitPose(undefined, view.width / view.height);
-    K2 = key(end.eye, end.target);
-    K1 = { aim: new THREE.Vector3(0, aim0.y + (end.target.y - aim0.y) * 0.6, aim0.z + (end.target.z - aim0.z) * 0.8),
-      dir: K0.dir.clone().add(K2.dir).normalize(), far: Math.log(Math.max(Math.exp(K0.far), BACK * Math.exp(K2.far))) };
+    toward(key(end.eye, end.target));
     // the bare table: its corners where the film's frame puts them (the frame, half as big again about its centre),
     // down on the floor - from then on they are points of the 3D floor, wherever the camera goes
     camAt(0);
@@ -330,28 +335,37 @@ export async function fromTable(v, img0, view0) {
   };
   reframe(img0, view0);
 
-  // the sounds go with the way forward only (a breath as a piece leaves the table, its own one as it is home)
+  // The sounds, both ways and quieter than the editor's: a breath as a piece leaves the table, its own one as it is
+  // home; back up, each comes out (a latch, a screw backing out) and is set down on the table again. (A fling of the
+  // scroll crosses many moments in one frame: a few of them are heard, not a burst.)
   const pan = (c) => Math.max(-0.6, Math.min(0.6, c.x / 160));
   let was = 0;
   const sounds = (pp) => {
-    if (pp <= was) { was = pp; return; }
-    const crossed = (x) => was < x && pp >= x;
-    for (const tr of tracks) {
-      if (tr.kind !== 'screw' && crossed(tr.fly[0] + 0.005)) sfx.lift(pan(tr.c0), 380);
-      if (tr.kind === 'screw' && crossed(tr.slide[0] + (tr.slide[1] - tr.slide[0]) * 0.4)) sfx.screw(pan(tr.c0), 260, 3);
-      if (tr.kind !== 'screw' && crossed(tr.slide[1] - 0.004)) {
-        if (tr.kind === 'thunk') sfx.thunk(pan(tr.c0)); else sfx.snap(pan(tr.c0), tr.size ?? 1);
+    if (pp === was) return;
+    const fwd = pp > was;
+    const crossed = (x) => (fwd ? was < x && pp >= x : pp < x && was >= x);
+    let n = 0;
+    const play = (f) => { if (n++ < 4) f(); };
+    softly(SOFT, () => {
+      for (const tr of tracks) {
+        const pn = pan(tr.c0);
+        if (tr.kind !== 'screw' && crossed(tr.fly[0] + 0.005)) play(() => (fwd ? sfx.lift(pn, 380) : sfx.land(pn)));
+        if (tr.kind === 'screw' && crossed(tr.slide[0] + (tr.slide[1] - tr.slide[0]) * 0.4)) play(() => (fwd ? sfx.screw(pn, 260, 3) : sfx.unscrew(pn, 260, 3)));
+        if (tr.kind !== 'screw' && crossed(tr.slide[1] - 0.004)) {
+          if (tr.kind === 'thunk') play(() => (fwd ? sfx.thunk(pn) : sfx.unthunk(pn)));
+          else play(() => (fwd ? sfx.snap(pn, tr.size ?? 1) : sfx.unsnap(pn, tr.size ?? 1)));
+        }
       }
-    }
-    if (door && crossed(DOOR[1] - 0.004)) sfx.thunk(-0.5);
-    if (crossed(CABLES)) { sfx.plug(-0.2); setTimeout(() => sfx.plug(0.15), 70); setTimeout(() => sfx.plug(0.3), 150); }
+      if (door && crossed(DOOR[1] - 0.004)) play(() => (fwd ? sfx.thunk(-0.5) : sfx.unthunk(-0.5)));
+      if (crossed(CABLES)) for (const [pn, d] of [[-0.2, 0], [0.15, 0.07], [0.3, 0.15]]) (fwd ? sfx.plug : sfx.unplug)(pn, d);
+    });
     was = pp;
   };
 
   // the 3D view's shadows on the floor: as light as the film's on its table to begin with, the view's own once the
   // camera has left it
   const shade = v.floor.material, shadeWas = shade.opacity;
-  let done = false;
+  let done = false, parked = false;
   const at = (pp) => {
     if (done) return;
     camAt(seg(pp, CAM[0], CAM[1]));
@@ -374,8 +388,8 @@ export async function fromTable(v, img0, view0) {
     for (const m of hidden) m.visible = true;
     v.setVisible('cables', cablesWere);
     if (door) for (const d of door.objs) { d.o.matrix.copy(d.base); d.o.matrixAutoUpdate = d.auto; d.o.matrix.decompose(d.o.position, d.o.quaternion, d.o.scale); }
-    cam.position.copy(end.eye);
-    ctl.target.copy(end.target);
+    // (parked, the camera is the visitor's: it stays where it is)
+    if (!parked) { cam.position.copy(end.eye); ctl.target.copy(end.target); }
     cam.clearViewOffset();
     cam.fov = fov1;
     v.resize();
@@ -397,7 +411,32 @@ export async function fromTable(v, img0, view0) {
     const m = [a / w, d / w, 0, g / w, b / h, e / h, 0, hh / h, 0, 0, 1, 0, c, f, 0, 1];
     return `matrix3d(${m.map((x) => +x.toFixed(9)).join(',')})`;
   };
-  return { at, finish, plateMatrix, fade: FADE, reframe: (img, box) => { if (!done) reframe(img, box); }, model: v.model };
+  // The configurator takes over with the PC built (park): the view is the visitor's, as the configurator's always is.
+  // Back up into the stretch (resume) it comes apart again, the camera's way starting from where it was left.
+  // (false: it cannot - a look or the explode of the view's own tools is on: the configurator stays as it is)
+  const park = () => {
+    if (done || parked) return;
+    at(1);
+    parked = true;
+    cam.clearViewOffset();
+    cam.fov = fov1;
+    v.resize();
+    v.dirty = true;
+  };
+  const resume = (img, box) => {
+    if (done) return false;
+    if (!parked) return true;
+    if (v.tools?.on || v.tools?.shown || v.tools?.explode?.target > 0) return false;
+    const k2 = key(cam.position, ctl.target);
+    reframe(img, box);                                      // (the page may be laid out anew meanwhile)
+    // (seen from behind or below, the way would turn through the PC: from the configurator's own view instead)
+    if (k2.dir.dot(K0.dir) > 0 && k2.dir.z > 0) toward(k2);
+    cablesWere = v.show.cables;
+    parked = false;
+    return true;
+  };
+  return { at, finish, park, resume, get parked() { return parked; }, plateMatrix, fade: FADE,
+    reframe: (img, box) => { if (!done && !parked) reframe(img, box); }, model: v.model };
 }
 
 // (a glide or a settle of the view under way would fight the film's camera)

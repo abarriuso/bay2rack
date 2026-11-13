@@ -34,7 +34,7 @@ function focusOn(el) {
 // relative to it once loaded: the files come from BASE)
 function langPath() {
   const want = new URL(lang === 'es' ? 'es/' : './', BASE).pathname;
-  if (location.pathname !== want && !/\/m\//.test(location.pathname)) history.replaceState(null, '', want + location.search + location.hash);
+  if (location.pathname !== want && !/\/m\//.test(location.pathname)) history.replaceState(history.state, '', want + location.search + location.hash);
 }
 function langKey() {
   const b = $('#lang');

@@ -11,7 +11,11 @@
    their pace) */
 .film.coda { --asm: 170vh; --asm: 170svh; height: calc(600vh + var(--asm)); height: calc(600svh + var(--asm)); }
 @media (max-width: 760px) { .film.coda { --asm: 150svh; height: calc(540svh + var(--asm)); } }
-.film.coda.built { --asm: 0px; }            /* (the PC built once: film.js takes its stretch away) */
+/* (the PC built once: film.js shortens its stretch - back up from the configurator it comes apart over a little
+   scroll, not the whole way it was built; none if the build is the visitor's own) */
+.film.coda.built { --asm: 80vh; --asm: 80svh; }
+@media (max-width: 760px) { .film.coda.built { --asm: 70svh; } }
+.film.coda.built.bare { --asm: 0px; }
 .film-coda, .film-assemble { position: absolute; left: 0; right: 0; pointer-events: none; visibility: hidden; }
 .film-coda { bottom: var(--asm, 0px); height: 70vh; height: 70svh; }
 .film-assemble { bottom: 0; height: var(--asm, 0px); }
@@ -78,20 +82,26 @@
 /* The way past the film: a quiet line of small type at the foot of the stage, by its progress bar, as a player's
    "skip" (upright, at its top: the texts are at the foot), from the second text on. No box: it is there for whoever
    looks for it, and it comes up under the pointer or the keyboard. */
-.film-skip {
+.film-keys {
   position: absolute; z-index: 2; right: max(var(--gutter-r), calc((100% - var(--page)) / 2 + var(--gutter-r))); bottom: 14px;
+  display: flex; align-items: center; gap: 20px; pointer-events: none;
+}
+.film-keys > * { pointer-events: auto; }
+/* the key for the sounds (film.js: .hush, until the browser lets the page make them), the same quiet line of type */
+.film-sound { -webkit-appearance: none; appearance: none; background: none; border: 0; margin: 0; cursor: pointer; }
+.film-skip, .film-sound {
   display: inline-flex; align-items: center; gap: 6px; padding: 8px 0; text-decoration: none;
   font: 500 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2);
   text-shadow: 0 0 6px var(--film-bg), 0 0 2px var(--film-bg);   /* (legible over a light part of the picture too) */
   opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s, color .15s;
 }
-.film-skip span:first-child { border-bottom: 1px solid transparent; transition: border-color .15s; }
-.film.rolling .film-skip { opacity: .6; visibility: visible; transition-delay: 0s; }
-.film-skip:hover, .film-skip:focus-visible { color: var(--ink); opacity: 1; visibility: visible; transition-delay: 0s; }
-.film-skip:hover span:first-child, .film-skip:focus-visible span:first-child { border-color: currentColor; }
-.film-skip:focus-visible { outline-offset: 4px; }
-.film.plain .film-skip { display: none; }
-@media (max-aspect-ratio: 4/3) { .film-skip { bottom: auto; top: var(--s-2); } }
+:is(.film-skip, .film-sound) span:first-child { border-bottom: 1px solid transparent; transition: border-color .15s; }
+.film.rolling .film-skip, .film.hush:is(.rolling, .closing):not(.merged) .film-sound { opacity: .6; visibility: visible; transition-delay: 0s; }
+.film-skip:hover, .film-skip:focus-visible, .film.hush .film-sound:is(:hover, :focus-visible) { color: var(--ink); opacity: 1; visibility: visible; transition-delay: 0s; }
+:is(.film-skip, .film-sound):is(:hover, :focus-visible) span:first-child { border-color: currentColor; }
+:is(.film-skip, .film-sound):focus-visible { outline-offset: 4px; }
+.film.plain .film-keys { display: none; }
+@media (max-aspect-ratio: 4/3) { .film-keys { bottom: auto; top: var(--s-2); } }
 
 /* The configurator right under the film: film.js lifts it (--merge-y) so that where the stage lets go its 3D view lies
    exactly where the coda's window is. Till then it waits under the stage, unseen and out of the pointer's way; there

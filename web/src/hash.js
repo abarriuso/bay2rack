@@ -21,7 +21,8 @@ export const startValues = () => {
 export function writeHash() {
   // (the first look: no settings in the address, and no '#' left dangling at its end)
   const h = hashString();
-  history.replaceState(null, '', h === hashString(startValues()) ? location.pathname + location.search : h);
+  // (the entry's state is kept: the film keeps the page's place in it - film.js)
+  history.replaceState(history.state, '', h === hashString(startValues()) ? location.pathname + location.search : h);
 }
 // a short link: the same settings, deflated (#z=...) when that is shorter than the readable ones
 export const b64url = (u8) => btoa(String.fromCharCode(...u8)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

@@ -24,10 +24,13 @@
 // the PC from it (assemble.js). The configurator is right under the stage, its 3D view where the coda's window is:
 // there the film gives way to it, built.
 import './css/film-extra.css';
-import { $, BASE, CALM } from './state.js';
+import { $, BASE, CALM, NARROW } from './state.js';
 import { viewer, startEngine } from './engine.js';
+import { sfx, softly, drift, audible, setSound, soundOn } from './sound.js';
 
 const pad = (n) => String(n).padStart(4, '0');
+// a reload, or back to this page: where it was, kept by the film (see the end of startFilm)
+const back = (() => { try { const f = history.state?.film; return f && Number.isFinite(f.y) ? f : null; } catch { return null; } })();
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 // Touch devices (phones, tablets; iOS Safari above all) keep every decoded frame in a small memory budget and reload
@@ -64,6 +67,13 @@ export async function startFilm() {
   const plain = () => {
     root.classList.add('plain');
     showStill('960');
+    // (the place kept by a film that ran before - motion allowed then: this page has another length; the configurator
+    // if the visitor was in it, else that place as near as it is)
+    if (back) {
+      try { history.scrollRestoration = 'auto'; } catch { /* (old browser) */ }
+      if (back.built) $('#configurator')?.scrollIntoView({ behavior: 'instant' });
+      else scrollTo({ top: back.y, behavior: 'instant' });
+    }
     new MutationObserver(() => showStill('960')).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   };
   // reduced motion, data saving, or a screen too short for a stage (a page zoomed to 400 %): the plain page
@@ -428,7 +438,7 @@ export async function startFilm() {
     shownIm = im; shownFrame = frame; shownMid = mid;
   }
 
-  let kWritten = -1, rolling = false;
+  let kWritten = -1, rolling = false, airing = false;
   // the picture follows the scroll with a little weight: a fifth of the way per 60th of a second, whatever the
   // screen's rate (at 120 Hz, a tenth of it per refresh: the same glide, twice the pictures)
   let lastT = 0;
@@ -438,12 +448,16 @@ export async function startFilm() {
     const ease = 1 - Math.pow(0.8, dt / (1000 / 60));
     cur += (target - cur) * ease;
     if (Math.abs(target - cur) < 0.05) cur = target;
+    const kc0 = kc;
     kc += (codaT - kc) * ease;
     if (Math.abs(codaT - kc) < 0.002) kc = codaT;
     const ka0 = ka;
     ka += (asmT - ka) * ease;
     if (Math.abs(asmT - ka) < 0.0004) ka = asmT;
     if (ka !== ka0) stage3d();
+    // (the air of the scroll while the stage closes and the PC is built: as fast as they move)
+    if (ka !== ka0 || kc !== kc0) { airing = true; drift((Math.abs(ka - ka0) + Math.abs(kc - kc0) * 0.5) / (dt / 1000), ka > ka0 || kc > kc0); }
+    else if (airing) { airing = false; drift(0); }
     reel?.aim(cur, target);
     if (fineOn) {
       // the scroll has moved on a frame (or turned): the fine pictures around the new place
@@ -469,7 +483,12 @@ export async function startFilm() {
       root.classList.toggle('closing', k > 0);
     }
     if (cur !== target || kc !== codaT || ka !== asmT || fade || (swap && performance.now() - swap.t0 < 5000)) requestAnimationFrame(tick);
-    else { running = false; clearTimeout(restTimer); restTimer = setTimeout(rest, REST_MS); }
+    else {
+      running = false;
+      if (airing) { airing = false; drift(0); }
+      clearTimeout(restTimer);
+      restTimer = setTimeout(rest, REST_MS);
+    }
   }
   function kick() { if (!running) { running = true; lastT = 0; requestAnimationFrame(tick); } }
 
@@ -683,10 +702,6 @@ export async function startFilm() {
     pump();
     kick();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  geometry();
-  fit();
-  measure();
-  booted = true;
 
   // ---------------------------------------------------------------- into the configurator
   // The last stretch of the stage builds the PC (assemble.js). The 3D view's own canvas comes into the coda's window
@@ -694,9 +709,10 @@ export async function startFilm() {
   // the film's bare table (the plate, laid on the 3D floor) and the kit on it in 3D. It fades in over the picture
   // (the two differ only in the light on the pieces), and the scroll builds the PC. Where the stage lets go, the
   // configurator is right under it, its 3D view exactly where the window is: the canvas goes home to it and the steps
-  // come in where the last text was. Back up, all of it the other way. A visitor who touched the view, changed the
-  // build or came with settings in the link gets the configurator as it is: the film just gives way to it.
-  let assembly = null, preparing = false, touched = false, pinned = false;
+  // come in where the last text was. Back up, all of it the other way (once built, over a shorter stretch: see
+  // collapse()). A visitor who changed the build, or came with settings in the link, gets the configurator as it is:
+  // the film just gives way to it.
+  let assembly = null, preparing = false, pinned = false;
   const view = $('#view');
   const box3d = document.createElement('div');
   box3d.className = 'film-3d';
@@ -718,8 +734,9 @@ export async function startFilm() {
   new MutationObserver(() => { if (plate.getAttribute('src')) setPlate(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-  const firstLook = () => !touched && !built && !/=/.test(location.hash);
-  // a hand on the view (a drag, a key, its wheel) or a change of the build: it is the visitor's now
+  const firstLook = () => !built && !/=/.test(location.hash);
+  // another build (the visitor's), or a look of the view's own on: the PC is no longer the film's - it stays as it
+  // is, and the film gives way to it without the stretch that built it
   const letGo = () => {
     if (!assembly) return;
     const a = assembly;
@@ -727,9 +744,8 @@ export async function startFilm() {
     a.finish();
     pin(false);
     root.classList.remove('live3d');
+    if (built && !root.classList.contains('bare')) queueMicrotask(() => relength(() => root.classList.add('bare')));
   };
-  for (const ev of ['pointerdown', 'keydown']) $('.workbench')?.addEventListener(ev, () => { touched = true; letGo(); }, { passive: true, capture: true });
-  view?.addEventListener('wheel', () => { touched = true; letGo(); }, { passive: true, capture: true });
 
   // where the film's last picture lies, seen from where the 3D view is on the stage (CSS px): as paint() lays it, and
   // as the coda moves it
@@ -760,10 +776,12 @@ export async function startFilm() {
       if (!v || v.model || !firstLook()) return;              // (a model on screen already: it stays as it is)
       setPlate();
       const load = v.load;
+      let first = true;
       v.load = function (buf, ext, opts = {}) {
-        v.load = load;
-        const film = firstLook();
+        const film = first && firstLook();
+        first = false;
         load.call(this, buf, ext, film ? { ...opts, still: true } : opts);
+        if (assembly && v.model !== assembly.model) letGo();
         if (!film) return;
         mod.fromTable(v, pictureRect(), viewBox()).then((a) => {
           if (!a || !firstLook() || v.model !== a.model) { a?.finish(); return; }
@@ -794,7 +812,11 @@ export async function startFilm() {
   function stage3d() {
     const v = viewer;
     if (assembly && v?.model !== assembly.model) letGo();  // (another build came: it is the visitor's)
+    const home = merged && ka >= 1;
+    // (back into the stretch from the configurator: it comes apart from where the visitor left it, if it can)
+    if (assembly?.parked && !home && !assembly.resume(pictureRect(), viewBox())) letGo();
     if (!assembly) { pin(false); box3d.style.opacity = 0; return; }
+    if (home) { assembly.park(); pin(false); return; }    // (the configurator's: the view is the visitor's)
     assembly.at(ka);
     pin(!merged && ka > 0);
     box3d.style.opacity = smooth(seg(ka, 0, assembly.fade * 0.9)).toFixed(4);
@@ -803,11 +825,15 @@ export async function startFilm() {
     plate.style.opacity = m ? (1 - smooth(seg(ka, 0.26, 0.58))).toFixed(4) : 0;
     if (m) plate.style.transform = m;
   }
+  let settled = 0, arrived = 0;
   function setMerged(m) {
     if (m === merged) return;
     merged = m;
+    if (m) arrived = performance.now();
     root.classList.toggle('merged', m);
     if (m) prepare();
+    // (scrolled into the editor: it is yours - a soft settle, now and then)
+    if (m && engaged && performance.now() - settled > 4000) { settled = performance.now(); softly(0.6, () => sfx.settle()); }
     stage3d();
     atRest();
   }
@@ -816,8 +842,26 @@ export async function startFilm() {
   // page's place is moved up by as much and nothing on screen moves. Back up from the configurator, the film is right
   // there - not a long way back through the build.
   addEventListener('touchstart', () => { touching++; }, { passive: true });
-  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); }, { passive: true });
-  addEventListener('scroll', () => atRest(), { passive: true });
+  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); aim(); }, { passive: true });
+  addEventListener('scroll', () => {
+    const y = scrollY;
+    if (y !== wentY) { went = Math.sign(y - wentY); wentY = y; }
+    atRest();
+    aim();
+  }, { passive: true });
+  // A phone's configurator is one screen. Come down into it by a swipe, the glide may carry the page a little past it:
+  // once at rest, just after arriving, it is put square on the screen. (Only then - going on down, or back up, the
+  // page stays where the visitor leaves it.)
+  const stacked = matchMedia(NARROW);
+  let went = 0, wentY = scrollY, aimT = 0;
+  function aim() {
+    clearTimeout(aimT);
+    aimT = setTimeout(() => {
+      if (!merged || went <= 0 || touching || !stacked.matches || performance.now() - arrived > 2500) return;
+      const t = $('.workbench')?.getBoundingClientRect().top ?? 0;
+      if (Math.abs(t) > 1 && Math.abs(t) < innerHeight * 0.25) scrollBy({ top: t, behavior: 'smooth' });
+    }, 160);
+  }
   function atRest() {
     clearTimeout(rested);
     if (!built && merged) rested = setTimeout(collapse, 450);
@@ -826,15 +870,19 @@ export async function startFilm() {
     if (built || !merged) return;
     if (touching) { atRest(); return; }
     built = true;
-    letGo();
-    // (where the 3D view is on screen, before and after: whatever the browser's own scroll anchoring did meanwhile,
-    // the page is put back so that it has not moved)
-    // (the page's place moves, the visitor did not: the header stays as it is - main.js)
-    dispatchEvent(new Event('b2r:jump'));
+    // (the PC of the film: a short stretch, where it comes apart and back again; else none)
+    relength(() => { root.classList.add('built'); root.classList.toggle('bare', !assembly); });
+  }
+  // The stretch above the configurator changes its length: where the 3D view is on screen, before and after - whatever
+  // the browser's own scroll anchoring did meanwhile - the page is put back so that it has not moved.
+  function relength(change) {
     const was = view.getBoundingClientRect().top;
-    root.classList.add('built');
+    change();
     const moved = view.getBoundingClientRect().top - was;
-    if (Math.abs(moved) > 0.5) scrollBy({ top: moved, behavior: 'instant' });
+    if (Math.abs(moved) > 0.5) {
+      dispatchEvent(new Event('b2r:jump'));                  // (the page's place moves, not the visitor: the header stays - main.js)
+      scrollBy({ top: moved, behavior: 'instant' });
+    }
     geometry();
     measure();
   }
@@ -845,6 +893,16 @@ export async function startFilm() {
     measure();
     collapse();
   }
+  // The sounds of the build: a browser lets a page make them only after a click or a key on it, never for a scroll.
+  // Until then (and unless they were turned off) the film offers a quiet key for them, by the one that skips it.
+  const hush = () => root.classList.toggle('hush', soundOn() && !audible());
+  addEventListener('b2r:sound', hush);
+  hush();
+  root.querySelector('.film-sound')?.addEventListener('click', () => {
+    setSound(true);
+    hush();
+    setTimeout(() => softly(0.6, () => sfx.snap(0, 1)), 80);
+  });
   // "Configure yours", the key that skips the film: the page goes on to where the film has given way
   for (const a of root.querySelectorAll('a[href="#configurator"], .film-skip')) a.addEventListener('click', (e) => {
     if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -855,4 +913,40 @@ export async function startFilm() {
     if (!wb.matches('[tabindex]')) wb.setAttribute('tabindex', '-1');
     wb.focus({ preventScroll: true });
   });
+
+  // (all of the film set up: it starts - a page opened further down starts the engine at once, see measure())
+  geometry();
+  fit();
+  measure();
+  booted = true;
+
+  // ---------------------------------------------------------------- a reload, or back to this page
+  // The browser would put the page back where it was before the film has its length (this script lays it out, once
+  // the list of frames has come), and with the stretch the build took away back in: somewhere in the film, not in the
+  // configurator. So the film keeps the page's place in its history entry and puts it back itself, laid out as it was.
+  if (back) {
+    // (a PC built before this load is not the film's one any more: the configurator as it is)
+    let y = back.y;
+    if (back.built) {
+      built = true;
+      root.classList.add('built', 'bare');
+      geometry();
+      // (the short stretch it had then, under the configurator's place: gone)
+      const from = filmTop - stick + span + close;
+      if (back.cut > 0 && y > from) y = Math.max(from, y - back.cut);
+    }
+    scrollTo({ top: y, behavior: 'instant' });
+    measure();
+  }
+  let placeT = 0;
+  const keepPlace = () => {
+    clearTimeout(placeT);
+    try {
+      const cut = built && !root.classList.contains('bare') ? asm : 0;
+      history.replaceState({ ...(history.state ?? {}), film: { y: Math.round(scrollY), built, cut } }, '');
+      history.scrollRestoration = 'manual';
+    } catch { /* (too many in a row: the next one) */ }
+  };
+  addEventListener('scroll', () => { clearTimeout(placeT); placeT = setTimeout(keepPlace, 300); }, { passive: true });
+  addEventListener('pagehide', keepPlace);
 }

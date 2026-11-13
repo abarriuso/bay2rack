@@ -653,11 +653,8 @@ button:disabled { opacity: .45; cursor: default; }
   /* the film has the whole screen: the header comes over its top and goes as you scroll down (the stage does not
      move with it, so the film's frames keep their place in the scroll), and its end is the configurator's place */
   .film-stage { top: 0; height: 100vh; height: 100svh; }
-  html:not(.head-off) .film-skip { top: calc(var(--top-h) + var(--s-2)); }
-  /* the one-screen configurator: the scroll settles on it when it is close */
-  html { scroll-snap-type: y proximity; }
-  /* (not while the film has the scroll: there each place is a moment of it, and the page does not move by itself) */
-  html:has(.film.coda:not(.merged):not(.plain)) { scroll-snap-type: none; }
+  html:not(.head-off) .film-keys { top: calc(var(--top-h) + var(--s-2)); }
+  /* (no snapping onto the one-screen configurator: it held the page there, a little scroll up went back down) */
   /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
   .layout { padding-inline: 0; gap: 0; }
   .workbench {
@@ -667,6 +664,9 @@ button:disabled { opacity: .45; cursor: default; }
   }
   .stage { display: contents; }
   .viewer { order: -1; margin: 0; height: min(42vh, 440px); height: min(42svh, 440px); min-height: 200px; flex: none; border-bottom: 1px solid var(--rule); }
+  /* a finger up or down the 3D view moves the page (the way out of the configurator is where the thumb is); across, it
+     turns the build; two fingers zoom and move it */
+  #view canvas { touch-action: pan-y !important; }
   .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
   /* the header back over the configurator (the steps scrolled up: main.js): the view's keys and legend under it */
   .viewer :is(.tabs, .legend) { transition: translate .25s ease; }

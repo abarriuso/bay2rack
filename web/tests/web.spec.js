@@ -165,16 +165,18 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await expect(page.locator('#film')).toHaveClass(/merged/);
   await expect.poll(home).toBe('view');
   await expect(page.locator('.film-3d canvas')).toHaveCount(0);
-  // only the first time: in the configurator, at rest, the stretch that built it goes - the view does not move - and
-  // back up from it the film is right there
+  // in the configurator, at rest, the stretch that built it gets short - the view does not move - and back up from it
+  // the PC comes apart on the stage again, over that little scroll
   const at = await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top);
+  const long = await page.evaluate(() => document.querySelector('.film-assemble').offsetHeight);
   await expect(page.locator('#film')).toHaveClass(/built/);
-  await expect(page.locator('.film-assemble')).toHaveJSProperty('offsetHeight', 0);
+  await expect.poll(() => page.evaluate(() => document.querySelector('.film-assemble').offsetHeight)).toBeLessThan(long * 0.6);
   expect(Math.abs(await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top) - at)).toBeLessThan(1);
-  await page.evaluate(() => window.scrollBy(0, -300));
+  await to(0.5);
   await expect(page.locator('#film')).not.toHaveClass(/merged/);
-  await expect(page.locator('#film')).not.toHaveClass(/live3d/);
-  expect(await home()).toBe('view');
+  await expect.poll(home).toBe('film-3d on');
+  await to(1.01);
+  await expect.poll(home).toBe('view');
   expect(errors).toEqual([]);
 });
 
