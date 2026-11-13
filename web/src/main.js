@@ -22,6 +22,7 @@ import { wireGallery, renderGallery } from './gallery.js';
 import { startFilm } from './film.js';
 import { soundOn, setSound, sfx, breeze } from './sound.js';
 import { themeSwitch, langSwap, widen } from './motion.js';
+import { bars } from './bars.js';
 
 // ---------------------------------------------------------------- chrome
 // moves the keyboard focus to a section (one that takes no focus of its own takes it from the script only)
@@ -54,9 +55,8 @@ function applyTheme(th, chosen = false) {
   viewer?.setTheme(th);
   $('#theme').replaceChildren(svgEl(th === 'dark' ? ICONS.sun : ICONS.moon));
   $('#theme').setAttribute('aria-pressed', String(th === 'dark'));
-  // the browser's own bars (Safari on iPhone) take the colour of the page
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue('--ground').trim() || meta.content;
+  // the phone's own bars take the colour of what is under them, in this theme (bars.js)
+  bars();
   // (only a choice is kept: a first visit does not freeze the system's theme of that day)
   if (chosen) try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }

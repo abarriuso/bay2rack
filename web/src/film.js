@@ -27,6 +27,7 @@ import './css/film-extra.css';
 import { $, BASE, CALM, NARROW, S, afterFrame, atRest as quiet } from './state.js';
 import { viewer, startEngine, startViewer, fetchFirst } from './engine.js';
 import { glAhead } from './gl-ahead.js';
+import { bars, barsFilm, barsFrame, studio } from './bars.js';
 import { sfx, softly, drift, audible, setSound, soundOn } from './sound.js';
 import { t } from './i18n.js';
 
@@ -449,6 +450,7 @@ export async function startFilm() {
       subject = { x: sx, y: 0.5 };
     }
     shownIm = im; shownFrame = frame; shownMid = mid;
+    barsFrame();
   }
 
   let kWritten = -1, rolling = false, airing = false;
@@ -700,6 +702,7 @@ export async function startFilm() {
     inflight.clear();
     delete sets[theme];
     theme = themeNow();
+    bars();
     showStill(baseSz.dir);
     // what is on screen stays (a copy: the pictures behind it are let go) until the new film has this frame
     if (shownIm && canvas.width) {
@@ -884,6 +887,7 @@ export async function startFilm() {
     merged = m;
     if (m) arrived = performance.now();
     root.classList.toggle('merged', m);
+    bars();
     if (m) prepare();
     // (scrolled into the editor: it is yours - a soft settle, now and then)
     if (m && engaged && performance.now() - settled > 4000) { settled = performance.now(); softly(0.6, () => sfx.settle()); }
@@ -1052,6 +1056,28 @@ export async function startFilm() {
   const soon = () => Promise.race([loaded, new Promise((ok) => setTimeout(ok, 12000))])
     .then(() => idle(() => { if (!root.classList.contains('plain')) early(); }, { timeout: 2000 }));
   if (document.readyState === 'complete') soon(); else addEventListener('load', soon, { once: true });
+
+  // The phone's own bars take the colour of the picture's top edge while it is up there (bars.js): each picture's,
+  // read ahead (scripts/blender/scroll_edges.py, some 4 kB) - an upright screen sees the middle of the upright set.
+  let edges = null;
+  fetch(`${BASE}scroll/edges.json${ver}`, { priority: 'low' }).then((r) => (r.ok ? r.json() : null))
+    .then((j) => { edges = j; bars(); }).catch(() => {});
+  // (the 3D view in its window, mostly in, up at the top edge: its studio - film-3d takes no pointer, so bars.js
+  // cannot find it there)
+  let boxUp = false;
+  barsFilm((fresh) => {
+    if (fresh) {
+      boxUp = false;
+      if (box3d.classList.contains('on') && +(box3d.style.opacity || 0) >= 0.5) { const r = box3d.getBoundingClientRect(); boxUp = r.top <= 1 && r.bottom > 1; }
+    }
+    if (boxUp) return studio();
+    const set = edges?.[theme];
+    if (!set || root.classList.contains('plain')) return null;
+    const tall = canvas.width / canvas.height < 4 / 3 && tallSz;
+    const s = tall ? set.tall : set.wide, step = tall ? tallSz.step : plainSz.step;
+    const i = Math.min(s.length / 6 - 1, Math.max(0, Math.round(Math.max(0, shownFrame) / step)));
+    return '#' + s.slice(i * 6, i * 6 + 6);
+  });
 
   // ---------------------------------------------------------------- a reload, or back to this page
   // The browser would put the page back where it was before the film has its length (this script lays it out, once
