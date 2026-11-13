@@ -5,6 +5,7 @@
 // screws ahead of them, the fillers out and apart, the bay screws out to the sides. Each part follows the slider
 // on its own spring (a little late, a little past and back: the "transformer" feel); with reduced motion it jumps.
 import * as THREE from 'three';
+import { piecesKnown } from './mesh.js';
 
 const HARDWARE = new Set(['steel', 'zinc', 'brass']);
 const ZETA = 0.6;                    // damping ratio: a slight overshoot (about 9 %)
@@ -16,6 +17,13 @@ export function pieces(geo) {
   const pos = geo.attributes.position;
   const idx = geo.index;
   const n = (idx ? idx.count : pos.count) / 3;
+  // (found already by the worker that read the model - mesh-worker.js)
+  const known = piecesKnown.get(geo);
+  if (known && known.tri.length === n) {
+    const b = known.boxes, boxes = [];
+    for (let i = 0; i < b.length; i += 6) boxes.push(new THREE.Box3(new THREE.Vector3(b[i], b[i + 1], b[i + 2]), new THREE.Vector3(b[i + 3], b[i + 4], b[i + 5])));
+    return { tri: known.tri, boxes };
+  }
   const vid = idx ? (i) => idx.getX(i) : (i) => i;
   const weld = new Int32Array(pos.count);
   const seen = new Map();

@@ -8,7 +8,7 @@ import { unzipSync } from 'three/addons/libs/fflate.module.js';
 self.onmessage = ({ data: { id, data } }) => {
   let meshes = null;
   try { meshes = read(data); } catch (e) { meshes = null; }
-  const list = meshes ? meshes.flatMap((m) => [m.position.buffer, m.normal.buffer, m.uv.buffer]) : [];
+  const list = meshes ? meshes.flatMap((m) => [m.position.buffer, m.normal.buffer, m.uv.buffer, m.pieces.tri.buffer, m.pieces.boxes.buffer]) : [];
   self.postMessage({ id, meshes }, list);
 };
 
@@ -54,7 +54,67 @@ function read(data) {
     if (!m) return null;
     for (const g of m) out.push(out.includes(g) ? { hex: g.hex, position: g.position.slice(), normal: g.normal.slice(), uv: g.uv.slice() } : g);
   }
+  for (const g of out) { g.pieces = pieces(g.position); g.bounds = bounds(g.position); }
   return out;
+}
+
+// A group's box and the sphere around it, as three.js computes them (computeBoundingBox, computeBoundingSphere: the
+// box's centre, the farthest vertex) - on the page they were tens of ms for a build, every vertex read twice.
+// -> min x y z, max x y z, the sphere's radius
+function bounds(pos) {
+  const b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < pos.length; i += 3) for (let d = 0; d < 3; d++) {
+    const x = pos[i + d];
+    if (x < b[d]) b[d] = x;
+    if (x > b[3 + d]) b[3 + d] = x;
+  }
+  const cx = (b[0] + b[3]) / 2, cy = (b[1] + b[4]) / 2, cz = (b[2] + b[5]) / 2;
+  let far = 0;
+  for (let i = 0; i < pos.length; i += 3) {
+    const dx = pos[i] - cx, dy = pos[i + 1] - cy, dz = pos[i + 2] - cz;
+    far = Math.max(far, dx * dx + dy * dy + dz * dz);
+  }
+  return new Float64Array([...b, Math.sqrt(far)]);
+}
+
+// The connected pieces of a group's triangles (triangles that share a vertex position are one piece) - explode.js's
+// pieces() to the bit, here off the page's thread: on the page it held the film's build up for some 70 ms.
+// -> { tri: the piece of each triangle, boxes: each piece's box, min x y z then max x y z }
+function pieces(pos) {
+  const count = pos.length / 3, n = count / 3;
+  const weld = new Int32Array(count), seen = new Map();
+  for (let i = 0; i < count; i++) {
+    const k = `${Math.round(pos[3 * i] * 64)},${Math.round(pos[3 * i + 1] * 64)},${Math.round(pos[3 * i + 2] * 64)}`;
+    let w = seen.get(k);
+    if (w === undefined) { w = seen.size; seen.set(k, w); }
+    weld[i] = w;
+  }
+  const up = new Int32Array(seen.size);
+  for (let i = 0; i < up.length; i++) up[i] = i;
+  const find = (a) => { while (up[a] !== a) { up[a] = up[up[a]]; a = up[a]; } return a; };
+  const join = (a, b) => { a = find(a); b = find(b); if (a !== b) up[a] = b; };
+  for (let t = 0; t < n; t++) {
+    const a = weld[3 * t];
+    join(a, weld[3 * t + 1]);
+    join(a, weld[3 * t + 2]);
+  }
+  const ids = new Map(), tri = new Int32Array(n), box = [];
+  for (let t = 0; t < n; t++) {
+    const r = find(weld[3 * t]);
+    let id = ids.get(r);
+    if (id === undefined) { id = ids.size; ids.set(r, id); box.push(Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity); }
+    tri[t] = id;
+    const b = id * 6;
+    for (let k = 0; k < 3; k++) {
+      const o = (3 * t + k) * 3;
+      for (let d = 0; d < 3; d++) {
+        const x = pos[o + d];
+        if (x < box[b + d]) box[b + d] = x;
+        if (x > box[b + 3 + d]) box[b + 3 + d] = x;
+      }
+    }
+  }
+  return { tri, boxes: new Float64Array(box) };
 }
 
 // an attribute of the tag between `from` and `to`

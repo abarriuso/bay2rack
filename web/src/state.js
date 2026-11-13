@@ -90,6 +90,21 @@ export function atRest(quiet = 150, most = 900) {
     check();
   });
 }
+// Just after the next frame is drawn: what runs there has the whole frame before the next one to itself, so a slice of
+// a long job done there never holds a frame of the page up - the scroll goes on as smooth while it runs. (A hidden tab
+// draws no frames: the job waits until it is seen again.)
+export const afterFrame = () => new Promise((ok) => requestAnimationFrame(() => setTimeout(ok, 0)));
+// A long job as a loop of small steps: a few ms of them per frame (`budget`), never a long task. A step that is a
+// generator is taken a yield at a time (scene.js builds a case so).
+export async function sliced(steps, budget = 6) {
+  let t = performance.now();
+  const turn = async () => { if (performance.now() - t > budget) { await afterFrame(); t = performance.now(); } };
+  for (const step of steps) {
+    await turn();
+    const r = step();
+    if (r && typeof r.next === 'function') while (!r.next().done) await turn();
+  }
+}
 export const NARROW = '(max-width: 900px) and (max-aspect-ratio: 5/4)';
 export const h = (tag, { dataset, ...props } = {}, ...kids) => {
   // aria-* (and role) are attributes, not properties (everywhere)

@@ -11,7 +11,9 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MAT, boxUV, materialFor } from './materials.js';
 import { buildScene, sceneSteps } from './scene.js';
-import { atRest } from './state.js';
+import { sliced, afterFrame } from './state.js';
+import { piecesKnown } from './mesh.js';
+import { takeGL } from './gl-ahead.js';
 import { ViewTools } from './blueprint.js';
 
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
@@ -31,7 +33,9 @@ export class Viewer {
     const mobile = matchMedia('(max-width: 900px)').matches;
     // (see through: the studio behind the build is the page's, .viewer in style.css - the film's table can lie under
     // it too, film.js)
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // (its WebGL context made ahead, if the film made one: gl-ahead.js)
+    const made = takeGL();
+    this.renderer = new THREE.WebGLRenderer(made ? { canvas: made.canvas, context: made.gl, antialias: true, alpha: true } : { antialias: true, alpha: true });
     this.renderer.setClearColor(0x000000, 0);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.5 : 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -128,6 +132,11 @@ export class Viewer {
       last = Math.max(last, performance.now() - 1000 / 60);   // (after a rest the first step is one frame, not a jump)
       frame = requestAnimationFrame(loop);
     };
+    // (its first frame's shaders - the floor, the composer's passes - compiled alongside the page before it is drawn)
+    const base = this.compiling = this.prime(() => this.composer.render()).then(() => {
+      if (this.compiling === base) this.compiling = null;
+      this.dirty = true;
+    });
     this.kick();
     new IntersectionObserver(([e]) => { this.active = e.isIntersecting; this.dirty = true; }).observe(el);
     // the blueprint and the explode, in the page's viewer only (not in an off-screen one, the GLB export)
@@ -146,21 +155,12 @@ export class Viewer {
       // the page half a second. PMREMGenerator's own steps, three.js 0.186: anything amiss, it draws as it always did)
       try {
         pmrem._setSize(256);
-        const target = pmrem._allocateTargets();
+        pmrem._allocateTargets().dispose();
         // (a quarter of the samples of its glossy blur: the same soft room, and its shader a quarter of the work to
         // build - on Windows' Direct3D the 256 of them took half a second, at the first draw)
         const ggx = pmrem._ggxMaterial;
         if (ggx?.defines?.GGX_SAMPLES > 64) { ggx.defines.GGX_SAMPLES = 64; ggx.needsUpdate = true; }
-        const was = r.getRenderTarget(), tone = r.toneMapping;
-        r.setRenderTarget(target);
-        r.toneMapping = THREE.NoToneMapping;
-        const flat = new THREE.OrthographicCamera();
-        const jobs = [r.compileAsync(room, new THREE.PerspectiveCamera(90, 1, 0.1, 100))];
-        for (const m of [pmrem._blurMaterial, pmrem._ggxMaterial]) if (m) jobs.push(r.compileAsync(new THREE.Mesh(new THREE.BufferGeometry(), m), flat));
-        r.setRenderTarget(was);
-        r.toneMapping = tone;
-        await Promise.all(jobs);
-        target.dispose();
+        await this.prime(() => pmrem.fromScene(room, 0.04).dispose());
       } catch (e) { /* drawn as it comes */ }
       this.scene.environment = pmrem.fromScene(room, 0.04).texture;
       this.scene.environmentIntensity = 0.75;
@@ -191,7 +191,7 @@ export class Viewer {
       for (let i = 0; i < meshes.length;) {
         let tris = 0;
         const batch = [];
-        while (i < meshes.length && batch.length < 90 && tris < 90000) {
+        while (i < meshes.length && batch.length < 40 && tris < 40000) {
           const m = meshes[i++];
           batch.push(m);
           const g = m.geometry;
@@ -201,7 +201,7 @@ export class Viewer {
         this.renderer.shadowMap.needsUpdate = true;
         this.composer.render();
         for (const m of batch) m.visible = false;
-        if (i < meshes.length) await new Promise((ok) => requestAnimationFrame(() => setTimeout(ok)));   // (a frame between)
+        if (i < meshes.length) await afterFrame();          // (a frame between)
       }
     } finally {
       for (const [o, v] of was) o.visible = v;
@@ -216,24 +216,44 @@ export class Viewer {
   async prepareScene(data) {
     const key = JSON.stringify(data);
     const { group, steps } = sceneSteps(data);
-    // (the little steps together, a few dozen ms at a time: a pause each, not one per cable)
-    let t = -Infinity;
-    for (const step of steps) {
-      if (performance.now() - t > 24) { await atRest(120, 600); t = performance.now(); }
-      step();
-    }
+    await sliced(steps);                                    // (a few ms of it after each frame)
+    // (its meshes' spheres too, which show3d reads: one at a time)
+    const meshes = [];
+    group.traverse((m) => { if (m.isMesh && !m.geometry.boundingSphere) meshes.push(m); });
+    await sliced(meshes.map((m) => () => m.geometry.computeBoundingSphere()));
     this.prepared = { key, group };
   }
 
   // the scene's shaders, compiled alongside the page - as the composer draws them: into its target (no tone mapping
-  // there, the output pass does it), not the screen, or they would be other shaders
-  compile() {
-    const r = this.renderer, was = r.getRenderTarget();
-    r.setRenderTarget(this.composer.readBuffer);
-    let job;
-    try { job = r.compileAsync(this.scene, this.camera); } catch (e) { job = Promise.resolve(); }
-    r.setRenderTarget(was);
-    return job.catch(() => {});
+  // there, the output pass does it), not the screen, or they would be other shaders. A few at a time, after each frame: a shader's source built
+  // and handed over is a few ms, a whole build's at once was a long task. (One of each kind: the same materials on the
+  // same kind of thing make the same shader.)
+  async compile() {
+    const r = this.renderer, kinds = new Set(), objs = [];
+    this.scene.traverse((o) => {
+      if (!(o.isMesh || o.isLine || o.isPoints || o.isSprite) || !o.material) return;
+      const a = o.geometry?.attributes ?? {};
+      const k = [...[o.material].flat().map((m) => m.uuid), o.type, o.receiveShadow, o.castShadow, !!a.color, !!a.tangent, !!a.uv, !!o.geometry?.morphAttributes?.position].join();
+      if (!kinds.has(k)) { kinds.add(k); objs.push(o); }
+    });
+    const jobs = [];
+    await sliced(objs.map((o) => () => {
+      const was = r.getRenderTarget();
+      r.setRenderTarget(this.composer.readBuffer);
+      try { jobs.push(r.compileAsync(o, this.camera, this.scene).catch(() => {})); } catch (e) { /* drawn as it comes */ }
+      r.setRenderTarget(was);
+    }), 5);
+    await Promise.all(jobs);
+  }
+
+  // A dry run of `draw`: each of its draws a compile instead, alongside the page - in the very state it draws in (its
+  // targets, its tone mapping: in any other, the shaders it then draws with are others, built on the spot and waited
+  // for, a long task). Then `draw` itself finds them all made.
+  async prime(draw) {
+    const r = this.renderer, jobs = [], render = r.render;
+    r.render = (scene, camera) => { jobs.push(r.compileAsync(scene, camera).catch(() => {})); };
+    try { draw(); } catch (e) { /* drawn as it comes */ } finally { r.render = render; }
+    await Promise.all(jobs);
   }
 
   // something changed on screen: a frame is asked for
@@ -341,6 +361,12 @@ export class Viewer {
           geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
         }
         if (print) this.printMats.push({ mat, i: slot });
+        if (p.pieces) piecesKnown.set(geo, p.pieces);       // (its connected pieces, found there too: explode.js)
+        if (p.bounds) {                                     // (and its box and sphere)
+          const [x0, y0, z0, x1, y1, z1, r] = p.bounds;
+          geo.boundingBox = new THREE.Box3(new THREE.Vector3(x0, y0, z0), new THREE.Vector3(x1, y1, z1));
+          geo.boundingSphere = new THREE.Sphere(geo.boundingBox.getCenter(new THREE.Vector3()), r);
+        }
         add(geo, mat);
       }
     } else if (ext === '3mf') {

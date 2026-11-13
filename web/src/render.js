@@ -2,7 +2,7 @@
 import { t } from './i18n.js';
 import { bomText, warnText } from './help.js';
 import { renderLegend } from './legend.js';
-import { UI, $, CALM, h, num, S, atRest } from './state.js';
+import { UI, $, CALM, h, num, S, afterFrame } from './state.js';
 import { calc, modLabel, usedMods } from './model.js';
 import { viewer, engineStarted, runJob, cachedJob, readyMade, definesFor, setStatus, announce } from './engine.js';
 import { meshesOf } from './mesh.js';
@@ -48,8 +48,8 @@ export async function render() {
   await engineStarted;                                  // (the 3D view loads alongside the engine)
   if (res.ok && ext === '3mf') {
     res.meshes = await meshesOf(res.data);              // (read off the page's thread)
-    // the view's first model: the room around it made a piece at a time, in pauses of the scroll
-    if (viewer && !viewer.model) { await viewer.prepareScene(sceneOf(res)); await atRest(); }
+    // the view's first model: the room around it made a piece at a time, a few ms after each frame
+    if (viewer && !viewer.model) { await viewer.prepareScene(sceneOf(res)); await afterFrame(); }
   }
   S.busy = false;
   try {
@@ -73,10 +73,11 @@ async function ahead() {
   S.aheading = true;
   const res = await readyMade(defs, 'out.' + ext);
   if (res && ext === '3mf') {
-    res.meshes = await meshesOf(res.data);
+    res.meshes = await (res.read ?? meshesOf(res.data));   // (read already, as it came: engine.js fetchFirst)
+    delete res.read;
     await viewer.prepareScene(sceneOf(res));            // (the room around it, made a piece at a time)
   }
-  if (res) await atRest();                              // (laying it out holds the page a moment: in a pause)
+  if (res) await afterFrame();                          // (laid out just after a frame)
   S.aheading = false;
   if (res && !S.busy && jobOf(S.values).key === key) {  // (the settings still those it was made for)
     try {

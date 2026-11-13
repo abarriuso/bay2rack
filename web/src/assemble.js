@@ -10,7 +10,7 @@
 import * as THREE from 'three';
 import { pieces, fasteners, subset } from './explode.js';
 import { sfx, softly } from './sound.js';
-import { BASE } from './state.js';
+import { BASE, afterFrame } from './state.js';
 
 // the bare table sees this much more than the film's last frame, about the same centre (scroll.py PLATE_OVERSCAN)
 export const PLATE_OVERSCAN = 1.5;
@@ -49,7 +49,7 @@ export const preloadTable = () => loadTable();
 
 // the model's meshes cut into the parts that move: adapter, filler, module<k> (top first), screw<j> (each screw of
 // the film's table), the rest stays. -> Map key -> { meshes, box }
-function split(v, T) {
+async function split(v, T) {
   const P = v.parts, units = [...(P.units ?? [])].map(([, b]) => b).sort((a, b) => b[1][2] - a[1][2]);
   const zones = P.zones ?? [];
   const [[, , fz0], [fx1, , fz1]] = P.front;
@@ -82,12 +82,16 @@ function split(v, T) {
     if (!parts.has(key)) parts.set(key, { meshes: [], box: new THREE.Box3() });
     const p = parts.get(key);
     p.meshes.push(mesh);
-    mesh.geometry.computeBoundingBox();
+    if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
     p.box.union(mesh.geometry.boundingBox);
   };
-  const meshes = [];
+  const meshes = [], model = v.model;
   v.model.traverse((o) => { if (o.isMesh && !o.userData.bpLine) meshes.push(o); });
+  let t0 = performance.now();
   for (const m of meshes) {
+    // (a mesh at a time, a few ms of them per frame: the page's scroll goes on as smooth meanwhile)
+    if (performance.now() - t0 > 6) { await afterFrame(); t0 = performance.now(); }
+    if (v.model !== model || !m.parent) return parts;      // (another build came meanwhile: fromTable lets it be)
     const mat = m.material.name;
     const { tri, boxes } = pieces(m.geometry);
     const keyOf = (HARDWARE.has(mat) ? fasteners(boxes) : boxes).map((b) => classify(b, mat));
@@ -142,7 +146,9 @@ function squareTo(q) {
 export async function fromTable(v, img0, view0) {
   const T = await loadTable();
   if (!T || !v.model || !v.parts?.front || v.tools?.on) return null;
-  const parts = split(v, T);
+  const model = v.model;
+  const parts = await split(v, T);
+  if (v.model !== model) return null;
   if (!parts.has('adapter') || !parts.has('module0')) return null;
   stopOthers(v);
   const floorZ = v.floor.position.z;

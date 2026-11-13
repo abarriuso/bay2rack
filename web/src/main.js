@@ -307,7 +307,8 @@ async function boot() {
   // the engine and the 3D view: with settings in the link at once, otherwise when the configurator is near
   if (/=/.test(location.hash)) startEngine();
   else {
-    const near = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) { near.disconnect(); startEngine(); } },
+    // (not while the film plays above it: it starts them itself, after its pictures - film.js)
+    const near = new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting) && !S.filmLoads) { near.disconnect(); startEngine(); } },
       { rootMargin: '1200px 0px' });
     near.observe($('#build'));
   }

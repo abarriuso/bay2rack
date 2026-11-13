@@ -451,6 +451,11 @@ function networkCard(g0, ports, x0, len, zc, d) {
 }
 
 export function buildCase(c) {
+  const it = caseSteps(c);
+  for (;;) { const r = it.next(); if (r.done) return r.value; }
+}
+// the case a part at a time (a yield between them: the page's 3D view builds it over a few frames - viewer.js)
+export function* caseSteps(c) {
   const st = c.style === 'sleeper' ? CASE_STYLES.sleeper : CASE_STYLES[c.id] ?? CASE_STYLES.obsidian750d;
   const root = new THREE.Group();
   const g = part(root, 'shell');
@@ -471,7 +476,9 @@ export function buildCase(c) {
   const side = sidePanel(winSide > 0 ? w / 2 - t - e : -w / 2 + e, 0, z0, d, h, t, body, st.window ? winRect : null);
   side.userData.role = 'side';
   sideG.add(side);
+  yield;
   part(root, 'side_panel_mb').add(sidePanel(winSide > 0 ? -w / 2 + e : w / 2 - t - e, 0, z0, d, h, t, body, null));
+  yield;
   if (st.window) {
     const glass = plane(winSide * (w / 2 - e - t / 2), winRect[0] + winRect[2] / 2, winRect[1] + winRect[3] / 2, winRect[2], winRect[3], MAT.glass(), 'x');
     glass.userData.role = 'side';
@@ -491,19 +498,39 @@ export function buildCase(c) {
   cut(w / 2 - 60, z1 - ATX.top - 4 - 158.75, w / 2 - 60 + 44.45, z1 - ATX.top - 4);
   cut(-w / 2 + 8, z0 + 6, -w / 2 + 158, z0 + 92);
   for (let i = 0; i < 7; i++) cut(px0 + 4, slotZ(i) - 6.5, px0 + pl - 4, slotZ(i) + 6.5);
-  const hex = (cx, cz, r) => {
+  // the honeycomb vent: strips of a few rows, each a hole of the sheet filled by a strip with its hexes (the sheet
+  // with every hex in it took tens of ms to cut, in one go). A strip is a hair wider than its hexes (2.6 across a
+  // centre, 2.25 up and down); strips keep half a mm of the sheet between them, so no two holes touch.
+  const hex = (into, cx, cz, r) => {
     const h6 = new THREE.Path();
     for (let k = 0; k < 6; k++) h6[k ? 'lineTo' : 'moveTo'](cx + r * Math.cos(k * Math.PI / 3), cz + r * Math.sin(k * Math.PI / 3));
     h6.closePath();
-    rearWall.holes.push(h6);
+    into.holes.push(h6);
   };
   const vx0 = -w / 2 + 16, vx1 = px0 - 20, vz0 = slotZ(6) - 6, vz1 = slotZ(0) + 6, hp = 6.4;
-  for (let r = 0, cz = vz0; cz <= vz1; r++, cz += hp * 0.866)
-    for (let cx = vx0 + (r % 2 ? hp / 2 : 0); cx <= vx1; cx += hp) hex(cx, cz, 2.6);
+  const rows = [];
+  for (let r = 0, cz = vz0; cz <= vz1; r++, cz += hp * 0.866) {
+    const xs = [];
+    for (let cx = vx0 + (r % 2 ? hp / 2 : 0); cx <= vx1; cx += hp) xs.push(cx);
+    if (xs.length) rows.push([cz, xs]);
+  }
+  const strips = [];
+  for (let i = 0; i < rows.length; i += 3) {
+    const band = rows.slice(i, i + 3), all = band.flatMap(([, xs]) => xs);
+    const x0 = Math.min(...all) - 3, x1 = Math.max(...all) + 3, za = band[0][0] - 2.5, zb = band.at(-1)[0] + 2.5;
+    const shape = new THREE.Shape().moveTo(x0, za).lineTo(x1, za).lineTo(x1, zb).lineTo(x0, zb).closePath();
+    for (const [cz, xs] of band) for (const cx of xs) hex(shape, cx, cz, 2.6);
+    rearWall.holes.push(new THREE.Path().moveTo(x0, za).lineTo(x0, zb).lineTo(x1, zb).lineTo(x1, za).closePath());
+    strips.push(shape);
+  }
+  yield;
   g.add(slab(rearWall, d - t, t, body, 48));
+  for (const shape of strips) { yield; g.add(slab(shape, d - t, t, body, 48)); }
+  yield;
   g.add(fan(fanX, d - t - 25, fanZ, 120, MAT.plastic(0x16171a, 0.5)));
   g.add(fanGuard(fanX, d + 1.2, fanZ, 120, MAT.powder(st.body)));
   for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) g.add(cyl(fanX + sx * 52.5, d + 0.6, fanZ + sz * 52.5, 2.6, 1.6, MAT.zinc()));
+  yield;
   // top: mesh panel or a fan
   if (st.top === 'mesh') g.add(plane(0, d * 0.55, z1 + 0.3, w - 40, d * 0.6, perforated(0x0c0c0d, w - 40, d * 0.6, 6), 'z'));
   if (st.top === 'fan') {         // a 200 mm fan under a wire guard in the roof
@@ -514,8 +541,11 @@ export function buildCase(c) {
     g.add(top);
   }
   // rear: I/O shield, PCI slots, the PSU face, the side panels' thumbscrews
+  yield;
   ioShield(g, w / 2 - 60, d - 0.8, z1 - ATX.top - 4);
+  yield;
   psuFace(g, -w / 2 + 8, d - t, z0 + 6);
+  yield;
   for (const sx of [-1, 1]) for (const zz of [z0 + 70, z1 - 70]) {
     g.add(cyl(sx * (w / 2 - 5), d + 3, zz, 4.2, 6, tiled(MAT.brushed(0x7d8288), 6), 'y', 18));     // knurled head
     g.add(cyl(sx * (w / 2 - 5), d + 6.1, zz, 3.2, 0.4, MAT.zinc()));
@@ -528,7 +558,9 @@ export function buildCase(c) {
   // the bar that holds the brackets, with a thumbscrew per slot (the brackets' tabs are away from the board)
   g.add(box(px0 - 12, d, slotZ(6) - 10, 10, 1.2, slotZ(0) - slotZ(6) + 20, tiled(MAT.brushed(0x8d9298), 20)));
   for (let i = 0; i < 7; i++) g.add(cyl(px0 - 7, d + 2, slotZ(i), 3.2, 3.4, tiled(MAT.brushed(0x7d8288), 6), 'y', 18));
+  yield;
   if (c.nic >= 0) networkCard(root, c.nicPorts ?? [], px0, pl, slotZ(c.nic), d);
+  yield;
   // feet
   for (const fx of [-w / 2 + 22, w / 2 - 22]) for (const fy of [24, d - 24]) g.add(cyl(fx, fy, z0 - 4, 14, 8, MAT.rubber(), 'z'));
 
@@ -541,8 +573,11 @@ export function buildCase(c) {
     for (const y of [62, 84, 166, 188]) cageHoles.push([y, zc, 6]);
     for (const y of [47.4, 127]) cageHoles.push([y, zb + 10, 1.7]);
   }
-  for (const s of [-1, 1]) g.add(sidePanel(s > 0 ? bayW / 2 : -bayW / 2 - cageT, 1, c.cz0, 200, c.cz1 - c.cz0, cageT,
-    tiled(MAT.powder(0x1c1d20), 50), null, cageHoles));
+  for (const s of [-1, 1]) {
+    yield;
+    g.add(sidePanel(s > 0 ? bayW / 2 : -bayW / 2 - cageT, 1, c.cz0, 200, c.cz1 - c.cz0, cageT, tiled(MAT.powder(0x1c1d20), 50), null, cageHoles));
+  }
+  yield;
   // the tabs the drives rest on: they run in the grooves of the adapter
   for (let j = Math.ceil(c.cz0 / pitch); j <= Math.floor(c.cz1 / pitch) + 1; j++) {
     const zt = j * pitch - (pitch - bayH) / 2;
@@ -569,7 +604,9 @@ export function buildCase(c) {
     holes.push([-52, 52, floppyZ - 1, floppyZ + 26]);
     for (let i = 0; i < 9; i++) holes.push([-w / 2 + 34, w / 2 - 34, z0 + 30 + i * 9, z0 + 33.5 + i * 9]);
   }
+  yield;
   front.add(frontPanel({ x0: -w / 2, z0: z0 + 2, w, h: h - 2, r: st.sleeper ? 3 : 8 }, holes, -fd, fd + 14, frontMat));
+  yield;
   if (st.sleeper) {
     floppy(front, 0, -fd + 0.8, floppyZ);
     front.add(box(-w / 2 + 34, 2, z0 + 28, w - 68, 2, 84, MAT.plastic(0x0a0a0a, 0.9)));
@@ -614,7 +651,9 @@ export function buildCase(c) {
   }
   // a sleeper hides a modern server: draw it even without a window (the video takes the side panel off)
   // the motherboard tray is always on +X, like the rear I/O and the slots (bay2rack.scad places them there)
+  yield;
   if (st.window || st.sleeper) interior(root, c, w / 2 - t);
+  yield;
   if (st.sleeper && c.nic !== 3) lowProfileGPU(root, px0, pl, slotZ(3), d);
   return root;
 }
@@ -768,7 +807,10 @@ export function sceneSteps(data) {
   const safe = (what, f) => steps.push(() => {
     try { const o = f(); if (o) { o.name = what.replace(/\s+/g, '_'); g.add(o); } } catch (e) { console.warn(`scene: ${what} skipped`, e); }
   });
-  safe('case', () => data.case && buildCase(data.case));
+  // (the case, a part at a time: state.js sliced() takes the steps of a step that yields)
+  if (data.case) steps.push(function* () {
+    try { const o = yield* caseSteps(data.case); if (o) { o.name = 'case'; g.add(o); } } catch (e) { console.warn('scene: case skipped', e); }
+  });
   if (data.homelab && data.case) {
     const c = data.case;
     const hl = data.homelab;

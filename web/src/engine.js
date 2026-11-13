@@ -1,8 +1,10 @@
 // The OpenSCAD engine (a worker, more for the kit), the render cache and the 3D view, started on demand.
 import { scadLiteral, same } from './customizer.js';
 import { t } from './i18n.js';
-import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S, atRest } from './state.js';
+import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S, atRest, afterFrame } from './state.js';
 import { render } from './render.js';
+import { meshesOf } from './mesh.js';
+import { madeAhead } from './gl-ahead.js';
 
 // ---------------------------------------------------------------- engine
 // The 3D view (three.js) and the OpenSCAD engine (11 MB of WebAssembly) start when the configurator comes near the
@@ -18,11 +20,14 @@ export function startEngine() {
   worker.postMessage({ type: 'init', base: BASE });
   return startViewer();
 }
-// The 3D view, which the film can start well before the engine (its first model is made ahead). Its start is two
-// heavy steps (the WebGL view, the studio's light): each waits for a pause in the scroll (atRest).
+// The 3D view, which the film can start well before the engine (its first model is made ahead). Its start is one step
+// that cannot be cut - three.js asking the GPU what it can do, a wait on each answer, long while the GPU draws the
+// film: it waits for a pause in the scroll (atRest). Its WebGL context, the longest wait, the film makes as the page
+// comes in (gl-ahead.js). The rest goes a few ms at a time after the frames (the studio's light compiles its shaders
+// alongside the page).
 export function startViewer() {
   engineStarted ??= import('./viewer.js').then(async ({ Viewer }) => {
-    await atRest();
+    await atRest(150, madeAhead() ? 500 : 900);           // (its context made ahead: the rest is short - gl-ahead.js)
     viewer = new Viewer($('#view'));
     viewer.setTheme(document.documentElement.dataset.theme);
     viewer.setFilament(filamentHexes());
@@ -30,7 +35,7 @@ export function startViewer() {
     viewer.show.side = UI.side;
     // (the film lays its first model on its table: it is told before any comes - film.js)
     dispatchEvent(new Event('b2r:viewer'));
-    await atRest();
+    await afterFrame();
     await viewer.light();
     // the first look's build may be on screen before the engine is ready: it is made ahead (readyMade)
     if (S.wantRender) render();
@@ -72,16 +77,24 @@ export const sumOf = (raw) => {
   for (let i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
   return (h >>> 0).toString(16).padStart(8, '0');
 };
-let ahead = null;
+// It is fetched - and read, off the page's thread (mesh.js) - as soon as the film's pictures are in (fetchFirst), while
+// the 3D view starts; which settings and which model it is for is checked when it is used.
+let first = null;
+export function fetchFirst() {
+  if (first) return first;
+  const meta = fetch(BASE + 'scad/first.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const data = meta.then((j) => (j ? fetch(BASE + 'scad/' + j.file).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null) : null));
+  const meshes = data.then((b) => (b ? meshesOf(new Uint8Array(b)) : null));
+  first = { meta, data, meshes };
+  return first;
+}
 export function readyMade(defines, out) {
   const key = out + '\n' + defines.join('\n');
   if (done.has(key)) return Promise.resolve(done.get(key));
-  ahead ??= fetch(BASE + 'scad/first.json').then((r) => (r.ok ? r.json() : null)).then((j) => (j?.scad === S.scadSum ? j : null)).catch(() => null);
-  return ahead.then(async (j) => {
-    if (!j || j.key !== key) return null;
-    const b = await fetch(BASE + 'scad/' + j.file).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
-    if (!b) return null;
-    const res = { ok: true, code: 0, logs: j.logs, ms: j.ms, data: new Uint8Array(b) };
+  const { meta, data, meshes } = fetchFirst();
+  return Promise.all([meta, data]).then(([j, b]) => {
+    if (!j || j.scad !== S.scadSum || j.key !== key || !b) return null;
+    const res = { ok: true, code: 0, logs: j.logs, ms: j.ms, data: new Uint8Array(b), read: meshes };
     done.set(key, res);
     return res;
   });

@@ -24,8 +24,9 @@
 // the PC from it (assemble.js). The configurator is right under the stage, its 3D view where the coda's window is:
 // there the film gives way to it, built.
 import './css/film-extra.css';
-import { $, BASE, CALM, NARROW, atRest } from './state.js';
-import { viewer, startEngine, startViewer } from './engine.js';
+import { $, BASE, CALM, NARROW, S, afterFrame, atRest as quiet } from './state.js';
+import { viewer, startEngine, startViewer, fetchFirst } from './engine.js';
+import { glAhead } from './gl-ahead.js';
 import { sfx, softly, drift, audible, setSound, soundOn } from './sound.js';
 import { t } from './i18n.js';
 
@@ -53,9 +54,11 @@ const REST_MS = 200;
 // the fine pictures asked for around the scroll position: ahead of the way it goes, behind it, and before the first
 // scroll (the film may never be played)
 const FINE_AHEAD = 140, FINE_BEHIND = 40, FINE_FIRST = 36;
-// how far into the film the 3D view starts (its first model, the film's build, is made ahead: it needs no engine), and
-// the configurator's engine (it is there for the visitor's own builds)
-const VIEW_AT = 0.08, ENGINE_AT = 0.4;
+// The order things load in: the film's pictures first (all of the set it plays), then the 3D view and the build made
+// ahead (it needs no engine), and the configurator's engine (11 MB, there for the visitor's own builds) only once the
+// build is on screen or the visitor is in the configurator - nothing heavy ever fights the film for the network. A
+// visitor already this far into the film has the 3D view started anyway (VIEW_AT), the pictures in or not.
+const VIEW_AT = 0.3;
 
 export async function startFilm() {
   const root = $('#film');
@@ -85,6 +88,7 @@ export async function startFilm() {
   const canvas = $('#filmCanvas');
   const ctx = canvas?.getContext('2d', { alpha: false });
   if (!meta?.sizes?.length || !ctx) { plain(); return; }
+  S.filmLoads = true;                                       // (the film says when the 3D and the engine start: main.js)
 
   // ---------------------------------------------------------------- the tiers
   const roleOf = (sz) => sz.role ?? (sz.step === 1 ? 'fine' : 'base');
@@ -125,6 +129,9 @@ export async function startFilm() {
   const url = (th, t, i) => `${BASE}scroll/${th}/${t.sz.dir}/${pad(i * t.skip + 1)}.webp${ver}`;
 
   const sets = {};
+  // the film's pictures all in (or failed): the 3D view may start (see the end)
+  let filmIn = null;
+  const loaded = new Promise((ok) => { filmIn = ok; });
   let theme = themeNow();
   let cur = 0, target = 0, running = false, shownIm = null;
   let kc = 0, codaT = 0;                                    // the coda: 0 film, 1 workbench
@@ -141,7 +148,7 @@ export async function startFilm() {
   const bar = $('#filmBar');
   const stage = root.querySelector('.film-stage');
 
-  const setOf = (th) => (sets[th] ??= { base: new Array(tiers.base.n), fine: tiers.fine ? new Array(tiers.fine.n) : [], fineLeft: tiers.fine?.n ?? 0, sharp: new Map(), next: 0 });
+  const setOf = (th) => (sets[th] ??= { baseIn: 0, base: new Array(tiers.base.n), fine: tiers.fine ? new Array(tiers.fine.n) : [], fineLeft: tiers.fine?.n ?? 0, sharp: new Map(), next: 0 });
 
   // ---------------------------------------------------------------- touch screens: the reel
   // sz: the set it plays; cropOf(frame) -> [x, w] the slice of a picture the screen shows (null: all of it);
@@ -160,6 +167,7 @@ export async function startFilm() {
     const maps = new Map(), decoding = new Set(), files = coarseFirst(n);
     let next = 0, fetching = 0, dead = false, at = Math.min(n - 1, Math.max(0, Math.round(cur / step))), dir = 1;
     const asked = new Set();
+    let got = blobs.filter(Boolean).length;
     let still = null, stillAsk = 0;                       // the fine picture of the frame the scroll rests on
     const near = (i, k) => i >= at - half * k && i <= at + half * k;
     const ahead = (i) => i >= at - half * (dir > 0 ? 1 : 2) && i <= at + half * (dir > 0 ? 2 : 1);
@@ -198,6 +206,7 @@ export async function startFilm() {
           fetching--;
           asked.delete(i);
           if (b) blobs[i] = b;
+          if (++got >= n) filmIn();
           feed();
         });
       }
@@ -295,6 +304,7 @@ export async function startFilm() {
       const done = (ok) => {
         im.onload = im.onerror = null;
         inflight.delete(im);
+        if (tier === 'base' && ++s.baseIn >= tiers.base.n) filmIn();
         if (ok) {
           im.ok = true;
           const frame = i * t.step;
@@ -602,7 +612,6 @@ export async function startFilm() {
     const c = close ? Math.min(1, Math.max(0, (y - span) / (close * 0.8))) : 0;
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
     if (t >= last * VIEW_AT) early();
-    if (t >= last * ENGINE_AT) prepare();
     setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
     autoplay(lastY - prev, a);
     waiting(a);
@@ -779,9 +788,10 @@ export async function startFilm() {
   async function early() {
     if (earlyOn) return;
     earlyOn = true;
+    fetchFirst();                                           // (the build made ahead comes meanwhile: engine.js)
     assembler().catch((e) => console.warn(e));
     try { await startViewer(); hook(); } catch (e) { console.warn(e); }
-    if (!viewer) { failed = true; waiting(0); }            // (no 3D view here: the film gives way to the page as it is)
+    if (!viewer) { failed = true; waiting(0); prepare(); } // (no 3D view here: the film gives way to the page as it is)
   }
   async function prepare() {
     if (preparing) return;
@@ -789,6 +799,8 @@ export async function startFilm() {
     early();
     try { await startEngine(); } catch (e) { console.warn(e); }
   }
+  // the engine once the film's build is on screen: in a quiet moment after (its 11 MB come in a worker)
+  const engineSoon = () => setTimeout(() => idle(prepare, { timeout: 3000 }), 1500);
   // In the stretch before the 3D view has the build (a slow phone, a slow network): the film's last picture holds, a
   // quiet line says the 3D is on its way, and the build takes over there the moment it comes.
   function waiting(a) {
@@ -819,15 +831,17 @@ export async function startFilm() {
       if (!film) return;
       const model = v.model;
       // (each heavy step in a pause of the scroll: the build taken apart onto the table, then its first draw)
-      assembler().then(async (mod) => { await atRest(); return mod.fromTable(v, pictureRect(), viewBox()); }).then(async (a) => {
+      // (each step a few ms at a time, after a frame: the film's scroll goes on as smooth meanwhile)
+      assembler().then(async (mod) => { await afterFrame(); return mod.fromTable(v, pictureRect(), viewBox()); }).then(async (a) => {
         if (!a || !firstLook() || v.model !== model || v.model !== a.model) { a?.finish(); return; }
-        await atRest();
+        await afterFrame();
         await v.warm();
         if (!firstLook() || v.model !== model) { a.finish(); return; }
         assembly = a;
         root.classList.add('live3d');
         stage3d();
         ready3d();
+        engineSoon();
       }, (e) => console.warn(e));
     };
   }
@@ -903,7 +917,9 @@ export async function startFilm() {
   }
   function atRest() {
     clearTimeout(rested);
-    if (!built && merged) rested = setTimeout(collapse, 450);
+    // (a second at rest: the configurator's keys have faded in by then - the page painted anew where it moves, a
+    // frame later than the others, is then a frame where nothing moves)
+    if (!built && merged) rested = setTimeout(collapse, 1000);
   }
   function collapse() {
     if (built || !merged) return;
@@ -1009,7 +1025,32 @@ export async function startFilm() {
   // the 3D view and the build made ahead start once the page has come and the first pictures are on screen - most
   // visitors look at the first one a moment, and its heavy steps are done by the time the film is played
   const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 200));
-  const soon = () => setTimeout(() => idle(() => { if (!root.classList.contains('plain')) early(); }, { timeout: 2000 }), 1200);
+  // The configurator painted once at the start, unseen (a thousandth of opacity, for three frames, on the screen): the
+  // first paint of its text and of its frosted keys is slow (the browser's glyphs and blur, made once for the page),
+  // and done here - in a pause of the scroll near the start - it no longer holds up the frame it fades in at.
+  function warmPaint() {
+    const w = $('.build .workbench');
+    if (!w || merged || built) return;
+    const r = w.getBoundingClientRect();
+    const was = w.getAttribute('style');
+    w.style.cssText += `;position:fixed;left:${r.left}px;top:0;width:${r.width}px;opacity:.001;pointer-events:none;transition:none;z-index:1`;
+    w.inert = true;
+    const back = () => { if (was == null) w.removeAttribute('style'); else w.setAttribute('style', was); w.inert = false; };
+    requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(back)));
+  }
+  // (and the 3D view's WebGL context, made ahead too: gl-ahead.js). Each is a wait on the GPU (a tenth of a second):
+  // each in a pause of the scroll of its own
+  const atLoad = async () => {
+    await quiet(250, 6000);
+    warmPaint();
+    await afterFrame();
+    await quiet(250, 6000);
+    if (!root.classList.contains('plain')) glAhead();
+  };
+  if (document.readyState === 'complete') atLoad(); else addEventListener('load', atLoad, { once: true });
+  // (once the film's pictures are all in - or, on a very slow network, after a while anyway)
+  const soon = () => Promise.race([loaded, new Promise((ok) => setTimeout(ok, 12000))])
+    .then(() => idle(() => { if (!root.classList.contains('plain')) early(); }, { timeout: 2000 }));
   if (document.readyState === 'complete') soon(); else addEventListener('load', soon, { once: true });
 
   // ---------------------------------------------------------------- a reload, or back to this page

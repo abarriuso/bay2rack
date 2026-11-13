@@ -1,6 +1,8 @@
 // The 3MF read off the page's thread (mesh-worker.js): a coloured assembly's triangles, grouped by colour, as flat
 // arrays ready for the view - or null, and the view reads it itself as before.
 let worker = null, next = 1;
+// the connected pieces of a geometry the worker read (explode.js): geometry -> { tri, boxes }
+export const piecesKnown = new WeakMap();
 const waiting = new Map();
 export function meshesOf(data) {
   try {
