@@ -906,17 +906,20 @@ export async function startFilm() {
     atRest();
     aim();
   }, { passive: true });
-  // A phone's configurator is one screen. Come down into it by a swipe, the glide may carry the page a little past it:
-  // once at rest, just after arriving, it is put square on the screen. (Only then - going on down, or back up, the
-  // page stays where the visitor leaves it.)
+  // A phone's configurator is one screen. Come down into it by a swipe, the glide may carry the page past it - a
+  // thumb's fling, most of a screen: once at rest, just after arriving, it is put square on the screen (and held
+  // there: main.js). (Only then - going on down further, or back up, the page stays where the visitor leaves it.)
   const stacked = matchMedia(NARROW);
   let went = 0, wentY = scrollY, aimT = 0;
   function aim() {
     clearTimeout(aimT);
     aimT = setTimeout(() => {
-      if (!merged || went <= 0 || touching || !stacked.matches || performance.now() - arrived > 2500) return;
+      if (!merged || went <= 0 || touching || !stacked.matches || performance.now() - arrived > 4000) return;
       const t = $('.workbench')?.getBoundingClientRect().top ?? 0;
-      if (Math.abs(t) > 1 && Math.abs(t) < innerHeight * 0.25) scrollBy({ top: t, behavior: 'smooth' });
+      if (!(t < 0 ? -t < innerHeight * 0.8 : t < innerHeight * 0.25)) return;
+      // (never short of where the stage lets go - the film would come back over it: a few px may lie between)
+      const to = Math.max(scrollY + t, filmTop - stick + span + coda + 1);
+      if (Math.abs(to - scrollY) > 1) scrollTo({ top: to, behavior: CALM.matches ? 'instant' : 'smooth' });
     }, 160);
   }
   function atRest() {

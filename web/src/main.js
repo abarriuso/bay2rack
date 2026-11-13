@@ -157,7 +157,17 @@ function wire() {
     if (y < 8 || y < panelY - 6) root.remove('head-off');
     else if (y > panelY + 6) root.add('head-off');
     if (Math.abs(y - panelY) > 6 || y < 8) panelY = y;
+    // the steps scrolled on: the 3D view gives them some of its height (back at their top, or at a touch on it)
+    if (y > 100) low(true);
+    else if (y < 8) low(false);
   }, { passive: true });
+  const low = (on) => {
+    const root = document.documentElement.classList;
+    if (root.contains('view-low') === on) return;
+    root.toggle('view-low', on);
+    requestAnimationFrame(() => requestAnimationFrame(() => viewer?.fit()));     // (the build framed for its new shape)
+  };
+  $('#view')?.addEventListener('click', () => low(false));
   narrow.addEventListener('change', head);
   // the air of the scroll, all down the page and the steps: as fast as they move, softer than the film's at its end
   // (sound.js); a jump of the page's place (a link, the film's own) is no scroll
@@ -182,10 +192,13 @@ function wire() {
   const hold = () => {
     clearTimeout(holdT);
     if (doc.contains('locked')) {
-      if (!narrow.matches || Math.abs(wb.getBoundingClientRect().top) > 2) doc.remove('locked');
+      if (!narrow.matches || Math.abs(wb.getBoundingClientRect().top) > 8) doc.remove('locked');
       return;
     }
-    if (narrow.matches) holdT = setTimeout(() => { if (narrow.matches && Math.abs(wb.getBoundingClientRect().top) <= 2) doc.add('locked'); }, 250);
+    // (square on it: within a few px - the film puts it where its stage lets go, film.js)
+    if (narrow.matches) holdT = setTimeout(() => {
+      if (narrow.matches && Math.abs(wb.getBoundingClientRect().top) <= 8 && !$('#film:not(.plain):not(.merged)')) doc.add('locked');
+    }, 250);
   };
   addEventListener('scroll', hold, { passive: true, capture: true });
   narrow.addEventListener('change', hold);

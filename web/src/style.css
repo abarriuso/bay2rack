@@ -683,6 +683,12 @@ button:disabled { opacity: .45; cursor: default; }
   html:is(.locked, .view-full) .viewer :is(.tabs, .legend, .vx-corner) { translate: none; }
   html:is(.locked, .view-full) #view canvas { touch-action: none !important; }
   html.locked .panel { overscroll-behavior-y: contain; }
+  /* the steps scrolled on (main.js): a lower 3D view, more room for them */
+  html.view-low:not(.view-full) .viewer { height: max(170px, 26svh); min-height: 170px; }
+  /* (a glimpse of the build: its keys away until it is back to its height - a touch on it) */
+  .viewer .tabs { transition: translate .25s ease, opacity .2s ease; }
+  .viewer .floatbar { transition: opacity .2s ease; }
+  html.view-low:not(.view-full) .viewer :is(.tabs, .floatbar) { opacity: 0; pointer-events: none; }
   /* the 3D view on the whole screen */
   html.view-full .viewer { position: fixed; inset: 0; z-index: 40; height: 100vh; height: 100dvh; max-height: none; min-height: 0; border: 0; }
   .panel {
