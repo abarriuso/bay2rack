@@ -578,11 +578,12 @@ export async function startFilm() {
     if (win && vw && build) {
       const s = stage.getBoundingClientRect();
       const wt = win.getBoundingClientRect().top - s.top, v = vw.getBoundingClientRect();
+      // (the view itself, inside the viewer's frame - a phone's has a line under it: read with the viewer, before the
+      // configurator is moved, or the two would be from two layouts, as far apart as it moved)
+      const c = $('#view')?.getBoundingClientRect() ?? v;
       const y = wt - stage.offsetHeight - (v.top - build.getBoundingClientRect().top);
       build.style.setProperty('--merge-y', `${y.toFixed(3)}px`);
-      // the 3D view's place on the stage while the PC is built: there, its size (the view itself, inside the
-      // viewer's frame: a phone's has a line under it)
-      const c = $('#view')?.getBoundingClientRect() ?? v;
+      // the 3D view's place on the stage while the PC is built: there, its size
       set('--v3-l', `${(c.left - s.left).toFixed(3)}px`);
       set('--v3-t', `${(wt + c.top - v.top).toFixed(3)}px`);
       set('--v3-w', `${c.width}px`);
@@ -1160,7 +1161,15 @@ export async function startFilm() {
     const was = w.getAttribute('style');
     w.style.cssText += `;position:fixed;left:${r.left}px;top:0;width:${r.width}px;opacity:.001;pointer-events:none;transition:none;z-index:1`;
     w.inert = true;
-    const back = () => { if (was == null) w.removeAttribute('style'); else w.setAttribute('style', was); w.inert = false; };
+    // (put back, the film measures it again: lifted out of the page meanwhile, it may have been measured there - its
+    // observer sees its size, which comes back the same, not its place - and the configurator would come up under the
+    // stage thousands of px off, the film giving way to nothing)
+    const back = () => {
+      if (was == null) w.removeAttribute('style'); else w.setAttribute('style', was);
+      w.inert = false;
+      geometry();
+      measure();
+    };
     requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(back)));
   }
   // (and the 3D view's WebGL context, made ahead too: gl-ahead.js). Each is a wait on the GPU (a tenth of a second):
