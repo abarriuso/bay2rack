@@ -20,6 +20,7 @@ const seg = (p, a, b) => clamp01((p - a) / (b - a));
 const inOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 const out3 = (t) => 1 - (1 - t) ** 3;
 const out5 = (t) => 1 - (1 - t) ** 5;
+const smooth01 = (t) => t * t * (3 - 2 * t);
 const bez = (a, b, c, d, t, o) => {
   const u = 1 - t;
   return o.set(0, 0, 0).addScaledVector(a, u * u * u).addScaledVector(b, 3 * u * u * t).addScaledVector(c, 3 * u * t * t).addScaledVector(d, t * t * t);
@@ -29,15 +30,17 @@ const mat4 = (rows, dz = 0) => new THREE.Matrix4().set(...rows[0].slice(0, 3), r
 
 // The moments along the stretch of scroll (fractions of it). The camera rises over most of it; the adapter goes in
 // first, the side panel shuts; meanwhile the modules fly into the exploded view, hold there a moment, and close in.
-const CAM = [0.03, 0.62];
+// (until FADE the 3D view comes in over the film's picture, still: nothing moves till it is wholly there)
+const FADE = 0.1;
+const CAM = [FADE, 0.62];
 const BACK = 2.6;                  // (how far back the wide shot halfway is, of the configurator's own distance)
-const ADAPTER = { fly: [0.05, 0.27], slide: [0.27, 0.34] };
-const SIDE_SCREWS = { fly: [0.12, 0.33], slide: 0.34, each: 0.016, len: 0.06 };
+const ADAPTER = { fly: [FADE, 0.29], slide: [0.29, 0.35] };
+const SIDE_SCREWS = { fly: [0.14, 0.34], slide: 0.35, each: 0.016, len: 0.06 };
 const DOOR = [0.42, 0.5];
-const MODULES = { fly: 0.12, each: 0.04, len: 0.3, close: 0.64, step: 0.032, slide: 0.11 };
+const MODULES = { fly: 0.14, each: 0.04, len: 0.3, close: 0.64, step: 0.032, slide: 0.11 };
 const SCREW_SLIDE = 0.07;
 const CABLES = 0.93;
-const SHADE = [0.15, 0.45];
+const SHADE = [FADE, 0.45];
 
 let tableData = null;
 const loadTable = () => (tableData ??= fetch(BASE + 'scroll/table.json').then((r) => (r.ok ? r.json() : null)).catch(() => null));
@@ -194,9 +197,15 @@ export async function fromTable(v, img0, view0) {
       bez(tr.p0, tr.l1, tr.l2, tr.H, k, p);
       q.copy(tr.q0).slerp(qi, k);
     }
+    // (what is not printed - a switch, a KVM, the ports - is not on the film's table: it comes about halfway through
+    // the module's flight, grown out of its middle)
+    const k = tr.devices ? smooth01(seg(pp, tr.fly[0] + (tr.fly[1] - tr.fly[0]) * 0.45, tr.fly[0] + (tr.fly[1] - tr.fly[0]) * 0.8)) : 1;
     for (const m of tr.part.meshes) {
+      const g = tr.devices?.has(m) ? k : 1;
+      m.visible = g > 0.001;
+      m.scale.setScalar(Math.max(g, 0.001));
       m.quaternion.copy(q);
-      m.position.copy(p).sub(tmp.copy(tr.c0).applyQuaternion(q));
+      m.position.copy(p).sub(tmp.copy(tr.c0).multiplyScalar(g).applyQuaternion(q));
     }
   };
 
@@ -239,7 +248,9 @@ export async function fromTable(v, img0, view0) {
     if (!piece) return;
     const off = apart(key);
     const f0 = MODULES.fly + MODULES.each * i, c0 = MODULES.close + MODULES.step * i;
-    track(key, mat4(piece.move, dz), { fly: [f0, f0 + MODULES.len], slide: [c0, c0 + MODULES.slide], wait: off, lift: 110, kind: 'snap', size: key === 'filler' ? 0.8 : 1 });
+    const devices = new Set(parts.get(key).meshes.filter((m) => !/^print_/.test(m.material.name) && !HARDWARE.has(m.material.name)));
+    track(key, mat4(piece.move, dz), { fly: [f0, f0 + MODULES.len], slide: [c0, c0 + MODULES.slide], wait: off, lift: 110, kind: 'snap',
+      size: key === 'filler' ? 0.8 : 1, devices: devices.size ? devices : null });
     const box = parts.get(key).box;
     let m = 0;
     for (const st of front) {
@@ -345,7 +356,7 @@ export async function fromTable(v, img0, view0) {
     if (done) return;
     camAt(seg(pp, CAM[0], CAM[1]));
     const s = seg(pp, SHADE[0], SHADE[1]);
-    shade.opacity = shadeWas * (0.27 + 0.73 * s * s * (3 - 2 * s));
+    shade.opacity = shadeWas * s * s * (3 - 2 * s);       // (none at first: the film's are in its picture)
     for (const tr of tracks) pose(tr, pp);
     for (const m of hidden) m.visible = pp >= ADAPTER.slide[1];
     if (door) doorAt(door.ang * (1 - inOut(seg(pp, DOOR[0], DOOR[1]))));
@@ -359,7 +370,7 @@ export async function fromTable(v, img0, view0) {
     if (done) return;
     done = true;
     shade.opacity = shadeWas;
-    for (const tr of tracks) for (const m of tr.part.meshes) { m.position.set(0, 0, 0); m.quaternion.identity(); }
+    for (const tr of tracks) for (const m of tr.part.meshes) { m.position.set(0, 0, 0); m.quaternion.identity(); m.scale.setScalar(1); m.visible = true; }
     for (const m of hidden) m.visible = true;
     v.setVisible('cables', cablesWere);
     if (door) for (const d of door.objs) { d.o.matrix.copy(d.base); d.o.matrixAutoUpdate = d.auto; d.o.matrix.decompose(d.o.position, d.o.quaternion, d.o.scale); }
@@ -386,7 +397,7 @@ export async function fromTable(v, img0, view0) {
     const m = [a / w, d / w, 0, g / w, b / h, e / h, 0, hh / h, 0, 0, 1, 0, c, f, 0, 1];
     return `matrix3d(${m.map((x) => +x.toFixed(9)).join(',')})`;
   };
-  return { at, finish, plateMatrix, reframe: (img, box) => { if (!done) reframe(img, box); }, model: v.model };
+  return { at, finish, plateMatrix, fade: FADE, reframe: (img, box) => { if (!done) reframe(img, box); }, model: v.model };
 }
 
 // (a glide or a settle of the view under way would fight the film's camera)

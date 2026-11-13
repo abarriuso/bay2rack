@@ -653,7 +653,7 @@ button:disabled { opacity: .45; cursor: default; }
   /* the film has the whole screen: the header comes over its top and goes as you scroll down (the stage does not
      move with it, so the film's frames keep their place in the scroll), and its end is the configurator's place */
   .film-stage { top: 0; height: 100vh; height: 100svh; }
-  html:not(.head-off) .film-skip { top: calc(var(--top-h) + var(--s-3)); }
+  html:not(.head-off) .film-skip { top: calc(var(--top-h) + var(--s-2)); }
   /* the one-screen configurator: the scroll settles on it when it is close */
   html { scroll-snap-type: y proximity; }
   /* (not while the film has the scroll: there each place is a moment of it, and the page does not move by itself) */
@@ -668,9 +668,12 @@ button:disabled { opacity: .45; cursor: default; }
   .stage { display: contents; }
   .viewer { order: -1; margin: 0; height: min(42vh, 440px); height: min(42svh, 440px); min-height: 200px; flex: none; border-bottom: 1px solid var(--rule); }
   .viewer .tabs { top: calc(10px + env(safe-area-inset-top, 0px)); }   /* clear of the iPhone notch */
+  /* the header back over the configurator (the steps scrolled up: main.js): the view's keys and legend under it */
+  .viewer :is(.tabs, .legend) { transition: translate .25s ease; }
+  html:not(.head-off) .viewer :is(.tabs, .legend) { translate: 0 calc(var(--top-h) - env(safe-area-inset-top, 0px)); }
   .panel {
-    /* the end of the steps does not carry the page on: the 3D view stays on screen */
-    flex: 1 1 auto; height: auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: contain; border-right: 0;
+    /* past the end of the steps (or their top) the page goes on: the way out of the configurator */
+    flex: 1 1 auto; height: auto; min-height: 0; overflow-y: auto; overscroll-behavior-y: auto; border-right: 0;
     background: var(--plate);
     padding: var(--s-4) max(var(--gutter-r), calc((100% - 680px) / 2)) calc(var(--s-6) + env(safe-area-inset-bottom, 0px)) max(var(--gutter-l), calc((100% - 680px) / 2));
   }

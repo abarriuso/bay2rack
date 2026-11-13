@@ -120,6 +120,7 @@ export async function startFilm() {
   let resting = false, restKey = -1, restTimer = 0, visible = true;
   let engaged = false, booted = false, fineAt = -1, fineDir = 1;   // (the fine set: see nextJob)
   let merged = false;                                       // the configurator over the stage (see the end)
+  let built = false, rested = 0, touching = 0;              // (the PC built once: its stretch gone, see the end)
   let subject = { x: 0.5, y: 0.5 };                         // where the subject of the drawn frame is (canvas fractions)
   const inflight = new Set();
   // each text of the page and the frames it belongs to (film.json has them, in the order of the page)
@@ -717,7 +718,7 @@ export async function startFilm() {
   new MutationObserver(() => { if (plate.getAttribute('src')) setPlate(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-  const firstLook = () => !touched && !/=/.test(location.hash);
+  const firstLook = () => !touched && !built && !/=/.test(location.hash);
   // a hand on the view (a drag, a key, its wheel) or a change of the build: it is the visitor's now
   const letGo = () => {
     if (!assembly) return;
@@ -796,7 +797,7 @@ export async function startFilm() {
     if (!assembly) { pin(false); box3d.style.opacity = 0; return; }
     assembly.at(ka);
     pin(!merged && ka > 0);
-    box3d.style.opacity = smooth(seg(ka, 0, 0.045)).toFixed(4);
+    box3d.style.opacity = smooth(seg(ka, 0, assembly.fade * 0.9)).toFixed(4);
     // the bare table: on the 3D floor, under the camera as it rises; it gives way to the studio as the camera leaves it
     const m = plate.naturalWidth ? assembly.plateMatrix(plate.naturalWidth, plate.naturalHeight) : null;
     plate.style.opacity = m ? (1 - smooth(seg(ka, 0.26, 0.58))).toFixed(4) : 0;
@@ -808,12 +809,41 @@ export async function startFilm() {
     root.classList.toggle('merged', m);
     if (m) prepare();
     stage3d();
+    atRest();
+  }
+  // Only the first time do the pieces come from the table. Once the visitor is in the configurator and the page is
+  // at rest (no finger on it: a phone's glide is over), the stretch that built the PC goes: all of it is above, so the
+  // page's place is moved up by as much and nothing on screen moves. Back up from the configurator, the film is right
+  // there - not a long way back through the build.
+  addEventListener('touchstart', () => { touching++; }, { passive: true });
+  for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); }, { passive: true });
+  addEventListener('scroll', () => atRest(), { passive: true });
+  function atRest() {
+    clearTimeout(rested);
+    if (!built && merged) rested = setTimeout(collapse, 450);
+  }
+  function collapse() {
+    if (built || !merged) return;
+    if (touching) { atRest(); return; }
+    built = true;
+    letGo();
+    // (where the 3D view is on screen, before and after: whatever the browser's own scroll anchoring did meanwhile,
+    // the page is put back so that it has not moved)
+    // (the page's place moves, the visitor did not: the header stays as it is - main.js)
+    dispatchEvent(new Event('b2r:jump'));
+    const was = view.getBoundingClientRect().top;
+    root.classList.add('built');
+    const moved = view.getBoundingClientRect().top - was;
+    if (Math.abs(moved) > 0.5) scrollBy({ top: moved, behavior: 'instant' });
+    geometry();
+    measure();
   }
   // the keyboard in the configurator while the film still covers it (a Tab from the last text): the page goes on to it
   $('#build')?.addEventListener('focusin', () => { if (!merged) toConfigurator(); });
   function toConfigurator() {
     scrollTo({ top: filmTop - stick + span + coda + 1, behavior: 'instant' });
     measure();
+    collapse();
   }
   // "Configure yours", the key that skips the film: the page goes on to where the film has given way
   for (const a of root.querySelectorAll('a[href="#configurator"], .film-skip')) a.addEventListener('click', (e) => {

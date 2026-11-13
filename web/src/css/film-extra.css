@@ -11,6 +11,7 @@
    their pace) */
 .film.coda { --asm: 170vh; --asm: 170svh; height: calc(600vh + var(--asm)); height: calc(600svh + var(--asm)); }
 @media (max-width: 760px) { .film.coda { --asm: 150svh; height: calc(540svh + var(--asm)); } }
+.film.coda.built { --asm: 0px; }            /* (the PC built once: film.js takes its stretch away) */
 .film-coda, .film-assemble { position: absolute; left: 0; right: 0; pointer-events: none; visibility: hidden; }
 .film-coda { bottom: var(--asm, 0px); height: 70vh; height: 70svh; }
 .film-assemble { bottom: 0; height: var(--asm, 0px); }
@@ -74,19 +75,23 @@
 }
 .film.closing .stacked .beat:last-child { translate: none; scale: none; }
 
-/* The way past the film: a key at the foot of the stage (upright, at its top: the texts are at the foot) from the
-   second text on. The first text has its own two; the keyboard meets this one first, and sees it then. */
+/* The way past the film: a quiet line of small type at the foot of the stage, by its progress bar, as a player's
+   "skip" (upright, at its top: the texts are at the foot), from the second text on. No box: it is there for whoever
+   looks for it, and it comes up under the pointer or the keyboard. */
 .film-skip {
-  position: absolute; z-index: 2; right: max(var(--gutter-r), calc((100% - var(--page)) / 2 + var(--gutter-r))); bottom: var(--s-4);
-  font: 500 12px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2);
-  background: var(--plate); background: color-mix(in srgb, var(--plate) 82%, transparent);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s, border-color .15s;
+  position: absolute; z-index: 2; right: max(var(--gutter-r), calc((100% - var(--page)) / 2 + var(--gutter-r))); bottom: 14px;
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 0; text-decoration: none;
+  font: 500 11px/1 var(--f-mono); font-stretch: 87.5%; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2);
+  text-shadow: 0 0 6px var(--film-bg), 0 0 2px var(--film-bg);   /* (legible over a light part of the picture too) */
+  opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s .3s, color .15s;
 }
-.film-skip:hover { color: var(--ink); }
-.film.rolling .film-skip, .film-skip:focus-visible { opacity: 1; visibility: visible; transition-delay: 0s; }
+.film-skip span:first-child { border-bottom: 1px solid transparent; transition: border-color .15s; }
+.film.rolling .film-skip { opacity: .6; visibility: visible; transition-delay: 0s; }
+.film-skip:hover, .film-skip:focus-visible { color: var(--ink); opacity: 1; visibility: visible; transition-delay: 0s; }
+.film-skip:hover span:first-child, .film-skip:focus-visible span:first-child { border-color: currentColor; }
+.film-skip:focus-visible { outline-offset: 4px; }
 .film.plain .film-skip { display: none; }
-@media (max-aspect-ratio: 4/3) { .film-skip { bottom: auto; top: var(--s-3); } }
+@media (max-aspect-ratio: 4/3) { .film-skip { bottom: auto; top: var(--s-2); } }
 
 /* The configurator right under the film: film.js lifts it (--merge-y) so that where the stage lets go its 3D view lies
    exactly where the coda's window is. Till then it waits under the stage, unseen and out of the pointer's way; there

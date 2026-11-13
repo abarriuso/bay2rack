@@ -121,28 +121,31 @@ function wire() {
   const placeResults = () => (narrow.matches ? $('.panel').append($('.results')) : $('.workbench').after($('.results')));
   narrow.addEventListener('change', placeResults);
   placeResults();
-  // narrow screens: the header hides while scrolling down and over the full-screen configurator
-  let lastY = scrollY;
-  // (where the configurator is in the page: measured when the page changes size, never while it scrolls - a scroll
-  // reads scrollY and nothing else, on a phone as on a wide screen)
-  let wbTop = 0, wbBottom = 0;
-  const place = () => { const r = $('.workbench').getBoundingClientRect(); wbTop = r.top + scrollY; wbBottom = r.bottom + scrollY; };
-  if ('ResizeObserver' in window) {
-    const ro = new ResizeObserver(place);
-    ro.observe(document.documentElement);
-    ro.observe($('.workbench'));
-  } else addEventListener('resize', place);
-  place();
+  // narrow screens: the header hides while scrolling down and comes back scrolling up (a scroll reads scrollY and
+  // nothing else)
+  let lastY = scrollY, jumped = false;
+  addEventListener('b2r:jump', () => { jumped = true; });   // (the film moved the page's place, not the visitor)
   const head = () => {
     const y = scrollY;
     const root = document.documentElement.classList;
+    if (jumped) { jumped = false; lastY = y; return; }
     if (!narrow.matches || y < 80) { root.remove('head-off'); lastY = y; return; }
-    const inApp = wbTop - y <= 1 && wbBottom - y >= innerHeight - 1;
-    if (inApp || y > lastY + 6) root.add('head-off');
+    if (y > lastY + 6) root.add('head-off');
     else if (y < lastY - 6) root.remove('head-off');
     if (Math.abs(y - lastY) > 6) lastY = y;
   };
   addEventListener('scroll', head, { passive: true });
+  // in the configurator it is the steps that scroll, not the page: the header follows them, back as they go up (or
+  // are at their top), away as they go on - the way out is always at hand
+  const panel = $('.panel');
+  let panelY = 0;
+  panel?.addEventListener('scroll', () => {
+    if (!narrow.matches) return;
+    const y = panel.scrollTop, root = document.documentElement.classList;
+    if (y < 8 || y < panelY - 6) root.remove('head-off');
+    else if (y > panelY + 6) root.add('head-off');
+    if (Math.abs(y - panelY) > 6 || y < 8) panelY = y;
+  }, { passive: true });
   narrow.addEventListener('change', head);
   $('#download').onclick = () => S.result && h('a', { href: S.result.url, download: S.result.name }).click();
   $('#kit').onclick = () => downloadKit();
