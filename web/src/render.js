@@ -4,7 +4,7 @@ import { bomText, warnText } from './help.js';
 import { renderLegend } from './legend.js';
 import { UI, $, CALM, h, num, S, afterFrame } from './state.js';
 import { calc, modLabel, usedMods } from './model.js';
-import { viewer, engineStarted, runJob, cachedJob, readyMade, definesFor, setStatus, announce } from './engine.js';
+import { viewer, engineStarted, startEngine, runJob, cachedJob, readyMade, definesFor, setStatus, announce } from './engine.js';
 import { meshesOf } from './mesh.js';
 import { sfx } from './sound.js';
 import { renderSteps } from './steps.js';
@@ -31,7 +31,9 @@ export async function render() {
   if (S.busy) { S.dirty = true; return; }
   // (the build made ahead first, if the view has nothing yet - even with the engine ready: it is there at once)
   if (S.engine !== 'ready' || (viewer && !viewer.model && !S.aheadTried)) { S.wantRender = true; ahead(); return; }
-  if (S.aheading) { S.wantRender = true; return; }      // (the build made ahead is on its way: it renders after it)
+  // (the build made ahead is on its way: it renders after it - unless the engine is ready first, a build that does not
+  // come is not waited for)
+  if (S.aheading && S.engine !== 'ready') { S.wantRender = true; return; }
   const values = { ...S.values };
   const { ext, defs, key } = jobOf(values);
   // (the build made ahead is on screen already: nothing to do)
@@ -78,8 +80,11 @@ async function ahead() {
     await viewer.prepareScene(sceneOf(res));            // (the room around it, made a piece at a time)
   }
   if (res) await afterFrame();                          // (laid out just after a frame)
+  // (not these settings, or not come: the engine renders them - started now, whoever was to start it later)
+  else startEngine();
   S.aheading = false;
-  if (res && !S.busy && jobOf(S.values).key === key) {  // (the settings still those it was made for)
+  // (the settings still those it was made for, and the engine's own render not there before it)
+  if (res && !S.busy && !viewer.model && jobOf(S.values).key === key) {
     try {
       showResult(res, ext, values);
       S.aheadKey = key;

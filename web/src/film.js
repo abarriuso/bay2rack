@@ -865,9 +865,25 @@ export async function startFilm() {
     f('touchstart', onTouch, { passive: true });
     f('touchmove', onTouch, { passive: false });
   }
+  // The quiet line is up for a while at most: a 3D view that has not the build by then (a slow GPU, a build that did
+  // not come) is not waited for any more - the film gives way to the page as it is, the engine renders the PC there.
+  const LATE_MS = HOLD_MS;
+  let lateT = 0;
   function waiting(a) {
     const on = a > 0 && !merged && !assembly && !failed && firstLook();
     if (on !== root.classList.contains('waiting')) root.classList.toggle('waiting', on);
+    if (on && !lateT) lateT = setTimeout(late, LATE_MS);
+  }
+  function late() {
+    lateT = 0;
+    if (assembly || failed || !firstLook()) return;
+    if (!root.classList.contains('waiting')) return;        // (gone back up meanwhile: the wait starts anew there)
+    failed = true;
+    unheld = true;
+    block(false);
+    waiting(0);
+    prepare();
+    measure();
   }
   function ready3d() {
     measure();
@@ -895,10 +911,10 @@ export async function startFilm() {
       // (each heavy step in a pause of the scroll: the build taken apart onto the table, then its first draw)
       // (each step a few ms at a time, after a frame: the film's scroll goes on as smooth meanwhile)
       assembler().then(async (mod) => { await afterFrame(); return mod.fromTable(v, pictureRect(), viewBox()); }).then(async (a) => {
-        if (!a || !firstLook() || v.model !== model || v.model !== a.model) { a?.finish(); return; }
+        if (!a || failed || !firstLook() || v.model !== model || v.model !== a.model) { a?.finish(); return; }
         await afterFrame();
         await v.warm();
-        if (!firstLook() || v.model !== model) { a.finish(); return; }
+        if (failed || !firstLook() || v.model !== model) { a.finish(); return; }
         assembly = a;
         root.classList.add('live3d');
         stage3d();
