@@ -24,7 +24,7 @@
 // the PC from it (assemble.js). The configurator is right under the stage, its 3D view where the coda's window is:
 // there the film gives way to it, built.
 import './css/film-extra.css';
-import { $, BASE, CALM, NARROW, S, afterFrame, atRest as quiet } from './state.js';
+import { $, BASE, CALM, NARROW, S, afterFrame, atRest as quiet, stillInput } from './state.js';
 import { viewer, startEngine, startViewer, fetchFirst } from './engine.js';
 import { glAhead } from './gl-ahead.js';
 import { bars, barsFilm, barsFrame, studio } from './bars.js';
@@ -608,6 +608,7 @@ export async function startFilm() {
     if (keep) return;                                       // (the sizes are changing: see above)
     const prev = lastY;
     lastY = scrollY;
+    if (blocking && !holds()) block(false);
     if (held(prev)) {
       dispatchEvent(new Event('b2r:jump'));                // (held back, not scrolled up: the header stays away - main.js)
       scrollTo({ top: holdY(), behavior: 'instant' });
@@ -826,14 +827,43 @@ export async function startFilm() {
     if (!heldAt) {
       if (prev > h + 1 || lastY - prev > innerHeight) return false;
       heldAt = performance.now();
+      early();
     }
     if (performance.now() - heldAt > HOLD_MS) { unheld = true; return false; }
+    block(true);
     if (TOUCH) {
       document.documentElement.classList.add('held');
       clearTimeout(heldT);
       heldT = setTimeout(() => document.documentElement.classList.remove('held'), 160);
     }
     return true;
+  }
+  // While it holds, the wheel and a finger do not take the page on down at all: moved and put back, the page would
+  // never be at rest, and the 3D view's heavy steps wait for a rest (state.js) - the hold would keep it from coming.
+  // (Listened to only then: a listener that can stop them costs every scroll a wait on the page.)
+  let blocking = false, fingerY = null;
+  const holds = () => {
+    if (unheld || assembly || failed || merged || !heldAt || scrollY < holdY() - 2) return false;
+    if (performance.now() - heldAt > HOLD_MS) { unheld = true; return false; }
+    return true;
+  };
+  const onWheel = (e) => { if (!holds()) block(false); else if (e.deltaY > 0) e.preventDefault(); };
+  const onTouch = (e) => {
+    const y = e.touches[0]?.clientY;
+    if (e.type === 'touchstart' || y == null) { fingerY = y ?? null; return; }
+    if (!holds()) { block(false); return; }
+    if (fingerY != null && y < fingerY) e.preventDefault();     // (a finger going up: the page would go down)
+    fingerY = y;
+  };
+  function block(on) {
+    if (on === blocking) return;
+    blocking = on;
+    stillInput(on);
+    fingerY = null;
+    const f = on ? addEventListener : removeEventListener;
+    f('wheel', onWheel, { passive: false });
+    f('touchstart', onTouch, { passive: true });
+    f('touchmove', onTouch, { passive: false });
   }
   function waiting(a) {
     const on = a > 0 && !merged && !assembly && !failed && firstLook();

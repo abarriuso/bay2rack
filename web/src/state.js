@@ -73,9 +73,11 @@ export const CALM = matchMedia('(prefers-reduced-motion: reduce)');       // mot
 // The page at rest: the heavy steps of the 3D view (its start, a model laid out, its first draw - each holds the page
 // for a moment) wait for a pause in the visitor's scroll, so a scroll seldom stutters on them; never more than `most`
 // ms (a scroll that does not stop still gets its 3D view in time).
-let moved = 0;
+let moved = 0, still = false;
 for (const e of ['scroll', 'wheel', 'touchstart', 'touchmove'])
-  addEventListener(e, () => { moved = performance.now(); }, { passive: true, capture: true });
+  addEventListener(e, () => { if (!still || e === 'scroll') moved = performance.now(); }, { passive: true, capture: true });
+// the page held still (film.js: the 3D view on its way): a wheel or a finger on it moves nothing - not a scroll
+export function stillInput(on) { still = on; }
 export function atRest(quiet = 150, most = 900) {
   const t0 = performance.now();
   return new Promise((ok) => {
