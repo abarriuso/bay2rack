@@ -219,7 +219,6 @@ button:disabled { opacity: .45; cursor: default; }
 
 /* ------------------------------------------------------------ sections */
 .band { padding-block: clamp(40px, 7vh, 88px); }
-.band.alt { background: var(--plate); border-block: 1px solid var(--rule); }
 .wrap { max-width: var(--page); margin: 0 auto; padding-inline: var(--gutter-l) var(--gutter-r); }
 .section-head {
   display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); align-items: end; gap: var(--s-4) var(--s-7);
@@ -322,9 +321,9 @@ button:disabled { opacity: .45; cursor: default; }
 .step:first-child { border-top: 0; padding-top: 4px; }
 /* a step you can leave as it is: one line with its setting, open it to change it */
 .step.fold > summary { display: flex; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
-.step.fold > summary > h4 { flex: 0 0.2 auto; min-width: 0; }
 .step.fold > summary::-webkit-details-marker { display: none; }
-.step.fold > summary :is(h3, h4) { flex: 0 1 auto; }
+/* the title gives way to the summary beside it, never below its longest word */
+.step.fold > summary > :is(h3, h4) { flex: 0 1 auto; min-width: min-content; }
 .step.fold > summary::after { content: '▸'; flex: none; color: var(--ink-3); margin-left: auto; transition: transform .15s; }
 .step.fold[open] > summary::after { transform: rotate(90deg); }
 .step.fold[open] > summary { margin-bottom: var(--s-3); }
@@ -367,7 +366,7 @@ button:disabled { opacity: .45; cursor: default; }
 
 .seg { display: flex; flex-wrap: wrap; background: var(--plate-2); border: 1px solid var(--edge); border-radius: var(--r-s); padding: 3px; gap: 3px; }
 .seg-btn {
-  flex: 1; min-width: 40px; border: 0; background: transparent; border-radius: 2px; padding: 7px 8px;
+  flex: 1 0 auto; min-width: 40px; border: 0; background: transparent; border-radius: 2px; padding: 7px 8px;
   cursor: pointer; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; transition: background .15s, color .15s;
 }
 .seg-btn:hover { color: var(--ink); }
@@ -404,9 +403,10 @@ button:disabled { opacity: .45; cursor: default; }
 }
 
 .rows { display: grid; gap: 6px; }
-.row { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; }
-.row .u { font: 600 12px/1.25 var(--f-mono); font-stretch: 87.5%; color: var(--ink-3); }
-.select { width: 100%; min-width: 0; padding: 7px 28px 7px 10px; border: 1px solid var(--edge); border-radius: var(--r-s); background: var(--plate-2); color: var(--ink);
+.row { display: grid; grid-template-columns: 46px minmax(0, 1fr); align-items: center; gap: 8px; }
+.row .u { min-width: 0; font: 600 12px/1.25 var(--f-mono); font-stretch: 87.5%; color: var(--ink-3); overflow-wrap: anywhere; }
+.row .u small { display: block; font: inherit; font-weight: 500; font-size: 11px; opacity: 0.8; }
+.select { width: 100%; min-width: 0; text-overflow: ellipsis; padding: 7px 28px 7px 10px; border: 1px solid var(--edge); border-radius: var(--r-s); background: var(--plate-2); color: var(--ink);
   -webkit-appearance: none; appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(-45deg, transparent 50%, var(--ink-3) 50%);
   background-size: 5px 5px; background-position: right 15px center, right 10px center; background-repeat: no-repeat; }
 .zone { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--rule); border-radius: var(--r-s); background: var(--plate-2); }
@@ -419,7 +419,7 @@ button:disabled { opacity: .45; cursor: default; }
 .zone .chip.active.misfit { background: var(--warn); border-color: var(--warn); }
 .split { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .split input[type=range] { width: 100%; accent-color: var(--key); }
-.tray { display: grid; gap: 4px; margin: -2px 0 6px 84px; }
+.tray { display: grid; gap: 4px; margin: -2px 0 6px 54px; }
 .tray-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; }
 .tray-slots .select { padding: 5px 8px; font-size: 13px; }
 
@@ -470,6 +470,8 @@ button:disabled { opacity: .45; cursor: default; }
 .sec summary::after { content: "+"; color: var(--ink-3); font-family: var(--f-mono); }
 .sec[open] > summary::after { content: "–"; }
 .param { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 150px); gap: 8px; align-items: center; padding: 3px 2px 7px; cursor: help; }
+/* a list, a text or a set of numbers of the advanced form under its name, the whole width: they are long */
+.advanced-form .param:has(> :is(.sel-face, .text, .vec)) { grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .param .name { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .param.modified .name::after { content: " •"; color: var(--signal); font-weight: 700; }
 .param input[type=checkbox] { justify-self: end; width: 18px; height: 18px; accent-color: var(--key); }
@@ -477,7 +479,11 @@ button:disabled { opacity: .45; cursor: default; }
 .param .num, .param .text, .param .select, .dim .num { font-size: 13.5px; }
 .param .num, .param .text { width: 100%; padding: 5px 8px; border: 1px solid var(--edge); border-radius: var(--r-s); background: var(--plate-2); text-align: right; font-variant-numeric: tabular-nums; }
 .param .text { text-align: left; }
-.slider { display: grid; grid-template-columns: minmax(0, 1fr) 56px; gap: 6px; align-items: center; }
+.slider { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 6px; align-items: center; }
+.param:has(> .slider) { grid-template-columns: minmax(0, 1fr) minmax(0, 210px); }   /* (a slider long enough to slide) */
+/* the slider beside it steps the number: no spin buttons taking the room of its digits */
+.slider .num { -moz-appearance: textfield; appearance: textfield; }
+.slider .num::-webkit-inner-spin-button, .slider .num::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .slider input[type=range] { width: 100%; accent-color: var(--key); }
 
 .stage { min-width: 0; min-height: 0; }
@@ -500,7 +506,19 @@ button:disabled { opacity: .45; cursor: default; }
 .tab:hover:not(:disabled) { color: var(--ink); }
 .tab.active { background: var(--key); color: var(--key-ink); border-color: var(--key); }
 .tab-sub { flex: none; }
-.tab-sub .select { width: auto; max-width: 260px; padding: 5px 10px; background: var(--plate); }
+.tab-sub .select { width: auto; max-width: 260px; padding: 5px 28px 5px 10px; background: var(--plate); }
+@media (min-width: 900px) { .tab-sub .select { max-width: 480px; } }
+/* a list's chosen choice shown over it, cut with an ellipsis where it does not fit (Safari cuts a list's own text
+   mid-letter): widgets.js faced() */
+.sel-face { position: relative; display: block; min-width: 0; }
+.sel-face > .select { color: transparent; }
+.sel-face > .select option { color: var(--ink); }
+.sel-face > .face {
+  position: absolute; left: 11px; right: 28px; top: 50%; translate: 0 -50%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+  color: var(--ink); pointer-events: none;
+}
+.param .sel-face > .face { font-size: 13.5px; }
+@media (forced-colors: active) { .sel-face > .face { display: none; } .sel-face > .select { color: CanvasText; } }
 .vx-corner { display: none; }
 .floatbar { position: absolute; z-index: 2; left: 10px; right: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .floatbar .pill { background: var(--plate); background: color-mix(in srgb, var(--plate) 88%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
@@ -734,7 +752,8 @@ button:disabled { opacity: .45; cursor: default; }
   .top-actions .btn.small { display: none; }
   .legend { font-size: 12px; padding: 6px 8px; gap: 2px; }
   .gallery { grid-auto-columns: 82%; }
-  .param { grid-template-columns: minmax(0, 1fr) 128px; }
+  .param { grid-template-columns: minmax(0, 1fr) 148px; }
+  .param:has(> .slider) { grid-template-columns: minmax(0, 1fr); gap: 4px; }   /* (the slider under its name: long enough to slide) */
   /* the bar over the 3D view is one row: the note that a render is done (and how long it took) is not said here,
      only that one is under way or went wrong */
   .floatbar { gap: 4px; left: 8px; right: 8px; bottom: 8px; flex-wrap: nowrap; }
@@ -747,7 +766,6 @@ button:disabled { opacity: .45; cursor: default; }
   .status { font-size: 12px; padding: 6px 8px; }
   .viewer .legend { display: none; }
   .case-name { display: none; }
-  .row { grid-template-columns: 78px minmax(0, 1fr); }
   .tray { margin-left: 0; }
   .tray-slots { grid-template-columns: minmax(0, 1fr); }
   /* the warnings badge shows only its count, so the bar over the 3D view stays one row */
@@ -759,7 +777,7 @@ button:disabled { opacity: .45; cursor: default; }
 /* ------------------------------------------------------------ touch screens */
 @media (pointer: coarse) {
   /* 16 px text in the fields: Safari on iPhone zooms in on anything smaller */
-  input, select, textarea, .param .num, .param .text, .param .select, .dim .num, .port-name, .tray-slots .select { font-size: 16px; }
+  input, select, textarea, .param .num, .param .text, .param .select, .dim .num, .port-name, .tray-slots .select, .sel-face > .face, .param .sel-face > .face { font-size: 16px; }
   /* targets a finger can hit (44 px), with the visible size kept where the layout is tight */
   .chip, .seg-btn, .tab, .pill, .file, .tray-slots .select, .select { min-height: 44px; }
   .chips.small .chip { min-height: 40px; }

@@ -37,6 +37,18 @@ export function select(param, options, current, onPick) {
   return sel;
 }
 
+// A list with long choices, its chosen one shown by a face over it: cut with an ellipsis where it does not fit (Safari
+// cuts a list's own text mid-letter). The list stays the control - the taps, the keys, the screen reader; its own text
+// is clear. Its value set from outside: sel.setValue(x).
+export function faced(sel) {
+  const face = h('span', { className: 'face', 'aria-hidden': 'true' });
+  const show = () => { face.textContent = sel.selectedOptions[0]?.textContent ?? ''; };
+  sel.addEventListener('change', show);
+  sel.setValue = (x) => { sel.value = x; show(); };
+  show();
+  return h('span', { className: 'sel-face' }, sel, face);
+}
+
 // a switch; `hint`, a line under its name
 export function toggle(label, on, set, hint = '') {
   return h('label', { className: 'toggle' },

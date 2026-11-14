@@ -5,7 +5,7 @@ import { paramLabel, paramHelp, optionLabel } from './help.js';
 import { BASE, VIEW_ONLY, $, h, num, S } from './state.js';
 import { calc, modKind, modItems, DEVICE_MODS, modLabel } from './model.js';
 import { update } from './edit.js';
-import { tipOf } from './widgets.js';
+import { tipOf, faced } from './widgets.js';
 import { schedule } from './render.js';
 import { numbered, ownIndex, kitList } from './kit.js';
 
@@ -67,7 +67,7 @@ export function renderTabs() {
       onchange: () => update({ ...pieces[Number(sel.value)].part }) },
       pieces.map((f, i) => h('option', { value: i, textContent: pieceLabel(f, v) })));
     sel.value = String(Math.max(0, current));
-    sub = sel;
+    sub = faced(sel);
   }
   $('#tabs').replaceChildren(...tabs, ...(sub ? [h('span', { className: 'tab-sub' }, sub)] : []));
   $('#download').textContent = mounted ? t('downloadPreview') : `${t('downloadPart')} (.stl)`;
@@ -76,10 +76,11 @@ export function renderTabs() {
 // ---------------------------------------------------------------- advanced mode (every parameter)
 export function control(p) {
   const set = (val) => update({ [p.name]: val });
-  let input;
+  let input, field = null;
   if (p.widget === 'select') {
     input = h('select', { className: 'select' }, p.options.map((o) => h('option', { value: o.value, textContent: optionLabel(p, o) })));
     input.onchange = () => set(p.type === 'number' ? Number(input.value) : input.value);
+    field = faced(input);                                   // (its choices are long: a face shows the chosen one)
   } else if (p.widget === 'check') {
     input = h('input', { type: 'checkbox', onchange: () => set(input.checked) });
   } else if (p.widget === 'slider') {
@@ -105,7 +106,7 @@ export function control(p) {
   input.setValue ??= (x) => { if (p.widget === 'check') input.checked = x; else input.value = x; };
   p.input = input;
   return h('label', { className: 'param', dataset: { tip: paramHelp(p) || undefined, tipTitle: `${paramLabel(p)}  ·  ${p.name}` } },
-    h('span', { className: 'name', textContent: paramLabel(p) }), input);
+    h('span', { className: 'name', textContent: paramLabel(p) }), field ?? input);
 }
 
 export function buildAdvanced() {

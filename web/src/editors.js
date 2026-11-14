@@ -108,7 +108,8 @@ export function contentsEditor(placed) {
     // (the row and what opens under it point at this unit in the 3D view: steps.js)
     const hl = 'unit:' + k;
     const row = h('label', { className: 'row', dataset: { tip: tipOf('mod:' + kind), hl } },
-      h('span', { className: 'u', textContent: p.top === 0 ? `${u}\u00a0·\u00a0${t('top')}` : u }),
+      // (the top unit says so under its number: beside it, it would not fit the column in every language)
+      h('span', { className: 'u' }, u, p.top === 0 && h('small', { textContent: t('top') })),
       // a 2U / 3U module is only offered where its units are left
       select(null, MODULES.map((x) => [x, modU(x) > units - p.top ? `${t('mod_' + x)} ${t('needsU', { n: modU(x) })}` : t('mod_' + x), modU(x) > units - p.top]),
         kind, (val) => set(k, TRAYS[val] ? `${val}:${TRAYS[val].def}`
