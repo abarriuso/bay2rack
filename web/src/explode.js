@@ -7,7 +7,8 @@
 import * as THREE from 'three';
 import { piecesKnown } from './mesh.js';
 
-const HARDWARE = new Set(['steel', 'zinc', 'brass']);
+// the materials of the screws, nuts and inserts (assemble.js too)
+export const HARDWARE = new Set(['steel', 'zinc', 'brass']);
 const ZETA = 0.6;                    // damping ratio: a slight overshoot (about 9 %)
 const EPS = 1e-4;
 
@@ -97,6 +98,24 @@ export function subset(geo, keep, count) {
   return out;
 }
 
+// a mesh cut into one mesh a key: the key of each of its pieces (keyOf, the pieces' tri from pieces()); each mesh with
+// its key to `add` - the mesh itself if it is all one key, else its parts in its place (assemble.js too)
+export function cutByKey(m, tri, keyOf, add) {
+  const keys = [...new Set(keyOf)];
+  if (keys.length === 1) { add(m, keys[0]); return; }
+  for (const key of keys) {
+    const keep = new Uint8Array(tri.length);
+    let count = 0;
+    for (let t = 0; t < tri.length; t++) if (keyOf[tri[t]] === key) { keep[t] = 1; count++; }
+    const sub = new THREE.Mesh(subset(m.geometry, keep, count), m.material);
+    sub.castShadow = m.castShadow; sub.receiveShadow = m.receiveShadow;
+    m.parent.add(sub);
+    add(sub, key);
+  }
+  m.parent.remove(m);
+  m.geometry.dispose();
+}
+
 // (a part is home below OUT of its way out, and has left past AWAY: apart, so that a spring's wobble is one sound)
 const OUT = 0.02, AWAY = 0.08;
 
@@ -172,8 +191,7 @@ export class Explode {
       const mat = m.material.name;
       const { tri, boxes } = pieces(m.geometry);
       const keyOf = (HARDWARE.has(mat) ? fasteners(boxes) : boxes).map((b) => classify(b, mat));
-      const keys = [...new Set(keyOf)];
-      const add = (mesh, key) => {
+      cutByKey(m, tri, keyOf, (mesh, key) => {
         if (key === 'stay') return;
         let g = this.groups.get(key);
         if (!g) {
@@ -183,22 +201,7 @@ export class Explode {
           this.groups.set(key, g);
         }
         g.meshes.push(mesh);
-        mesh.userData.part = key;
-      };
-      if (keys.length === 1) { add(m, keys[0]); continue; }
-      // one mesh a part: the same material, its triangles split
-      for (const key of keys) {
-        const keep = new Uint8Array(tri.length);
-        let count = 0;
-        for (let t = 0; t < tri.length; t++) if (keyOf[tri[t]] === key) { keep[t] = 1; count++; }
-        const sub = new THREE.Mesh(subset(m.geometry, keep, count), m.material);
-        sub.castShadow = m.castShadow; sub.receiveShadow = m.receiveShadow;
-        sub.userData.part = key;
-        m.parent.add(sub);
-        add(sub, key);
-      }
-      m.parent.remove(m);
-      m.geometry.dispose();
+      });
     }
     // the parts take the slider's current place at once (a new result while it is apart: no animation)
     for (const key of this.groups.keys()) if (!this.state.has(key)) this.state.set(key, { s: this.target, vel: 0, home: this.target < OUT });

@@ -8,13 +8,12 @@
 // top first, each one's screws after it; the cables plug in. The camera meanwhile rises from the table to the
 // configurator's own view. Every moment is a pose of the scroll (at(p), p 0..1): back up, it comes apart again.
 import * as THREE from 'three';
-import { pieces, fasteners, subset } from './explode.js';
+import { pieces, fasteners, cutByKey, HARDWARE } from './explode.js';
 import { sfx, softly } from './sound.js';
 import { BASE, afterFrame } from './state.js';
 
 // the bare table sees this much more than the film's last frame, about the same centre (scroll.py PLATE_OVERSCAN)
 export const PLATE_OVERSCAN = 1.5;
-const HARDWARE = new Set(['steel', 'zinc', 'brass']);
 const clamp01 = (t) => Math.min(1, Math.max(0, t));
 const seg = (p, a, b) => clamp01((p - a) / (b - a));
 const inOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -94,20 +93,7 @@ async function split(v, T) {
     if (v.model !== model || !m.parent) return parts;      // (another build came meanwhile: fromTable lets it be)
     const mat = m.material.name;
     const { tri, boxes } = pieces(m.geometry);
-    const keyOf = (HARDWARE.has(mat) ? fasteners(boxes) : boxes).map((b) => classify(b, mat));
-    const keys = [...new Set(keyOf)];
-    if (keys.length === 1) { add(m, keys[0]); continue; }
-    for (const key of keys) {
-      const keep = new Uint8Array(tri.length);
-      let count = 0;
-      for (let t = 0; t < tri.length; t++) if (keyOf[tri[t]] === key) { keep[t] = 1; count++; }
-      const sub = new THREE.Mesh(subset(m.geometry, keep, count), m.material);
-      sub.castShadow = m.castShadow; sub.receiveShadow = m.receiveShadow;
-      m.parent.add(sub);
-      add(sub, key);
-    }
-    m.parent.remove(m);
-    m.geometry.dispose();
+    cutByKey(m, tri, (HARDWARE.has(mat) ? fasteners(boxes) : boxes).map((b) => classify(b, mat)), add);
   }
   return parts;
 }

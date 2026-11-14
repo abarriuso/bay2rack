@@ -450,10 +450,6 @@ function networkCard(g0, ports, x0, len, zc, d) {
   g.add(box(xr - 5, d - 168, zc - 7.5, 5, 90, 4.6, MAT.gold()));       // edge connector in the x8 slot
 }
 
-export function buildCase(c) {
-  const it = caseSteps(c);
-  for (;;) { const r = it.next(); if (r.done) return r.value; }
-}
 // the case a part at a time (a yield between them: the page's 3D view builds it over a few frames - viewer.js)
 export function* caseSteps(c) {
   const st = c.style === 'sleeper' ? CASE_STYLES.sleeper : CASE_STYLES[c.id] ?? CASE_STYLES.obsidian750d;
