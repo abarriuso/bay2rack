@@ -73,7 +73,9 @@ const fontAhead = () => ({
 
 // The site's Content-Security-Policy (into _headers, Cloudflare Pages): everything from the site itself - no other
 // origin can be loaded, framed or sent to - OpenSCAD's WebAssembly, and the page's own inline scripts by their hash
-// (the theme before the first paint and the film's still; the film's list of frames is data, not a script).
+// (the theme before the first paint and the film's still; the film's list of frames is data, not a script). The one
+// other origin: Cloudflare's Web Analytics, which Pages writes into every page - its script, and where it reports to
+// (developers.cloudflare.com/fundamentals/reference/policies-compliances/content-security-policies).
 function csp(pages) {
   const hashes = new Set();
   for (const html of pages)
@@ -82,11 +84,11 @@ function csp(pages) {
         hashes.add(`'sha256-${createHash('sha256').update(code).digest('base64')}'`);
   return [
     "default-src 'self'",
-    `script-src 'self' 'wasm-unsafe-eval' ${[...hashes].join(' ')}`,
+    `script-src 'self' 'wasm-unsafe-eval' ${[...hashes].join(' ')} https://static.cloudflareinsights.com`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://cloudflareinsights.com",
     "worker-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
