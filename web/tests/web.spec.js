@@ -247,6 +247,7 @@ test('a link to the builds goes through the film to them', async ({ page }) => {
 // The wheel that brought the page down through the build goes on a moment after it arrives (a trackpad's glide): the
 // page stays square on the configurator - it once went on under the header - and the 3D view is not zoomed away by it.
 test('a wheel into the configurator stops at it', async ({ page }) => {
+  test.slow();                                              // (each wheel waits on a frame: slow under CI's software GL)
   const errors = watchErrors(page);
   await page.goto('/');
   await expect(page.locator('#film')).toHaveClass(/live/);
@@ -259,9 +260,9 @@ test('a wheel into the configurator stops at it', async ({ page }) => {
   await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
   await page.mouse.move(900, 450);                          // (over where the 3D view will be)
   const merged = () => page.evaluate(() => document.querySelector('#film').classList.contains('merged'));
-  for (let i = 0; i < 1500 && !(await merged()); i++) { await page.mouse.wheel(0, 40); await page.waitForTimeout(16); }
+  for (let i = 0; i < 750 && !(await merged()); i++) { await page.mouse.wheel(0, 80); await page.waitForTimeout(16); }
   expect(await merged()).toBe(true);
-  for (let i = 0; i < 25; i++) { await page.mouse.wheel(0, 40); await page.waitForTimeout(16); }
+  for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, 80); await page.waitForTimeout(16); }
   const off = await page.evaluate(() => {
     const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
     return Math.abs(w.top - v.top);
