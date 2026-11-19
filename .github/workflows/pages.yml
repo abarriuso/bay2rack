@@ -6,7 +6,7 @@ name: Web generator mirror (GitHub Pages)
 on:
   push:
     branches: [main]
-    paths: [web/**, src/**, stl/**, docs/img/**, docs/gallery/**, docs/video/**, .github/workflows/pages.yml]
+    paths: [web/**, src/**, stl/**, docs/img/**, docs/gallery/**, docs/scroll/**, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions:
@@ -36,6 +36,8 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          SITE_ROOT: /${{ github.event.repository.name }}/   # (the 404 page's links: the mirror is one folder down)
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist
