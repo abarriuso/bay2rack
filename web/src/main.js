@@ -61,7 +61,8 @@ function applyTheme(th, chosen = false) {
   if (chosen) try { localStorage.setItem('theme', th); } catch { /* private mode */ }
 }
 
-function wire() {
+// what needs nothing of the model: the tips, the icons and the theme key (on at once, before the configurator's files)
+function chrome() {
   initTooltips($('#tip'));
   for (const el of document.querySelectorAll('[data-icon]')) el.innerHTML = ICONS[el.dataset.icon] ?? '';
   applyTheme(storedTheme() ?? (systemDark.matches ? 'dark' : 'light'));
@@ -71,6 +72,9 @@ function wire() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     themeSwitch(() => applyTheme(next, true), e.currentTarget);
   };
+}
+
+function wire() {
   $('#lang').onclick = () => {
     langSwap();                                   // (the words of the other language come in: motion.js)
     setLang(lang === 'es' ? 'en' : 'es');
@@ -273,11 +277,31 @@ async function boot() {
   langKey();
   langPath();
   applyI18n();
-  const [src, presets, catalog] = await Promise.all([
-    fetch(BASE + 'scad/bay2rack.scad').then((r) => r.text()),
-    fetch(BASE + 'scad/bay2rack.json').then((r) => r.json()),
-    fetch(BASE + 'stl/index.json').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  // The configurator's files, at a low priority: the page above it - the film and its pictures - needs none of them,
+  // and starts at once (it lays out what it restores of a reload once the page is all there: pageReady).
+  const get = (path, as) => fetch(BASE + path, { priority: 'low' }).then((r) => {
+    if (!r.ok) throw new Error(`${path}: ${r.status}`);    // (a missing file is the host's 404 page, not the model)
+    return r[as]();
+  });
+  const files = Promise.all([
+    get('scad/bay2rack.scad', 'text'),
+    get('scad/bay2rack.json', 'json'),
+    get('stl/index.json', 'json').catch(() => null),
   ]);
+  let pageIsReady = null;
+  const pageReady = new Promise((ok) => { pageIsReady = ok; });
+  chrome();
+  startFilm(pageReady);
+  let src, presets, catalog;
+  try {
+    [src, presets, catalog] = await files;
+  } catch (e) {
+    // (no model, no configurator: the rest of the page still works, and says so where the build would be)
+    console.warn(e);
+    setStatus(t('modelError', { e: e.message }), 'error');
+    pageIsReady();
+    return;
+  }
   S.scadSum = sumOf(src);                                // (the build made ahead is only for this model: engine.js)
   S.sections = parseCustomizer(src);
   for (const s of S.sections) for (const p of s.params) { S.params[p.name] = p; S.defaults[p.name] = p.value; }
@@ -292,7 +316,7 @@ async function boot() {
   refresh();
   renderGallery();
   wireGallery();
-  startFilm();
+  pageIsReady();
   // the titles (and the name in the foot) come up as they scroll into view, their headings opening wide (motion.js)
   if (!CALM.matches && 'IntersectionObserver' in window) {
     const waiting = new WeakSet();
@@ -317,6 +341,8 @@ async function boot() {
   if ('serviceWorker' in navigator && !import.meta.env.DEV)
     addEventListener('load', () => navigator.serviceWorker.register(BASE + 'sw.js').catch(() => {}), { once: true });
   S.wantRender = true;
+  // (the film may have started the 3D view before the model was here: its first build now)
+  if (viewer) render();
   // the engine and the 3D view: with settings in the link at once, otherwise when the configurator is near
   if (/=/.test(location.hash)) startEngine();
   else {

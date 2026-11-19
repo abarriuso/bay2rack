@@ -2,8 +2,7 @@
 // The .wasm is compiled once; every render gets a fresh OpenSCAD instance
 // (a program's main() can only run once per instance).
 
-const FONTS = ['LiberationSans-Regular.ttf', 'LiberationSans-Bold.ttf',
-               'LiberationSans-Italic.ttf', 'LiberationSans-BoldItalic.ttf'];
+const FONTS = ['LiberationSans-Regular.ttf', 'LiberationSans-Bold.ttf'];   // (the model uses no italics: fills.scad)
 const FONTS_CONF = '<?xml version="1.0"?>\n<!DOCTYPE fontconfig SYSTEM "fonts.dtd">\n'
                  + '<fontconfig><dir>/fonts</dir></fontconfig>\n';
 
@@ -28,13 +27,23 @@ async function loadSources(base) {
   return [['bay2rack.scad', main], ...(await Promise.all(libs.map(async (l) => [l, await get(l)])))];
 }
 
-async function init(base) {
+async function loadFonts(base) {
+  return Promise.all(FONTS.map(async (f) => {
+    const r = await fetch(base + 'openscad/fonts/' + f);
+    if (!r.ok) throw new Error(`cannot load ${f}`);       // (a missing file is the host's 404 page, not a font)
+    return [f, new Uint8Array(await r.arrayBuffer())];
+  }));
+}
+
+// shared: what another engine has already (the kit's engines get the first one's): the compiled WebAssembly - 11 MB
+// not fetched and compiled again - the fonts and the model
+async function init(base, shared) {
   const t0 = performance.now();
   const [mod, wasm, fonts, sources] = await Promise.all([
     import(/* @vite-ignore */ base + 'openscad/openscad.js'),
-    compileWasm(base + 'openscad/openscad.wasm'),
-    Promise.all(FONTS.map(async (f) => [f, new Uint8Array(await (await fetch(base + 'openscad/fonts/' + f)).arrayBuffer())])),
-    loadSources(base),
+    shared?.wasm instanceof WebAssembly.Module ? shared.wasm : compileWasm(base + 'openscad/openscad.wasm'),
+    shared?.fonts ?? loadFonts(base),
+    shared?.sources ?? loadSources(base),
   ]);
   return { OpenSCAD: mod.default, wasm, fonts, sources, ms: performance.now() - t0 };
 }
@@ -86,9 +95,12 @@ async function run({ id, defines, out }) {
 
 self.onmessage = async ({ data: msg }) => {
   if (msg.type === 'init') {
-    ready = init(msg.base);
-    ready.then((c) => self.postMessage({ type: 'ready', ms: c.ms }),
-               (e) => self.postMessage({ type: 'error', message: String(e?.message ?? e) }));
+    ready = init(msg.base, msg.shared);
+    ready.then((c) => {
+      // (the compiled module goes along for the kit's engines; a browser that cannot send one: they compile their own)
+      try { self.postMessage({ type: 'ready', ms: c.ms, shared: { wasm: c.wasm, fonts: c.fonts, sources: c.sources } }); }
+      catch { self.postMessage({ type: 'ready', ms: c.ms }); }
+    }, (e) => self.postMessage({ type: 'error', message: String(e?.message ?? e) }));
   } else if (msg.type === 'run') {
     try {
       await run(msg);

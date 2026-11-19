@@ -5,9 +5,9 @@ name: Web tests
 on:
   push:
     branches: [main]
-    paths: [web/**, src/**, stl/**, .github/workflows/web.yml]
+    paths: [web/**, src/**, stl/**, docs/scroll/**, docs/gallery/**, .github/workflows/web.yml]
   pull_request:
-    paths: [web/**, src/**, stl/**, .github/workflows/web.yml]
+    paths: [web/**, src/**, stl/**, docs/scroll/**, docs/gallery/**, .github/workflows/web.yml]
   workflow_dispatch:
 
 jobs:

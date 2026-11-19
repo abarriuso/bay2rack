@@ -32,6 +32,21 @@ import { sfx, softly, drift, audible, setSound, soundOn } from './sound.js';
 import { t } from './i18n.js';
 
 const pad = (n) => String(n).padStart(4, '0');
+// No film (the plain page: a still and the texts): reduced motion, data saving, a slow network (a film is a few MB of
+// pictures), or a screen too short for a stage (a page zoomed to 400 %)
+const SLOW = ['slow-2g', '2g', '3g'];
+const noFilm = () => CALM.matches || !!navigator.connection?.saveData || SLOW.includes(navigator.connection?.effectiveType)
+  || matchMedia('(max-height: 300px)').matches;
+// film.json: written into the page by the build (vite.config.js), so the film needs no request before its first
+// pictures; asked for only where it is not (the dev server without frames, an old page)
+const filmMeta = (() => {
+  if (noFilm()) return Promise.resolve(null);
+  try {
+    const j = JSON.parse(document.getElementById('filmMeta')?.textContent ?? '');
+    if (j?.sizes?.length) return Promise.resolve(j);
+  } catch { /* (not in the page) */ }
+  return fetch(BASE + 'scroll/film.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+})();
 // a reload, or back to this page: where it was, kept by the film (see the end of startFilm)
 const back = (() => { try { const f = history.state?.film; return f && Number.isFinite(f.y) ? f : null; } catch { return null; } })();
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
@@ -61,13 +76,16 @@ const FINE_AHEAD = 140, FINE_BEHIND = 40, FINE_FIRST = 36;
 // visitor already this far into the film has the 3D view started anyway (VIEW_AT), the pictures in or not.
 const VIEW_AT = 0.3;
 
-export async function startFilm() {
+// pageReady: the page all there (main.js: the configurator and the builds laid out) - what restores the place of a
+// reload waits for it, the film itself does not
+export async function startFilm(pageReady = Promise.resolve()) {
   const root = $('#film');
   if (!root) return;
   const still = root.querySelector('.film-still');
-  // the still of the theme in use (the page ships the dark one; the light theme has its own film)
+  // the still of the theme in use (the page's script in its head chose it: index.html; the light theme has its own film)
+  const stillV = /\?v=\w+/.exec(still?.getAttribute('src') ?? '')?.[0] ?? '';   // (the page's version of it: one download)
   const showStill = (dir) => {
-    const src = `${BASE}scroll/${themeNow()}/${dir}/0001.webp`;
+    const src = `${BASE}scroll/${themeNow()}/${dir}/0001.webp${stillV}`;
     if (still && still.src !== src) still.src = src;
   };
   const plain = () => {
@@ -75,17 +93,16 @@ export async function startFilm() {
     showStill('960');
     // (the place kept by a film that ran before - motion allowed then: this page has another length; the configurator
     // if the visitor was in it, else that place as near as it is)
-    if (back) {
+    if (back) pageReady.then(() => {
       try { history.scrollRestoration = 'auto'; } catch { /* (old browser) */ }
       if (back.built) $('#configurator')?.scrollIntoView({ behavior: 'instant' });
       else scrollTo({ top: back.y, behavior: 'instant' });
-    }
+    });
     new MutationObserver(() => showStill('960')).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   };
-  // reduced motion, data saving, or a screen too short for a stage (a page zoomed to 400 %): the plain page
-  if (CALM.matches || navigator.connection?.saveData || matchMedia('(max-height: 300px)').matches) { plain(); return; }
-  // (the frames are kept by the browser for a long time, under the version film.json gives them: it is asked anew)
-  const meta = await fetch(BASE + 'scroll/film.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (noFilm()) { plain(); return; }
+  // (the frames are kept by the browser for a long time, under the version film.json gives them: never kept itself)
+  const meta = await filmMeta;
   const canvas = $('#filmCanvas');
   const ctx = canvas?.getContext('2d', { alpha: false });
   if (!meta?.sizes?.length || !ctx) { plain(); return; }
@@ -139,6 +156,8 @@ export async function startFilm() {
   let ka = 0, asmT = 0;                                     // ...and the build in it: 0 the kit on the table, 1 the PC
   let resting = false, restKey = -1, restTimer = 0, visible = true;
   let engaged = false, booted = false, fineAt = -1, fineDir = 1;   // (the fine set: see nextJob)
+  let playedOk = null;
+  const played = new Promise((ok) => { playedOk = ok; });   // (the visitor's first scroll of the film)
   let merged = false;                                       // the configurator over the stage (see the end)
   let built = false, rested = 0, touching = 0;              // (the PC built once: its stretch gone, see the end)
   let auto = null;                                          // (the build playing itself: see the end)
@@ -167,6 +186,9 @@ export async function startFilm() {
     const blobs = old?.sz === sz && old.th === th ? old.blobs : new Array(n);
     const maps = new Map(), decoding = new Set(), files = coarseFirst(n);
     let next = 0, fetching = 0, dead = false, at = Math.min(n - 1, Math.max(0, Math.round(cur / step))), dir = 1;
+    // until the film is played, one file in every 8 (the first ones of coarseFirst) and those around the start: a
+    // phone that never scrolls it does not download its whole reel
+    const sample = Math.floor((n - 1) / 8) + 1;
     const asked = new Set();
     let got = blobs.filter(Boolean).length;
     let still = null, stillAsk = 0;                       // the fine picture of the frame the scroll rests on
@@ -198,18 +220,23 @@ export async function startFilm() {
       if (dead) return;
       // the files where the film is first (a reel made anew - the other theme - starts there), then the whole film
       const around = [at, at + dir, at - dir, at + 2 * dir].filter((i) => i >= 0 && i < n && !blobs[i] && !asked.has(i));
-      while (fetching < IN_FLIGHT && (around.length || next < files.length)) {
-        const i = around.length ? around.shift() : files[next++];
+      const upTo = engaged ? files.length : Math.min(files.length, sample);
+      if (!engaged && next >= upTo && !around.length && !fetching) filmIn();   // (the sample in: as far as it goes now)
+      while (fetching < IN_FLIGHT && (around.length || next < upTo)) {
+        const near = around.length > 0;
+        const i = near ? around.shift() : files[next++];
         if (blobs[i] || asked.has(i)) continue;
         asked.add(i);
         fetching++;
-        fetch(`${BASE}scroll/${th}/${sz.dir}/${pad(i + 1)}.webp${ver}`).then((r) => (r.ok ? r.blob() : null)).catch(() => null).then((b) => {
-          fetching--;
-          asked.delete(i);
-          if (b) blobs[i] = b;
-          if (++got >= n) filmIn();
-          feed();
-        });
+        // (the ones the screen is about to show first; the rest after whatever else the page asks for)
+        fetch(`${BASE}scroll/${th}/${sz.dir}/${pad(i + 1)}.webp${ver}`, { priority: near ? 'high' : 'low' })
+          .then((r) => (r.ok ? r.blob() : null)).catch(() => null).then((b) => {
+            fetching--;
+            asked.delete(i);
+            if (b) blobs[i] = b;
+            if (++got >= n) filmIn();
+            feed();
+          });
       }
       const ready = (i) => i >= 0 && i < n && blobs[i] && !maps.has(i) && !decoding.has(i);
       // nearest the scroll position first, the way it goes before the way it came; then the ones along the film
@@ -223,7 +250,7 @@ export async function startFilm() {
       aim(f, to) {
         const c = Math.min(n - 1, Math.max(0, Math.round(f / step)));
         const d = to > f ? 1 : to < f ? -1 : dir;
-        if (c === at && d === dir) return;
+        if (c === at && d === dir) { if (engaged && next < files.length && fetching < IN_FLIGHT) feed(); return; }
         at = c; dir = d;
         for (const [i, bmp] of maps) if (i % every && !near(i, 2)) { bmp.close?.(); maps.delete(i); }
         feed();
@@ -621,10 +648,11 @@ export async function startFilm() {
     const c = close ? Math.min(1, Math.max(0, (y - span) / (close * 0.8))) : 0;
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
     if (t >= last * VIEW_AT) early();
+    if (a > 0 && assembly && !preparing) engineSoon();
     setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
     steer();
     waiting(a);
-    if (t !== target) { target = t; if (booted) engaged = true; if (resting) resting = false; }
+    if (t !== target) { target = t; if (booted) { engaged = true; playedOk(); } if (resting) resting = false; }
     clearTimeout(restTimer);
     if (t === cur && c === codaT && a === asmT && !running) { restTimer = setTimeout(rest, REST_MS); return; }
     codaT = c;
@@ -810,7 +838,8 @@ export async function startFilm() {
     try { await startEngine(); } catch (e) { console.warn(e); }
   }
   // the engine once the film's build is on screen: in a quiet moment after (its 11 MB come in a worker)
-  const engineSoon = () => setTimeout(() => idle(prepare, { timeout: 3000 }), 1500);
+  let soonT = 0;
+  const engineSoon = () => { soonT ||= setTimeout(() => idle(prepare, { timeout: 3000 }), 1500); };
   // In the stretch before the 3D view has the build (a slow phone, a slow network): the film's last picture holds, a
   // quiet line says the 3D is on its way, and the build takes over there the moment it comes.
   // ...and the page holds there: scrolled on, it would go through the build over a still picture, and the 3D would
@@ -919,7 +948,7 @@ export async function startFilm() {
         root.classList.add('live3d');
         stage3d();
         ready3d();
-        engineSoon();
+        if (asmT > 0) engineSoon();                         // (only once the build's stretch is on screen: measure())
       }, (e) => console.warn(e));
     };
   }
@@ -1234,7 +1263,7 @@ export async function startFilm() {
     if (!w || merged || built) return;
     const r = w.getBoundingClientRect();
     const was = w.getAttribute('style');
-    w.style.cssText += `;position:fixed;left:${r.left}px;top:0;width:${r.width}px;opacity:.001;pointer-events:none;transition:none;z-index:1`;
+    w.style.cssText += `;transform:translateY(${-r.top}px);opacity:.001;pointer-events:none;transition:none;position:relative;z-index:1`;
     w.inert = true;
     // (put back, the film measures it again: lifted out of the page meanwhile, it may have been measured there - its
     // observer sees its size, which comes back the same, not its place - and the configurator would come up under the
@@ -1258,7 +1287,10 @@ export async function startFilm() {
   };
   if (document.readyState === 'complete') atLoad(); else addEventListener('load', atLoad, { once: true });
   // (once the film's pictures are all in - or, on a very slow network, after a while anyway)
+  // (a touch screen - a phone, on its data most likely - only once the film is played: the 3D view and its build are
+  // more than a MB a visitor who only reads the first text never sees; it comes long before the build's stretch)
   const soon = () => Promise.race([loaded, new Promise((ok) => setTimeout(ok, 12000))])
+    .then(() => (TOUCH ? played : null))
     .then(() => idle(() => { if (!root.classList.contains('plain')) early(); }, { timeout: 2000 }));
   if (document.readyState === 'complete') soon(); else addEventListener('load', soon, { once: true });
 
@@ -1288,6 +1320,8 @@ export async function startFilm() {
   // The browser would put the page back where it was before the film has its length (this script lays it out, once
   // the list of frames has come), and with the stretch the build took away back in: somewhere in the film, not in the
   // configurator. So the film keeps the page's place in its history entry and puts it back itself, laid out as it was.
+  // (laid out once the page is all there: the configurator and the builds under the film give it its length)
+  if (back) await pageReady;
   if (back) {
     // (a PC built before this load, the page back at the configurator or under it: the configurator as it is - the PC
     // is not the film's one any more. Back in the film above it - a reload at the top - the film is as on a first

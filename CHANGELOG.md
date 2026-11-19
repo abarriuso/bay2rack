@@ -5,6 +5,21 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web, loading order: a visitor who does not scroll no longer downloads the OpenSCAD engine (11 MB, it came some
+  5 s after the page) - it starts once the build's stretch of the film is on screen or the configurator is reached;
+  on a touch screen the 3D view waits for the first scroll too, and the film's reel takes one frame in eight until
+  it is played (a phone that only reads the first text: about 1 MB instead of 19). The film starts with the page
+  (its list of frames is written into it), not after the configurator's files, which now come at a low priority.
+  The still is the one of the theme (the dark one came first for everybody) and is the film's first frame, one
+  download; the display font is asked for with the page. The page no longer jumps at load (the configurator's
+  unseen first paint moved it: a layout shift of 1.7). Slow networks (2G/3G) get the plain page.
+- Web, engine: only the two fonts the model uses (no italics: 690 kB less), and the kit's extra engines start from
+  the first one's compiled WebAssembly instead of fetching and compiling it again. A missing model file now says so
+  where the build would be, instead of stopping the whole page.
+- Web, headers: a Content-Security-Policy (everything from the site itself, OpenSCAD's WebAssembly, the page's two
+  inline scripts by their hash), so no other origin can ever be loaded. The share pages redirect with their meta
+  refresh alone. The 404 page links to the site's root on the GitHub mirror too, and the mirror and the web tests
+  run again when the film's frames change.
 - Simpler module list:
   - Removed the 1U shelf (`shelf`): the device trays (`dev1`, `dev2`, `kvm`, `pi`) cover what it held.
   - The NanoKVM Lite bay keeps two versions: `nkvm:side`, standing outside the case in its little mountain, and

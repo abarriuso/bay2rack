@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,11 +42,58 @@ const liveRepoFiles = () => ({
 // The English texts written into index.html at build time (applyI18n puts them in at run time too): search engines
 // and the first paint get the words, and the page does not jump when the script fills them in.
 const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// ...and the film's list of frames (docs/scroll/film.json): in the page, so the film asks for no file before its first
+// pictures, and its version on the first one (the still and the film's first frame: one address, one download). Read
+// at every page (the dev server: a new encode shows on reload).
+const film = () => { try { return JSON.parse(readFileSync(join(repo, 'docs', 'scroll', 'film.json'), 'utf8')); } catch { return null; } };
+const withFilm = (html) => {
+  const f = film();
+  return html.replaceAll('__FILMV__', f?.v ?? '')
+    .replace('__FILM_JSON__', f ? JSON.stringify(f).replace(/</g, '\\u003c') : '');
+};
 const staticTexts = () => ({
   name: 'bay2rack-static-texts',
-  transformIndexHtml: (html) => html.replace(/(<([a-z0-9]+)\b[^>]*\bdata-i18n="([^"]+)"[^>]*>)(<\/\2>)/g,
+  transformIndexHtml: (html) => withFilm(html).replace(/(<([a-z0-9]+)\b[^>]*\bdata-i18n="([^"]+)"[^>]*>)(<\/\2>)/g,
     (m, open, tag, key, close) => (dict.en[key] != null ? open + esc(dict.en[key]).replace(/\{\w+\}/g, '') + close : m)),
 });
+
+// The display font of the film's first text (Archivo, Latin, with its width axis): asked for with the page, not once the
+// stylesheet has been read (the hashed name is only known in the build)
+const fontAhead = () => ({
+  name: 'bay2rack-font-ahead',
+  apply: 'build',
+  transformIndexHtml: {
+    order: 'post',
+    handler(html, ctx) {
+      const f = Object.keys(ctx.bundle ?? {}).find((k) => /archivo-latin-wdth-normal-[\w-]+\.woff2$/.test(k));
+      return f ? html.replace('</head>', `  <link rel="preload" as="font" type="font/woff2" crossorigin href="./${f}">\n</head>`) : html;
+    },
+  },
+});
+
+// The site's Content-Security-Policy (into _headers, Cloudflare Pages): everything from the site itself - no other
+// origin can be loaded, framed or sent to - OpenSCAD's WebAssembly, and the page's own inline scripts by their hash
+// (the theme before the first paint and the film's still; the film's list of frames is data, not a script).
+function csp(pages) {
+  const hashes = new Set();
+  for (const html of pages)
+    for (const [, attrs, code] of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g))
+      if (!/\bsrc=|type="application\/(ld\+)?json"/.test(attrs) && code.trim())
+        hashes.add(`'sha256-${createHash('sha256').update(code).digest('base64')}'`);
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'wasm-unsafe-eval' ${[...hashes].join(' ')}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "worker-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
 
 // After the build: /es/ (the same page with the Spanish texts in it, for search engines and links) and /m/<build>/
 // for each ready-made build (its name, text and picture for link previews, then straight into the configurator).
@@ -82,14 +130,22 @@ const extraPages = () => {
     closeBundle() {
       const dir = join(dirname(fileURLToPath(import.meta.url)), outDir);
       mkdirSync(join(dir, 'es'), { recursive: true });
-      writeFileSync(join(dir, 'es', 'index.html'), spanish(readFileSync(join(dir, 'index.html'), 'utf8')));
+      const en = readFileSync(join(dir, 'index.html'), 'utf8'), es = spanish(en);
+      writeFileSync(join(dir, 'es', 'index.html'), es);
       // any other address: a page that says so (without it the host answers with the home page, broken one folder down)
       writeFileSync(join(dir, '404.html'), notFound());
+      // the policy, for every page of the site (scripts/copy-assets.mjs wrote the rest of _headers)
+      const headers = join(dir, '_headers');
+      if (existsSync(headers))
+        writeFileSync(headers, readFileSync(headers, 'utf8').replace(/^\/\*\n/, `/*\n  Content-Security-Policy: ${csp([en, es])}\n`));
       // (the pages of the ready-made builds, m/<build>/ and es/m/<build>/, come from scripts/copy-assets.mjs)
     },
   };
 };
 
+// (the 404 page answers at any address, so its links start from the site's root: / on Cloudflare Pages, /bay2rack/ on
+// the GitHub Pages mirror - SITE_ROOT, set by its workflow)
+const ROOT = process.env.SITE_ROOT || '/';
 function notFound() {
   return `<!doctype html>
 <html lang="en">
@@ -111,8 +167,8 @@ function notFound() {
 </head>
 <body>
   <h1>4<b>0</b>4</h1>
-  <p>This page does not exist. <a href="/">Bay2Rack</a></p>
-  <p lang="es">Esta página no existe. <a href="/es/">Bay2Rack en español</a></p>
+  <p>This page does not exist. <a href="${ROOT}">Bay2Rack</a></p>
+  <p lang="es">Esta página no existe. <a href="${ROOT}es/">Bay2Rack en español</a></p>
 </body>
 </html>
 `;
@@ -121,7 +177,7 @@ function notFound() {
 // Relative base so the build works on any path (GitHub Pages serves it under /bay2rack/).
 export default defineConfig({
   base: './',
-  plugins: [liveRepoFiles(), staticTexts(), extraPages()],
+  plugins: [liveRepoFiles(), staticTexts(), fontAhead(), extraPages()],
   build: { target: 'es2022', chunkSizeWarningLimit: 1500, sourcemap: true },
   worker: { format: 'es' },
 });

@@ -81,6 +81,27 @@ test('a film nobody scrolls stays light, and can be skipped', async ({ page }) =
   await expect(page.locator('#configurator')).toBeInViewport({ ratio: 0.9 });
 });
 
+// A visitor who only looks at the first picture: the OpenSCAD engine (11 MB) is not downloaded, the page does not
+// jump (the configurator once went to the top of the screen and back, unseen: a layout shift of 1.7), and the still
+// is the one of the theme (the dark one once came first, for everybody), asked for once.
+test('a page nobody scrolls loads no engine, does not shift, and shows its own theme', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  const asked = [];
+  page.on('request', (r) => asked.push(new URL(r.url()).pathname + new URL(r.url()).search));
+  await page.addInitScript(() => {
+    window.__shift = 0;
+    new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__shift += e.value; })
+      .observe({ type: 'layout-shift', buffered: true });
+  });
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live3d/);      // (the 3D view and the build made ahead are in)
+  await page.waitForTimeout(6000);                                // (the engine used to come some 4 s after them)
+  expect(asked.filter((u) => /openscad/.test(u))).toEqual([]);
+  expect(await page.evaluate(() => window.__shift)).toBeLessThan(0.1);
+  expect(await page.locator('.film-still').evaluate((i) => i.currentSrc)).toMatch(/\/scroll\/light\/960\/0001\.webp\?v=\w+$/);
+  expect(asked.filter((u) => /\/scroll\/\w+\/960\/0001\.webp/.test(u))).toHaveLength(1);
+});
+
 // a phone: an iPhone's screen and touch (in Chromium: Safari itself only on a real one). The big headings once ran off
 // the side, and the film once drew at four times the pixels its frames have.
 test.describe('on a phone', () => {

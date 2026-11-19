@@ -192,7 +192,6 @@ ${size ? `  <meta property="og:image:width" content="${size[0]}">\n  <meta prope
   <meta name="twitter:image" content="${SITE}${img}">
   <link rel="canonical" href="${SITE}${l === 'es' ? 'es/' : ''}">
   <meta http-equiv="refresh" content="0; url=${esc(to)}">
-  <script>location.replace(${JSON.stringify(to)});</script>
 </head>
 <body><p><a href="${esc(to)}">${esc(title)}</a></p></body>
 </html>

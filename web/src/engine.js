@@ -48,8 +48,11 @@ export function startViewer() {
 }
 export const jobs = new Map();
 export let nextJob = 1;
+// what the first engine has ready (its compiled WebAssembly, the fonts, the model): the kit's engines start from it
+let shared = null;
 export function onEngine({ data: m }) {
   if (m.type === 'ready') {
+    shared = m.shared ?? null;
     S.engine = 'ready';
     setStatus(t('ready'), 'ok', true);
     if (S.wantRender) render();
@@ -126,7 +129,7 @@ export function kitEngines() {
         else if (m.type === 'result') { pending.get(m.id)?.(m); pending.delete(m.id); }
       };
     });
-    w.postMessage({ type: 'init', base: BASE });
+    w.postMessage({ type: 'init', base: BASE, shared });
     const run = (defines, out) => new Promise((resolve) => {
       const id = next++;
       pending.set(id, resolve);
