@@ -128,6 +128,32 @@ test.describe('on a phone', () => {
     }
     expect(errors).toEqual([]);
   });
+
+  // In the configurator, the phone turned on its side and back: the page above it is laid out anew, and the page once
+  // came back under it, among the builds, no longer held.
+  test('turned on its side and back, the configurator is where it was', async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto('/');
+    await expect(page.locator('#film')).toHaveClass(/live/);
+    await page.locator('.beat.on .cta .btn').first().click();
+    await expect(page.locator('#film')).toHaveClass(/merged/);
+    await page.waitForTimeout(1500);                         // (the link's scroll and its looks again: main.js)
+    await page.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollBy(0, document.querySelector('.workbench').getBoundingClientRect().top + 1);     // (just past where the stage lets go)
+    });
+    await expect(page.locator('html')).toHaveClass(/\blocked\b/);
+    const top = () => page.evaluate(() => document.querySelector('.workbench').getBoundingClientRect().top);
+    await page.setViewportSize({ width: viewport.height, height: viewport.width });
+    await page.waitForTimeout(800);
+    // (on its side: still in it, where the film lets go - and the page not held where it cannot be used)
+    await expect(page.locator('#film')).toHaveClass(/merged/);
+    await page.setViewportSize(viewport);
+    await expect(page.locator('#film')).toHaveClass(/merged/);
+    await expect(page.locator('html')).toHaveClass(/\blocked\b/);
+    expect(Math.abs(await top())).toBeLessThanOrEqual(8);
+    expect(errors).toEqual([]);
+  });
 });
 
 // the end of the film: its coda closes the picture into the shape of the configurator, which lies right under it -
@@ -200,6 +226,51 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await expect.poll(home).toBe('film-3d on');
   await to(1.01);
   await expect.poll(home).toBe('view');
+  expect(errors).toEqual([]);
+});
+
+// A link to what lies under the configurator scrolls through the film: it was once held at the table and driven into
+// the configurator instead, and never came to the builds.
+test('a link to the builds goes through the film to them', async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await page.locator('.nav a[href="#gallery"]').click();
+  const top = () => page.evaluate(() => document.querySelector('#gallery').getBoundingClientRect().top - document.querySelector('.top').offsetHeight);
+  await expect.poll(async () => Math.abs(await top()), { timeout: 20_000 }).toBeLessThan(8);
+  // (and stays there: the film's stretch goes, the first build's lists come in above it)
+  await page.waitForTimeout(2500);
+  expect(Math.abs(await top())).toBeLessThan(8);
+  expect(errors).toEqual([]);
+});
+
+// The wheel that brought the page down through the build goes on a moment after it arrives (a trackpad's glide): the
+// page stays square on the configurator - it once went on under the header - and the 3D view is not zoomed away by it.
+test('a wheel into the configurator stops at it', async ({ page }) => {
+  test.slow();                                              // (each wheel waits on a frame: slow under CI's software GL)
+  const errors = watchErrors(page);
+  await page.goto('/');
+  await expect(page.locator('#film')).toHaveClass(/live/);
+  await page.evaluate(() => {
+    const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
+    const all = f.offsetHeight - st.offsetHeight, asm = f.querySelector('.film-assemble').offsetHeight;
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm - 200);
+  });
+  await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
+  await page.mouse.move(900, 450);                          // (over where the 3D view will be)
+  const merged = () => page.evaluate(() => document.querySelector('#film').classList.contains('merged'));
+  for (let i = 0; i < 750 && !(await merged()); i++) { await page.mouse.wheel(0, 80); await page.waitForTimeout(16); }
+  expect(await merged()).toBe(true);
+  for (let i = 0; i < 12; i++) { await page.mouse.wheel(0, 80); await page.waitForTimeout(16); }
+  const off = await page.evaluate(() => {
+    const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
+    return Math.abs(w.top - v.top);
+  });
+  expect(off).toBeLessThanOrEqual(2);
+  await expect(page.locator('#film')).toHaveClass(/built/);
+  // (the view did not move as the build's stretch went)
+  expect(await page.evaluate(() => document.querySelector('.viewer').getBoundingClientRect().top - document.querySelector('.top').offsetHeight)).toBeLessThan(40);
   expect(errors).toEqual([]);
 });
 

@@ -65,13 +65,31 @@ function chrome() {
 
 // the page's keys and its scrolling: nothing of the model (the configurator's own keys: configurator.js)
 function wire() {
+  let goT = [], goStop = () => {};
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a[href^="#"]');
     const id = a?.getAttribute('href').slice(1);
     if (!id || /=/.test(id) || !document.getElementById(id)) return;
     e.preventDefault();
     const el = document.getElementById(id);
-    el.scrollIntoView({ behavior: CALM.matches ? 'auto' : 'smooth' });
+    const go = () => {
+      dispatchEvent(new Event('b2r:goto'));                // (the film lets this scroll through: film.js)
+      el.scrollIntoView({ behavior: CALM.matches ? 'auto' : 'smooth' });
+    };
+    go();
+    // The page above the place may change its length while the scroll is on its way (the first build's lists come in
+    // under the configurator, the film's stretch goes): the scroll would end short of it. Looked at again a few times
+    // after, and taken on to it - unless the visitor has scrolled meanwhile.
+    for (const t of goT) clearTimeout(t);
+    removeEventListener('wheel', goStop); removeEventListener('touchstart', goStop); removeEventListener('keydown', goStop);
+    goStop = () => { for (const t of goT) clearTimeout(t); goT = []; };
+    for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, goStop, { passive: true, once: true });
+    const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+    goT = [1100, 2200, 3400].map((ms) => setTimeout(() => {
+      const off = el.getBoundingClientRect().top - pad;
+      const room = document.documentElement.scrollHeight - innerHeight - scrollY;     // (the foot of the page: as far as it goes)
+      if (Math.abs(off) > 6 && (off < 0 || room > 6)) go();
+    }, ms));
     if (el.tagName === 'DETAILS') el.open = true;
     // the focus goes along (the skip link, the menu): the next Tab carries on from there, not from the top
     focusOn(el);
@@ -162,19 +180,47 @@ function wire() {
   // or a link of the page, which takes the page elsewhere. (A scroll reads nothing while it is not held.)
   const wb = $('.workbench'), doc = document.documentElement.classList;
   let holdT = 0;
+  // (square: the page at rest on the configurator - its top at the screen's top, or under the header)
+  const padTop = () => parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+  let square = false, turning = 0;
   const hold = () => {
     clearTimeout(holdT);
+    const keep = performance.now() < turning;               // (being put back after a turn: see below)
     if (doc.contains('locked')) {
-      if (!narrow.matches || Math.abs(wb.getBoundingClientRect().top) > 8) doc.remove('locked');
+      // (turned on its side, being put back: not held meanwhile, but still on it - see below)
+      if (!narrow.matches || Math.abs(wb.getBoundingClientRect().top) > 8) { doc.remove('locked'); if (!keep) square = false; }
       return;
     }
     // (square on it: within a few px - the film puts it where its stage lets go, film.js)
-    if (narrow.matches) holdT = setTimeout(() => {
-      if (narrow.matches && Math.abs(wb.getBoundingClientRect().top) <= 8 && !$('#film:not(.plain):not(.merged)')) doc.add('locked');
+    holdT = setTimeout(() => {
+      const top = wb.getBoundingClientRect().top;
+      if (!keep) square = Math.abs(top) <= 8 || Math.abs(top - padTop()) <= 8;
+      if (narrow.matches && Math.abs(top) <= 8 && !$('#film:not(.plain):not(.merged)')) doc.add('locked');
     }, 250);
   };
   addEventListener('scroll', hold, { passive: true, capture: true });
   narrow.addEventListener('change', hold);
+  // A phone turned on its side and back: the page above the configurator is laid out anew, so the same scrollY is
+  // another place - under it, among the builds. On it before, on it after: put back square on it once the new sizes
+  // are known, and held again on a phone. (Under a film, the film puts it back - where its stage lets go: film.js.)
+  let lastW = innerWidth;
+  addEventListener('resize', () => {
+    if (innerWidth === lastW) return;                       // (a phone's bars folding: only the height)
+    lastW = innerWidth;
+    if (!square && !doc.contains('locked') && performance.now() >= turning) return;
+    square = true;
+    // (the page above settles over a few frames - the film's stage, the view's size: put back again as it does)
+    turning = performance.now() + 1200;
+    const put = () => {
+      const top = wb.getBoundingClientRect().top - (narrow.matches ? 0 : padTop());
+      if (Math.abs(top) > 1 && !$('#film.live:not(.plain)')) scrollTo({ top: scrollY + top, behavior: 'instant' });
+      hold();
+    };
+    requestAnimationFrame(() => requestAnimationFrame(put));
+    for (const ms of [300, 700, 1150]) setTimeout(() => { if (performance.now() < turning + 50) put(); }, ms);
+  });
+  // (a scroll of the visitor's own while it is put back: theirs wins)
+  for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, () => { turning = 0; }, { passive: true });
   // the view on the whole screen (and the browser's own bars away, where it lets a page do that: not on an iPhone)
   const fullKey = $('#viewFull');
   const setFull = (on) => {

@@ -53,6 +53,8 @@
 .film-3d { position: absolute; left: var(--v3-l, 0); top: var(--v3-t, 0); width: var(--v3-w, 0); height: var(--v3-h, 0);
   overflow: hidden; pointer-events: none; opacity: 0; visibility: hidden; }
 .film-3d.on { visibility: visible; }
+/* (the build come in the middle of its stretch, film.js: it fades in, once) */
+.film-3d.late { transition: opacity .5s ease; }
 .film-3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .film-plate { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; backface-visibility: hidden;
   /* (its edges melt into the studio: the film's frame, its middle two thirds, is whole) */

@@ -127,17 +127,24 @@ self.addEventListener('fetch', (e) => {
       const hit = await c.match(req);
       if (hit) return hit;
       const res = await fetch(req);
-      if (res.ok) c.put(req, res.clone());
+      if (res.status === 200) c.put(req, res.clone()).catch(() => {});   // (whole answers only: a part of one cannot be kept)
       return res;
     }));
     return;
   }
-  // the page, the model, the images: the network first (a push shows at once), the cache when offline
-  e.respondWith(fetch(req).then((res) => {
-    if (res.ok) { const copy = res.clone(); caches.open(SITE).then((c) => c.put(req, copy)); }
+  // the page, the model, the images: the network first (a push shows at once), the cache when offline - or when the
+  // network does not answer in a few seconds (a phone with one bar: the page kept from the last visit, not a blank one)
+  const kept = () => caches.match(req, { ignoreSearch: true }).then((hit) => hit ?? (req.mode === 'navigate' ? caches.match(scope) : undefined));
+  const fresh = fetch(req).then((res) => {
+    if (res.status === 200) { const copy = res.clone(); caches.open(SITE).then((c) => c.put(req, copy)).catch(() => {}); }
     return res;
-  }).catch(async () => (await caches.match(req, { ignoreSearch: true }))
-    ?? (req.mode === 'navigate' ? caches.match(scope) : Response.error())));
+  });
+  e.respondWith(new Promise((answer) => {
+    const late = setTimeout(async () => { const hit = await kept(); if (hit) answer(hit); }, 4000);
+    fresh.then((res) => { clearTimeout(late); answer(res); },
+      async () => { clearTimeout(late); answer((await kept()) ?? Response.error()); });
+  }));
+  e.waitUntil(fresh.catch(() => {}));                         // (the fresh copy is kept even if the old one answered)
 });
 `);
 

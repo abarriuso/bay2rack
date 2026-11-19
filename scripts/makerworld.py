@@ -154,7 +154,7 @@ def triangles(path):
 def check(scad):
     """The one-file model must give the same adapter as the repo."""
     stl = OUT / "_check.stl"
-    r = subprocess.run([find_openscad(), "-o", str(stl), str(scad)], capture_output=True, text=True)
+    r = subprocess.run([find_openscad(), "-o", str(stl), str(scad)], capture_output=True, text=True, encoding="utf-8", errors="replace")
     if r.returncode or not stl.exists():
         sys.exit("OpenSCAD failed on the flattened file:\n" + r.stderr[-2000:])
     got, want = triangles(stl), triangles(ROOT / "stl/plate-flush/3bay-2U/adapter.stl")

@@ -40,6 +40,7 @@ const MODULES = { fly: 0.14, each: 0.04, len: 0.3, close: 0.64, step: 0.032, sli
 const SCREW_SLIDE = 0.07;
 const CABLES = 0.93;
 const SHADE = [FADE, 0.45];
+const SHADE_TABLE = 0.6;           // (the shadows on the table, of the view's own)
 const SOFT = 0.5;                  // (the scroll's sounds, of the editor's level)
 
 let tableData = null;
@@ -325,6 +326,7 @@ export async function fromTable(v, img0, view0) {
       return ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -floorZ), new THREE.Vector3());
     });
   };
+  v.limits(false);                                          // (the camera is the film's: its way is its own)
   reframe(img0, view0);
 
   // The sounds, both ways and quieter than the editor's: a breath as a piece leaves the table, its own one as it is
@@ -357,12 +359,21 @@ export async function fromTable(v, img0, view0) {
   // the 3D view's shadows on the floor: as light as the film's on its table to begin with, the view's own once the
   // camera has left it
   const shade = v.floor.material, shadeWas = shade.opacity;
+  const keyHome = v.key.position.clone();
+  const keyTable = v.key.target.position.clone()
+    .add(new THREE.Vector3(-0.12, -0.2, 1).normalize().multiplyScalar(keyHome.distanceTo(v.key.target.position)));
   let done = false, parked = false;
   const at = (pp) => {
     if (done) return;
     camAt(seg(pp, CAM[0], CAM[1]));
     const s = seg(pp, SHADE[0], SHADE[1]);
-    shade.opacity = shadeWas * s * s * (3 - 2 * s);       // (none at first: the film's are in its picture)
+    // (on the table already, lighter: the film's own are in its picture, which the 3D view covers once it is in -
+    // without them the pieces lay on the table flat, as if cut out)
+    const sk = s * s * (3 - 2 * s);
+    shade.opacity = shadeWas * (SHADE_TABLE + (1 - SHADE_TABLE) * sk);
+    // (the light from nearly right above the table, as the film's: the shadows lie under the pieces, not beside them;
+    // it goes to the view's own place as the camera leaves the table)
+    v.key.position.lerpVectors(keyTable, keyHome, sk);
     for (const tr of tracks) pose(tr, pp);
     for (const m of hidden) m.visible = pp >= ADAPTER.slide[1];
     if (door) doorAt(door.ang * (1 - inOut(seg(pp, DOOR[0], DOOR[1]))));
@@ -376,12 +387,14 @@ export async function fromTable(v, img0, view0) {
     if (done) return;
     done = true;
     shade.opacity = shadeWas;
+    v.key.position.copy(keyHome);
     for (const tr of tracks) for (const m of tr.part.meshes) { m.position.set(0, 0, 0); m.quaternion.identity(); m.scale.setScalar(1); m.visible = true; }
     for (const m of hidden) m.visible = true;
     v.setVisible('cables', cablesWere);
     if (door) for (const d of door.objs) { d.o.matrix.copy(d.base); d.o.matrixAutoUpdate = d.auto; d.o.matrix.decompose(d.o.position, d.o.quaternion, d.o.scale); }
     // (parked, the camera is the visitor's: it stays where it is)
     if (!parked) { cam.position.copy(end.eye); ctl.target.copy(end.target); }
+    v.limits(true);
     cam.clearViewOffset();
     cam.fov = fov1;
     v.resize();
@@ -410,6 +423,7 @@ export async function fromTable(v, img0, view0) {
     if (done || parked) return;
     at(1);
     parked = true;
+    v.limits(true);                                         // (the visitor's camera again, within its reach)
     cam.clearViewOffset();
     cam.fov = fov1;
     v.resize();
@@ -420,6 +434,7 @@ export async function fromTable(v, img0, view0) {
     if (!parked) return true;
     if (v.tools?.on || v.tools?.shown || v.tools?.explode?.target > 0) return false;
     const k2 = key(cam.position, ctl.target);
+    v.limits(false);
     reframe(img, box);                                      // (the page may be laid out anew meanwhile)
     // (seen from behind or below, the way would turn through the PC: from the configurator's own view instead)
     if (k2.dir.dot(K0.dir) > 0 && k2.dir.z > 0) toward(k2);
