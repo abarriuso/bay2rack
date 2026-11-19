@@ -2,7 +2,10 @@
 import { scadLiteral, same } from './customizer.js';
 import { t } from './i18n.js';
 import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S, atRest, afterFrame } from './state.js';
-import { render } from './render.js';
+// (the configurator's render, handed in by it once loaded - configurator.js: the film and the page above it come with
+// this module, and nothing of the configurator; before it, nothing is wanted rendered: S.wantRender)
+let render = () => {};
+export const onRender = (f) => { render = f; };
 import { meshesOf } from './mesh.js';
 import { madeAhead } from './gl-ahead.js';
 

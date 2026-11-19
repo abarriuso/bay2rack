@@ -5,6 +5,10 @@ on the photos and in the MakerWorld notes.
 
 ## Unreleased
 
+- Web, scripts: the page's first script is the page and its film only (117 kB, was 255 kB); the configurator - the
+  model's parameters, the steps, the renders, the downloads, the gallery - comes in a chunk of its own alongside it
+  (configurator.js), so the film starts sooner. The service worker is registered as the page starts (after the
+  model's files it could miss the page's load and never be).
 - Web, loading order: a visitor who does not scroll no longer downloads the OpenSCAD engine (11 MB, it came some
   5 s after the page) - it starts once the build's stretch of the film is on screen or the configurator is reached;
   on a touch screen the 3D view waits for the first scroll too, and the film's reel takes one frame in eight until
