@@ -35,8 +35,9 @@ const pad = (n) => String(n).padStart(4, '0');
 // No film (the plain page: a still and the texts): reduced motion, data saving, a slow network (a film is a few MB of
 // pictures), or a screen too short for a stage (a page zoomed to 400 %)
 const SLOW = ['slow-2g', '2g', '3g'];
-const noFilm = () => CALM.matches || !!navigator.connection?.saveData || SLOW.includes(navigator.connection?.effectiveType)
-  || matchMedia('(max-height: 300px)').matches;
+const noFilm = () => CALM.matches || !!navigator.connection?.saveData || SLOW.includes(navigator.connection?.effectiveType);
+// (too short only for now - a tab opened in a pane not laid out yet, a window made taller: the film starts then)
+const SHORT = matchMedia('(max-height: 300px)');
 // film.json: written into the page by the build (vite.config.js), so the film needs no request before its first
 // pictures; asked for only where it is not (the dev server without frames, an old page)
 const filmMeta = (() => {
@@ -98,9 +99,23 @@ export async function startFilm(pageReady = Promise.resolve()) {
       if (back.built) $('#configurator')?.scrollIntoView({ behavior: 'instant' });
       else scrollTo({ top: back.y, behavior: 'instant' });
     });
-    new MutationObserver(() => showStill('960')).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    const mo = new MutationObserver(() => showStill('960'));
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return mo;
   };
   if (noFilm()) { plain(); return; }
+  if (SHORT.matches) {
+    const mo = plain();
+    const tall = () => {
+      if (SHORT.matches) return;
+      SHORT.removeEventListener('change', tall);
+      mo.disconnect();
+      root.classList.remove('plain');
+      startFilm(pageReady);
+    };
+    SHORT.addEventListener('change', tall);
+    return;
+  }
   // (the frames are kept by the browser for a long time, under the version film.json gives them: never kept itself)
   const meta = await filmMeta;
   const canvas = $('#filmCanvas');
@@ -626,6 +641,13 @@ export async function startFilm(pageReady = Promise.resolve()) {
     lastW = innerWidth; lastDpr = devicePixelRatio;
     if (keep) return;
     const y = lastY + stick - filmTop;
+    // (in the configurator, where the stage let go - a phone turned on its side and back: in it again, where the
+    // stage lets go now; the page above it settles over a few frames, so for a moment each new layout puts it back)
+    if (merged && Math.abs(lastY - endY()) <= 8) {
+      keep = { end: true };
+      requestAnimationFrame(() => requestAnimationFrame(() => { if (keep) resize(); }));
+      return;
+    }
     if (y <= 0 || y >= span + coda) return;                 // (not in the film: the page keeps its own place)
     keep = y <= span ? { t: y / span } : { c: (y - span) / Math.max(1, coda) };
     // (the sizes are known before the next frame is drawn; if nothing of the film changed size, they still are)
@@ -641,6 +663,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
       scrollTo({ top: holdY(), behavior: 'instant' });
       lastY = scrollY;
     }
+    arrive(prev);
     const y = lastY + stick - filmTop;
     const t = Math.min(1, Math.max(0, y / span)) * last;
     // the coda closes over its first stretch (and holds a little), the PC is built over the next, then the stage
@@ -682,13 +705,17 @@ export async function startFilm(pageReady = Promise.resolve()) {
     thread();
     draw(true);
   }
+  let endUntil = 0;
+  for (const ev of ['wheel', 'touchstart', 'keydown']) addEventListener(ev, () => { endUntil = 0; }, { passive: true });
   function resize() {
     geometry();
     if (keep) {
       const k = keep;
       keep = null;
-      scrollTo({ top: filmTop - stick + (k.t != null ? k.t * span : span + k.c * coda), behavior: 'instant' });
+      if (k.end) endUntil = performance.now() + 1500;
+      else scrollTo({ top: filmTop - stick + (k.t != null ? k.t * span : span + k.c * coda), behavior: 'instant' });
     }
+    if (performance.now() < endUntil && Math.abs(scrollY - endY()) > 1) scrollTo({ top: endY(), behavior: 'instant' });
     measure();
     // only the height moved, by a little (the bars of a phone's browser, a keyboard): the bitmap stays, stretched to
     // cover by object-fit, and is redone once it has settled - no blank canvas between two frames
@@ -851,7 +878,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   let heldAt = 0, unheld = false, heldT = 0;
   function held(prev) {
     const h = holdY();
-    if (unheld || assembly || failed || merged || !firstLook() || CALM.matches) return false;
+    if (unheld || passing || assembly || failed || merged || !firstLook() || CALM.matches) return false;
     if (lastY <= h + 1) { if (lastY < h - innerHeight) heldAt = 0; return false; }
     if (!heldAt) {
       if (prev > h + 1 || lastY - prev > innerHeight) return false;
@@ -872,7 +899,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // (Listened to only then: a listener that can stop them costs every scroll a wait on the page.)
   let blocking = false, fingerY = null;
   const holds = () => {
-    if (unheld || assembly || failed || merged || !heldAt || scrollY < holdY() - 2) return false;
+    if (unheld || passing || assembly || failed || merged || !heldAt || scrollY < holdY() - 2) return false;
     if (performance.now() - heldAt > HOLD_MS) { unheld = true; return false; }
     return true;
   };
@@ -881,7 +908,8 @@ export async function startFilm(pageReady = Promise.resolve()) {
     const y = e.touches[0]?.clientY;
     if (e.type === 'touchstart' || y == null) { fingerY = y ?? null; return; }
     if (!holds()) { block(false); return; }
-    if (fingerY != null && y < fingerY) e.preventDefault();     // (a finger going up: the page would go down)
+    // (a finger going up: the page would go down; a scroll already under way cannot be stopped here - held() puts it back)
+    if (fingerY != null && y < fingerY && e.cancelable) e.preventDefault();
     fingerY = y;
   };
   function block(on) {
@@ -894,20 +922,87 @@ export async function startFilm(pageReady = Promise.resolve()) {
     f('touchstart', onTouch, { passive: true });
     f('touchmove', onTouch, { passive: false });
   }
+  // The arrival. The scroll that brought the visitor down through the build ends at the configurator; what is left of
+  // it - a finger's fling, a trackpad's glide - would carry the page on past it (a phone: a screen further, down to
+  // the builds under it) or, the pointer over the 3D view, zoom the PC away. So for a moment after arriving the page
+  // stays where the stage lets go: put back there, the wheel going on down not listened to (nor passed to the view),
+  // until that scroll is over - a pause in it, the finger lifted - and never for long. A scroll back up, a key, or a
+  // link that takes the page elsewhere (passing) are not held.
+  const CATCH_MS = 3000, CATCH_QUIET = 320;
+  let catchEnd = 0, catchT = 0, catchY = null;
+  const catchQuiet = () => {
+    clearTimeout(catchT);
+    catchT = setTimeout(() => (touching && performance.now() < catchEnd ? catchQuiet() : uncatch()), CATCH_QUIET);
+  };
+  const onCatchWheel = (e) => {
+    if (e.ctrlKey) return;                                  // (a pinch: the browser's zoom)
+    if (e.deltaY <= 0) { uncatch(); return; }
+    e.preventDefault();
+    e.stopPropagation();                                    // (not the 3D view's zoom either)
+    catchQuiet();
+  };
+  const onCatchTouch = (e) => {
+    const y = e.touches[0]?.clientY;
+    if (e.type === 'touchstart' || y == null) { catchY = y ?? null; return; }
+    if (catchY != null && y < catchY && e.cancelable) e.preventDefault();
+    catchY = y;
+  };
+  function uncatch() {
+    if (!catchEnd) return;
+    catchEnd = 0;
+    catchY = null;
+    clearTimeout(catchT);
+    removeEventListener('wheel', onCatchWheel, { capture: true });
+    removeEventListener('touchstart', onCatchTouch, { capture: true });
+    removeEventListener('touchmove', onCatchTouch, { capture: true });
+    removeEventListener('keydown', uncatch, { capture: true });
+  }
+  function arrive(prev) {
+    const e = endY();
+    if (!catchEnd) {
+      // (come down into it by a scroll: not a jump, not from under it)
+      if (merged || passing || prev >= e - 1 || lastY < e - 1 || lastY - prev > innerHeight) return;
+      catchEnd = performance.now() + CATCH_MS;
+      addEventListener('wheel', onCatchWheel, { passive: false, capture: true });
+      addEventListener('touchstart', onCatchTouch, { passive: true, capture: true });
+      addEventListener('touchmove', onCatchTouch, { passive: false, capture: true });
+      addEventListener('keydown', uncatch, { capture: true });
+      catchQuiet();
+    } else if (performance.now() > catchEnd || lastY < e - 2) { uncatch(); return; }
+    if (lastY <= e) return;
+    dispatchEvent(new Event('b2r:jump'));                  // (put back, not scrolled up: the header stays away - main.js)
+    scrollTo({ top: e, behavior: 'instant' });
+    lastY = scrollY;
+    if (TOUCH) {                                            // (the browser's own glide stops there)
+      document.documentElement.classList.add('held');
+      clearTimeout(heldT);
+      heldT = setTimeout(() => document.documentElement.classList.remove('held'), 160);
+    }
+    catchQuiet();
+  }
+  // A link of the page that takes it elsewhere (main.js: the builds under the configurator, the top): its scroll goes
+  // through the film as through any page - not held at the table, not driven into the configurator - until it ends.
+  let passing = false, passT = 0;
+  const passed = (ms) => { clearTimeout(passT); passT = setTimeout(() => { passing = false; }, ms); };
+  addEventListener('b2r:goto', () => { passing = true; stopAuto(); release(); uncatch(); block(false); passed(500); });
+  addEventListener('scroll', () => { if (passing) passed(300); }, { passive: true, capture: true });
   // The quiet line is up for a while at most: a 3D view that has not the build by then (a slow GPU, a build that did
   // not come) is not waited for any more - the film gives way to the page as it is, the engine renders the PC there.
   const LATE_MS = HOLD_MS;
   let lateT = 0;
   function waiting(a) {
-    const on = a > 0 && !merged && !assembly && !failed && firstLook();
+    const on = a > 0 && !merged && !passing && !assembly && !failed && !waited && firstLook();
     if (on !== root.classList.contains('waiting')) root.classList.toggle('waiting', on);
     if (on && !lateT) lateT = setTimeout(late, LATE_MS);
   }
+  // (The build is not given up for that: if it comes while the visitor is still above the configurator - it was a
+  // moment away, often - it takes over there as it would have. Only the wait is over.)
+  let waited = false;
   function late() {
     lateT = 0;
     if (assembly || failed || !firstLook()) return;
     if (!root.classList.contains('waiting')) return;        // (gone back up meanwhile: the wait starts anew there)
-    failed = true;
+    waited = true;
     unheld = true;
     block(false);
     waiting(0);
@@ -939,12 +1034,21 @@ export async function startFilm(pageReady = Promise.resolve()) {
       const model = v.model;
       // (each heavy step in a pause of the scroll: the build taken apart onto the table, then its first draw)
       // (each step a few ms at a time, after a frame: the film's scroll goes on as smooth meanwhile)
-      assembler().then(async (mod) => { await afterFrame(); return mod.fromTable(v, pictureRect(), viewBox()); }).then(async (a) => {
-        if (!a || failed || !firstLook() || v.model !== model || v.model !== a.model) { a?.finish(); return; }
+      // (the visitor in the configurator already - the wait given up, a link: the build stays as it is there, never
+      // taken apart under their eyes)
+      const gone = () => failed || merged || !firstLook() || v.model !== model;
+      assembler().then(async (mod) => { await afterFrame(); return gone() ? null : mod.fromTable(v, pictureRect(), viewBox()); }).then(async (a) => {
+        if (!a || gone() || v.model !== a.model) { a?.finish(); return; }
         await afterFrame();
         await v.warm();
-        if (failed || !firstLook() || v.model !== model) { a.finish(); return; }
+        if (gone()) { a.finish(); return; }
         assembly = a;
+        // (come in the middle of its stretch - a reload there, a wait given up: it fades in over the film's picture,
+        // not cut to)
+        if (asmT > a.fade) {
+          box3d.classList.add('late');
+          setTimeout(() => box3d.classList.remove('late'), 700);
+        }
         root.classList.add('live3d');
         stage3d();
         ready3d();
@@ -1084,7 +1188,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
     vel = now - t0 >= 8 ? (y - y0) / (now - t0) : 0;
   }
   addEventListener('scroll', track, { passive: true, capture: true });     // (before measure reads it)
-  const drivable = () => !!assembly && !assembly.parked && !merged && !failed && !CALM.matches;
+  const drivable = () => !!assembly && !assembly.parked && !merged && !passing && !failed && !CALM.matches;
   // the page's speed now: none if it has not moved for a moment
   const moving = () => (trail.length && performance.now() - trail[trail.length - 1][0] < 120 ? Math.max(0, vel) : 0);
   function steer(letGo = false) {
@@ -1139,7 +1243,8 @@ export async function startFilm(pageReady = Promise.resolve()) {
       wait();
     };
     if (scrollY < from - 2) {
-      glide(from, Math.min(2600, 700 + (from - scrollY) / innerHeight * 300));
+      // (the film at a pace its texts can still be read at: some four seconds from the top, less from further on)
+      glide(from, Math.min(5000, 900 + (from - scrollY) / innerHeight * 700));
       auto.free = true;
       auto.ride = done;
       auto.done = build;
@@ -1322,6 +1427,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // configurator. So the film keeps the page's place in its history entry and puts it back itself, laid out as it was.
   // (laid out once the page is all there: the configurator and the builds under the film give it its length)
   if (back) await pageReady;
+  let settling = false;
   if (back) {
     // (a PC built before this load, the page back at the configurator or under it: the configurator as it is - the PC
     // is not the film's one any more. Back in the film above it - a reload at the top - the film is as on a first
@@ -1336,12 +1442,24 @@ export async function startFilm(pageReady = Promise.resolve()) {
       // (the short stretch it had then, under the configurator's place: gone)
       if (back.cut > 0 && y > from) y = Math.max(from, y - back.cut);
     }
-    scrollTo({ top: y, behavior: 'instant' });
-    measure();
+    const put = () => { scrollTo({ top: y, behavior: 'instant' }); measure(); };
+    put();
+    // (a place under the configurator, the page there not all in yet - its steps, its builds come with the model's
+    // files: put back again as it grows, until it reaches; never against the visitor's own scroll)
+    if (Math.abs(scrollY - y) > 2) {
+      settling = true;
+      const grow = new ResizeObserver(() => { put(); if (Math.abs(scrollY - y) <= 2) stop(); });
+      const evs = ['wheel', 'touchstart', 'keydown'];
+      const stop = () => { settling = false; grow.disconnect(); for (const ev of evs) removeEventListener(ev, stop); };
+      grow.observe(document.body);
+      for (const ev of evs) addEventListener(ev, stop, { passive: true });
+      setTimeout(stop, 4000);
+    }
   }
   let placeT = 0;
   const keepPlace = () => {
     clearTimeout(placeT);
+    if (settling) return;                                   // (not back where it was yet: that place is kept)
     try {
       const cut = built && !root.classList.contains('bare') ? asm : 0;
       history.replaceState({ ...(history.state ?? {}), film: { y: Math.round(scrollY), built, cut } }, '');

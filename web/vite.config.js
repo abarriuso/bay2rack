@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createReadStream, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, extname, join, normalize } from 'node:path';
+import { dirname, extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import { readFileSync } from 'node:fs';
@@ -17,7 +17,7 @@ const liveRepoFiles = () => ({
     for (const [url, dir] of [['/scad/', 'src'], ['/stl/', 'stl'], ['/img/gallery/', 'docs/gallery'], ['/scroll/', 'docs/scroll']]) {
       server.middlewares.use(url, (req, res, next) => {
         const file = normalize(join(repo, dir, decodeURIComponent(req.url.split('?')[0])));
-        if (!file.startsWith(join(repo, dir)) || !existsSync(file) || !statSync(file).isFile()) return next();
+        if (!file.startsWith(join(repo, dir) + sep) || !existsSync(file) || !statSync(file).isFile()) return next();
         res.setHeader('Content-Type', TYPES[extname(file)] ?? 'application/octet-stream');
         res.setHeader('Cache-Control', 'no-store');
         createReadStream(file).pipe(res);
@@ -27,7 +27,7 @@ const liveRepoFiles = () => ({
     server.middlewares.use('/__save', (req, res) => {
       const rel = new URL(req.url, 'http://x').searchParams.get('path') ?? '';
       const file = normalize(join(repo, 'docs', rel));
-      if (req.method !== 'POST' || !file.startsWith(join(repo, 'docs'))) { res.statusCode = 400; res.end(); return; }
+      if (req.method !== 'POST' || !file.startsWith(join(repo, 'docs') + sep)) { res.statusCode = 400; res.end(); return; }
       const parts = [];
       req.on('data', (c) => parts.push(c));
       req.on('end', () => {

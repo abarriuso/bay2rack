@@ -201,7 +201,7 @@ def export(openscad, v, filename, extra):
     out.parent.mkdir(parents=True, exist_ok=True)
     params = {**v["params"], **extra}
     cmd = [openscad, "-o", str(out)] + [a for k, val in params.items() for a in ("-D", f"{k}={scad_value(val)}")] + [str(SCAD)]
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     log = r.stdout + r.stderr
     echoes = re.findall(r'ECHO: "(.*)"', log)
     ok = r.returncode == 0 and out.exists()

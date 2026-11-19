@@ -52,7 +52,7 @@ def run(case):
         out = Path(tmp) / "a.echo"
         args = [EXE, "-o", str(out)] + [a for k, v in {"part": "assembly", **d}.items() for a in ("-D", f"{k}={lit(v)}")] + [str(SCAD)]
         try:
-            r = subprocess.run(args, capture_output=True, text=True, timeout=180)
+            r = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
         except subprocess.TimeoutExpired:
             return name, ["HANG (over 180 s)"]
         log = r.stdout + r.stderr + (out.read_text(errors="ignore") if out.exists() else "")

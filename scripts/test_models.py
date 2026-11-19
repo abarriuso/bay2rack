@@ -205,8 +205,8 @@ def run(exe, case):
         args = [exe, "-o", str(stl)]
         for k, v in defines.items():
             args += ["-D", f"{k}={literal(v)}"]
-        r = subprocess.run(args + [str(SCAD)], capture_output=True, text=True, timeout=900)
-        log = r.stdout + r.stderr
+        r = subprocess.run(args + [str(SCAD)], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=900)
+        log = (r.stdout or "") + (r.stderr or "")
         tris = triangles(stl) if stl.exists() else 0
     problems = []
     if r.returncode != 0 or re.search(r"^ERROR", log, re.M):

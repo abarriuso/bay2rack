@@ -103,7 +103,7 @@ def render(openscad, name, spec):
     if viewall:
         cmd += ["--viewall", "--autocenter"]
     cmd += [a for k, v in params.items() for a in ("-D", f"{k}={scad_value(v)}")] + [str(src)]
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     return name, r.returncode == 0 and out.exists()
 
 

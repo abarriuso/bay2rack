@@ -19,6 +19,7 @@ import { ViewTools } from './blueprint.js';
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);      // OpenSCAD is Z-up
 const FOV = 30;                                 // the view's angle of view (top to bottom), degrees
 const VIEW_DIR = new THREE.Vector3(-0.55, -1, 0.6).normalize();   // front-left, from above
+const MAX_POLAR = Math.PI / 2 - 0.03;           // the camera's lowest: just above the floor
 // motion: off for those who ask the system for less of it
 const CALM = matchMedia('(prefers-reduced-motion: reduce)');
 const easeOut = (t) => 1 - (1 - t) ** 3;
@@ -59,6 +60,8 @@ export class Viewer {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.12;
+    this.reach = [0, Infinity];                           // (how near and how far the camera goes: fit)
+    this.limits(true);
     this.controls.addEventListener('change', () => { this.turned = true; this.kick?.(); });
     // a drag takes the camera from a glide; while a finger or the mouse holds it, frames are asked for
     this.controls.addEventListener('start', () => { this.stopFly?.(); this.dragging = true; this.kick?.(); });
@@ -495,10 +498,26 @@ export class Viewer {
     }
   }
 
+  // The camera's reach: never under the floor (a finger up the view of a phone took it there in one swipe), never so
+  // far that the build is a dot or gone (a wheel that went on after the page stopped), never inside a part. Off while
+  // the film has the camera (assemble.js: its own way goes from right above the table, and further back).
+  limits(on = true) {
+    const c = this.controls;
+    this.unbound = !on;
+    c.minPolarAngle = on ? 0.02 : 0;
+    c.maxPolarAngle = on ? MAX_POLAR : Math.PI;
+    c.minDistance = on ? this.reach[0] : 0;
+    c.maxDistance = on ? this.reach[1] : Infinity;
+  }
+
   fit(box = this.focus ?? this.whole, entry = null) {
     this.dirty = true;
     const pose = this.fitPose(box);
     if (!pose) return;
+    // (as far as twice the view of the whole scene, as near as a hand's width)
+    const all = this.fitPose(this.whole) ?? pose;
+    this.reach = [8, Math.max(all.eye.distanceTo(all.target), pose.eye.distanceTo(pose.target)) * 2];
+    if (!this.unbound) this.limits(true);
     this.camera.near = pose.near;
     this.camera.far = pose.far;
     this.camera.updateProjectionMatrix();
