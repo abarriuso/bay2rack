@@ -314,8 +314,12 @@ export class Viewer {
     this.dirty = true;
     const w = Math.max(this.el.clientWidth, 1);
     const h = Math.max(this.el.clientHeight, 1);
-    this.renderer.setSize(w, h, false);
-    this.composer.setSize(w, h);
+    // (the same size: its buffers stay - made anew, they were a long frame where the film hands over, assemble.js)
+    if (w !== this.size?.[0] || h !== this.size?.[1]) {
+      this.size = [w, h];
+      this.renderer.setSize(w, h, false);
+      this.composer.setSize(w, h);
+    }
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }

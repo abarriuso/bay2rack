@@ -1143,7 +1143,9 @@ export async function startFilm(pageReady = Promise.resolve()) {
     if (m) arrived = performance.now();
     root.classList.toggle('merged', m);
     bars();
-    if (m) prepare();
+    // (the engine, if it has not started yet: in a quiet moment after the configurator has come in - its start, its
+    // status line and its 11 MB, in the frame it hands over at, held it up)
+    if (m) setTimeout(() => idle(() => { if (merged) prepare(); }, { timeout: 1500 }), 500);
     // (scrolled into the editor: it is yours - a soft settle, now and then)
     if (m && engaged && performance.now() - settled > 4000) { settled = performance.now(); softly(0.6, () => sfx.settle()); }
     stage3d();

@@ -121,6 +121,7 @@ function snapshot(w, hgt) {
     cam.far = saved.far;
     cam.lookAt(saved.target);
     for (const [m, vis] of marks) m.visible = vis;
+    v.size = null;                    // (its buffers were another size meanwhile: made anew)
     v.resize();                       // (the page's size and aspect again, and a new frame)
   }
 }
