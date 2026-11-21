@@ -789,7 +789,12 @@ export function buildCable(cb) {
 // everything at once, from the parsed SCENE lines
 export function buildScene(data) {
   const { group, steps } = sceneSteps(data);
-  for (const step of steps) step();
+  // (the case's step yields between its parts: run to its end here - called alone it only made a generator, and
+  // every build the engine rendered came without its PC)
+  for (const step of steps) {
+    const r = step();
+    if (r && typeof r.next === 'function') while (!r.next().done);
+  }
   return group;
 }
 
