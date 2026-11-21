@@ -1440,7 +1440,9 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // (once the film's pictures are all in - or, on a very slow network, after a while anyway)
   // (a touch screen - a phone, on its data most likely - only once the film is played: the 3D view and its build are
   // more than a MB a visitor who only reads the first text never sees; it comes long before the build's stretch)
-  const soon = () => Promise.race([loaded, new Promise((ok) => setTimeout(ok, 12000))])
+  // (a wide screen: as soon as the film is played, too, its pictures in or not - a reader who scrolls on steadily
+  // never pauses, and the 3D view's steps, each in a quiet moment, need the whole film to be ready at its end)
+  const soon = () => Promise.race([loaded, new Promise((ok) => setTimeout(ok, 12000)), ...(TOUCH ? [] : [played])])
     .then(() => (TOUCH ? played : null))
     .then(() => idle(() => { if (!root.classList.contains('plain')) early(); }, { timeout: 2000 }));
   if (document.readyState === 'complete') soon(); else addEventListener('load', soon, { once: true });

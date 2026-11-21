@@ -70,9 +70,10 @@ export function filamentHexes() {
 export const $ = (s) => document.querySelector(s);
 // phones and narrow windows: the one-screen configurator (the same query as in style.css)
 export const CALM = matchMedia('(prefers-reduced-motion: reduce)');       // motion off, if the system asks
-// The page at rest: the heavy steps of the 3D view (its start, a model laid out, its first draw - each holds the page
-// for a moment) wait for a pause in the visitor's scroll, so a scroll seldom stutters on them; never more than `most`
-// ms (a scroll that does not stop still gets its 3D view in time).
+// The page at rest: a heavy step that can wait (the film's first paint of the configurator, its WebGL context made
+// ahead - each holds the page for a moment) waits for a pause in the visitor's scroll, so a scroll seldom stutters on
+// it; never more than `most` ms. (The 3D view's own steps take idle moments instead - idleMoment: a scroll that does
+// not stop gets its 3D view in time.)
 let moved = 0, still = false;
 for (const e of ['scroll', 'wheel', 'touchstart', 'touchmove'])
   addEventListener(e, () => { if (!still || e === 'scroll') moved = performance.now(); }, { passive: true, capture: true });
@@ -92,6 +93,12 @@ export function atRest(quiet = 150, most = 900) {
     check();
   });
 }
+// A quiet moment of the page: its idle time between two frames (a scroll that goes on steadily has some in every
+// frame it draws fast enough), or after `most` ms anyway
+export const idleMoment = (most = 200) => new Promise((ok) => {
+  if (window.requestIdleCallback) requestIdleCallback(() => ok(), { timeout: most });
+  else setTimeout(ok, 0);
+});
 // Just after the next frame is drawn: what runs there has the whole frame before the next one to itself, so a slice of
 // a long job done there never holds a frame of the page up - the scroll goes on as smooth while it runs. (A hidden tab
 // draws no frames: the job waits until it is seen again.)
