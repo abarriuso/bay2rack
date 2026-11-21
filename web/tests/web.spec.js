@@ -398,6 +398,33 @@ test('undo and redo', async ({ page }) => {
   await expect(page).toHaveURL(/bays=5/);
 });
 
+// Every build the engine renders comes with the PC around it. The case is made a part at a time (a step that yields,
+// scene.js), and the whole scene made at once skipped it: the PC was there only in the build made ahead - the film's
+// and the first look's - and gone at the first edit, the printed parts alone in the 3D view.
+test('a build rendered again keeps the PC around it', async ({ page }) => {
+  // (three.js tells its devtools of each scene it makes: the 3D view's is looked into through that)
+  await page.addInitScript(() => {
+    window.__scenes = [];
+    window.__THREE_DEVTOOLS__ = new EventTarget();
+    window.__THREE_DEVTOOLS__.addEventListener('observe', (e) => { if (e.detail?.isScene) window.__scenes.push(e.detail); });
+  });
+  const pc = () => page.evaluate(() => {
+    const room = window.__scenes.map((s) => s.getObjectByName('scene')).find(Boolean);
+    let meshes = 0;
+    room?.getObjectByName('case')?.traverse((o) => { if (o.isMesh) meshes++; });
+    return { room: room?.uuid ?? null, meshes };
+  });
+  await page.goto('/#bays=4');
+  await rendered(page);
+  await expect.poll(async () => (await pc()).meshes).toBeGreaterThan(50);
+  const first = (await pc()).room;
+  await page.locator('.seg-btn', { hasText: /^5$/ }).first().click();
+  await expect(page).toHaveURL(/bays=5/);
+  await expect.poll(async () => (await pc()).room).not.toBe(first);
+  await rendered(page);
+  expect((await pc()).meshes).toBeGreaterThan(50);
+});
+
 test('a short link opens the same build', async ({ page, context }) => {
   await page.goto('/#bays=5&rack_modules=uswflex,ms105g,ux,patch&ks_names=WAN,LAN,NAS&label_text=MY%20LAB');
   await rendered(page);
