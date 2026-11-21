@@ -659,12 +659,12 @@ export async function startFilm(pageReady = Promise.resolve()) {
   function measure() {
     if (keep) return;                                       // (the sizes are changing: see above)
     const prev = lastY;
-    lastY = scrollY;
+    lastY = sy = scrollY;
     if (blocking && !holds()) block(false);
     if (held(prev)) {
       dispatchEvent(new Event('b2r:jump'));                // (held back, not scrolled up: the header stays away - main.js)
       scrollTo({ top: holdY(), behavior: 'instant' });
-      lastY = scrollY;
+      lastY = sy = scrollY;
     }
     arrive(prev);
     const y = lastY + stick - filmTop;
@@ -1015,7 +1015,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
     if (lastY <= e) return;
     dispatchEvent(new Event('b2r:jump'));                  // (put back, not scrolled up: the header stays away - main.js)
     scrollTo({ top: e, behavior: 'instant' });
-    lastY = scrollY;
+    lastY = sy = scrollY;
     if (TOUCH) {                                            // (the browser's own glide stops there)
       document.documentElement.classList.add('held');
       clearTimeout(heldT);
@@ -1156,7 +1156,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   addEventListener('touchstart', () => { touching++; }, { passive: true });
   for (const ev of ['touchend', 'touchcancel']) addEventListener(ev, () => { touching = Math.max(0, touching - 1); atRest(); aim(); steer(true); }, { passive: true });
   addEventListener('scroll', () => {
-    const y = scrollY;
+    const y = sy;                                           // (read before the film wrote its styles: track)
     if (y !== wentY) { went = Math.sign(y - wentY); wentY = y; }
     atRest();
     aim();
@@ -1225,9 +1225,13 @@ export async function startFilm(pageReady = Promise.resolve()) {
   let drive = null, vel = 0, steerT = 0;
   // the page's own speed (px per ms): over its last tenth of a second of scroll events (a fling's own speed as it is let
   // go - an average over longer would lag behind it)
+  // (and the page's place, read here - first of all, before anything is written - by whatever runs after it: in the
+  // scroll's own listeners and in the next frame, a read of scrollY after the film has written its styles lays the
+  // page out there and then, some 10 ms each)
   const trail = [];
+  let sy = scrollY;
   function track() {
-    const now = performance.now(), y = scrollY;
+    const now = performance.now(), y = sy = scrollY;
     if (trail.length && now - trail[trail.length - 1][0] > 200) trail.length = 0;
     trail.push([now, y]);
     while (trail.length > 2 && now - trail[1][0] >= 100) trail.shift();
@@ -1240,7 +1244,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   const moving = () => (trail.length && performance.now() - trail[trail.length - 1][0] < 120 ? Math.max(0, vel) : 0);
   function steer(letGo = false) {
     if (drive || touching || !drivable() || went < 0) return;
-    const y = scrollY;
+    const y = sy;
     if (y >= endY() - 1) return;
     // (a fling: taken over from half a screen before the build)
     if (vel > fastest() * 1.1 && y >= buildY() - innerHeight * 0.5) { take(vel); return; }
@@ -1253,7 +1257,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
     steerT = setTimeout(() => { if (!drive && !touching && went >= 0 && drivable() && scrollY >= buildY() - 1) take(0); }, 140);
   }
   function take(v0, boost = 1, done = null) {
-    if (drive || touching || !drivable() || scrollY >= endY() - 1) return false;
+    if (drive || touching || !drivable() || sy >= endY() - 1) return false;
     clearTimeout(steerT);
     // (taken from a ride's run down the film - ride: on at its speed, and the ride's end is this one's)
     if (auto?.ride) { done ??= auto.ride; boost = Math.max(boost, RIDE); }
@@ -1309,7 +1313,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
     const dt = Math.min(50, Math.max(1, now - d.t));
     d.t = now;
     // (moved under it - a link, a key, the browser - or the build gone: the page is the visitor's again)
-    if (Math.abs(scrollY - d.y) > 2) { release(); return; }
+    if (Math.abs(sy - d.y) > 2) { release(); return; }
     if (!drivable()) { const done = merged ? d.done : null; release(); done?.(); return; }   // (merged: arrived)
     const end = endY(), left = end - d.y;
     if (left <= 0.5) { scrollTo({ top: end, behavior: 'instant' }); const done = d.done; release(); done?.(); return; }
@@ -1338,7 +1342,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   }
   function play(now) {
     if (!auto) return;
-    const y = scrollY, d = auto.dir;
+    const y = sy, d = auto.dir;
     // (taken back the other way, or - on the way down - the build is the visitor's now)
     if ((y - auto.set) * d < -2 || (d > 0 && !assembly && !auto.free)) { auto = null; return; }
     const k = Math.min(1, (now - auto.t0) / auto.ms);

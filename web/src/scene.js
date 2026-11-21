@@ -3,6 +3,7 @@
 // World axes as in OpenSCAD: X width, Y depth (+Y into the case), Z up, fronts face -Y.
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MAT } from './materials.js';
 
 const YZX = new THREE.Matrix4().set(0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1);   // shape (y, z) + extrude -> world (x)
@@ -822,6 +823,61 @@ export function sceneSteps(data) {
   (data.cables ?? []).forEach((cb, i) => safe(`cable_${i}_vlan${cb.vlan ?? 'x'}`, () => buildCable(cb)));
   if (data.case?.tidy) safe('cable_ties', () => cableTies(data.case, data.cables ?? []));
   return { group: g, steps };
+}
+
+// The scene drawn in fewer pieces: in each of its parts (the case, each client, the access point...), the meshes that
+// never move or hide on their own - not the side panel, not the cables (their role), nothing mirrored - and look the
+// same (one kind of material with the same settings, the same textures, the same shadows) become one mesh. The case
+// alone was some 350 meshes, each a draw, twice a frame with its shadow: the film's build ran at a dozen frames a
+// second on a slow machine. Only for the page's view (viewer.js prepareScene): the GLB export keeps its named parts.
+// A generator: a part's kind of mesh at a time (sliced, state.js).
+const SMALL = 7;                                // (as in viewer.js show3d: a mesh this small casts no shadow)
+const texKey = (t) => (t ? t.uuid : '');
+function lookOf(m) {
+  const a = m.material;
+  if (!a || Array.isArray(a) || a.type !== 'MeshStandardMaterial' || a.userData.keep) return null;
+  const g = m.geometry, attrs = Object.keys(g.attributes).sort().map((k) => k + g.attributes[k].itemSize).join();
+  if (Object.keys(g.morphAttributes).length) return null;      // (its groups - a box's faces - are one draw with one material: dropped)
+  const r = g.boundingSphere?.radius ?? 0;
+  return [a.name, a.color.getHexString(), a.roughness, a.metalness, a.emissive.getHexString(), a.emissiveIntensity, a.side,
+    a.transparent, a.opacity, a.alphaTest, a.toneMapped, a.envMapIntensity, a.bumpScale, a.depthWrite, a.vertexColors, a.flatShading,
+    texKey(a.map), texKey(a.bumpMap), texKey(a.roughnessMap), texKey(a.metalnessMap), texKey(a.alphaMap), texKey(a.normalMap), texKey(a.emissiveMap),
+    attrs, g.index ? 'i' : 'n', m.castShadow && r >= SMALL, m.receiveShadow].join('|');
+}
+export function* mergeStatic(group) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4(), rel = new THREE.Matrix4();
+  for (const part of [...group.children]) {
+    if (part.userData.role) continue;
+    const kinds = new Map();
+    part.traverse((o) => {
+      if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.visible || o.renderOrder || o.frustumCulled === false || o.children.length) return;
+      for (let p = o; p && p !== part; p = p.parent) if (p.userData.role || !p.visible) return;
+      if (o.matrixWorld.determinant() < 0) return;
+      const k = lookOf(o);
+      if (k == null) return;
+      if (!kinds.has(k)) kinds.set(k, []);
+      kinds.get(k).push(o);
+    });
+    inv.copy(part.matrixWorld).invert();
+    for (const meshes of kinds.values()) {
+      if (meshes.length < 2) continue;
+      const geos = meshes.map((m) => { const g = m.geometry.clone().applyMatrix4(rel.multiplyMatrices(inv, m.matrixWorld)); g.clearGroups(); return g; });
+      const merged = mergeGeometries(geos);
+      for (const g of geos) g.dispose();
+      if (!merged) continue;
+      merged.computeBoundingSphere();
+      merged.computeBoundingBox();
+      const first = meshes[0], one = new THREE.Mesh(merged, first.material);
+      one.castShadow = first.castShadow && first.geometry.boundingSphere.radius >= SMALL;
+      one.receiveShadow = first.receiveShadow;
+      if (first.castShadow && !one.castShadow) one.userData.noShadow = true;
+      one.name = 'merged_' + first.material.name;
+      part.add(one);
+      for (const m of meshes) { m.removeFromParent(); m.geometry.dispose(); if (m.material !== first.material) m.material.dispose(); }
+      yield;
+    }
+  }
 }
 
 // Velcro ties around the flat ribbon of cables inside the case (bay2rack.scad routes it along the roof and
