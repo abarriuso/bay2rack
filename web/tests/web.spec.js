@@ -207,7 +207,8 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
     document.documentElement.style.scrollBehavior = 'auto';
     window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm + k * asm);
   }, k);
-  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas)')?.parentElement?.className ?? '');
+  // (the 3D view's canvas: not the film's, nor the table's picture under it - a canvas too, with its edges faded)
+  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas):not(.film-plate)')?.parentElement?.className ?? '');
   // (down through the film: the engine starts on the way)
   for (const k of [-8, -6, -4, -2, -1]) await to(k);
   await to(0);
@@ -223,7 +224,7 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await to(1.01);
   await expect(page.locator('#film')).toHaveClass(/merged/);
   await expect.poll(home).toBe('view');
-  await expect(page.locator('.film-3d canvas')).toHaveCount(0);
+  await expect(page.locator('.film-3d canvas:not(.film-plate)')).toHaveCount(0);
   // in the configurator, at rest, the stretch that built it gets short - the view does not move - and back up from it
   // the PC comes apart on the stage again, over that little scroll
   const at = await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top);
