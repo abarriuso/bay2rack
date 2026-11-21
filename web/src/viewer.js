@@ -10,7 +10,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { MAT, boxUV, materialFor } from './materials.js';
-import { buildScene, sceneSteps } from './scene.js';
+import { buildScene, sceneSteps, mergeStatic } from './scene.js';
 import { sliced, afterFrame } from './state.js';
 import { piecesKnown } from './mesh.js';
 import { takeGL } from './gl-ahead.js';
@@ -103,6 +103,8 @@ export class Viewer {
     this.camera.position.set(-300, -500, 300);
     this.hooks = [];          // per-frame callbacks (animations)
     this.active = true;       // paused while scrolled out of view
+    this.shadowsDue = false;  // (the shadows to draw again: see the loop)
+    this.shadowSkip = 0;
     // the frames: one is asked for only while there is something to draw (dirty, an animation, the camera moving or
     // held); at rest nothing runs at all, not even an empty requestAnimationFrame
     let last = performance.now();
@@ -120,15 +122,23 @@ export class Viewer {
       // controls.update() is true while the camera moves (dragging, and the damping after it)
       const moved = this.controls.update() || this.turned;
       this.turned = false;
-      if (moved || this._dirty || this.hooks.length) {
-        // (the camera alone turned: the shadows are as they were)
-        if (this._dirty || this.hooks.length) this.renderer.shadowMap.needsUpdate = true;
+      const changed = this._dirty || this.hooks.length > 0;
+      if (moved || changed || this.shadowsDue) {
+        // (the camera alone turned: the shadows are as they were. Something moved: they are drawn again - the whole
+        // scene once more, from the light. While the film builds the PC on its stage (pinned) its pieces move in every
+        // frame: their shadows follow every other frame, and once more as they stop)
+        if (changed) this.shadowsDue = true;
+        if (this.shadowsDue && (!this.pinned || !changed || ++this.shadowSkip >= 2)) {
+          this.renderer.shadowMap.needsUpdate = true;
+          this.shadowsDue = false;
+          this.shadowSkip = 0;
+        }
         this._dirty = false;
         this.depthRange();
         this.composer.render();
         this.tools?.place();                              // the blueprint's labels follow (only when it drew)
       }
-      if (moved || this._dirty || this.hooks.length || this.dragging) this.kick();
+      if (moved || this._dirty || this.hooks.length || this.dragging || this.shadowsDue) this.kick();
     };
     this.kick = () => {
       if (frame) return;
@@ -224,6 +234,8 @@ export class Viewer {
     const meshes = [];
     group.traverse((m) => { if (m.isMesh && !m.geometry.boundingSphere) meshes.push(m); });
     await sliced(meshes.map((m) => () => m.geometry.computeBoundingSphere()));
+    // (then drawn in fewer pieces: what looks the same in each part of it, one mesh - scene.js)
+    await sliced([() => mergeStatic(group)]);
     this.prepared = { key, group };
   }
 
@@ -302,8 +314,12 @@ export class Viewer {
     this.dirty = true;
     const w = Math.max(this.el.clientWidth, 1);
     const h = Math.max(this.el.clientHeight, 1);
-    this.renderer.setSize(w, h, false);
-    this.composer.setSize(w, h);
+    // (the same size: its buffers stay - made anew, they were a long frame where the film hands over, assemble.js)
+    if (w !== this.size?.[0] || h !== this.size?.[1]) {
+      this.size = [w, h];
+      this.renderer.setSize(w, h, false);
+      this.composer.setSize(w, h);
+    }
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }

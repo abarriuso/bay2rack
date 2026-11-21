@@ -46,9 +46,14 @@ const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 // pictures, and its version on the first one (the still and the film's first frame: one address, one download). Read
 // at every page (the dev server: a new encode shows on reload).
 const film = () => { try { return JSON.parse(readFileSync(join(repo, 'docs', 'scroll', 'film.json'), 'utf8')); } catch { return null; } };
+// The still's sizes: the film's wide sets, smallest first ([folder, width, height] - a phone or a big screen takes a
+// larger one than the smallest: index.html).
+const stillSet = (f) => (f?.sizes ?? []).filter((sz) => sz.role !== 'tall' && sz.w && sz.h)
+  .sort((a, b) => a.w - b.w).map((sz) => [String(sz.dir), sz.w, sz.h]);
 const withFilm = (html) => {
   const f = film();
   return html.replaceAll('__FILMV__', f?.v ?? '')
+    .replace('__STILL_SET__', JSON.stringify(stillSet(f)).replace(/</g, '\\u003c'))
     .replace('__FILM_JSON__', f ? JSON.stringify(f).replace(/</g, '\\u003c') : '');
 };
 const staticTexts = () => ({

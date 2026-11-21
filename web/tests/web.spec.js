@@ -98,8 +98,9 @@ test('a page nobody scrolls loads no engine, does not shift, and shows its own t
   await page.waitForTimeout(6000);                                // (the engine used to come some 4 s after them)
   expect(asked.filter((u) => /openscad/.test(u))).toEqual([]);
   expect(await page.evaluate(() => window.__shift)).toBeLessThan(0.1);
-  expect(await page.locator('.film-still').evaluate((i) => i.currentSrc)).toMatch(/\/scroll\/light\/960\/0001\.webp\?v=\w+$/);
-  expect(asked.filter((u) => /\/scroll\/\w+\/960\/0001\.webp/.test(u))).toHaveLength(1);
+  // (the still of the size the screen needs, and the film's first frame that same picture: one download of it)
+  expect(await page.locator('.film-still').evaluate((i) => i.currentSrc)).toMatch(/\/scroll\/light\/\w+\/0001\.webp\?v=\w+$/);
+  expect(asked.filter((u) => /\/scroll\/\w+\/\w+\/0001\.webp/.test(u))).toHaveLength(1);
 });
 
 // a phone: an iPhone's screen and touch (in Chromium: Safari itself only on a real one). The big headings once ran off
@@ -114,9 +115,13 @@ test.describe('on a phone', () => {
     await expect(page.locator('.beat.on h1')).toHaveText('Bay2Rack');
     await expect(page.locator('.beat.on h1')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('.beat.on .cta .btn').first()).toBeInViewport({ ratio: 1 });
-    // the canvas is no bigger than the phone's frames (960 x 540) need
-    const canvas = await page.locator('#filmCanvas').evaluate((c) => c.width * c.height);
-    expect(canvas).toBeLessThanOrEqual(1100 * 1100);
+    // the canvas is no bigger than the film's largest frames need (as tall as they are at most: a phone's screen is
+    // cut from them), within a phone's budget - and sharper than the reel's own frames on a 3x screen
+    const [cw, ch] = await page.locator('#filmCanvas').evaluate((c) => [c.width, c.height]);
+    const sizes = await page.evaluate(() => JSON.parse(document.getElementById('filmMeta').textContent).sizes);
+    expect(ch).toBeLessThanOrEqual(Math.max(...sizes.map((s) => s.h)));
+    expect(cw * ch).toBeLessThanOrEqual(4.2e6);
+    expect(ch).toBeGreaterThan(900);
     const overflow = () => page.evaluate(() => {
       const wide = [...document.querySelectorAll('.beat h1, .beat h2, .band h2, .build h2:not(.build-head h2), .foot-mark')]
         .filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent);
@@ -202,11 +207,16 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
     document.documentElement.style.scrollBehavior = 'auto';
     window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm + k * asm);
   }, k);
-  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas)')?.parentElement?.className ?? '');
+  // (the 3D view's canvas: not the film's, nor the table's picture under it - a canvas too, with its edges faded)
+  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas):not(.film-plate)')?.parentElement?.className ?? '');
   // (down through the film: the engine starts on the way)
   for (const k of [-8, -6, -4, -2, -1]) await to(k);
   await to(0);
   await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
+  // (on the stage already where its stretch starts, the coda's layers made ahead: the frames the 3D view fades in
+  // at and the coda starts at once held the page up, each a first paint)
+  await expect.poll(home).toBe('film-3d on');
+  await expect(page.locator('#film')).toHaveClass(/nearing/);
   await to(0.5);
   await expect.poll(home).toBe('film-3d on');
   await expect(page.locator('.film-3d')).toHaveCSS('opacity', '1');
@@ -214,7 +224,7 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await to(1.01);
   await expect(page.locator('#film')).toHaveClass(/merged/);
   await expect.poll(home).toBe('view');
-  await expect(page.locator('.film-3d canvas')).toHaveCount(0);
+  await expect(page.locator('.film-3d canvas:not(.film-plate)')).toHaveCount(0);
   // in the configurator, at rest, the stretch that built it gets short - the view does not move - and back up from it
   // the PC comes apart on the stage again, over that little scroll
   const at = await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top);
