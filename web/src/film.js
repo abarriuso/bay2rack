@@ -50,6 +50,8 @@ const filmMeta = (() => {
 })();
 // a reload, or back to this page: where it was, kept by the film (see the end of startFilm)
 const back = (() => { try { const f = history.state?.film; return f && Number.isFinite(f.y) ? f : null; } catch { return null; } })();
+// (a quiet moment of the page: its idle time, or a moment anyway)
+const idle = window.requestIdleCallback ? (f, o) => requestIdleCallback(f, o) : (f) => setTimeout(f, 200);
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 // Touch devices (phones, tablets; iOS Safari above all) keep every decoded frame in a small memory budget and reload
@@ -582,12 +584,13 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // its coda. It is measured with the stage's own height (svh, steady), not innerHeight, which on iPhone changes as
   // Safari's bars fold and unfold and would nudge the frame.
   const codaEl = root.querySelector('.film-coda'), asmEl = root.querySelector('.film-assemble');
-  let filmTop = 0, span = 1, stick = 0, coda = 0, close = 0, asm = 0;
+  let filmTop = 0, span = 1, stick = 0, coda = 0, close = 0, asm = 0, stageH = 1;
   function geometry() {
     const r = root.getBoundingClientRect();
     filmTop = r.top + scrollY;
     stick = parseFloat(getComputedStyle(stage).top) || 0;
-    const all = Math.max(1, r.height - stage.offsetHeight);
+    stageH = stage.offsetHeight;
+    const all = Math.max(1, r.height - stageH);
     close = Math.min(all * 0.25, codaEl?.offsetHeight ?? 0);
     asm = Math.min(all * 0.35, asmEl?.offsetHeight ?? 0);
     coda = close + asm;
@@ -671,6 +674,13 @@ export async function startFilm(pageReady = Promise.resolve()) {
     const c = close ? Math.min(1, Math.max(0, (y - span) / (close * 0.8))) : 0;
     const a = asm ? Math.min(1, Math.max(0, (y - span - close) / asm)) : 0;
     if (t >= last * VIEW_AT) early();
+    // Near the end of the film, unseen: the coda's layers (most of a screen before it, film-extra.css .nearing), then
+    // the 3D view on the stage (half a screen before it: stage3d). Each is a first paint, slow, done in a frame of the
+    // film rather than in the first frame of the coda or of the 3D view.
+    const nearing = y >= span - stageH * 0.8;
+    if (nearing !== root.classList.contains('nearing')) root.classList.toggle('nearing', nearing);
+    const n3 = y >= span - stageH * 0.4;
+    if (n3 !== near3d) { near3d = n3; if (assembly) stage3d(); }
     if (a > 0 && assembly && !preparing) engineSoon();
     setMerged(y >= span + coda);                       // (where the stage has let go: no sooner, by a fraction)
     steer();
@@ -793,26 +803,59 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // come in where the last text was. Back up, all of it the other way (once built, over a shorter stretch: see
   // collapse()). A visitor who changed the build, or came with settings in the link, gets the configurator as it is:
   // the film just gives way to it.
-  let assembly = null, preparing = false, pinned = false;
+  let assembly = null, preparing = false, pinned = false, near3d = false;
   const view = $('#view');
   const box3d = document.createElement('div');
   box3d.className = 'film-3d';
   box3d.setAttribute('aria-hidden', 'true');
-  const plate = document.createElement('img');
+  // The bare table is a canvas of its own, its picture drawn into it once with its edges already melted into the
+  // studio (the film's frame, its middle two thirds, whole). As a picture with two CSS masks under a 3D transform it
+  // was decoded and rastered, masks and all, in the very frame the 3D view faded in (a frame held up to half a
+  // second); a canvas is a texture the compositor only moves.
+  const plate = document.createElement('canvas');
   plate.className = 'film-plate';
-  plate.alt = '';
-  plate.decoding = 'async';
+  plate.width = plate.height = 1;
   box3d.append(plate);
   root.querySelector('.film-window')?.after(box3d);
+  let plateOk = false, plateSrcNow = '', plateAsk = 0;
   // (a phone, or a small window: the lighter plate; it is a blur of a floor)
   const plateSrc = () => `${BASE}scroll/${themeNow()}/plate${TOUCH || innerWidth * (devicePixelRatio || 1) < 2000 ? '-1600' : ''}.webp`;
   const setPlate = () => {
     const src = plateSrc();
-    if (plate.getAttribute('src') === src) return;
-    plate.onload = () => { plate.style.width = `${plate.naturalWidth}px`; plate.style.height = `${plate.naturalHeight}px`; stage3d(); };
-    plate.setAttribute('src', src);
+    if (plateSrcNow === src) return;
+    plateSrcNow = src;
+    const ask = ++plateAsk;
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = src;
+    // (decoded off the page's thread, then drawn in a quiet moment: a few ms)
+    im.decode().then(() => new Promise((ok) => idle(ok, { timeout: 600 }))).then(() => {
+      if (ask !== plateAsk) return;
+      const w = im.naturalWidth, h = im.naturalHeight;
+      plate.width = w;
+      plate.height = h;
+      plate.style.width = `${w}px`;
+      plate.style.height = `${h}px`;
+      const g = plate.getContext('2d');
+      g.imageSmoothingQuality = 'high';
+      g.drawImage(im, 0, 0);
+      // its edges: what the two masks did, once (each fade keeps what is under it, so the corners fade both ways)
+      g.globalCompositeOperation = 'destination-in';
+      for (const [x1, y1] of [[w, 0], [0, h]]) {
+        const fade = g.createLinearGradient(0, 0, x1, y1);
+        fade.addColorStop(0.01, 'rgba(0,0,0,0)');
+        fade.addColorStop(0.16, '#000');
+        fade.addColorStop(0.84, '#000');
+        fade.addColorStop(0.99, 'rgba(0,0,0,0)');
+        g.fillStyle = fade;
+        g.fillRect(0, 0, w, h);
+      }
+      g.globalCompositeOperation = 'source-over';
+      plateOk = true;
+      stage3d();
+    }).catch(() => {});
   };
-  new MutationObserver(() => { if (plate.getAttribute('src')) setPlate(); })
+  new MutationObserver(() => { if (plateSrcNow) setPlate(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   const firstLook = () => !built && !/=/.test(location.hash);
@@ -1082,10 +1125,14 @@ export async function startFilm(pageReady = Promise.resolve()) {
     if (!assembly) { pin(false); box3d.style.opacity = 0; return; }
     if (home) { assembly.park(); pin(false); return; }    // (the configurator's: the view is the visitor's)
     assembly.at(ka);
-    pin(!merged && ka > 0);
-    box3d.style.opacity = smooth(seg(ka, 0, assembly.fade * 0.9)).toFixed(4);
+    // (from a little before the build's stretch - near3d - the canvas is on the stage already, the table laid, both
+    // drawn at a thousandth of opacity: moved and rastered then, the frame the 3D view fades in at only changes an
+    // opacity)
+    const on = !merged && (ka > 0 || near3d);
+    pin(on);
+    box3d.style.opacity = Math.max(on ? 0.001 : 0, smooth(seg(ka, 0, assembly.fade * 0.9))).toFixed(4);
     // the bare table: on the 3D floor, under the camera as it rises; it gives way to the studio as the camera leaves it
-    const m = plate.naturalWidth ? assembly.plateMatrix(plate.naturalWidth, plate.naturalHeight) : null;
+    const m = plateOk ? assembly.plateMatrix(plate.width, plate.height) : null;
     plate.style.opacity = m ? (1 - smooth(seg(ka, 0.26, 0.58))).toFixed(4) : 0;
     if (m) plate.style.transform = m;
   }
@@ -1359,7 +1406,6 @@ export async function startFilm(pageReady = Promise.resolve()) {
   booted = true;
   // the 3D view and the build made ahead start once the page has come and the first pictures are on screen - most
   // visitors look at the first one a moment, and its heavy steps are done by the time the film is played
-  const idle = window.requestIdleCallback ?? ((f) => setTimeout(f, 200));
   // The configurator painted once at the start, unseen (a thousandth of opacity, for three frames, on the screen): the
   // first paint of its text and of its frosted keys is slow (the browser's glyphs and blur, made once for the page),
   // and done here - in a pause of the scroll near the start - it no longer holds up the frame it fades in at.

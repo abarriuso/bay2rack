@@ -31,39 +31,41 @@
   --fr-col: max(350px, calc(min(52ch, 38%) + 2 * var(--s-5)));
 }
 .film.coda:not(.plain) .film-frame, .film.coda:not(.plain) .film-window, .film.coda:not(.plain) .film-3d { display: block; }
-.film-frame, .film-window { position: absolute; pointer-events: none; opacity: var(--k); visibility: hidden; }
-.film.closing .film-frame, .film.closing .film-window { visibility: visible; }
-/* under the picture: the page's ground around the frame, the plate of the steps column in it */
-.film-frame {
-  top: var(--fr-t); bottom: var(--fr-b); left: var(--fr-l); right: var(--fr-r);
-  border: 1px solid var(--rule); background: var(--plate); box-shadow: 0 0 0 100vmax var(--ground);
+/* (painted first a little before the coda, unseen - .nearing, film.js - and on layers of their own, at a thousandth of
+   opacity: the first frame of the coda only changes opacities, it paints nothing. The same for what the coda does to
+   the picture, its shade and the last text: from .nearing on they are clipped, faded and moved by a thousandth of the
+   coda, --kk - every kind of drawing the coda needs is made once there, unseen, not in its first frame) */
+.film-stage { --kk: max(.001, var(--k)); }
+.film-frame, .film-window { position: absolute; pointer-events: none; opacity: var(--kk); visibility: hidden; will-change: opacity; }
+.film:is(.nearing, .closing) .film-frame, .film:is(.nearing, .closing) .film-window { visibility: visible; }
+/* under the picture: the page's ground around the frame, the plate of the steps column in it (the ground is the
+   stage's own size: no shadow reaching a screen out on every side, all of it to raster) */
+.film-frame { inset: 0; background: var(--ground); }
+.film-frame::before {
+  content: ''; position: absolute; top: var(--fr-t); bottom: var(--fr-b); left: var(--fr-l); right: var(--fr-r);
+  border: 1px solid var(--rule); background: var(--plate);
 }
 /* over the picture: the hairline between the steps and the view */
 .film-window {
   top: calc(var(--fr-t) + 1px); bottom: calc(var(--fr-b) + 1px); right: calc(var(--fr-r) + 1px);
   left: calc(var(--fr-l) + var(--fr-col)); border-left: 1px solid var(--rule);
 }
-.film.closing .film-still, .film.closing .film-canvas {
-  clip-path: inset(calc(var(--k) * (var(--fr-t) + 1px)) calc(var(--k) * (var(--fr-r) + 1px))
-    calc(var(--k) * (var(--fr-b) + 1px)) calc(var(--k) * (var(--fr-l) + var(--fr-col) + 1px)));
+.film:is(.nearing, .closing) :is(.film-still, .film-canvas) {
+  clip-path: inset(calc(var(--kk) * (var(--fr-t) + 1px)) calc(var(--kk) * (var(--fr-r) + 1px))
+    calc(var(--kk) * (var(--fr-b) + 1px)) calc(var(--kk) * (var(--fr-l) + var(--fr-col) + 1px)));
 }
-.film.closing .film-shade, .film.closing .film-bar { opacity: calc(1 - var(--k)); }
+.film:is(.nearing, .closing) :is(.film-shade, .film-bar) { opacity: calc(1 - var(--kk)); will-change: opacity; }
 /* the 3D view's own canvas, brought into the window while the PC is built (film.js): where the 3D view will be, its
    size; under it the film's bare table, laid on the 3D floor (a CSS matrix3d: the picture stays the picture) */
 .film-3d { position: absolute; left: var(--v3-l, 0); top: var(--v3-t, 0); width: var(--v3-w, 0); height: var(--v3-h, 0);
-  overflow: hidden; pointer-events: none; opacity: 0; visibility: hidden; }
+  overflow: hidden; pointer-events: none; opacity: 0; visibility: hidden; will-change: opacity; }
 .film-3d.on { visibility: visible; }
 /* (the build come in the middle of its stretch, film.js: it fades in, once) */
 .film-3d.late { transition: opacity .5s ease; }
 .film-3d canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* (a canvas, its edges melted into the studio as film.js draws it: the film's frame, its middle two thirds, is whole) */
 .film-plate { position: absolute; left: 0; top: 0; max-width: none; transform-origin: 0 0; backface-visibility: hidden;
-  /* (its edges melt into the studio: the film's frame, its middle two thirds, is whole) */
-  -webkit-mask: linear-gradient(to right, transparent 1%, #000 16%, #000 84%, transparent 99%),
-    linear-gradient(to bottom, transparent 1%, #000 16%, #000 84%, transparent 99%);
-  -webkit-mask-composite: source-in;
-  mask: linear-gradient(to right, transparent 1%, #000 16%, #000 84%, transparent 99%),
-    linear-gradient(to bottom, transparent 1%, #000 16%, #000 84%, transparent 99%);
-  mask-composite: intersect; }
+  will-change: transform; }
 /* the 3D on its way (film.js: .waiting) - a quiet line where the 3D view will be, a dot breathing beside it */
 .film-wait { position: absolute; z-index: 1; left: var(--v3-l, 0); top: var(--v3-t, 0); width: var(--v3-w, 0); height: var(--v3-h, 0);
   margin: 0; display: grid; place-items: center; pointer-events: none; opacity: 0; transition: opacity .4s ease;
@@ -77,21 +79,21 @@
 .film.waiting .film-wait { opacity: 1; transition-delay: .25s; }
 .film.plain .film-wait { display: none; }
 /* the last text steps into the column, as far in as the steps sit in theirs */
-.film.closing .beat:last-child {
-  translate: calc(var(--k) * var(--fr-dx, var(--s-5))) 0; scale: calc(1 - var(--k) * (1 - var(--fr-s, 1)));
+.film:is(.nearing, .closing) .beat:last-child {
+  translate: calc(var(--kk) * var(--fr-dx, var(--s-5))) 0; scale: calc(1 - var(--kk) * (1 - var(--fr-s, 1)));
   transform-origin: 0 0;                    /* (its left edge, its middle line: the text is set up by half its height) */
 }
 
 /* the configurator stacked (a phone, a narrow upright window: film.js tells, .stacked, as it measures it): the view on
    top, as tall as the configurator's (--win, measured too), the picture slides up into it */
 .film-stage.stacked { --win: max(200px, min(42vh, 440px)); --win: max(200px, min(42svh, 440px)); }
-.film-stage.stacked .film-frame { inset: 0; border: 0; box-shadow: none; }
+.film-stage.stacked .film-frame::before { inset: 0; border: 0; }
 .film-stage.stacked .film-window { inset: 0 0 auto 0; height: var(--win); border-left: 0; border-bottom: 1px solid var(--rule); }
-.film.closing .stacked :is(.film-still, .film-canvas) {
-  clip-path: inset(calc(var(--k) * (100% - var(--win)) / 2) 0);
-  translate: 0 calc(var(--k) * (var(--win) - 100%) / 2);
+.film:is(.nearing, .closing) .stacked :is(.film-still, .film-canvas) {
+  clip-path: inset(calc(var(--kk) * (100% - var(--win)) / 2) 0);
+  translate: 0 calc(var(--kk) * (var(--win) - 100%) / 2);
 }
-.film.closing .stacked .beat:last-child { translate: none; scale: none; }
+.film:is(.nearing, .closing) .stacked .beat:last-child { translate: none; scale: none; }
 
 /* The way past the film: a quiet line of small type at the foot of the stage, by its progress bar, as a player's
    "skip" (upright, at its top: the texts are at the foot), from the second text on. No box: it is there for whoever
