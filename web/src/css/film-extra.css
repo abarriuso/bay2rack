@@ -137,11 +137,16 @@
 }
 .film.coda:not(.plain) + .build .workbench { opacity: 0; transition: opacity .45s cubic-bezier(.3, 0, .2, 1); }
 .film.coda.merged:not(.plain) + .build .workbench { opacity: 1; }
+/* (from a little before the coda, at a thousandth of opacity and a layer of its own: rastered then, unseen - not all at once in
+   the frame it comes in at) */
+.film.coda:is(.nearing, .closing):not(.plain) + .build .workbench { will-change: opacity; }
+.film.coda:is(.nearing, .closing):not(.merged):not(.plain) + .build .workbench { opacity: .001; }
 /* With the PC built in 3D the view is there already (the same canvas, the same studio): only the steps come in where
    the last text was, and the keys of the view. (The workbench's own ground is the stage's plate meanwhile.) */
 .film.coda.live3d:not(.plain) + .build .workbench { transition: none; background: transparent; }
 .film.coda.live3d:not(.plain) + .build .panel { background: var(--plate); }
 .film.coda.live3d:not(.plain) + .build :is(.panel, .viewer > :is(.tabs, .legend, .floatbar)) { transition: opacity .5s cubic-bezier(.3, 0, .2, 1); }
 .film.coda.live3d:not(.merged):not(.plain) + .build :is(.panel, .viewer > :is(.tabs, .legend, .floatbar)) { opacity: 0; }
+.film.coda.live3d:is(.nearing, .closing):not(.merged):not(.plain) + .build :is(.panel, .viewer > :is(.tabs, .legend, .floatbar)) { opacity: .001; }
 .film.coda.live3d .beat:last-child { transition: opacity .35s ease; }
 .film.coda.live3d.merged .beat:last-child { opacity: 0; }
