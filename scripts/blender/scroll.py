@@ -278,8 +278,12 @@ def build_film(sc, root, info):
     hang = (0.0, -0.17, 0.065)
     kit = (0.0, -0.58, floor)
     S = h.shot
-    S(cam, aim, focus, 1, (-0.72, -1.62, -0.2), (0.2, 0.15, -0.1), lab, lens=32, fstop=4.0)               # the homelab, low
+    # the hero: one unbroken move - low and wide on the homelab, a crane that rises as it arcs in, the focus
+    # pulled from the room to the rack, and on into the macro of the rack without a stop
+    S(cam, aim, focus, 1, (-0.95, -1.75, -0.24), (0.22, 0.16, -0.12), lab, lens=30, fstop=3.5)            # the homelab, low
+    S(cam, aim, focus, 12, (-0.78, -1.55, -0.17), (0.18, 0.13, -0.08), lab, lens=34, fstop=3.5)
     S(cam, aim, focus, 24, (-0.55, -1.3, -0.1), (0.12, 0.1, -0.03), rack, lens=38, fstop=4.0)
+    S(cam, aim, focus, 40, (-0.36, -0.86, 0.04), (0.05, 0.04, 0.04), rack, lens=52, fstop=3.2)
     S(cam, aim, focus, 54, (-0.13, -0.5, 0.115), (0.0, 0.0, 0.088), rack, lens=70, fstop=2.8)             # macro on the rack
     S(cam, aim, focus, 70, (0.03, -0.56, 0.12), (0.0, -0.02, 0.088), (0.0, -0.03, 0.09), lens=62, fstop=2.8)
     S(cam, aim, focus, 88, (0.25, -0.63, 0.15), (0.0, -0.06, 0.09), (0.0, -0.04, 0.09), lens=55, fstop=3.2)    # round to the right
@@ -299,11 +303,20 @@ def build_film(sc, root, info):
         cam.data.shift_x = SHIFT[side]
         for f in sorted({a + 4, max(a + 4, b - 4)}):
             cam.data.keyframe_insert("shift_x", frame=f)
+    # one continuous move: the camera, what it looks at, its focus and its lens pass through each key without
+    # slowing down there (auto handles, not clamped ones: those stop at every key); it eases out of the first key
+    # and into the last (that one is the table the configurator takes over, still). The aperture and the lens
+    # shift keep clamped keys: they hold between them.
     for o in (cam, aim, focus, cam.data):
         for fc in h.fcurves_of(o):
-            for kp in fc.keyframe_points:
+            flowing = fc.data_path in ("location", "lens")
+            pts = list(fc.keyframe_points)
+            for i, kp in enumerate(pts):
                 kp.interpolation = "BEZIER"
                 kp.easing = "AUTO"
+                end = i in (0, len(pts) - 1)
+                kp.handle_left_type = kp.handle_right_type = "AUTO" if flowing and not end else "AUTO_CLAMPED"
+            fc.update()
     return film
 
 
@@ -390,6 +403,25 @@ def main():
                 sc.frame_set(f, subframe=k / n)
                 sc.render.filepath = path
                 bpy.ops.render.render(write_still=True)
+        return
+    if h.arg("--full"):
+        # the whole film at once, every frame of the page (the keys and the moments between them, --between N,
+        # 4 by default), named as --render and --between name theirs, in frames_hq<TAG>/ (scroll_encode.py --src hq).
+        # The key frames go first and then the rest, so a stopped run still has a whole coarse film; it skips the
+        # frames already there, so it can be stopped and run again.
+        n = int(h.arg("--between", 4))
+        folder = os.path.join(OUT, "frames_hq" + TAG)
+        os.makedirs(folder, exist_ok=True)
+        todo = [(f, 0, f"f_{f:04d}.png") for f in range(1, END + 1)]
+        todo += [(f, k, f"q_{f:04d}_{k}.png") for f in range(1, END) for k in (2, 1, 3) if k < n]
+        todo += [(f, k, f"q_{f:04d}_{k}.png") for f in range(1, END) for k in range(4, n)]
+        for f, k, name in todo:
+            path = os.path.join(folder, name)
+            if os.path.exists(path):
+                continue
+            sc.frame_set(f, subframe=k / n)
+            sc.render.filepath = path
+            bpy.ops.render.render(write_still=True)
         return
     if h.arg("--plate"):
         # the last frame without the kit: the bare table the configurator lays its 3D pieces on (the page projects

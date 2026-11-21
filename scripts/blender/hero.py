@@ -561,6 +561,32 @@ def render_settings(sc, preview, lowres):
     sc.cycles.caustics_reflective = False
     sc.cycles.caustics_refractive = False
     r.use_persistent_data = True
+    # --hq: the best this machine gives - many samples down to a fine noise floor, fireflies clamped, the denoiser
+    # fed with albedo and normals at its accurate setting, and the same noise on every frame (a film scrubbed by the
+    # scroll would show a noise that changes each frame as a shimmer). --res WxH sets the size.
+    if arg("--hq"):
+        sc.cycles.samples = int(arg("--samples", 1024))
+        sc.cycles.adaptive_threshold = float(arg("--threshold", 0.006))
+        sc.cycles.adaptive_min_samples = 64
+        sc.cycles.use_animated_seed = False
+        sc.cycles.seed = 0
+        sc.cycles.max_bounces = 16
+        sc.cycles.diffuse_bounces = 6
+        sc.cycles.glossy_bounces = 8
+        sc.cycles.transmission_bounces = 12
+        sc.cycles.transparent_max_bounces = 16
+        sc.cycles.sample_clamp_indirect = 8.0
+        sc.cycles.blur_glossy = 0.5
+        for name, value in (("denoising_input_passes", "RGB_ALBEDO_NORMAL"), ("denoising_prefilter", "ACCURATE"),
+                            ("denoising_quality", "HIGH")):
+            try:
+                setattr(sc.cycles, name, value)
+            except (AttributeError, TypeError):
+                pass
+        r.filter_size = 1.2                                  # (a little crisper than the default 1.5 px)
+    res = arg("--res")
+    if res and res is not True:
+        r.resolution_x, r.resolution_y = (int(v) for v in res.lower().split("x"))
 
 
 def main():
