@@ -49,11 +49,21 @@
       document.querySelector('meta[name="theme-color"]').content = th === 'dark' ? '#000000' : '#ffffff';
       // the first picture of the film, of this theme and under the film's version: the same address the film asks
       // for, so one download (the manifest's address is the site's folder, also from /es/)
-      var still = (document.querySelector('link[rel="manifest"]') || {}).href || location.href;
-      still = still.replace(/[^/]*$/, '') + 'scroll/' + th + '/960/0001.webp' + ('__FILMV__' ? '?v=__FILMV__' : '');
+      var dir = (document.querySelector('link[rel="manifest"]') || {}).href || location.href;
+      dir = dir.replace(/[^/]*$/, '') + 'scroll/' + th + '/';
+      var v = '__FILMV__' ? '?v=__FILMV__' : '', set = __STILL_SET__;
+      var still = dir + (set.length ? set[0][0] : '960') + '/0001.webp' + v;
       root.dataset.still = still;
       var pl = document.createElement('link');
       pl.rel = 'preload'; pl.as = 'image'; pl.href = still; pl.setAttribute('fetchpriority', 'high');
+      // ...of the size the screen needs, from the film's wide sets (vite.config.js): the still covers the stage, so
+      // on a screen taller than the pictures it is as wide as their shape at the screen's height
+      if (set.length > 1) {
+        root.dataset.stillSet = set.map(function (s) { return dir + s[0] + '/0001.webp' + v + ' ' + s[1] + 'w'; }).join(', ');
+        root.dataset.stillSizes = '(max-aspect-ratio: ' + set[0][1] + '/' + set[0][2] + ') ' + Math.floor(1e4 * set[0][1] / set[0][2]) / 100 + 'svh, 100vw';
+        pl.setAttribute('imagesrcset', root.dataset.stillSet);
+        pl.setAttribute('imagesizes', root.dataset.stillSizes);
+      }
       document.head.appendChild(pl);
     })();
   </script>
@@ -84,7 +94,7 @@
       <div class="film-stage" id="top">
         <!-- the coda (film.js, css/film-extra.css): the workbench the film closes into at its end -->
         <div class="film-frame" aria-hidden="true"></div>
-        <img class="film-still" width="960" height="540" alt="" data-i18n-alt="film_alt"><script>document.querySelector('.film-still').src = document.documentElement.dataset.still;</script>
+        <img class="film-still" width="960" height="540" alt="" data-i18n-alt="film_alt"><script>(function (i, d) { if (d.stillSet) { i.sizes = d.stillSizes; i.srcset = d.stillSet; } i.src = d.still; })(document.querySelector('.film-still'), document.documentElement.dataset);</script>
         <canvas id="filmCanvas" class="film-canvas" aria-hidden="true"></canvas>
         <div class="film-shade" aria-hidden="true"></div>
         <div class="film-window" aria-hidden="true"></div>

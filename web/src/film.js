@@ -52,6 +52,9 @@ const filmMeta = (() => {
 const back = (() => { try { const f = history.state?.film; return f && Number.isFinite(f.y) ? f : null; } catch { return null; } })();
 // (a quiet moment of the page: its idle time, or a moment anyway)
 const idle = window.requestIdleCallback ? (f, o) => requestIdleCallback(f, o) : (f) => setTimeout(f, 200);
+// a 2D context that scales pictures as well as it can (the default is the fastest: softer, and jagged going down).
+// Set again after every resize of its canvas, which puts its settings back.
+const smoothly = (g) => { if (g) { g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; } return g; };
 const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 // Touch devices (phones, tablets; iOS Safari above all) keep every decoded frame in a small memory budget and reload
@@ -63,12 +66,15 @@ const PIXELS = 64e6, FEW = 100;
 const REEL_PIXELS = 26e6;       // the reel of a touch screen: decoded pictures at a time (about 100 MB)
 const DECODES = 3;              // ...and pictures being decoded at a time
 const area = (sz) => (sz.w || 1600) * (sz.h || 900);
-// the canvas never holds more than this (a 4K screen at 2x would be 33 Mpx to fill per frame)
-const CANVAS_MAX = 4.2e6;
+// the canvas never holds more than this: a 4K screen's worth (at 2x it would be 33 Mpx to fill per frame); a touch
+// screen half of it (its memory is the reel's)
+const CANVAS_MAX = 8.3e6, TOUCH_CANVAS_MAX = 4.2e6;
 const IN_FLIGHT = 6;            // requests at a time
 const FINE_FROM = 1100;         // device px across the canvas from which the fine set loads
 const SHARP_FROM = 1700;        // ...and the sharp one, where the scroll rests
 const SHARP_KEEP = 12;          // sharp pictures kept (the farthest goes)
+const SHARP_NEAR = 6;           // ...and asked for ahead of the scroll, on a canvas wider than the fine set (2 behind)
+const FAST_MS = 220;            // a picture in in less than this (on average): a fast network, the fine set comes early
 const REST_MS = 200;
 // the fine pictures asked for around the scroll position: ahead of the way it goes, behind it, and before the first
 // scroll (the film may never be played)
@@ -87,9 +93,13 @@ export async function startFilm(pageReady = Promise.resolve()) {
   const still = root.querySelector('.film-still');
   // the still of the theme in use (the page's script in its head chose it: index.html; the light theme has its own film)
   const stillV = /\?v=\w+/.exec(still?.getAttribute('src') ?? '')?.[0] ?? '';   // (the page's version of it: one download)
+  // (its other sizes - the page's srcset, index.html: a phone or a big screen takes a larger one - of that theme too)
   const showStill = (dir) => {
     const src = `${BASE}scroll/${themeNow()}/${dir}/0001.webp${stillV}`;
-    if (still && still.src !== src) still.src = src;
+    if (!still) return;
+    const set = still.getAttribute('srcset')?.replace(/\/scroll\/(dark|light)\//g, `/scroll/${themeNow()}/`);
+    if (set && set !== still.getAttribute('srcset')) { still.srcset = set; still.ok = false; }
+    if (still.src !== src) { still.src = src; still.ok = false; }
   };
   const plain = () => {
     root.classList.add('plain');
@@ -121,7 +131,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // (the frames are kept by the browser for a long time, under the version film.json gives them: never kept itself)
   const meta = await filmMeta;
   const canvas = $('#filmCanvas');
-  const ctx = canvas?.getContext('2d', { alpha: false });
+  const ctx = smoothly(canvas?.getContext('2d', { alpha: false }));
   if (!meta?.sizes?.length || !ctx) { plain(); return; }
   S.filmLoads = true;                                       // (the film says when the 3D and the engine start: main.js)
 
@@ -151,6 +161,22 @@ export async function startFilm(pageReady = Promise.resolve()) {
     sharp: !TOUCH && sharpSz ? { sz: sharpSz, skip: 1, step: sharpSz.step, n: framesOf(sharpSz) } : null,
   };
   let fineOn = false, sharpOn = false;                      // (fit() decides, by the size of the canvas)
+  // (a canvas wider than the fine set: the sharp pictures around the scroll position too, not only where it rests)
+  let sharpNear = false;
+  // the largest pictures of all (a touch screen's canvas is as sharp as they are: the reel's are drawn up to it, and
+  // where the scroll rests it gets one of them)
+  const bigSz = [...meta.sizes].sort((a, b) => area(b) - area(a))[0];
+  let loadMs = 0;                                           // (how long a picture takes to come in, on average: fast())
+  const fast = () => (loadMs ? loadMs < FAST_MS : (navigator.connection?.downlink ?? 0) >= 8);
+  // the page's still is the first frame of a set no wider than it (one download: index.html asked for it before the
+  // film), so the film waits for it before it asks for anything (a moment: it was asked for first)
+  let stillWait = !!still && !still.complete;
+  if (stillWait) {
+    const go = () => { if (stillWait) { stillWait = false; pump(); } };
+    still.addEventListener('load', go, { once: true });
+    still.addEventListener('error', go, { once: true });
+    setTimeout(go, 2500);
+  }
   showStill(baseSz.dir);
   // a set coarse first (every 64th, 32nd...): the whole film scrubs after the first pass and gets finer after
   const coarseFirst = (n) => {
@@ -194,7 +220,10 @@ export async function startFilm(pageReady = Promise.resolve()) {
   function makeReel(th, sz, cropOf, old) {
     const n = framesOf(sz), step = sz.step;
     const wide = cropOf ? cropOf(0)[1] : sz.w;
-    const room = Math.max(24, Math.floor(REEL_PIXELS / (wide * sz.h)));
+    // (the budget less the canvas and the picture where the scroll rests, about as big as the canvas: a 3x phone's
+    // are a few Mpx each)
+    const spare = Math.max(REEL_PIXELS / 2, REEL_PIXELS - 2 * canvas.width * canvas.height);
+    const room = Math.max(24, Math.floor(spare / (wide * sz.h)));
     // one in `every` along the whole film stays decoded (a fling, a jump); the rest of the room goes around the
     // scroll position: `half` behind, `half` twice ahead (and as much kept the other way, for a scroll that turns)
     let every = 1;
@@ -283,17 +312,18 @@ export async function startFilm(pageReady = Promise.resolve()) {
         }
         return null;
       },
-      // the scroll rests on `frame`: its picture from the fine set (sharper than the reel's), cut the same way
-      rest(frame, cropFine) {
-        if (!fineSz || fineSz === sz || frame % fineSz.step || still?.frame === frame) return;
+      // the scroll rests on `frame`: its picture from a sharper set than the reel's (rsz: the fine one, or the
+      // sharp one for a canvas taller than that), cut the same way
+      rest(frame, rsz, crop) {
+        if (!rsz || rsz === sz || frame % rsz.step || still?.frame === frame) return;
         const ask = ++stillAsk;
-        fetch(`${BASE}scroll/${th}/${fineSz.dir}/${pad(frame / fineSz.step + 1)}.webp${ver}`).then((x) => (x.ok ? x.blob() : null))
-          .then((b) => (b ? (cropFine && cropOk ? createImageBitmap(b, cropFine[0], 0, cropFine[1], fineSz.h) : createImageBitmap(b)) : null))
+        fetch(`${BASE}scroll/${th}/${rsz.dir}/${pad(frame / rsz.step + 1)}.webp${ver}`).then((x) => (x.ok ? x.blob() : null))
+          .then((b) => (b ? (crop && cropOk ? createImageBitmap(b, crop[0], 0, crop[1], rsz.h) : createImageBitmap(b)) : null))
           .then((bmp) => {
             if (!bmp) return;
             if (dead || ask !== stillAsk) { bmp.close?.(); return; }
             still?.bmp.close?.();
-            still = { frame, bmp, mid: !!cropFine && cropOk };
+            still = { frame, bmp, mid: !!crop && cropOk };
             if (th === theme && resting && Math.round(cur) === frame) kick();
           }).catch(() => {});
       },
@@ -325,8 +355,25 @@ export async function startFilm(pageReady = Promise.resolve()) {
     if (resting && fineOn && visible) { const c = Math.round(cur / tiers.fine.step); if (c < tiers.fine.n && !s.fine[c]) return ['fine', c]; }
     const c = Math.min(tiers.base.n - 1, Math.round(cur / tiers.base.step));
     for (const i of [c, c + 1, c - 1]) if (i >= 0 && i < tiers.base.n && !s.base[i]) return ['base', i];
+    // (a fast network: the fine pictures where the film is come in between the base set's, one in two - not only
+    // after all of it)
+    if (s.next < order.length && fast() && (s.flip = !s.flip)) { const j = nearJob(s); if (j) return j; }
     while (s.next < order.length) { const i = order[s.next++]; if (!s.base[i]) return ['base', i]; }
-    if (fineOn && visible && s.fineLeft > 0) {
+    return nearJob(s);
+  }
+  // the sharper pictures around the scroll position: the sharp ones (a canvas wider than the fine set, once the film
+  // is played), then the fine ones, ahead of the way it goes, behind it
+  function nearJob(s) {
+    if (!visible) return null;
+    if (sharpNear && engaged) {
+      const n = tiers.sharp.n, c = Math.min(n - 1, Math.max(0, Math.round(cur / tiers.sharp.step)));
+      const up = fineDir >= 0 ? SHARP_NEAR : 2, down = fineDir >= 0 ? 2 : SHARP_NEAR;
+      for (let d = 0; d <= SHARP_NEAR; d++) {
+        if (d <= up && c + d < n && !s.sharp.has(c + d)) return ['sharp', c + d];
+        if (d && d <= down && c - d >= 0 && !s.sharp.has(c - d)) return ['sharp', c - d];
+      }
+    }
+    if (fineOn && s.fineLeft > 0) {
       const n = tiers.fine.n, c = Math.min(n - 1, Math.max(0, Math.round(cur / tiers.fine.step)));
       const fwd = engaged ? FINE_AHEAD : FINE_FIRST, back = engaged ? FINE_BEHIND : 0;
       const up = fineDir >= 0 ? fwd : back, down = fineDir >= 0 ? back : fwd;
@@ -337,14 +384,29 @@ export async function startFilm(pageReady = Promise.resolve()) {
     }
     return null;
   }
+  // the first frame of a set, from the page's still: if it is in, of this theme, and as wide as the set's pictures
+  function fromStill(s, th, tier, t) {
+    if (!still?.complete || !still.naturalWidth || !still.currentSrc.includes(`/scroll/${th}/`)) return false;
+    // (its own width, from the set it is of: naturalWidth is in CSS px, a 2560 picture chosen for 2x is 1280 of them)
+    const dir = /\/scroll\/\w+\/(\w+)\/0001\.webp/.exec(still.currentSrc)?.[1];
+    if (!(meta.sizes.find((sz) => String(sz.dir) === dir)?.w >= t.sz.w)) return false;
+    still.ok = true;
+    if (tier === 'sharp') { s.sharp.set(0, still); trimSharp(s); }
+    else { s[tier][0] = still; if (tier === 'fine') s.fineLeft--; }
+    if (tier === 'base' && ++s.baseIn >= tiers.base.n) filmIn();
+    if (th === theme) kick();
+    return true;
+  }
   function pump() {
-    if (useReel) return;                                    // (a touch screen: the reel asks for its own)
+    if (useReel || stillWait) return;                       // (a touch screen: the reel asks for its own)
     const s = setOf(theme), th = theme;
     while (inflight.size < IN_FLIGHT) {
       const job = nextJob(s);
       if (!job) return;
       const [tier, i] = job, t = tiers[tier];
+      if (i === 0 && fromStill(s, th, tier, t)) continue;
       const im = new Image();
+      const t0 = performance.now();
       im.decoding = 'async';
       const done = (ok) => {
         im.onload = im.onerror = null;
@@ -352,8 +414,9 @@ export async function startFilm(pageReady = Promise.resolve()) {
         if (tier === 'base' && ++s.baseIn >= tiers.base.n) filmIn();
         if (ok) {
           im.ok = true;
+          loadMs = loadMs ? loadMs * 0.8 + (performance.now() - t0) * 0.2 : performance.now() - t0;
           const frame = i * t.step;
-          if (th === theme && (tier === 'sharp' ? resting && i === restKey : Math.abs(frame - cur) <= tiers.base.step * 2)) kick();
+          if (th === theme && (tier === 'sharp' && (resting || !sharpNear) ? resting && i === restKey : Math.abs(frame - cur) <= tiers.base.step * 2)) kick();
         }
         pump();
       };
@@ -367,16 +430,18 @@ export async function startFilm(pageReady = Promise.resolve()) {
       else { s[tier][i] = im; if (tier === 'fine') s.fineLeft--; }
     }
   }
-  // a dozen sharp pictures at most (each 15 MB decoded): the farthest from where the film rests goes
+  // a dozen sharp pictures at most (each 15 MB decoded): the farthest from where the film rests (or is) goes
   function trimSharp(s) {
+    const at = resting && restKey >= 0 ? restKey : Math.round(cur / tiers.sharp.step);
     while (s.sharp.size > SHARP_KEEP) {
       let far = -1;
-      for (const k of s.sharp.keys()) if (far < 0 || Math.abs(k - restKey) > Math.abs(far - restKey)) far = k;
+      for (const k of s.sharp.keys()) if (far < 0 || Math.abs(k - at) > Math.abs(far - at)) far = k;
       const im = s.sharp.get(far);
+      s.sharp.delete(far);
+      if (im === still) continue;                           // (the page's own: it stays as it is)
       im.onload = im.onerror = null;
       inflight.delete(im);
       im.src = '';
-      s.sharp.delete(far);
     }
   }
 
@@ -419,6 +484,15 @@ export async function startFilm(pageReady = Promise.resolve()) {
     const s = sets[theme];
     if (!s) return null;
     if (resting && sharpOn && f === restKey * tiers.sharp.step) { const im = s.sharp.get(restKey); if (im?.ok) return [im, f]; }
+    // (a canvas wider than the fine set: a sharp picture within a frame of the scroll's, rather than a softer one -
+    // the sharp set has every other frame)
+    if (sharpNear) {
+      const c = Math.round(f / tiers.sharp.step);
+      for (const d of [0, -1, 1]) {
+        const im = s.sharp.get(c + d), frame = (c + d) * tiers.sharp.step;
+        if (im?.ok && Math.abs(frame - f) <= 1) return [im, frame];
+      }
+    }
     let best = null;
     const b = s.base, c = Math.round(f / tiers.base.step);
     for (let d = 0; d < b.length; d++) {
@@ -556,9 +630,17 @@ export async function startFilm(pageReady = Promise.resolve()) {
     restTimer = 0;
     if (useReel) {
       if (!reel || !visible || cur !== target || resting) return;
-      resting = true;
       const frame = Math.round(cur);
-      reel.rest(frame, sliceOf(fineSz, frame));
+      // (the largest set's picture where the canvas is taller than the fine set's - a 3x phone: it settles on the
+      // nearest frame that set has, as a big screen does - not across the edge of a text)
+      const tallCanvas = bigSz !== fineSz && fineSz && canvas.height > fineSz.h * 1.05;
+      if (tallCanvas && frame % bigSz.step) {
+        const k = Math.min(last - (last % bigSz.step), Math.round(frame / bigSz.step) * bigSz.step);
+        if (beats.every((x) => (1 + k >= x.from && 1 + k <= x.to + 0.999) === x.on)) { target = k; kick(); return; }
+      }
+      resting = true;
+      const big = tallCanvas && !(frame % bigSz.step) ? bigSz : fineSz;
+      reel.rest(frame, big, sliceOf(big, frame));
       kick();                                             // (a picture of this frame it has already)
       return;
     }
@@ -699,19 +781,24 @@ export async function startFilm(pageReady = Promise.resolve()) {
   function fit() {
     const cssW = canvas.clientWidth, cssH = canvas.clientHeight;
     if (!cssW || !cssH) return;
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    const k0 = Math.min(dpr, Math.sqrt(CANVAS_MAX / (cssW * cssH)));
+    // (a phone's screen is 3x: its canvas up to that, within its own budget - its frames are cut to it, see the reel)
+    const dpr = Math.min(devicePixelRatio || 1, TOUCH ? 3 : 2);
+    const k0 = Math.min(dpr, Math.sqrt((TOUCH ? TOUCH_CANVAS_MAX : CANVAS_MAX) / (cssW * cssH)));
     if (!useReel && tiers.fine && !fineOn && cssW * dpr > FINE_FROM) { fineOn = true; queueMicrotask(pump); }   // (once on, it stays)
     sharpOn = !useReel && !!tiers.sharp && cssW * k0 > SHARP_FROM;
-    // (a reel: the fine picture where the scroll rests is the sharpest it gets)
-    const top = useReel ? fineSz ?? plainSz : (sharpOn ? tiers.sharp : fineOn ? tiers.fine : tiers.base).sz;
+    // (a reel: the largest picture where the scroll rests is the sharpest it gets)
+    const top = useReel ? bigSz : (sharpOn ? tiers.sharp : fineOn ? tiers.fine : tiers.base).sz;
     const nat = top.w && top.h ? 1 / Math.max(cssW / top.w, cssH / top.h) : 2;
     const k = Math.min(k0, nat);
     const w = Math.max(1, Math.round(cssW * k)), h = Math.max(1, Math.round(cssH * k));
     if (w !== canvas.width || h !== canvas.height) {
       canvas.width = bw = w;                                // (this clears the bitmap: the frame goes back on below,
       canvas.height = bh = h;                               //  before the browser paints)
+      smoothly(ctx);                                        // (...and the context's settings)
     }
+    const wasNear = sharpNear;
+    sharpNear = sharpOn && w > (tiers.fine ?? tiers.base).sz.w * 1.05;
+    if (sharpNear && !wasNear) queueMicrotask(pump);
     thread();
     draw(true);
   }
@@ -768,8 +855,8 @@ export async function startFilm(pageReady = Promise.resolve()) {
     const old = sets[theme];
     if (old) {
       for (const im of [...old.base, ...old.fine, ...old.sharp.values()])
-        if (im && !im.ok) { im.onload = im.onerror = null; im.src = ''; }
-      for (const im of old.sharp.values()) im.src = '';
+        if (im && !im.ok && im !== still) { im.onload = im.onerror = null; im.src = ''; }
+      for (const im of old.sharp.values()) if (im !== still) im.src = '';
     }
     inflight.clear();
     delete sets[theme];
@@ -780,7 +867,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
     if (shownIm && canvas.width) {
       const shot = document.createElement('canvas');
       shot.width = canvas.width; shot.height = canvas.height;
-      shot.getContext('2d', { alpha: false }).drawImage(canvas, 0, 0);
+      smoothly(shot.getContext('2d', { alpha: false })).drawImage(canvas, 0, 0);
       swap = { shot, tol: useReel ? 2 : tiers.base.step, t0: performance.now() };
     }
     fade = null;
