@@ -33,9 +33,14 @@ export function update(patch) {
   S.editFrom = null;
   Object.assign(S.values, clamped(patch));
   normalize(S.values);
+  // the case of the 3D view (only the view) grown out of by another change - more bays: the smallest that fits
+  // instead of a warning for something that is not printed. (A case picked just now stays as it was picked.)
+  if (!('case_model' in patch) && caseBays(S.values.case_model) < S.values.bays) S.values.case_model = 'auto';
   refresh();
   schedule();
 }
+// how many bays a case of the 3D view has (its option says: "... - 4 bays"; auto: as many as it takes)
+const caseBays = (id) => +(S.params.case_model?.options.find((o) => o.value === id)?.label.match(/(\d+) bays$/)?.[1] ?? Infinity);
 // the settings of a link or a saved build ('#' for the first look): one undo step, like any change
 export function loadLink(hash) {
   startEngine();

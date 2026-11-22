@@ -676,6 +676,9 @@ button:disabled { opacity: .45; cursor: default; }
   /* the film has the whole screen: the header comes over its top and goes as you scroll down (the stage does not
      move with it, so the film's frames keep their place in the scroll), and its end is the configurator's place */
   .film-stage { top: 0; height: 100vh; height: 100svh; }
+  /* (as the page opens the stage is still under the header, not stuck yet: its foot is the header's height below the
+     screen, so the first text - the hint at its foot - sits that much higher) */
+  .film-beats > .beat:first-child { bottom: calc(max(clamp(20px, 6svh, 56px), env(safe-area-inset-bottom, 0px)) + var(--top-h)); }
   html:not(.head-off) .film-keys { top: calc(var(--top-h) + var(--s-2)); }
   /* (no snapping onto the one-screen configurator: it held the page there, a little scroll up went back down) */
   /* the configurator takes the whole screen (no header, Safari's bars already folded by the scroll down) */
@@ -809,4 +812,8 @@ button:disabled { opacity: .45; cursor: default; }
   /* (and the steps' undo and redo: the title's line no taller than its text) */
   .panel-head .mini { width: 34px; height: 34px; position: relative; }
   .panel-head .mini::after { content: ''; position: absolute; inset: -5px -2px; }
+  /* (and the film's keys - skip to the editor, the sounds: 44 px to a finger, the same size to the eye) */
+  :is(.film-skip, .film-sound) { position: relative; }
+  .film-skip::after { content: ''; position: absolute; inset: -9px -4px; }
+  .film-sound::after { content: ''; position: absolute; inset: -7px; }
 }

@@ -149,4 +149,6 @@
 .film.coda.live3d:not(.merged):not(.plain) + .build :is(.panel, .viewer > :is(.tabs, .legend, .floatbar)) { opacity: 0; }
 .film.coda.live3d:is(.nearing, .closing):not(.merged):not(.plain) + .build :is(.panel, .viewer > :is(.tabs, .legend, .floatbar)) { opacity: .001; }
 .film.coda.live3d .beat:last-child { transition: opacity .35s ease; }
-.film.coda.live3d.merged .beat:last-child { opacity: 0; }
+/* (once the configurator is over the stage its key is gone - also when the PC was let go and live3d with it: a
+   build of the visitor's, the theme changed) */
+.film.coda.merged .beat:last-child { opacity: 0; pointer-events: none; }
