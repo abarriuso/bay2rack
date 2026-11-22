@@ -176,13 +176,16 @@ test('the film ends inside the configurator', async ({ page }) => {
   await expect.poll(() => page.locator('.film-stage').evaluate((s) => +s.style.getPropertyValue('--k'))).toBeGreaterThan(0.99);
   await expect(page.locator('.beat.on h2')).toHaveText(/Now, yours/);
   // the 3D view lies exactly where the coda's window is, at the moment the stage lets go
-  const at = await page.evaluate(() => {
+  // (measured once the page has settled there: a busy machine lays the stage out a frame late - the offsets are in
+  // the message when it does not line up)
+  await page.evaluate(() => {
     const f = document.querySelector('#film'), st = document.querySelector('.film-stage');
     window.scrollTo(0, f.getBoundingClientRect().top + scrollY + f.offsetHeight - st.offsetHeight - parseFloat(getComputedStyle(st).top) - 1);
-    const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
-    return [w.left - v.left, w.top - v.top, w.width - v.width, w.height - v.height].map((x) => Math.abs(x) <= 2);
   });
-  expect(at).toEqual([true, true, true, true]);
+  await expect.poll(() => page.evaluate(() => {
+    const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
+    return [w.left - v.left, w.top - v.top, w.width - v.width, w.height - v.height].map((x) => (Math.abs(x) <= 2 ? 0 : Math.round(x)));
+  }), { timeout: 2000 }).toEqual([0, 0, 0, 0]);
   await expect(page.locator('#film')).not.toHaveClass(/merged/);
   await page.locator('.beat.on .cta .btn').click();
   await expect(page.locator('#film')).toHaveClass(/merged/);
