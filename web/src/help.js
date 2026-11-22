@@ -471,6 +471,8 @@ const BOM_EN = [
   [/^fan:/, 'Fan:'], [/^fans:/, 'Fans:'], [/^rack module:/, 'Rack module:'], [/^rack panel:/, 'Rack panel:'],
   [/^devices \(not included\):/, 'Devices:'], [/^cables and power \(not included\):/, 'Cables and power:'],
   [/the printed caps \(part = button_cap\)/, 'the printed buttons'],
+  // (the model's word for the NanoKVM's stand; the page calls it a stand, piece_mountain)
+  [/^NanoKVM mountain to plate:/, 'NanoKVM stand to plate:'], [/\(in the mountain posts\)/, '(in the stand posts)'],
 ];
 // for both languages: a multiplication sign between sizes, an en dash in a range of sizes
 const tidy = (x) => x.replace(/(\d) x /g, '$1 × ').replace(/(\d[.,]\d+)-(\d[.,]\d+) mm/g, '$1–$2 mm');
