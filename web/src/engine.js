@@ -1,7 +1,7 @@
 // The OpenSCAD engine (a worker, more for the kit), the render cache and the 3D view, started on demand.
 import { scadLiteral, same } from './customizer.js';
 import { t } from './i18n.js';
-import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S, atRest, afterFrame } from './state.js';
+import { BASE, UI, saveUI, filamentHexes, $, NARROW, h, S, idleMoment, afterFrame } from './state.js';
 // (the configurator's render, handed in by it once loaded - configurator.js: the film and the page above it come with
 // this module, and nothing of the configurator; before it, nothing is wanted rendered: S.wantRender)
 let render = () => {};
@@ -25,12 +25,13 @@ export function startEngine() {
 }
 // The 3D view, which the film can start well before the engine (its first model is made ahead). Its start is one step
 // that cannot be cut - three.js asking the GPU what it can do, a wait on each answer, long while the GPU draws the
-// film: it waits for a pause in the scroll (atRest). Its WebGL context, the longest wait, the film makes as the page
-// comes in (gl-ahead.js). The rest goes a few ms at a time after the frames (the studio's light compiles its shaders
-// alongside the page).
+// film: it waits for a quiet moment of the page (its idle time, between two frames of the film - not a pause of the
+// scroll: a reader who scrolls on steadily never makes one, and the 3D view would come late). Its WebGL context, the
+// longest wait, the film makes as the page comes in (gl-ahead.js). The rest goes a few ms at a time after the frames
+// (the studio's light compiles its shaders alongside the page).
 export function startViewer() {
   engineStarted ??= import('./viewer.js').then(async ({ Viewer }) => {
-    await atRest(150, madeAhead() ? 500 : 900);           // (its context made ahead: the rest is short - gl-ahead.js)
+    await idleMoment(madeAhead() ? 150 : 300);            // (its context made ahead: the rest is short - gl-ahead.js)
     viewer = new Viewer($('#view'));
     viewer.setTheme(document.documentElement.dataset.theme);
     viewer.setFilament(filamentHexes());

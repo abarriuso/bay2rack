@@ -98,8 +98,9 @@ test('a page nobody scrolls loads no engine, does not shift, and shows its own t
   await page.waitForTimeout(6000);                                // (the engine used to come some 4 s after them)
   expect(asked.filter((u) => /openscad/.test(u))).toEqual([]);
   expect(await page.evaluate(() => window.__shift)).toBeLessThan(0.1);
-  expect(await page.locator('.film-still').evaluate((i) => i.currentSrc)).toMatch(/\/scroll\/light\/960\/0001\.webp\?v=\w+$/);
-  expect(asked.filter((u) => /\/scroll\/\w+\/960\/0001\.webp/.test(u))).toHaveLength(1);
+  // (the still of the size the screen needs, and the film's first frame that same picture: one download of it)
+  expect(await page.locator('.film-still').evaluate((i) => i.currentSrc)).toMatch(/\/scroll\/light\/\w+\/0001\.webp\?v=\w+$/);
+  expect(asked.filter((u) => /\/scroll\/\w+\/\w+\/0001\.webp/.test(u))).toHaveLength(1);
 });
 
 // a phone: an iPhone's screen and touch (in Chromium: Safari itself only on a real one). The big headings once ran off
@@ -114,9 +115,13 @@ test.describe('on a phone', () => {
     await expect(page.locator('.beat.on h1')).toHaveText('Bay2Rack');
     await expect(page.locator('.beat.on h1')).toBeInViewport({ ratio: 1 });
     await expect(page.locator('.beat.on .cta .btn').first()).toBeInViewport({ ratio: 1 });
-    // the canvas is no bigger than the phone's frames (960 x 540) need
-    const canvas = await page.locator('#filmCanvas').evaluate((c) => c.width * c.height);
-    expect(canvas).toBeLessThanOrEqual(1100 * 1100);
+    // the canvas is no bigger than the film's largest frames need (as tall as they are at most: a phone's screen is
+    // cut from them), within a phone's budget - and sharper than the reel's own frames on a 3x screen
+    const [cw, ch] = await page.locator('#filmCanvas').evaluate((c) => [c.width, c.height]);
+    const sizes = await page.evaluate(() => JSON.parse(document.getElementById('filmMeta').textContent).sizes);
+    expect(ch).toBeLessThanOrEqual(Math.max(...sizes.map((s) => s.h)));
+    expect(cw * ch).toBeLessThanOrEqual(4.2e6);
+    expect(ch).toBeGreaterThan(900);
     const overflow = () => page.evaluate(() => {
       const wide = [...document.querySelectorAll('.beat h1, .beat h2, .band h2, .build h2:not(.build-head h2), .foot-mark')]
         .filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.textContent);
@@ -171,13 +176,16 @@ test('the film ends inside the configurator', async ({ page }) => {
   await expect.poll(() => page.locator('.film-stage').evaluate((s) => +s.style.getPropertyValue('--k'))).toBeGreaterThan(0.99);
   await expect(page.locator('.beat.on h2')).toHaveText(/Now, yours/);
   // the 3D view lies exactly where the coda's window is, at the moment the stage lets go
-  const at = await page.evaluate(() => {
+  // (measured once the page has settled there: a busy machine lays the stage out a frame late - the offsets are in
+  // the message when it does not line up)
+  await page.evaluate(() => {
     const f = document.querySelector('#film'), st = document.querySelector('.film-stage');
     window.scrollTo(0, f.getBoundingClientRect().top + scrollY + f.offsetHeight - st.offsetHeight - parseFloat(getComputedStyle(st).top) - 1);
-    const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
-    return [w.left - v.left, w.top - v.top, w.width - v.width, w.height - v.height].map((x) => Math.abs(x) <= 2);
   });
-  expect(at).toEqual([true, true, true, true]);
+  await expect.poll(() => page.evaluate(() => {
+    const w = document.querySelector('.film-window').getBoundingClientRect(), v = document.querySelector('.viewer').getBoundingClientRect();
+    return [w.left - v.left, w.top - v.top, w.width - v.width, w.height - v.height].map((x) => (Math.abs(x) <= 2 ? 0 : Math.round(x)));
+  }), { timeout: 2000 }).toEqual([0, 0, 0, 0]);
   await expect(page.locator('#film')).not.toHaveClass(/merged/);
   await page.locator('.beat.on .cta .btn').click();
   await expect(page.locator('#film')).toHaveClass(/merged/);
@@ -202,11 +210,16 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
     document.documentElement.style.scrollBehavior = 'auto';
     window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm + k * asm);
   }, k);
-  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas)')?.parentElement?.className ?? '');
+  // (the 3D view's canvas: not the film's, nor the table's picture under it - a canvas too, with its edges faded)
+  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas):not(.film-plate)')?.parentElement?.className ?? '');
   // (down through the film: the engine starts on the way)
   for (const k of [-8, -6, -4, -2, -1]) await to(k);
   await to(0);
   await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
+  // (on the stage already where its stretch starts, the coda's layers made ahead: the frames the 3D view fades in
+  // at and the coda starts at once held the page up, each a first paint)
+  await expect.poll(home).toBe('film-3d on');
+  await expect(page.locator('#film')).toHaveClass(/nearing/);
   await to(0.5);
   await expect.poll(home).toBe('film-3d on');
   await expect(page.locator('.film-3d')).toHaveCSS('opacity', '1');
@@ -214,7 +227,7 @@ test('the scroll builds the PC from the film table, into the configurator', asyn
   await to(1.01);
   await expect(page.locator('#film')).toHaveClass(/merged/);
   await expect.poll(home).toBe('view');
-  await expect(page.locator('.film-3d canvas')).toHaveCount(0);
+  await expect(page.locator('.film-3d canvas:not(.film-plate)')).toHaveCount(0);
   // in the configurator, at rest, the stretch that built it gets short - the view does not move - and back up from it
   // the PC comes apart on the stage again, over that little scroll
   const at = await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top);
@@ -396,6 +409,33 @@ test('undo and redo', async ({ page }) => {
   await expect(page).not.toHaveURL(/bays=5/);
   await page.locator('#redo').click();
   await expect(page).toHaveURL(/bays=5/);
+});
+
+// Every build the engine renders comes with the PC around it. The case is made a part at a time (a step that yields,
+// scene.js), and the whole scene made at once skipped it: the PC was there only in the build made ahead - the film's
+// and the first look's - and gone at the first edit, the printed parts alone in the 3D view.
+test('a build rendered again keeps the PC around it', async ({ page }) => {
+  // (three.js tells its devtools of each scene it makes: the 3D view's is looked into through that)
+  await page.addInitScript(() => {
+    window.__scenes = [];
+    window.__THREE_DEVTOOLS__ = new EventTarget();
+    window.__THREE_DEVTOOLS__.addEventListener('observe', (e) => { if (e.detail?.isScene) window.__scenes.push(e.detail); });
+  });
+  const pc = () => page.evaluate(() => {
+    const room = window.__scenes.map((s) => s.getObjectByName('scene')).find(Boolean);
+    let meshes = 0;
+    room?.getObjectByName('case')?.traverse((o) => { if (o.isMesh) meshes++; });
+    return { room: room?.uuid ?? null, meshes };
+  });
+  await page.goto('/#bays=4');
+  await rendered(page);
+  await expect.poll(async () => (await pc()).meshes).toBeGreaterThan(50);
+  const first = (await pc()).room;
+  await page.locator('.seg-btn', { hasText: /^5$/ }).first().click();
+  await expect(page).toHaveURL(/bays=5/);
+  await expect.poll(async () => (await pc()).room).not.toBe(first);
+  await rendered(page);
+  expect((await pc()).meshes).toBeGreaterThan(50);
 });
 
 test('a short link opens the same build', async ({ page, context }) => {

@@ -27,12 +27,20 @@ OUT = ROOT / "docs" / "scroll"
 SIZES = [("1600", 1600, 900, 1, 76, "fine"), ("960", 960, 540, 4, 70, "base"), ("tall", 576, 720, 2, 68, "tall")]
 SHARP = ("2560", 2560, 1440, 4, 80, "sharp")
 THEMES = {"dark": "frames", "light": "frames_light"}
+# --src hq: the frames of scroll.py --full (frames_hq<TAG>/, every frame at 2560 x 1440). The sharp set is then those
+# same frames, one in two, and the upright cut keeps more of them (720 x 900, the 2560 slice shrunk once).
+HQ = "--src" in sys.argv and sys.argv[sys.argv.index("--src") + 1] == "hq"
+if HQ:
+    THEMES = {"dark": "frames_hq", "light": "frames_hq_light"}
+    SIZES = [("1600", 1600, 900, 1, 78, "fine"), ("960", 960, 540, 4, 72, "base"), ("tall", 720, 900, 2, 72, "tall")]
+    SHARP = ("2560", 2560, 1440, 2, 80, "sharp")
 
 
 def main():
     only = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
     beats = json.loads((SRC / "beats.json").read_text(encoding="utf-8"))
     total = 0
+    all_frames = {}
     grain = None                                           # frames per frame of the keys (1: no in-between frames)
     for theme, folder in THEMES.items():
         keys = sorted((SRC / folder).glob("f_*.png"))
@@ -51,6 +59,7 @@ def main():
         if grain not in (None, fine):
             sys.exit("the two themes have a different number of in-between frames")
         grain = fine
+        all_frames[theme] = frames
         # where the subject is across each frame (the beats say, in key frames)
         def subject(k):
             key = k // fine + 1
@@ -83,7 +92,10 @@ def main():
     halves = {th: [SRC / ("sharp" + folder[len("frames"):]) / f"h_{i:04d}.png" for i in range(1, beats["frames"])]
               for th, folder in THEMES.items()}
     sharp_step = grain
-    if grain % 2 == 0 and all(p.exists() for v in halves.values() for p in v):
+    if HQ:
+        sharp_step = SHARP[3]
+        sharp = {th: [p for i, p in enumerate(all_frames[th]) if i % sharp_step == 0] for th in THEMES}
+    elif grain % 2 == 0 and all(p.exists() for v in halves.values() for p in v):
         sharp_step = grain // 2
         sharp = {th: [f for i, k in enumerate(keys) for f in ([k, halves[th][i]] if i < len(keys) - 1 else [k])]
                  for th, keys in sharp.items()}
