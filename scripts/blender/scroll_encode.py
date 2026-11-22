@@ -28,11 +28,12 @@ SIZES = [("1600", 1600, 900, 1, 76, "fine"), ("960", 960, 540, 4, 70, "base"), (
 SHARP = ("2560", 2560, 1440, 4, 80, "sharp")
 THEMES = {"dark": "frames", "light": "frames_light"}
 # --src hq: the frames of scroll.py --full (frames_hq<TAG>/, every frame at 2560 x 1440). The sharp set is then those
-# same frames, one in two, and the upright cut keeps more of them (720 x 900, the 2560 slice shrunk once).
+# same frames, one in two. The upright cut stays 576 x 720: a phone's reel holds its decoded frames in a fixed budget
+# (film.js, REEL_PIXELS), and at 720 x 900 it held too few of them and decoded again and again (long frames).
 HQ = "--src" in sys.argv and sys.argv[sys.argv.index("--src") + 1] == "hq"
 if HQ:
     THEMES = {"dark": "frames_hq", "light": "frames_hq_light"}
-    SIZES = [("1600", 1600, 900, 1, 78, "fine"), ("960", 960, 540, 4, 72, "base"), ("tall", 720, 900, 2, 72, "tall")]
+    SIZES = [("1600", 1600, 900, 1, 78, "fine"), ("960", 960, 540, 4, 72, "base"), ("tall", 576, 720, 2, 72, "tall")]
     SHARP = ("2560", 2560, 1440, 2, 80, "sharp")
 
 
