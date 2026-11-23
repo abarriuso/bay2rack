@@ -1,6 +1,6 @@
 {
- "frames": 957,
- "v": "4131a05ad7",
+ "frames": 1197,
+ "v": "63351545f4",
  "sizes": [
   {
    "dir": "1600",
@@ -76,14 +76,21 @@
   },
   {
    "from": 825,
-   "to": 912,
+   "to": 960,
    "key": "kit",
    "side": "left",
    "subject": 0.63
   },
   {
-   "from": 913,
-   "to": 957,
+   "from": 961,
+   "to": 1128,
+   "key": "assemble",
+   "side": "left",
+   "subject": 0.63
+  },
+  {
+   "from": 1129,
+   "to": 1197,
    "key": "build",
    "side": "left",
    "subject": 0.63

@@ -1,4 +1,5 @@
-"""bay2rack scroll film: a retro homelab, then its rack comes apart piece by piece and ends as the kit on the table.
+"""bay2rack scroll film: a retro homelab, then its rack comes apart piece by piece into the kit on the table, and the
+kit goes back together into the homelab (the PC the configurator then shows).
 
 The page plays it with the scroll (one frame per step, forwards and backwards), so nothing here depends on time:
 no motion blur, no camera shake. Shot like a commercial: long lenses, shallow depth of field, the focus pulled to
@@ -38,7 +39,8 @@ from mathutils import Euler, Vector
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import hero as h  # noqa: E402
 
-END = 240
+END = 300
+TABLE = 240        # the kit lies still on the table here; from here on it goes back into the PC (the build)
 OUT = os.path.join(h.SRC, "scroll")
 LIGHT = bool(h.arg("--light"))
 TAG = "_light" if LIGHT else ""
@@ -50,8 +52,9 @@ BEATS = [
     (89, 134, "modules", "left", "Cada U es un modulo impreso: tu eliges que va en cada una"),
     (135, 164, "frozen", "left", "Una pieza por aparato. Todas se imprimen sin soportes"),
     (165, 206, "adapter", "left", "Y una sola pieza convierte las bahias en rack"),
-    (207, 228, "kit", "left", "Esto imprimes, esto compras"),
-    (229, 240, "build", "left", "Configura el tuyo"),
+    (207, 240, "kit", "left", "Esto imprimes, esto compras"),
+    (241, 282, "assemble", "left", "Y vuelve a montarse, pieza a pieza"),
+    (283, 300, "build", "left", "Configura el tuyo"),
 ]
 # where the subject sits for a text on that side: the camera's lens shift (a fraction of the picture's width)
 SHIFT = {"left": -0.13, "right": 0.13}
@@ -196,9 +199,11 @@ def build_film(sc, root, info):
     for i, o in enumerate(front):
         euler(o)
         f = 60 + i * 3
-        move(o, [(1, Z, Z, "move"), (f, Z, Z, "snap"), (f + 7, (0.0, -0.05, 0.0), Z, "move"),
-                 (f + 20, (-0.05 + 0.02 * i, -0.3, -0.22), (0.5, 0.0, 0.4 - 0.15 * i), "move")])
-        h.hidden_from(o, f + 21)
+        gone = ((-0.05 + 0.02 * i, -0.3, -0.22), (0.5, 0.0, 0.4 - 0.15 * i))
+        b = 276 + i * 2                                                    # (the build: they plug in again, last)
+        move(o, [(1, Z, Z, "move"), (f, Z, Z, "snap"), (f + 7, (0.0, -0.05, 0.0), Z, "move"), (f + 20, *gone, "move"),
+                 (b, *gone, "move"), (b + 9, (0.0, -0.05, 0.0), Z, "move"), (b + 13, Z, Z, "move")])
+        h.hide_keys(o, [(1, False), (f + 20, False), (f + 21, True), (b - 1, True), (b, False)])
 
     # the screws: the ones of the rack spin out of the front one after another (56-88) and hang in the air; the ones
     # that hold the adapter in the bays go in from the side, so they wait for the side panel to open (172-186).
@@ -232,9 +237,15 @@ def build_film(sc, root, info):
         spot = Vector((0.165 + (k % 8) * 0.014, -0.47 - (k // 8) * 0.035, floor + min(size.x, size.y, size.z) / 2 + 0.0005))
         lay = (spin[0], spin[1], math.pi / 2) if side else spin
         fk = 206 + round(k * 6 / n)
+        # the build: off the table into the air again, and in - the bay screws once the adapter is in its bays
+        # (through the open side), the rack's once the modules are in
+        up = 244 + round(k * 4 / n) if side else 252 + round(k * 6 / n)
+        b = 262 + (i % 4) * 2 if side else 274 + round(i * 10 / n)
         k += 1
         move(p, [(1, Z, Z, "move"), (f0, Z, Z, "move"), (f0 + 12, d * 0.03, spin, "move"), (f0 + 26, cloud, spin, "move"),
-                 (fk, cloud * 1.08, spin, "snap"), (fk + 14, spot - mid, lay, "move")])
+                 (fk, cloud * 1.08, spin, "snap"), (fk + 14, spot - mid, lay, "move"),
+                 (up, spot - mid, lay, "snap"), (up + 10, cloud, spin, "move"), (b, d * 0.03, spin, "move"),
+                 (b + 8, Z, Z, "move")])
 
     # 160-176: the side panel swings open like a door (its hinge at the back): the inside of the PC, and the way
     # out for the bay screws
@@ -243,7 +254,8 @@ def build_film(sc, root, info):
         euler(panel)
         lo, hi = world_box(panel)
         off, rot = hinged(math.radians(-105), (lo.x, hi.y))
-        move(panel, [(1, Z, Z, "move"), (160, Z, Z, "snap"), (176, off, rot, "move")])
+        move(panel, [(1, Z, Z, "move"), (160, Z, Z, "snap"), (176, off, rot, "move"), (278, off, rot, "move"),
+                     (292, Z, Z, "move")])                                 # (it closes again once its screws are in)
     film.update(groups=groups, screws=screws, panel=panel, floor=floor)
 
     # the modules and the strip's panel shoot out of the bays and lock in the air; later the adapter follows
@@ -251,6 +263,8 @@ def build_film(sc, root, info):
              "filler": (114, (0.0, -0.1, 0.215)), "adapter": (184, (0.0, -0.09, 0.0855))}
     table = {"adapter": (-0.215, -0.58), "filler": (0.0, -0.44), "module0": (0.0, -0.52), "module1": (0.0, -0.61),
              "module2": (0.0, -0.7)}
+    # the build, the other way round: the adapter first, then the strip's panel and the modules from the bottom up
+    lift = {"adapter": 242, "filler": 252, "module2": 255, "module1": 258, "module0": 261}
     for i, (name, (f0, center)) in enumerate(stage.items()):
         o = groups.get(name)
         if not o:
@@ -259,8 +273,11 @@ def build_film(sc, root, info):
         out = posed(o, Z, center=center)
         dur = 20 if name == "adapter" else 12
         fk = 204 + i * 2
+        lying = posed(o, FLAT, xy=table[name], floor=floor)
+        b = lift[name]
         move(o, [(1, Z, Z, "move"), (f0, Z, Z, "snap"), (f0 + dur, out, Z, "move"), (fk, out * 1.04, Z, "snap"),
-                 (fk + 16, posed(o, FLAT, xy=table[name], floor=floor), FLAT, "move")])
+                 (fk + 16, lying, FLAT, "move"), (b, lying, FLAT, "snap"), (b + 10, out * 1.04, Z, "move"),
+                 (b + 18, Z, Z, "move")])
 
     # the bays, empty: light from inside the case comes out as the adapter leaves
     inside = h.area("inside", (0.0, 0.14, 0.085), (0.0, -1.0, 0.085), 0.13, 0.0, (0.55, 0.72, 1.0), 0.15)
@@ -295,11 +312,13 @@ def build_film(sc, root, info):
     S(cam, aim, focus, 186, (-0.68, -0.6, 0.13), (0.0, -0.04, 0.075), (0.0, -0.02, 0.085), lens=42, fstop=4.0)    # the open side
     S(cam, aim, focus, 206, (-0.6, -0.74, 0.1), (0.0, -0.1, 0.08), (0.0, -0.09, 0.085), lens=45, fstop=4.0)
     S(cam, aim, focus, 228, (0.0, -0.86, floor + 1.2), kit, kit, lens=45, fstop=5.6)                       # over the table
-    S(cam, aim, focus, END, (0.02, -0.82, floor + 1.08), kit, kit, lens=45, fstop=5.6)
+    S(cam, aim, focus, TABLE, (0.02, -0.82, floor + 1.08), kit, kit, lens=45, fstop=5.6)
     film["cam"], film["aim"] = cam, aim
     # the picture slides sideways under the camera (lens shift: the perspective stays) so the subject sits on the
     # side the text of that stretch leaves free
     for a, b, _, side, _ in BEATS:
+        if a > TABLE:
+            continue
         cam.data.shift_x = SHIFT[side]
         for f in sorted({a + 4, max(a + 4, b - 4)}):
             cam.data.keyframe_insert("shift_x", frame=f)
@@ -317,6 +336,36 @@ def build_film(sc, root, info):
                 end = i in (0, len(pts) - 1)
                 kp.handle_left_type = kp.handle_right_type = "AUTO" if flowing and not end else "AUTO_CLAMPED"
             fc.update()
+    # the build. The film up to the table stays as it was rendered: the table's key keeps the handles it had as
+    # the last one, and the camera rises from there, round to the front of the tower, and back out to the homelab
+    for o in (cam, aim, focus, cam.data):
+        for fc in h.fcurves_of(o):
+            last = fc.keyframe_points[-1]
+            last.handle_left_type = last.handle_right_type = "FREE"
+    S(cam, aim, focus, 249, (-0.12, -1.3, 0.62), (0.0, -0.36, -0.12), (0.0, -0.3, -0.05), lens=38, fstop=5.0)   # back: table and tower
+    S(cam, aim, focus, 260, (-0.3, -1.12, 0.34), (0.0, -0.16, 0.03), (0.0, -0.12, 0.07), lens=41, fstop=4.5)
+    S(cam, aim, focus, 272, (-0.44, -0.8, 0.15), (0.0, -0.05, 0.07), (0.0, -0.03, 0.085), lens=45, fstop=4.0)   # the bays fill
+    S(cam, aim, focus, 288, (-0.52, -1.08, 0.04), (0.06, 0.04, 0.0), rack, lens=40, fstop=4.0)
+    S(cam, aim, focus, END, (-0.58, -1.3, -0.06), (0.1, 0.1, -0.04), rack, lens=38, fstop=4.0)              # the homelab again
+    for a, b, _, side, _ in BEATS:
+        if a > TABLE:
+            cam.data.shift_x = SHIFT[side]
+            for f in sorted({a + 4, max(a + 4, b - 4)}):
+                cam.data.keyframe_insert("shift_x", frame=f)
+    for o in (cam, aim, focus, cam.data):
+        for fc in h.fcurves_of(o):
+            flowing = fc.data_path in ("location", "lens")
+            pts = [kp for kp in fc.keyframe_points if kp.co.x > TABLE + 0.5]
+            for i, kp in enumerate(pts):
+                kp.interpolation = "BEZIER"
+                kp.easing = "AUTO"
+                kp.handle_left_type = kp.handle_right_type = "AUTO" if flowing and i < len(pts) - 1 else "AUTO_CLAMPED"
+            fc.update()
+            # out of the table's key from a stop (it came to one there): a flat handle a third of the way on
+            at = [kp for kp in fc.keyframe_points if abs(kp.co.x - TABLE) < 0.5]
+            if at and pts:
+                at[0].handle_right = (TABLE + (pts[0].co.x - TABLE) / 3, at[0].co.y)
+            fc.update()
     return film
 
 
@@ -329,7 +378,7 @@ def table(sc, film):
     """Where each piece is at the first frame (built) and at the last (on the table), and the last camera."""
     names = [n for n in ("adapter", "filler", "module0", "module1", "module2", "module3") if n in film["groups"]]
     rest, end = {}, {}
-    for f, out in ((1, rest), (END, end)):
+    for f, out in ((1, rest), (TABLE, end)):
         sc.frame_set(f)
         bpy.context.view_layer.update()
         for n in names:
@@ -339,7 +388,7 @@ def table(sc, film):
             out[f"screw{i}"] = (p.matrix_world.copy(), (lo + hi) / 2, hi - lo)
         if film["panel"]:
             out["panel"] = film["panel"].matrix_world.copy()
-        if f == END:
+        if f == TABLE:
             cam, aim = film["cam"], film["aim"]
             camera = {"matrix": mm(cam.matrix_world), "aim": [round(x * 1000, 2) for x in aim.matrix_world.translation],
                       "lens": cam.data.lens, "sensor": cam.data.sensor_width, "shift": [cam.data.shift_x, cam.data.shift_y],
@@ -428,7 +477,7 @@ def main():
         # it onto its floor from this camera, so the film's picture turns into the 3D view with nothing moving), and
         # the same frame with the kit, to match the 3D pieces against
         sc.render.resolution_x, sc.render.resolution_y = 2560, 1440
-        sc.frame_set(END)
+        sc.frame_set(TABLE)
         folder = os.path.join(OUT, "plate")
         os.makedirs(folder, exist_ok=True)
         sc.render.filepath = os.path.join(folder, f"kit{TAG}.png")

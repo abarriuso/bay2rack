@@ -18,11 +18,13 @@
 // the slice of the picture a phone shows, with twice the frames. Where the scroll rests, the fine picture of that
 // frame.
 //
-// At its end the film turns into the configurator: a coda (a little more scroll after the last frame) closes the
-// picture into the shape of the workbench, its 3D view and its steps column. Then the kit on the table turns 3D -
-// the same pieces, in the same places, on the same table, from the same camera - and the rest of the scroll builds
-// the PC from it (assemble.js). The configurator is right under the stage, its 3D view where the coda's window is:
-// there the film gives way to it, built.
+// At its end the film turns into the configurator: the film itself builds the PC again from the kit on the table
+// (rendered, like the rest), and a coda (a little more scroll after the last frame) closes the picture into the
+// shape of the workbench, its 3D view and its steps column. The configurator is right under the stage, its 3D view
+// where the coda's window is: there the film gives way to it.
+// (LIVE: the old way, the kit turned 3D on the stage and the scroll building the PC in the 3D view - assemble.js. Off:
+// it waited on the 3D view, and a slow one held the page on a still picture.)
+const LIVE = false;
 import './css/film-extra.css';
 import { $, BASE, CALM, NARROW, S, afterFrame, atRest as quiet, stillInput } from './state.js';
 import { viewer, startEngine, startViewer, fetchFirst } from './engine.js';
@@ -674,7 +676,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
     stageH = stage.offsetHeight;
     const all = Math.max(1, r.height - stageH);
     close = Math.min(all * 0.25, codaEl?.offsetHeight ?? 0);
-    asm = Math.min(all * 0.35, asmEl?.offsetHeight ?? 0);
+    asm = LIVE ? Math.min(all * 0.35, asmEl?.offsetHeight ?? 0) : 0;
     coda = close + asm;
     span = Math.max(1, all - coda);
     // The coda closes into the configurator as it is on this screen, at this zoom: its edges, its height, its steps
@@ -979,12 +981,13 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // before it is ever drawn
   let assembleMod = null, hooked = false;
   const assembler = () => (assembleMod ??= import('./assemble.js').then((m) => { m.preloadTable(); return m; }));
-  let failed = false, earlyOn = false;
+  // (not LIVE: as for a page with no 3D view - nothing waits on it, nothing holds the scroll for it)
+  let failed = !LIVE, earlyOn = false;
   async function early() {
     if (earlyOn) return;
     earlyOn = true;
     fetchFirst();                                           // (the build made ahead comes meanwhile: engine.js)
-    assembler().catch((e) => console.warn(e));
+    if (LIVE) assembler().catch((e) => console.warn(e));
     try { await startViewer(); hook(); } catch (e) { console.warn(e); }
     if (!viewer) { failed = true; waiting(0); prepare(); } // (no 3D view here: the film gives way to the page as it is)
   }
@@ -1148,7 +1151,7 @@ export async function startFilm(pageReady = Promise.resolve()) {
   addEventListener('b2r:viewer', () => hook());
   function hook() {
     const v = viewer;
-    if (hooked || !v) return;
+    if (hooked || !v || !LIVE) return;
     hooked = true;
     if (v.model || !firstLook()) return;                    // (a model on screen already: it stays as it is)
     setPlate();
@@ -1366,7 +1369,17 @@ export async function startFilm(pageReady = Promise.resolve()) {
   // configurator has the keyboard there. (Without motion, or the build not there in a few seconds: straight to it.)
   const RIDE = 1.6;                                       // (the build's pace on a ride: a little quicker)
   function ride(done) {
-    if (CALM.matches || merged || failed) { toConfigurator(); done(); return; }
+    if (CALM.matches || merged || (failed && LIVE)) { toConfigurator(); done(); return; }
+    if (!LIVE) {
+      // (the film runs on to its end - the PC built in it - and the configurator has the keyboard there)
+      const end = endY();
+      if (scrollY >= end - 2) { toConfigurator(); done(); return; }
+      glide(end, Math.min(5000, 900 + (end - scrollY) / innerHeight * 700));
+      auto.free = true;
+      auto.ride = done;
+      auto.done = () => { toConfigurator(); done(); };
+      return;
+    }
     // (the 3D view started now, its files coming while the film runs; not ready by the end of the film, it waits on
     // the film's last picture - a still one - not halfway into the build)
     early();
