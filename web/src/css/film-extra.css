@@ -6,15 +6,13 @@
    workbench) on the stage; everything else follows from it here, so a frame of the coda is one style change, no
    layout. A phone's configurator has its 3D view on top and the steps under it: so has its coda. */
 
-/* the coda's length: style.css's film (530 / 470 svh on phones), 70 svh more that close it into the workbench and
-   --asm more that build the PC in it (film.js reads both from .film-coda and .film-assemble, so the frames keep
-   their pace) */
-.film.coda { --asm: 170vh; --asm: 170svh; height: calc(600vh + var(--asm)); height: calc(600svh + var(--asm)); }
-@media (max-width: 760px) { .film.coda { --asm: 150svh; height: calc(540svh + var(--asm)); } }
+/* the coda's length: style.css's film (660 / 590 svh on phones: the build is in the film's own frames now), 70 svh
+   more that close it into the workbench (film.js reads it from .film-coda, so the frames keep their pace). --asm was
+   the stretch where the scroll built the PC in the 3D view (film.js LIVE): none now. */
+.film.coda { --asm: 0px; height: calc(730vh + var(--asm)); height: calc(730svh + var(--asm)); }
+@media (max-width: 760px) { .film.coda { --asm: 0px; height: calc(660svh + var(--asm)); } }
 /* (the PC built once: film.js shortens its stretch - back up from the configurator it comes apart over a little
    scroll, not the whole way it was built; none if the build is the visitor's own) */
-.film.coda.built { --asm: 80vh; --asm: 80svh; }
-@media (max-width: 760px) { .film.coda.built { --asm: 70svh; } }
 .film.coda.built.bare { --asm: 0px; }
 .film-coda, .film-assemble { position: absolute; left: 0; right: 0; pointer-events: none; visibility: hidden; }
 .film-coda { bottom: var(--asm, 0px); height: 70vh; height: 70svh; }

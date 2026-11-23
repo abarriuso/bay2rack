@@ -48,7 +48,7 @@ test('the film follows the scroll: each text comes in at its frames', async ({ p
     document.documentElement.style.scrollBehavior = 'auto';
     // (the film's own stretch: its length less the coda's, where the stage closes and the PC is built)
     const span = f.offsetHeight - st.offsetHeight - f.querySelector('.film-coda').offsetHeight - f.querySelector('.film-assemble').offsetHeight;
-    window.scrollTo(0, f.offsetTop + span * 0.52);
+    window.scrollTo(0, f.offsetTop + span * 0.4);
   });
   await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
   await expect(page.locator('.beat.on')).toHaveCount(1);
@@ -94,7 +94,7 @@ test('a page nobody scrolls loads no engine, does not shift, and shows its own t
       .observe({ type: 'layout-shift', buffered: true });
   });
   await page.goto('/');
-  await expect(page.locator('#film')).toHaveClass(/live3d/);      // (the 3D view and the build made ahead are in)
+  await expect(page.locator('#view canvas')).toHaveCount(1, { timeout: 30_000 });   // (the 3D view is in)
   await page.waitForTimeout(6000);                                // (the engine used to come some 4 s after them)
   expect(asked.filter((u) => /openscad/.test(u))).toEqual([]);
   expect(await page.evaluate(() => window.__shift)).toBeLessThan(0.1);
@@ -198,47 +198,33 @@ test('the film ends inside the configurator', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-// after the coda, the scroll builds the PC from the film's table in the 3D view itself: its canvas is on the stage
-// while it is built, home in the configurator where the stage lets go, and back on the stage up again
-test('the scroll builds the PC from the film table, into the configurator', async ({ page }) => {
+// The film builds the PC itself (its own frames) and gives way to the configurator: down through it nothing waits on
+// the 3D view - no quiet line, the page never held - and back up from the configurator the film is right there.
+test('the film builds the PC in its own frames and gives way to the configurator', async ({ page }) => {
   const errors = watchErrors(page);
   await page.goto('/');
   await expect(page.locator('#film')).toHaveClass(/live/);
   const to = (k) => page.evaluate((k) => {
     const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
-    const all = f.offsetHeight - st.offsetHeight, close = f.querySelector('.film-coda').offsetHeight, asm = f.querySelector('.film-assemble').offsetHeight;
     document.documentElement.style.scrollBehavior = 'auto';
-    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm + k * asm);
+    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + (f.offsetHeight - st.offsetHeight) * k);
   }, k);
-  // (the 3D view's canvas: not the film's, nor the table's picture under it - a canvas too, with its edges faded)
-  const home = () => page.evaluate(() => document.querySelector('canvas:not(.film-canvas):not(.film-plate)')?.parentElement?.className ?? '');
-  // (down through the film: the engine starts on the way)
-  for (const k of [-8, -6, -4, -2, -1]) await to(k);
-  await to(0);
-  await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
-  // (on the stage already where its stretch starts, the coda's layers made ahead: the frames the 3D view fades in
-  // at and the coda starts at once held the page up, each a first paint)
-  await expect.poll(home).toBe('film-3d on');
-  await expect(page.locator('#film')).toHaveClass(/nearing/);
-  await to(0.5);
-  await expect.poll(home).toBe('film-3d on');
-  await expect(page.locator('.film-3d')).toHaveCSS('opacity', '1');
-  const long = await page.evaluate(() => document.querySelector('.film-assemble').offsetHeight);
-  await to(1.01);
+  let waited = false;
+  for (const k of [0.5, 0.8, 0.88, 0.92, 0.96, 1.01]) {
+    await to(k);
+    await page.waitForTimeout(150);
+    waited ||= await page.evaluate(() => document.querySelector('#film').classList.contains('waiting'));
+  }
+  expect(waited).toBe(false);
+  await expect(page.locator('.film-assemble')).toHaveJSProperty('offsetHeight', 0);
   await expect(page.locator('#film')).toHaveClass(/merged/);
-  await expect.poll(home).toBe('view');
-  await expect(page.locator('.film-3d canvas:not(.film-plate)')).toHaveCount(0);
-  // in the configurator, at rest, the stretch that built it gets short - the view does not move - and back up from it
-  // the PC comes apart on the stage again, over that little scroll
-  const at = await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top);
-  await expect(page.locator('#film')).toHaveClass(/built/);
-  await expect.poll(() => page.evaluate(() => document.querySelector('.film-assemble').offsetHeight)).toBeLessThan(long * 0.6);
-  expect(Math.abs(await page.evaluate(() => document.querySelector('#view').getBoundingClientRect().top) - at)).toBeLessThan(1);
-  await to(0.5);
+  expect(await page.locator('#film').evaluate((f) => f.classList.contains('live3d'))).toBe(false);
+  // (the page stays where it was put: not held back, not pulled elsewhere)
+  const y = await page.evaluate(() => scrollY);
+  await page.waitForTimeout(1500);
+  expect(Math.abs(await page.evaluate(() => scrollY) - y)).toBeLessThan(2);
+  await to(0.9);
   await expect(page.locator('#film')).not.toHaveClass(/merged/);
-  await expect.poll(home).toBe('film-3d on');
-  await to(1.01);
-  await expect.poll(home).toBe('view');
   expect(errors).toEqual([]);
 });
 
@@ -270,7 +256,6 @@ test('a wheel into the configurator stops at it', async ({ page }) => {
     document.documentElement.style.scrollBehavior = 'auto';
     window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm - 200);
   });
-  await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
   await page.mouse.move(900, 450);                          // (over where the 3D view will be)
   const merged = () => page.evaluate(() => document.querySelector('#film').classList.contains('merged'));
   for (let i = 0; i < 750 && !(await merged()); i++) { await page.mouse.wheel(0, 80); await page.waitForTimeout(16); }
@@ -287,9 +272,9 @@ test('a wheel into the configurator stops at it', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-// the film's build is made ahead (scripts/first-render.mjs) for this very model: the PC is built on the table with no
-// engine at all - and a model changed since is caught here, not by a visitor
-test('the film builds the PC made ahead, before the engine', async ({ page }) => {
+// the film's build is made ahead (scripts/first-render.mjs) for this very model: the configurator the film gives way to
+// shows the PC with no engine at all - and a model changed since is caught here, not by a visitor
+test('the configurator after the film shows the PC made ahead, before the engine', async ({ page }) => {
   const errors = watchErrors(page);
   const made = await page.request.get('/scad/first.json');
   expect(made.ok(), 'no build made ahead for this model: run node scripts/first-render.mjs').toBe(true);
@@ -301,9 +286,10 @@ test('the film builds the PC made ahead, before the engine', async ({ page }) =>
     const f = document.querySelector('#film'), st = f.querySelector('.film-stage');
     const all = f.offsetHeight - st.offsetHeight, asm = f.querySelector('.film-assemble').offsetHeight;
     document.documentElement.style.scrollBehavior = 'auto';
-    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm);
+    window.scrollTo(0, f.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(st).top) + all - asm + 1);
   });
-  await expect(page.locator('#film')).toHaveClass(/live3d/, { timeout: 60_000 });
+  await expect(page.locator('#film')).toHaveClass(/merged/);
+  await rendered(page);
   expect(errors.filter((e) => !/openscad|Failed to load resource|engine/i.test(e))).toEqual([]);
 });
 
@@ -317,7 +303,7 @@ test('the film keeps its place when the window changes size', async ({ page }) =
     document.documentElement.style.scrollBehavior = 'auto';
     // (the film's own stretch: its length less the coda's, where the stage closes and the PC is built)
     const span = f.offsetHeight - st.offsetHeight - f.querySelector('.film-coda').offsetHeight - f.querySelector('.film-assemble').offsetHeight;
-    window.scrollTo(0, f.offsetTop + span * 0.52);
+    window.scrollTo(0, f.offsetTop + span * 0.4);
   });
   await expect(page.locator('.beat.on h2')).toHaveText(/Every unit/);
   const progress = () => page.locator('#filmBar').evaluate((b) => +(b.style.transform.match(/scaleX\(([\d.]+)\)/)?.[1] ?? 0));
